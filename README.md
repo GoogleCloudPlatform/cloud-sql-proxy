@@ -1,9 +1,9 @@
 
-The Cloud SQL Proxy allowes a user with the appropriate permissions to connect
+The Cloud SQL Proxy allows a user with the appropriate permissions to connect
 to a Cloud SQL database without having to deal with IP whitelisting or SSL
-certificates manually. It works by opening unix sockets on the local machine and
-proxying connections to the associated Cloud SQL instances when the sockets are
-used.
+certificates manually. It works by opening unix/tcp sockets on the local machine
+and proxying connections to the associated Cloud SQL instances when the sockets
+are used.
 
 cloud_sql_proxy takes a few arguments to configure:
 
@@ -32,10 +32,10 @@ enabled.  The default service account must also have at least WRITER/EDITOR
 priviledges to any projects of target SQL instances.
 
 Examples:
-  ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:sql-inst &
-  mysql -u user [-p] -S /cloudsql/my-project:sql-inst
+  ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central:sql-inst &
+  mysql -u user [-p] -S /cloudsql/my-project:us-central:sql-inst
 
   # For -fuse you do not need to specify instance names ahead of time:
   ./cloud_sql_proxy -dir=/cloudsql -fuse &
-  mysql -u user [-p] -S /cloudsql/my-project:sql-inst
+  mysql -u user [-p] -S /cloudsql/my-project:us-central:sql-inst
 
