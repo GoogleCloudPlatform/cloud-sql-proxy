@@ -26,9 +26,10 @@ import (
 	"time"
 
 	"flag"
-	"log"
 	"gcp/metadata"
+	"log"
 	"util/prettyprint"
+
 	"golang.org/x/oauth2"
 )
 
@@ -75,7 +76,6 @@ func (t tokenFunc) Token() (*oauth2.Token, error) {
 }
 
 func gceToken() (*oauth2.Token, error) {
-	log.Print("Retrieving oauth token via metadata server...")
 	tok, exp, err := NewGCEToken()
 	if err != nil {
 		return nil, err

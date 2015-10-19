@@ -148,13 +148,11 @@ func listenInstance(dst chan<- proxy.Conn, dir, instance string) (net.Listener, 
 	}
 
 	go func() {
-		// Cleanup the socket.
-		defer l.Close()
-		defer log.Printf("close listenInstance: %q", instance)
 		for {
 			c, err := l.Accept()
 			if err != nil {
 				log.Printf("Error in accept for %q on %v: %v", instance, path, err)
+				l.Close()
 				return
 			}
 			log.Printf("Got a connection for %q", instance)

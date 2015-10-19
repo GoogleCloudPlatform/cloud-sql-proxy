@@ -43,8 +43,9 @@ import (
 
 	"log"
 	"proxy/proxy"
-	"bazil.org/fuse/fs"
+
 	"bazil.org/fuse"
+	"bazil.org/fuse/fs"
 	"golang.org/x/net/context"
 )
 
@@ -86,7 +87,9 @@ func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.C
 
 	server := fs.New(c, &fs.Config{
 		Debug: func(msg interface{}) {
-			log.Print(msg)
+			if false {
+				log.Print(msg)
+			}
 		},
 	})
 
@@ -116,7 +119,6 @@ var _ interface {
 } = symlink("")
 
 func (s symlink) Readlink(context.Context, *fuse.ReadlinkRequest) (string, error) {
-	log.Printf("readlink -> %q", string(s))
 	return string(s), nil
 }
 

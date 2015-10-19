@@ -20,19 +20,19 @@
 package main
 
 import (
+	"flag"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gcp/auth"
-	"gcp/metadata"
 	"proxy/certs"
 	"proxy/fuse"
 	"proxy/proxy"
 
-	"flag"
-	
-	"log"
+	"google.golang.org/cloud/compute/metadata"
 )
 
 var (
@@ -77,13 +77,22 @@ func main() {
 		connSrc = c
 		defer fuse.Close()
 	} else {
-		var updates <-chan string
+		updates := make(chan string)
 		if *instanceSrc != "" {
-			c, err := metadata.Subscribe(*instanceSrc)
-			if err != nil {
-				log.Fatal(err)
-			}
-			updates = c
+			go func() {
+				for {
+					err := metadata.Subscribe(*instanceSrc, func(v string, ok bool) error {
+						if ok {
+							updates <- v
+						}
+						return nil
+					})
+					if err != nil {
+						log.Print(err)
+					}
+					time.Sleep(5 * time.Second)
+				}
+			}()
 		}
 
 		c, err := WatchInstances(*dir, instances, updates)
@@ -98,9 +107,9 @@ func main() {
 
 	log.Print("Socket prefix: " + *dir)
 
-	proxy.Client{
+	(&proxy.Client{
 		Port:  *port,
 		Certs: certs.NewCertSource(*host, client),
 		Conns: connset,
-	}.Run(connSrc)
+	}).Run(connSrc)
 }

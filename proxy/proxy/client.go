@@ -17,12 +17,21 @@ package proxy
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
-	"strconv"
+	"sync"
+	"time"
 
 	"log"
 )
+
+// errNotCached is returned when the instance was not found in the Client's
+// cache. It is an internal detail and is not actually ever returned to the
+// user.
+var errNotCached = errors.New("instance was not found in cache")
+
+const refreshCfgThrottle = time.Minute
 
 // Conn represents a connection from a client to a specific instance.
 type Conn struct {
@@ -35,10 +44,8 @@ type CertSource interface {
 	// Local returns a certificate that can be used to authenticate with the
 	// provided instance.
 	Local(instance string) (tls.Certificate, error)
-	// Remote returns the instance's CA certificate and address.
-	// If cert is nil or addr is "" the instance may not support connecting via SSL.
-	// If addr is "" the instance may not exist.
-	Remote(instance string) (cert *x509.Certificate, addr string, err error)
+	// Remote returns the instance's CA certificate, address, and name.
+	Remote(instance string) (cert *x509.Certificate, addr, name string, err error)
 }
 
 // Client is a type to handle connecting to a Server. All fields are required
@@ -54,11 +61,23 @@ type Client struct {
 	// called on each new connection to an instance. net.Dial will be used if
 	// left nil.
 	Dialer func(net, addr string) (net.Conn, error)
+
+	// The cfgCache holds the most recent connection configuration keyed by
+	// instance. Relevant functions are refreshCfg and cachedCfg. It is
+	// protected by cfgL.
+	cfgCache map[string]cacheEntry
+	cfgL     sync.RWMutex
+}
+
+type cacheEntry struct {
+	addr          string
+	cfg           *tls.Config
+	lastRefreshed time.Time
 }
 
 // Run causes the client to start waiting for new connections to connSrc and
 // proxy them to the destination instance. It blocks until connSrc is closed.
-func (c Client) Run(connSrc <-chan Conn) {
+func (c *Client) Run(connSrc <-chan Conn) {
 	for conn := range connSrc {
 		go c.handleConn(conn)
 	}
@@ -68,7 +87,7 @@ func (c Client) Run(connSrc <-chan Conn) {
 	}
 }
 
-func (c Client) handleConn(conn Conn) {
+func (c *Client) handleConn(conn Conn) {
 	server, err := c.Dial(conn.Instance)
 	if err != nil {
 		log.Printf("couldn't connect to %q: %v", conn.Instance, err)
@@ -91,28 +110,78 @@ func (c Client) handleConn(conn Conn) {
 	}
 }
 
-// Dial uses the configuration stored in the client to connect to an instance.
-// If this func returns a nil error the connection is correctly authenticated
-// to connect to the instance.
-func (c Client) Dial(instance string) (net.Conn, error) {
-	mycert, err := c.Certs.Local(instance)
-	if err != nil {
-		return nil, err
+// refreshCfg uses the CertSource inside the Client to find the instance's
+// address as well as construct a new tls.Config to connect to the instance. It
+// caches the result.
+func (c *Client) refreshCfg(instance string) (string, *tls.Config, error) {
+	c.cfgL.Lock()
+	defer c.cfgL.Unlock()
+
+	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < refreshCfgThrottle {
+		// Refresh was called too recently, just reuse the result.
+		return old.addr, old.cfg, nil
 	}
 
-	scert, addr, err := c.Certs.Remote(instance)
+	mycert, err := c.Certs.Local(instance)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	addr += ":" + strconv.Itoa(c.Port)
+
+	scert, addr, name, err := c.Certs.Remote(instance)
+	if err != nil {
+		return "", nil, err
+	}
 	certs := x509.NewCertPool()
 	certs.AddCert(scert)
 
-	cconf := &tls.Config{
-		ServerName:   instance,
-		Certificates: []tls.Certificate{mycert},
-		RootCAs:      certs,
+	val := cacheEntry{
+		addr: fmt.Sprintf("%s:%d", addr, c.Port),
+		cfg: &tls.Config{
+			ServerName:   name,
+			Certificates: []tls.Certificate{mycert},
+			RootCAs:      certs,
+		},
+		lastRefreshed: time.Now(),
 	}
+
+	if c.cfgCache == nil {
+		c.cfgCache = make(map[string]cacheEntry)
+	}
+	c.cfgCache[instance] = val
+	return val.addr, val.cfg, nil
+}
+
+func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
+	c.cfgL.RLock()
+	ret, ok := c.cfgCache[instance]
+	c.cfgL.RUnlock()
+
+	// Don't waste time returning an expired cert.
+	if !ok || time.Now().After(ret.cfg.Certificates[0].Leaf.NotAfter) {
+		return "", nil
+	}
+	return ret.addr, ret.cfg
+}
+
+// Dial uses the configuration stored in the client to connect to an instance.
+// If this func returns a nil error the connection is correctly authenticated
+// to connect to the instance.
+func (c *Client) Dial(instance string) (net.Conn, error) {
+	if addr, cfg := c.cachedCfg(instance); cfg != nil {
+		ret, err := c.tryConnect(addr, cfg)
+		if err == nil {
+			return ret, err
+		}
+	}
+
+	addr, cfg, err := c.refreshCfg(instance)
+	if err != nil {
+		return nil, err
+	}
+	return c.tryConnect(addr, cfg)
+}
+
+func (c *Client) tryConnect(addr string, cfg *tls.Config) (net.Conn, error) {
 	d := c.Dialer
 	if d == nil {
 		d = net.Dial
@@ -121,7 +190,19 @@ func (c Client) Dial(instance string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := tls.Client(conn, cconf)
+	type setKeepAliver interface {
+		SetKeepAlive(keepalive bool) error
+	}
+
+	if s, ok := conn.(setKeepAliver); ok {
+		if err := s.SetKeepAlive(true); err != nil {
+			log.Printf("Couldn't set KeepAlive to true: %v", err)
+		}
+	} else {
+		log.Printf("KeepAlive not supported: long-running tcp connections may be killed by the OS.")
+	}
+
+	ret := tls.Client(conn, cfg)
 	if err := ret.Handshake(); err != nil {
 		ret.Close()
 		return nil, err
@@ -138,7 +219,6 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 	go func() {
 		for {
 			c, err := l.Accept()
-			log.Printf("New connection: %v", c)
 			if err != nil {
 				log.Printf("listener (%#v) had error: %v", l, err)
 				l.Close()

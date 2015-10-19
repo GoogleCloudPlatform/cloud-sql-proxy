@@ -88,7 +88,6 @@ func (c *ConnSet) String() string {
 func (c *ConnSet) Add(id string, conn net.Conn) {
 	c.Lock()
 	c.m[id] = append(c.m[id], conn)
-	log.Printf("ConnSet.Add(%v, %v)", id, conn)
 	c.Unlock()
 }
 
@@ -133,7 +132,6 @@ func (c *ConnSet) Remove(id string, conn net.Conn) error {
 		}
 	}
 
-	log.Printf("ConnSet.Remove(%v, %v); pos=%d", id, conn, pos)
 	if pos == -1 {
 		return fmt.Errorf("couldn't find connection %v for id %s", conn, id)
 	}
