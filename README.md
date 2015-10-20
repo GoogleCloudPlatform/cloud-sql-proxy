@@ -31,6 +31,12 @@ sql-admin API scope and the associated project must have the SQL Admin API
 enabled.  The default service account must also have at least WRITER/EDITOR
 priviledges to any projects of target SQL instances.
 
+Specifying the `-credential_file` flag allows use of the proxy outside of
+Google's cloud. Simply [create a new service
+account](https://console.developers.google.com/project/_/apiui/credential/serviceaccount),
+download the associated JSON file, and set `-credential_file` to the path of the
+JSON file.
+
 Examples:
   ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central:sql-inst &
   mysql -u user [-p] -S /cloudsql/my-project:us-central:sql-inst

@@ -21,17 +21,22 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"gcp/auth"
 	"proxy/certs"
 	"proxy/fuse"
 	"proxy/proxy"
 
+	goauth "golang.org/x/oauth2/google"
 	"google.golang.org/cloud/compute/metadata"
 )
 
@@ -48,8 +53,11 @@ var (
 	fuseTmp     = flag.String("fuse_tmp", defaultTmp, "Used as a temporary directory if -fuse is set. Note that files in this directory can be removed automatically by this program.")
 
 	// Settings for authentication.
-	token = flag.String("token", "", "By default, requests are authorized under the identity of the default service account. Setting this flag causes requests to include this Bearer token instead.")
+	token     = flag.String("token", "", "By default, requests are authorized under the identity of the default service account. Setting this flag causes requests to include this Bearer token instead.")
+	tokenFile = flag.String("credential_file", "", "If provided, this json file will be used to retrieve Service Account credentials; see README")
 )
+
+const sqlScope = "https://www.googleapis.com/auth/sqlservice.admin"
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
@@ -102,8 +110,21 @@ func main() {
 		connSrc = c
 	}
 
-	// Passing token == "" causes the GCE metadata server to be used.
-	client := auth.NewAuthenticatedClient(*token)
+	var client *http.Client
+	if file := *tokenFile; file != "" {
+		all, err := ioutil.ReadFile(file)
+		if err != nil {
+			log.Fatalf("invalid json file %q: %v", file, err)
+		}
+		cfg, err := goauth.JWTConfigFromJSON(all, sqlScope)
+		if err != nil {
+			log.Fatalf("invalid json file %q: %v", file, err)
+		}
+		client = auth.NewClientFrom(cfg.TokenSource(context.Background()))
+	} else {
+		// Passing token == "" causes the GCE metadata server to be used.
+		client = auth.NewAuthenticatedClient(*token)
+	}
 
 	log.Print("Socket prefix: " + *dir)
 

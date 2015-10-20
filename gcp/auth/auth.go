@@ -145,11 +145,11 @@ func transport() CancelTripper {
 // NewClientFrom returns an http client which will use the provided func
 // as a source for oauth tokens. The underlying transport handles automatic
 // retries and logging that is useful for integration tests and agents.
-func NewClientFrom(src func() (*oauth2.Token, error)) *http.Client {
+func NewClientFrom(src oauth2.TokenSource) *http.Client {
 	// Wrapping in a ReuseTokenSource will cache the returned token so that src
 	// is only called when a new token is needed.
 	return newAuthenticatedClient(
-		oauth2.ReuseTokenSource(nil, tokenFunc(src)),
+		oauth2.ReuseTokenSource(nil, src),
 		transport(),
 	)
 }
