@@ -26,12 +26,15 @@ import (
 	"log"
 )
 
+const (
+	refreshCfgThrottle = time.Minute
+	keepAlivePeriod    = time.Minute
+)
+
 // errNotCached is returned when the instance was not found in the Client's
 // cache. It is an internal detail and is not actually ever returned to the
 // user.
 var errNotCached = errors.New("instance was not found in cache")
-
-const refreshCfgThrottle = time.Minute
 
 // Conn represents a connection from a client to a specific instance.
 type Conn struct {
@@ -192,11 +195,14 @@ func (c *Client) tryConnect(addr string, cfg *tls.Config) (net.Conn, error) {
 	}
 	type setKeepAliver interface {
 		SetKeepAlive(keepalive bool) error
+		SetKeepAlivePeriod(d time.Duration) error
 	}
 
 	if s, ok := conn.(setKeepAliver); ok {
 		if err := s.SetKeepAlive(true); err != nil {
 			log.Printf("Couldn't set KeepAlive to true: %v", err)
+		} else if err := s.SetKeepAlivePeriod(keepAlivePeriod); err != nil {
+			log.Printf("Couldn't set KeepAlivePeriod to %v", keepAlivePeriod)
 		}
 	} else {
 		log.Printf("KeepAlive not supported: long-running tcp connections may be killed by the OS.")
