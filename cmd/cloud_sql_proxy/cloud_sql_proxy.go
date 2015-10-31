@@ -45,6 +45,8 @@ var (
 
 	port = flag.Int("remote_port", 3307, "Port to use when connecting to instances")
 
+	checkRegion = flag.Bool("check_region", false, "If specified, the 'region' portion of the connection string is required for connections. If this is false and a region is not specified only a log is printed.")
+
 	// Settings for how to choose which instance to connect to.
 	dir         = flag.String("dir", "", "Directory to use for placing instance sockets. Exactly what ends up in this directory depends on other flags.")
 	instances   = flag.String("instances", "", "Comma-separated list of fully qualified instances (project:name) to connect to. If the name has the suffix '=tcp:port', a TCP server is opened on the specified port to proxy to that instance. Otherwise, one socket file per instance is opened in 'dir'; ignored if -fuse is set")
@@ -130,7 +132,7 @@ func main() {
 
 	(&proxy.Client{
 		Port:  *port,
-		Certs: certs.NewCertSource(*host, client),
+		Certs: certs.NewCertSource(*host, client, *checkRegion),
 		Conns: connset,
 	}).Run(connSrc)
 }

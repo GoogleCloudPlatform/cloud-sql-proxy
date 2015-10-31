@@ -34,12 +34,12 @@ import (
 
 // NewCertSource returns a CertSource which can be used to authenticate using
 // the provided oauth token.
-func NewCertSource(host string, c *http.Client) *RemoteCertSource {
+func NewCertSource(host string, c *http.Client, checkRegion bool) *RemoteCertSource {
 	pkey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		panic(err) // very unexpected.
 	}
-	return &RemoteCertSource{pkey, host + "projects/", c}
+	return &RemoteCertSource{pkey, host + "projects/", c, checkRegion}
 }
 
 // RemoteCertSource implements a CertSource, using Cloud SQL APIs to
@@ -53,6 +53,10 @@ type RemoteCertSource struct {
 	basepath string
 	// client is used to make authenticated API calls to Cloud SQL.
 	client *http.Client
+	// If set, providing an incorrect region in their connection string will be
+	// treated as an error. This is to provide the same functionality that will
+	// occur when API calls require the region.
+	checkRegion bool
 }
 
 // TODO(b/22249121): remove this method once I can use the auto-generated library.
@@ -179,11 +183,22 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	if err := s.jsonReq("GET", fmt.Sprintf("%s/instances/%s", p, n), "", &data); err != nil {
 		return nil, "", "", err
 	}
+	// TODO(chowski): remove this when us-central is removed.
+	if data.Region == "us-central" {
+		data.Region = "us-central1"
+	}
 	if data.Region != region {
+		var err error
 		if region == "" {
-			log.Printf("NOTE: instance %v doesn't provide region", instance)
+			err = fmt.Errorf("instance %v doesn't provide region", instance)
 		} else {
-			log.Printf(`For connection string "%s": got region %q, want %q`, instance, region, data.Region)
+			err = fmt.Errorf(`for connection string "%s": got region %q, want %q`, instance, region, data.Region)
+		}
+		if err != nil {
+			if s.checkRegion {
+				return nil, "", "", err
+			}
+			log.Print(err)
 		}
 	}
 	c, err := parseCert(data.ServerCaCert.Cert)
