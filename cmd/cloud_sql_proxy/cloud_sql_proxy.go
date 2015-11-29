@@ -56,7 +56,7 @@ var (
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "By default, requests are authorized under the identity of the default service account. Setting this flag causes requests to include this Bearer token instead.")
-	tokenFile = flag.String("credential_file", "", "If provided, this json file will be used to retrieve Service Account credentials; see README")
+	tokenFile = flag.String("credential_file", "", "If provided, this json file will be used to retrieve Service Account credentials; you may also set the GOOGLE_APPLICATION_CREDENTIALS environment variable to avoid the need to pass this flag.")
 )
 
 const sqlScope = "https://www.googleapis.com/auth/sqlservice.admin"
@@ -112,6 +112,11 @@ func main() {
 		connSrc = c
 	}
 
+	// Use the environment variable only if the flag hasn't been set.
+	if *tokenFile == "" {
+		*tokenFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	}
+
 	var client *http.Client
 	if file := *tokenFile; file != "" {
 		all, err := ioutil.ReadFile(file)
@@ -123,9 +128,11 @@ func main() {
 			log.Fatalf("invalid json file %q: %v", file, err)
 		}
 		client = auth.NewClientFrom(cfg.TokenSource(context.Background()))
-	} else {
+	} else if *token != "" || metadata.OnGCE() {
 		// Passing token == "" causes the GCE metadata server to be used.
 		client = auth.NewAuthenticatedClient(*token)
+	} else {
+		log.Fatal("No authentication method available! When not running on Google Compute Engine, provide the -credential_file flag.")
 	}
 
 	log.Print("Socket prefix: " + *dir)
