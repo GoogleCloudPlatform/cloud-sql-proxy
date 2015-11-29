@@ -19,14 +19,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"proxy/proxy"
-
-	"log"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
 // WatchInstances handles the lifecycle of local sockets used for proxying

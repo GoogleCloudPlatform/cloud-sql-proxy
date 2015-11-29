@@ -36,16 +36,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"sync"
 
-	"log"
-	"proxy/proxy"
-
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 	"golang.org/x/net/context"
 )
 

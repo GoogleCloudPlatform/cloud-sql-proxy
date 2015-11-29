@@ -20,10 +20,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"sync"
-
-	"log"
 )
 
 type dbgConn struct {

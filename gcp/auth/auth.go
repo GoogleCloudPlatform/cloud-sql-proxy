@@ -19,17 +19,16 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os/user"
 	"time"
 
-	"flag"
-	"gcp/metadata"
-	"log"
-	"util/prettyprint"
-
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/gcp/metadata"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/util/prettyprint"
 	"golang.org/x/oauth2"
 )
 

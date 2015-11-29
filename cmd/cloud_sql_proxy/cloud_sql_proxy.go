@@ -29,13 +29,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/gcp/auth"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+
 	"golang.org/x/net/context"
-
-	"gcp/auth"
-	"proxy/certs"
-	"proxy/fuse"
-	"proxy/proxy"
-
 	goauth "golang.org/x/oauth2/google"
 	"google.golang.org/cloud/compute/metadata"
 )

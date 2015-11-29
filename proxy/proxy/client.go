@@ -19,11 +19,10 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"sync"
 	"time"
-
-	"log"
 )
 
 const (

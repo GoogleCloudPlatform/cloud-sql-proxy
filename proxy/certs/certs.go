@@ -26,10 +26,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
-
-	"log"
 )
 
 // NewCertSource returns a CertSource which can be used to authenticate using
