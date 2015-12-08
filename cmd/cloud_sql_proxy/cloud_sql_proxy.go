@@ -62,6 +62,15 @@ const sqlScope = "https://www.googleapis.com/auth/sqlservice.admin"
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
+// See https://github.com/GoogleCloudPlatform/gcloud-golang/issues/194
+func onGCE() bool {
+	res, err := http.Get("http://metadata.google.internal")
+	if err != nil {
+		return false
+	}
+	return res.Header.Get("Metadata-Flavor") == "Google"
+}
+
 func main() {
 	flag.Parse()
 
@@ -127,7 +136,7 @@ func main() {
 			log.Fatalf("invalid json file %q: %v", file, err)
 		}
 		client = auth.NewClientFrom(cfg.TokenSource(context.Background()))
-	} else if *token != "" || metadata.OnGCE() {
+	} else if *token != "" || onGCE() {
 		// Passing token == "" causes the GCE metadata server to be used.
 		client = auth.NewAuthenticatedClient(*token)
 	} else {
