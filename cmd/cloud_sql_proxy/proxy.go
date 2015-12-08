@@ -130,7 +130,7 @@ func listenInstance(dst chan<- proxy.Conn, dir, instance string) (net.Listener, 
 		instance = instance[:eq]
 
 		var err error
-		if l, err = net.Listen(spl[0], ":"+spl[1]); err != nil {
+		if l, err = net.Listen(spl[0], "127.0.0.1:"+spl[1]); err != nil {
 			return nil, err
 		}
 		path = "localhost:" + spl[1]
