@@ -72,9 +72,11 @@ type Client struct {
 }
 
 type cacheEntry struct {
-	addr          string
-	cfg           *tls.Config
 	lastRefreshed time.Time
+	// If err is not nil, the addr and cfg are not valid.
+	err  error
+	addr string
+	cfg  *tls.Config
 }
 
 // Run causes the client to start waiting for new connections to connSrc and
@@ -115,14 +117,29 @@ func (c *Client) handleConn(conn Conn) {
 // refreshCfg uses the CertSource inside the Client to find the instance's
 // address as well as construct a new tls.Config to connect to the instance. It
 // caches the result.
-func (c *Client) refreshCfg(instance string) (string, *tls.Config, error) {
+func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err error) {
 	c.cfgL.Lock()
 	defer c.cfgL.Unlock()
 
 	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < refreshCfgThrottle {
+		log.Printf("Thottling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
 		// Refresh was called too recently, just reuse the result.
-		return old.addr, old.cfg, nil
+		return old.addr, old.cfg, old.err
 	}
+
+	if c.cfgCache == nil {
+		c.cfgCache = make(map[string]cacheEntry)
+	}
+
+	defer func() {
+		c.cfgCache[instance] = cacheEntry{
+			lastRefreshed: time.Now(),
+
+			err:  err,
+			addr: addr,
+			cfg:  cfg,
+		}
+	}()
 
 	mycert, err := c.Certs.Local(instance)
 	if err != nil {
@@ -136,21 +153,12 @@ func (c *Client) refreshCfg(instance string) (string, *tls.Config, error) {
 	certs := x509.NewCertPool()
 	certs.AddCert(scert)
 
-	val := cacheEntry{
-		addr: fmt.Sprintf("%s:%d", addr, c.Port),
-		cfg: &tls.Config{
-			ServerName:   name,
-			Certificates: []tls.Certificate{mycert},
-			RootCAs:      certs,
-		},
-		lastRefreshed: time.Now(),
+	cfg = &tls.Config{
+		ServerName:   name,
+		Certificates: []tls.Certificate{mycert},
+		RootCAs:      certs,
 	}
-
-	if c.cfgCache == nil {
-		c.cfgCache = make(map[string]cacheEntry)
-	}
-	c.cfgCache[instance] = val
-	return val.addr, val.cfg, nil
+	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, nil
 }
 
 func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
@@ -158,8 +166,8 @@ func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
 	ret, ok := c.cfgCache[instance]
 	c.cfgL.RUnlock()
 
-	// Don't waste time returning an expired cert.
-	if !ok || time.Now().After(ret.cfg.Certificates[0].Leaf.NotAfter) {
+	// Don't waste time returning an expired/invalid cert.
+	if !ok || ret.err != nil || time.Now().After(ret.cfg.Certificates[0].Leaf.NotAfter) {
 		return "", nil
 	}
 	return ret.addr, ret.cfg
