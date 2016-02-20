@@ -21,6 +21,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -40,6 +41,8 @@ import (
 )
 
 var (
+	version = flag.Bool("version", false, "Print the version of the proxy and exit")
+
 	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "API endpoint to use")
 
 	port = flag.Int("remote_port", 3307, "Port to use when connecting to instances")
@@ -71,8 +74,15 @@ func onGCE() bool {
 	return res.Header.Get("Metadata-Flavor") == "Google"
 }
 
+var versionString = "NO_VERSION_SET"
+
 func main() {
 	flag.Parse()
+
+	if *version {
+		fmt.Println("Cloud SQL Proxy:", versionString)
+		return
+	}
 
 	instances := strings.Split(*instances, ",")
 	if len(instances) == 1 && instances[0] == "" {
