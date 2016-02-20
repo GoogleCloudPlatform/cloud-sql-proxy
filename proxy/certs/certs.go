@@ -16,29 +16,36 @@
 package certs
 
 import (
-	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io"
 	"log"
+	"math"
+	mrand "math/rand"
 	"net/http"
 	"strings"
+	"time"
+
+	"google.golang.org/api/googleapi"
+	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 
 // NewCertSource returns a CertSource which can be used to authenticate using
-// the provided oauth token.
+// the provided oauth token. The provided client must not be nil.
 func NewCertSource(host string, c *http.Client, checkRegion bool) *RemoteCertSource {
 	pkey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		panic(err) // very unexpected.
 	}
-	return &RemoteCertSource{pkey, host + "projects/", c, checkRegion}
+	serv, err := sqladmin.New(c)
+	if err != nil {
+		panic(err) // only possible if 'c' is nil.
+	}
+	return &RemoteCertSource{pkey, host + "projects/", serv, checkRegion}
 }
 
 // RemoteCertSource implements a CertSource, using Cloud SQL APIs to
@@ -50,47 +57,12 @@ type RemoteCertSource struct {
 	key *rsa.PrivateKey
 	// basepath is the URL prefix for Cloud SQL API calls.
 	basepath string
-	// client is used to make authenticated API calls to Cloud SQL.
-	client *http.Client
+	// serv is used to make authenticated API calls to Cloud SQL.
+	serv *sqladmin.Service
 	// If set, providing an incorrect region in their connection string will be
 	// treated as an error. This is to provide the same functionality that will
 	// occur when API calls require the region.
 	checkRegion bool
-}
-
-// TODO(b/22249121): remove this method once I can use the auto-generated library.
-func (s *RemoteCertSource) jsonReq(method, path string, src, dst interface{}) error {
-	var data []byte
-	switch src := src.(type) {
-	case string:
-		data = []byte(src)
-	default:
-		var err error
-		if data, err = json.Marshal(src); err != nil {
-			return err
-		}
-	}
-	req, err := http.NewRequest(method, s.basepath+path, bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	var buf bytes.Buffer
-	_, err = io.Copy(&buf, resp.Body)
-	if err != nil || resp.StatusCode != 200 {
-		return fmt.Errorf("%v %q: %v; Body=%q; read error: %v", req.Method, req.URL, resp.Status, buf.String(), err)
-	}
-	if err = json.Unmarshal(buf.Bytes(), dst); err != nil {
-		err = fmt.Errorf("Decode(%q, %q, %#v) error: %v", req.URL, buf.String(), dst, err)
-	}
-	return err
 }
 
 // splitName splits a fully qualified instance into its project, region, and
@@ -120,32 +92,57 @@ func splitName(instance string) (project, region, name string) {
 	}
 }
 
+const (
+	baseBackoff = float64(time.Second / 5)
+	backoffMult = 1.618
+)
+
+func backoffAPIRetry(iters int, desc string, do func() error) error {
+	var err error
+	for i := 0; i < iters; i++ {
+		err = do()
+		// Only Server-level HTTP errors are immediately retryable.
+		// 'ok' will also be false if err is nil.
+		gerr, ok := err.(*googleapi.Error)
+		if !ok || gerr.Code < 500 {
+			return err
+		}
+
+		exp := float64(i) * (1 - mrand.Float64()/10)
+		sleep := time.Duration(baseBackoff * math.Pow(backoffMult, exp))
+		log.Printf("Error in %s: %v; retrying in %v", desc, err, sleep)
+		time.Sleep(sleep)
+	}
+	return err
+}
+
 // Local returns a certificate that may be used to establish a TLS
 // connection to the specified instance.
 func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err error) {
-	var (
-		p, _, n = splitName(instance)
-		url     = fmt.Sprintf("%s/instances/%s/createEphemeral", p, n)
-		data    struct {
-			Cert string
-		}
-	)
 	pkix, err := x509.MarshalPKIXPublicKey(&s.key.PublicKey)
 	if err != nil {
 		return ret, err
 	}
 
-	var request = struct {
-		Key string `json:"public_key"`
-	}{
-		string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"})),
-	}
-	if err := s.jsonReq("POST", url, request, &data); err != nil {
+	p, _, n := splitName(instance)
+	req := s.serv.SslCerts.CreateEphemeral(p, n,
+		&sqladmin.SslCertsCreateEphemeralRequest{
+			PublicKey: string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"})),
+		},
+	)
+
+	var data *sqladmin.SslCert
+	err = backoffAPIRetry(5, "createEphemeral for "+instance, func() error {
+		data, err = req.Do()
+		return err
+	})
+	if err != nil {
 		return ret, err
 	}
+
 	c, err := parseCert(data.Cert)
 	if err != nil {
-		return ret, fmt.Errorf("coudln't parse ephemeral certificate for instance %q: %v", instance, err)
+		return ret, fmt.Errorf("couldn't parse ephemeral certificate for instance %q: %v", instance, err)
 	}
 	return tls.Certificate{
 		Certificate: [][]byte{c.Raw},
@@ -164,42 +161,36 @@ func parseCert(pemCert string) (*x509.Certificate, error) {
 
 // Remote returns the specified instance's CA certificate, address, and name.
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name string, err error) {
-	// This represents a DatabaseInstance retrieved from the standard InstancesService Get.
-	// As a part of b/22249121 this will be moved to also use the autogenerated library for
-	// accessing the API.
-	var data struct {
-		Region string `json:"region"`
-
-		IPAddresses []struct {
-			IPAddress string `json:"ipAddress"`
-		} `json:"ipAddresses"`
-		ServerCaCert struct {
-			Cert string
-		}
-	}
-
 	p, region, n := splitName(instance)
-	if err := s.jsonReq("GET", fmt.Sprintf("%s/instances/%s", p, n), "", &data); err != nil {
+	req := s.serv.Instances.Get(p, n)
+
+	var data *sqladmin.DatabaseInstance
+	err = backoffAPIRetry(5, "get instance "+instance, func() error {
+		data, err = req.Do()
+		return err
+	})
+	if err != nil {
 		return nil, "", "", err
 	}
+
 	// TODO(chowski): remove this when us-central is removed.
 	if data.Region == "us-central" {
 		data.Region = "us-central1"
 	}
 	if data.Region != region {
-		var err error
 		if region == "" {
 			err = fmt.Errorf("instance %v doesn't provide region", instance)
 		} else {
 			err = fmt.Errorf(`for connection string "%s": got region %q, want %q`, instance, region, data.Region)
 		}
-		if err != nil {
-			if s.checkRegion {
-				return nil, "", "", err
-			}
-			log.Print(err)
+		if s.checkRegion {
+			return nil, "", "", err
 		}
+		log.Print(err)
+	}
+	if len(data.IpAddresses) == 0 || data.IpAddresses[0].IpAddress == "" {
+		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
 	}
 	c, err := parseCert(data.ServerCaCert.Cert)
-	return c, data.IPAddresses[0].IPAddress, p + ":" + n, err
+	return c, data.IpAddresses[0].IpAddress, p + ":" + n, err
 }
