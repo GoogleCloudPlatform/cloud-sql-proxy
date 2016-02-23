@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build !windows
+
 // Package fuse provides a connection source wherein the user does not need to
 // specify which instance they are connecting to before they start the
 // executable. Instead, simply attempting to access a file in the provided
