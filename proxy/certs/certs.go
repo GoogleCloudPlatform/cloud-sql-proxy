@@ -92,23 +92,28 @@ func splitName(instance string) (project, region, name string) {
 	}
 }
 
+// Constants for backoffAPIRetry. These cause the retry logic to scale the
+// backoff delay from 200ms to around 3.5s.
 const (
-	baseBackoff = float64(time.Second / 5)
-	backoffMult = 1.618
+	baseBackoff    = float64(200 * time.Millisecond)
+	backoffMult    = 1.618
+	backoffRetries = 5
 )
+ asdfasdf
 
-func backoffAPIRetry(iters int, desc string, do func() error) error {
+func backoffAPIRetry(desc string, do func() error) error {
 	var err error
-	for i := 0; i < iters; i++ {
+	for i := 0; i < backoffRetries; i++ {
 		err = do()
 		// Only Server-level HTTP errors are immediately retryable.
 		// 'ok' will also be false if err is nil.
-		gerr, ok := err.(*googleapi.Error)
-		if !ok || gerr.Code < 500 {
+		gErr, ok := err.(*googleapi.Error)
+		if !ok || gErr.Code < 500 {
 			return err
 		}
 
-		exp := float64(i) * (1 - mrand.Float64()/10)
+		// sleep = baseBackoff * backoffMult^(retries + randomFactor)
+		exp := float64(i+1) + mrand.Float64()
 		sleep := time.Duration(baseBackoff * math.Pow(backoffMult, exp))
 		log.Printf("Error in %s: %v; retrying in %v", desc, err, sleep)
 		time.Sleep(sleep)
@@ -132,7 +137,7 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 	)
 
 	var data *sqladmin.SslCert
-	err = backoffAPIRetry(5, "createEphemeral for "+instance, func() error {
+	err = backoffAPIRetry("createEphemeral for "+instance, func() error {
 		data, err = req.Do()
 		return err
 	})
@@ -165,7 +170,7 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	req := s.serv.Instances.Get(p, n)
 
 	var data *sqladmin.DatabaseInstance
-	err = backoffAPIRetry(5, "get instance "+instance, func() error {
+	err = backoffAPIRetry("get instance "+instance, func() error {
 		data, err = req.Do()
 		return err
 	})
