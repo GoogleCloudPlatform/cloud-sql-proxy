@@ -24,5 +24,5 @@ fi
 
 VERSION+="; sha $(git rev-parse HEAD) built $(date)"
 
-echo "Compiling \"$VERSION\""
-CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.versionString=$VERSION" -a -installsuffix cgo -o cloud_sql_proxy .
+echo "Compiling $VERSION"
+CGO_ENABLED=0 GOOS=linux go build -x -ldflags "-X 'main.versionString=$VERSION'" -a -installsuffix cgo -o cloud_sql_proxy .

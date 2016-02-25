@@ -155,9 +155,14 @@ func main() {
 
 	log.Print("Socket prefix: " + *dir)
 
+	src, err := certs.NewCertSource(*host, client, *checkRegion)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	(&proxy.Client{
 		Port:  *port,
-		Certs: certs.NewCertSource(*host, client, *checkRegion),
+		Certs: src,
 		Conns: connset,
 	}).Run(connSrc)
 }

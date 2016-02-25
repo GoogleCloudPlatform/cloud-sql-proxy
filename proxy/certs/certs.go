@@ -36,16 +36,16 @@ import (
 
 // NewCertSource returns a CertSource which can be used to authenticate using
 // the provided oauth token. The provided client must not be nil.
-func NewCertSource(host string, c *http.Client, checkRegion bool) *RemoteCertSource {
+func NewCertSource(host string, c *http.Client, checkRegion bool) (*RemoteCertSource, error) {
 	pkey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		panic(err) // very unexpected.
 	}
 	serv, err := sqladmin.New(c)
 	if err != nil {
-		panic(err) // only possible if 'c' is nil.
+		return nil, err
 	}
-	return &RemoteCertSource{pkey, host + "projects/", serv, checkRegion}
+	return &RemoteCertSource{pkey, host + "projects/", serv, checkRegion}, nil
 }
 
 // RemoteCertSource implements a CertSource, using Cloud SQL APIs to
@@ -99,7 +99,6 @@ const (
 	backoffMult    = 1.618
 	backoffRetries = 5
 )
- asdfasdf
 
 func backoffAPIRetry(desc string, do func() error) error {
 	var err error
