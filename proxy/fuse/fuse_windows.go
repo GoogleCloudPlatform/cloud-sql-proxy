@@ -22,6 +22,10 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
+func Supported() bool {
+	return false
+}
+
 func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.Conn, io.Closer, error) {
 	return nil, nil, errors.New("fuse not supported on windows")
 }

@@ -50,6 +50,12 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Supported returns true if the current system supports FUSE.
+// TODO: for OSX, check to see if OSX FUSE is installed.
+func Supported() bool {
+	return true
+}
+
 // NewConnSrc returns a source of new connections based on Lookups in the
 // provided mount directory. If there isn't a directory located at tmpdir one
 // is created. The second return parameter can be used to shutdown and release

@@ -17,14 +17,17 @@ package main
 // This file contains code for supporting local sockets for the Cloud SQL Proxy.
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
@@ -32,7 +35,7 @@ import (
 // local connections.  Values received from the updates channel are
 // interpretted as a comma-separated list of instances.  The set of sockets in
 // 'dir' is the union of 'instances' and the most recent list from 'updates'.
-func WatchInstances(dir string, instances []string, updates <-chan string) (<-chan proxy.Conn, error) {
+func WatchInstances(dir string, instances []instanceConfig, updates <-chan string) (<-chan proxy.Conn, error) {
 	ch := make(chan proxy.Conn, 1)
 
 	// Instances specified statically (e.g. as flags to the binary) will always
@@ -40,32 +43,31 @@ func WatchInstances(dir string, instances []string, updates <-chan string) (<-ch
 	// the socket will already be open.
 	staticInstances := make(map[string]net.Listener, len(instances))
 	for _, v := range instances {
-		if v = strings.TrimSpace(v); v == "" {
-			continue
-		}
-		l, err := listenInstance(ch, dir, v)
+		l, err := listenInstance(ch, v)
 		if err != nil {
 			return nil, err
 		}
-		staticInstances[v] = l
+		staticInstances[v.Instance] = l
 	}
 
 	if updates != nil {
-		go watchInstancesLoop(ch, dir, updates, staticInstances)
+		go watchInstancesLoop(dir, ch, updates, staticInstances)
 	}
 	return ch, nil
 }
 
-func watchInstancesLoop(dst chan<- proxy.Conn, dir string, updates <-chan string, static map[string]net.Listener) {
+func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string, static map[string]net.Listener) {
 	dynamicInstances := make(map[string]net.Listener)
 	for instances := range updates {
-		stillOpen := make(map[string]net.Listener)
+		list, err := parseInstanceConfigs(dir, strings.Split(instances, ","))
+		if err != nil {
+			log.Print(err)
+		}
 
-		list := strings.Split(instances, ",")
-		for _, instance := range list {
-			if len(instance) == 0 {
-				continue
-			}
+		stillOpen := make(map[string]net.Listener)
+		for _, cfg := range list {
+			instance := cfg.Instance
+
 			// If the instance is specified in the static list don't do anything:
 			// it's already open and should stay open forever.
 			if _, ok := static[instance]; ok {
@@ -78,7 +80,7 @@ func watchInstancesLoop(dst chan<- proxy.Conn, dir string, updates <-chan string
 				continue
 			}
 
-			l, err := listenInstance(dst, dir, instance)
+			l, err := listenInstance(dst, cfg)
 			if err != nil {
 				log.Printf("Couldn't open socket for %q: %v", instance, err)
 				continue
@@ -116,33 +118,18 @@ func remove(path string) {
 
 // listenInstance starts listening on a new unix socket in dir to connect to the
 // specified instance. New connections to this socket are sent to dst.
-func listenInstance(dst chan<- proxy.Conn, dir, instance string) (net.Listener, error) {
-	log.Printf("listenInstance: %q", instance)
-
-	var path string
-	var l net.Listener
-	if eq := strings.Index(instance, "="); eq != -1 {
-		spl := strings.SplitN(instance[eq+1:], ":", 2)
-		if len(spl) == 1 {
-			return nil, fmt.Errorf("invalid format in %q; expected 'project:instance=tcp:port'", instance)
-		}
-
-		instance = instance[:eq]
-
-		var err error
-		if l, err = net.Listen(spl[0], "127.0.0.1:"+spl[1]); err != nil {
-			return nil, err
-		}
-		path = "localhost:" + spl[1]
-	} else {
-		path = filepath.Join(dir, instance)
-		remove(path)
-		var err error
-		if l, err = net.Listen("unix", path); err != nil {
-			return nil, err
-		}
-		if err := os.Chmod(path, 0777|os.ModeSocket); err != nil {
-			log.Printf("couldn't update permissions for socket file %q: %v; other users may not be unable to connect", path, err)
+func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, error) {
+	unix := cfg.Network == "unix"
+	if unix {
+		remove(cfg.Address)
+	}
+	l, err := net.Listen(cfg.Network, cfg.Address)
+	if err != nil {
+		return nil, err
+	}
+	if unix {
+		if err := os.Chmod(cfg.Address, 0777|os.ModeSocket); err != nil {
+			log.Printf("couldn't update permissions for socket file %q: %v; other users may not be unable to connect", cfg.Address, err)
 		}
 	}
 
@@ -150,31 +137,177 @@ func listenInstance(dst chan<- proxy.Conn, dir, instance string) (net.Listener, 
 		for {
 			c, err := l.Accept()
 			if err != nil {
-				log.Printf("Error in accept for %q on %v: %v", instance, path, err)
+				log.Printf("Error in accept for %q on %v: %v", cfg, cfg.Address, err)
 				l.Close()
 				return
 			}
-			log.Printf("Got a connection for %q", instance)
-			dst <- proxy.Conn{instance, c}
+			log.Printf("Got a connection for %q", cfg.Instance)
+			dst <- proxy.Conn{cfg.Instance, c}
 		}
 	}()
 
-	log.Printf("Open socket for %q at %q", instance, path)
+	log.Printf("Open socket for %q at %q", cfg.Instance, cfg.Address)
 	return l, nil
 }
 
-// Check verifies that the dir parameter is set and that either 'fuse' is true or
-// at least one of instances/instancesSrc is set, but not both.
-func Check(dir string, fuse bool, instances []string, instancesSrc string) error {
-	switch {
-	case dir == "":
-		return errors.New("must set -dir")
-	case !fuse:
-		if len(instances) == 0 && instancesSrc == "" {
-			return errors.New("must specify -fuse, -instances, or -instances_metadata")
-		}
-	case len(instances) != 0 || instancesSrc != "":
-		return errors.New("-fuse is not compatible with -instances or -instances_metadata")
+type instanceConfig struct {
+	Instance         string
+	Network, Address string
+}
+
+// loopbackForNet maps a network (e.g. tcp6) to the loopback address for that
+// network. It is updated during the initialization of validNets to include a
+// valid loopback address for "tcp".
+var loopbackForNet = map[string]string{
+	"tcp4": "127.0.0.1",
+	"tcp6": "[::1]",
+}
+
+// validNets tracks the networks that are valid for this platform and machine.
+var validNets = func() map[string]bool {
+	m := map[string]bool{
+		"unix": runtime.GOOS != "windows",
 	}
-	return nil
+
+	anyTCP := false
+	for _, n := range []string{"tcp4", "tcp6"} {
+		addr, ok := loopbackForNet[n]
+		if !ok {
+			// This is effectively a compile-time error.
+			panic(fmt.Sprintf("no loopback address found for %v", n))
+		}
+		// Open any port to see if the net is valid.
+		x, err := net.Listen(n, addr+":")
+		if err != nil {
+			log.Printf("Protocol %v not supported: %v", n, err)
+			continue
+		}
+		x.Close()
+		m[n] = true
+
+		if !anyTCP {
+			anyTCP = true
+			// Set the loopback value for generic tcp if it hasn't already been
+			// set. (If both tcp4/tcp6 are supported the first one in the list
+			// (tcp4's 127.0.0.1) is used.
+			loopbackForNet["tcp"] = addr
+		}
+	}
+	if anyTCP {
+		m["tcp"] = true
+	}
+	return m
+}()
+
+func parseInstanceConfig(dir, instance string) (instanceConfig, error) {
+	var ret instanceConfig
+	eq := strings.Index(instance, "=")
+	if eq != -1 {
+		spl := strings.SplitN(instance[eq+1:], ":", 3)
+		ret.Instance = instance[:eq]
+
+		switch len(spl) {
+		default:
+			return ret, fmt.Errorf("invalid %q: expected 'project:instance=tcp:port'", instance)
+		case 2:
+			// No "host" part of the address. Be safe and assume that they want a
+			// loopback address.
+			ret.Network = spl[0]
+			addr, ok := loopbackForNet[spl[0]]
+			if !ok {
+				return ret, fmt.Errorf("invalid %q: unrecognized network %v", instance, spl[0])
+			}
+			ret.Address = fmt.Sprintf("%s:%s", addr, spl[1])
+		case 3:
+			// User provided a host and port; use that.
+			ret.Network = spl[0]
+			ret.Address = fmt.Sprintf("%s:%s", spl[1], spl[2])
+		}
+	} else {
+		ret.Instance = instance
+		// Default to unix socket.
+		ret.Network = "unix"
+		ret.Address = filepath.Join(dir, instance)
+	}
+
+	if !validNets[ret.Network] {
+		return ret, fmt.Errorf("invalid %q: unsupported network: %v", instance, ret.Network)
+	}
+	return ret, nil
+}
+
+// parseInstanceConfigs calls parseInstanceConfig for each instance in the
+// provided slice, collecting errors along the way. There may be valid
+// instanceConfigs returned even if there's an error.
+func parseInstanceConfigs(dir string, instances []string) ([]instanceConfig, error) {
+	errs := new(bytes.Buffer)
+	var cfg []instanceConfig
+	for _, v := range instances {
+		if v == "" {
+			continue
+		}
+		if c, err := parseInstanceConfig(dir, v); err != nil {
+			fmt.Fprintf(errs, "\n\t%v", err)
+		} else {
+			cfg = append(cfg, c)
+		}
+	}
+
+	var err error
+	if errs.Len() > 0 {
+		err = fmt.Errorf("errors parsing config:%s", errs)
+	}
+	return cfg, err
+}
+
+// Check verifies that the parameters passed to it are valid for the proxy for
+// the platform and system.
+func Check(dir string, useFuse bool, instances []string, instancesSrc string) ([]instanceConfig, error) {
+	if len(instances) == 1 && instances[0] == "" {
+		instances = nil
+	}
+	if useFuse && !fuse.Supported() {
+		return nil, errors.New("FUSE not supported on this system")
+	}
+
+	cfgs, err := parseInstanceConfigs(dir, instances)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reasons to set '-dir':
+	//    - Using -fuse
+	//    - Using the metadata to get a list of instances
+	//    - Having an instance that uses a 'unix' network
+	needDirReason := ""
+	if useFuse {
+		needDirReason = "-fuse was set"
+	} else if instancesSrc != "" {
+		needDirReason = "-instances_metadata was set"
+	} else {
+		for _, v := range cfgs {
+			if v.Network == "unix" {
+				needDirReason = "using a unix socket for " + v.Instance
+				break
+			}
+		}
+	}
+
+	if dir == "" && needDirReason != "" {
+		return nil, fmt.Errorf("must set -dir because %v", needDirReason)
+	}
+	if useFuse {
+		if len(instances) != 0 || instancesSrc != "" {
+			return nil, errors.New("-fuse is not compatible with -instances or -instances_metadata")
+		}
+		return nil, nil
+	}
+	// FUSE disabled.
+	if len(instances) == 0 && instancesSrc == "" {
+		if fuse.Supported() {
+			return nil, errors.New("must specify -fuse, -instances, or -instances_metadata")
+		}
+		return nil, errors.New("must specify -instances")
+	}
+	return cfgs, nil
 }

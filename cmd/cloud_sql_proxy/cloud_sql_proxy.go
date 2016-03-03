@@ -84,11 +84,13 @@ func main() {
 		return
 	}
 
-	instances := strings.Split(*instances, ",")
-	if len(instances) == 1 && instances[0] == "" {
-		instances = nil
+	onGCE := onGCE()
+	if !onGCE && *instanceSrc != "" {
+		log.Fatal("-instances_metadata unsupported outside of Google Compute Engine")
 	}
-	if err := Check(*dir, *useFuse, instances, *instanceSrc); err != nil {
+
+	instances, err := Check(*dir, *useFuse, strings.Split(*instances, ","), *instanceSrc)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -146,14 +148,21 @@ func main() {
 			log.Fatalf("invalid json file %q: %v", file, err)
 		}
 		client = auth.NewClientFrom(cfg.TokenSource(context.Background()))
-	} else if *token != "" || onGCE() {
+	} else if *token != "" || onGCE {
 		// Passing token == "" causes the GCE metadata server to be used.
 		client = auth.NewAuthenticatedClient(*token)
 	} else {
 		log.Fatal("No authentication method available! When not running on Google Compute Engine, provide the -credential_file flag.")
 	}
 
-	log.Print("Socket prefix: " + *dir)
+	if *dir != "" {
+		log.Print("Socket prefix: " + *dir)
+	}
+	for _, cfg := range instances {
+		if strings.Contains(cfg.Network, "tcp") {
+			log.Printf("Listening for %v on %v", cfg.Instance, cfg.Address)
+		}
+	}
 
 	src, err := certs.NewCertSource(*host, client, *checkRegion)
 	if err != nil {
