@@ -122,18 +122,24 @@ func listenInstance(dst chan<- proxy.Conn, dir, instance string) (net.Listener, 
 	var path string
 	var l net.Listener
 	if eq := strings.Index(instance, "="); eq != -1 {
-		spl := strings.SplitN(instance[eq+1:], ":", 2)
+		spl := strings.SplitN(instance[eq+1:], ":", 3)
 		if len(spl) == 1 {
 			return nil, fmt.Errorf("invalid format in %q; expected 'project:instance=tcp:port'", instance)
 		}
 
 		instance = instance[:eq]
 
+		host := "127.0.0.1"
+		if len(spl) == 3 {
+			host = spl[2]
+		}
+
 		var err error
-		if l, err = net.Listen(spl[0], "127.0.0.1:"+spl[1]); err != nil {
+		if l, err = net.Listen(spl[0], host+":"+spl[1]); err != nil {
 			return nil, err
 		}
-		path = "localhost:" + spl[1]
+		// path = "localhost:" + spl[1]
+		path = host + ":" + spl[1]
 	} else {
 		path = filepath.Join(dir, instance)
 		remove(path)
