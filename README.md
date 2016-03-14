@@ -1,4 +1,5 @@
 
+## Cloud SQl Proxy
 The Cloud SQL Proxy allows a user with the appropriate permissions to connect
 to a Cloud SQL database without having to deal with IP whitelisting or SSL
 certificates manually. It works by opening unix/tcp sockets on the local machine
@@ -42,7 +43,7 @@ account](https://console.developers.google.com/project/_/apiui/credential/servic
 download the associated JSON file, and set `-credential_file` to the path of the
 JSON file. You may also set the GOOGLE_APPLICATION_CREDENTIALS environment variable instead of passing this flag.
 
-Example invocations:
+## Example invocations:
 
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst &
     mysql -u root -S /cloudsql/my-project:us-central1:sql-inst
@@ -54,3 +55,71 @@ Example invocations:
     # For programs which do not support using Unix Domain Sockets, specify tcp:
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:3306 &
     mysql -u root -h 127.0.0.1
+
+## To use from Kubernetes:
+
+Kubernetes does not support the metadata server that is used by default for credentials, so we have to manually
+pass the credentials to the proxy as a Kubernetes [Secret](http://kubernetes.io/v1.1/docs/user-guide/secrets.html).
+At a high level, we have to create a Secret, add it as a Volume in a Pod and mount that Volume into the proxy container.
+Here are some detailed steps:
+
+* Create a Service Account and download the JSON credential file, following [these steps](https://cloud.google.com/docs/authentication#developer_workflow).
+* Create a local Kubernetes Secret named `sqlcreds` from this file by base64 encoding the Service Account file, and creating a Secret file with that content:
+```
+{
+  "kind": "Secret",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "sqlcreds"
+  },
+  "data": {
+    "file.json": "BASE64 encoded Service Account credential file."
+   }
+} 
+```
+* Create this Secret using `kubectl create`.
+```
+$ kubectl create -f secret.json
+```
+* Add the `sqlcreds` Secret in your Pod by creating a volume like this:
+```
+{
+  "name": "secret-volume",
+  "secret": {"secretName": "sqlcreds"}
+}
+```
+* Create an emptydir volume named `cloudsql` for the SQL proxy to place it's socket:
+```
+{
+  "name": "cloudsql",
+  "emptyDir": {}
+}
+```
+* Add the SQL proxy container to your pod, and mount the `sqlcreds` credentials container, making sure to pass the correct instance and project.
+```
+{
+  "name": "sql-proxy",
+  "image": "b.gcr.io/cloudsql-docker/gce-proxy",
+  "volumeMounts": [
+    {
+      "name": "cloudsql",
+      "mountPath": "/cloudsql"
+    },
+    {
+      "name": "secret-volume",
+      "mountPath": "/secret/"
+    }
+  ],
+  "command": ["/cloud_sql_proxy", "-dir=/cloudsql", "-credential_file=/secret/file.json", "-instances=$MYPROJECT:MYINSTANCE"]
+}
+```
+Note that we pass the path to the secret file in the command line arguments to the proxy.
+We also pass the project and Cloud SQL instance name we want to connect to using the "--instances" flag.
+
+* To use the proxy from your application container, mount the shared cloudsql volume:
+"volumeMounts": [
+  {
+    "name": "cloudsql",
+    "mountPath": "/cloudsql"
+  }
+]
