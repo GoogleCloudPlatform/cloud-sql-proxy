@@ -99,7 +99,7 @@ $ kubectl create -f secret.json
 ```
 {
   "name": "sql-proxy",
-  "image": "gcr.io/google_appengine/cloud-sql-proxy:2016-02-29a",
+  "image": "b.gcr.io/cloudsql-docker/gce-proxy",
   "volumeMounts": [
     {
       "name": "cloudsql",
