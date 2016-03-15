@@ -1,5 +1,5 @@
 
-## Cloud SQl Proxy
+## Cloud SQL Proxy
 The Cloud SQL Proxy allows a user with the appropriate permissions to connect
 to a Cloud SQL database without having to deal with IP whitelisting or SSL
 certificates manually. It works by opening unix/tcp sockets on the local machine
