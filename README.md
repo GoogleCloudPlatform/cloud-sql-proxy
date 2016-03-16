@@ -66,60 +66,48 @@ Here are some detailed steps:
 * Create a Service Account and download the JSON credential file, following [these steps](https://cloud.google.com/docs/authentication#developer_workflow).
 * Create a local Kubernetes Secret named `sqlcreds` from this file by base64 encoding the Service Account file, and creating a Secret file with that content:
 ```
-{
-  "kind": "Secret",
-  "apiVersion": "v1",
-  "metadata": {
-    "name": "sqlcreds"
-  },
-  "data": {
-    "file.json": "BASE64 encoded Service Account credential file."
-   }
-} 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sqlcreds
+type: Opaque
+data:
+  file.json: "BASE64 encoded Service Account credential file."
 ```
+
 * Create this Secret using `kubectl create`.
 ```
 $ kubectl create -f secret.json
 ```
+
 * Add the `sqlcreds` Secret in your Pod by creating a volume like this:
 ```
-{
-  "name": "secret-volume",
-  "secret": {"secretName": "sqlcreds"}
-}
+  - name: secret-volume
+    # This GCE PD must already exist.
+    secret:
+      secretName: sqlcreds
 ```
 * Create an emptydir volume named `cloudsql` for the SQL proxy to place it's socket:
 ```
-{
-  "name": "cloudsql",
-  "emptyDir": {}
-}
+  - name: mysql-persistent-storage
+    emptyDir:
 ```
 * Add the SQL proxy container to your pod, and mount the `sqlcreds` credentials container, making sure to pass the correct instance and project.
 ```
-{
-  "name": "sql-proxy",
-  "image": "b.gcr.io/cloudsql-docker/gce-proxy",
-  "volumeMounts": [
-    {
-      "name": "cloudsql",
-      "mountPath": "/cloudsql"
-    },
-    {
-      "name": "secret-volume",
-      "mountPath": "/secret/"
-    }
-  ],
-  "command": ["/cloud_sql_proxy", "-dir=/cloudsql", "-credential_file=/secret/file.json", "-instances=$MYPROJECT:MYINSTANCE"]
-}
+  - image: b.gcr.io/cloudsql-docker/gce-proxy
+    volumeMounts:
+    - name: cloudsql
+      mountPath: /cloudsql
+    - name: secret-volume
+      mountPath: /secret/
+    command: ["/cloud_sql_proxy", "-dir=/cloudsql", "-credential_file=/secret/file.json", "-instances=$MYPROJECT:MYINSTANCE"]
 ```
 Note that we pass the path to the secret file in the command line arguments to the proxy.
 We also pass the project and Cloud SQL instance name we want to connect to using the "--instances" flag.
 
 * To use the proxy from your application container, mount the shared cloudsql volume:
-"volumeMounts": [
-  {
-    "name": "cloudsql",
-    "mountPath": "/cloudsql"
-  }
-]
+```
+volumeMounts:
+    - name: cloudsql
+      mountPath: /cloudsql
+```
