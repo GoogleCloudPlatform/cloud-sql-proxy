@@ -35,14 +35,14 @@ import (
 // local connections.  Values received from the updates channel are
 // interpretted as a comma-separated list of instances.  The set of sockets in
 // 'dir' is the union of 'instances' and the most recent list from 'updates'.
-func WatchInstances(dir string, instances []instanceConfig, updates <-chan string) (<-chan proxy.Conn, error) {
+func WatchInstances(dir string, cfgs []instanceConfig, updates <-chan string) (<-chan proxy.Conn, error) {
 	ch := make(chan proxy.Conn, 1)
 
 	// Instances specified statically (e.g. as flags to the binary) will always
 	// be available. They are ignored if also returned by the GCE metadata since
 	// the socket will already be open.
-	staticInstances := make(map[string]net.Listener, len(instances))
-	for _, v := range instances {
+	staticInstances := make(map[string]net.Listener, len(cfgs))
+	for _, v := range cfgs {
 		l, err := listenInstance(ch, v)
 		if err != nil {
 			return nil, err
@@ -260,9 +260,10 @@ func parseInstanceConfigs(dir string, instances []string) ([]instanceConfig, err
 	return cfg, err
 }
 
-// Check verifies that the parameters passed to it are valid for the proxy for
-// the platform and system.
-func Check(dir string, useFuse bool, instances []string, instancesSrc string) ([]instanceConfig, error) {
+// CreateInstanceConfigs verifies that the parameters passed to it are valid
+// for the proxy for the platform and system and then returns a slice of valid
+// instanceConfig.
+func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instancesSrc string) ([]instanceConfig, error) {
 	if len(instances) == 1 && instances[0] == "" {
 		instances = nil
 	}
@@ -275,27 +276,25 @@ func Check(dir string, useFuse bool, instances []string, instancesSrc string) ([
 		return nil, err
 	}
 
-	// Reasons to set '-dir':
-	//    - Using -fuse
-	//    - Using the metadata to get a list of instances
-	//    - Having an instance that uses a 'unix' network
-	needDirReason := ""
-	if useFuse {
-		needDirReason = "-fuse was set"
-	} else if instancesSrc != "" {
-		needDirReason = "-instances_metadata was set"
-	} else {
-		for _, v := range cfgs {
-			if v.Network == "unix" {
-				needDirReason = "using a unix socket for " + v.Instance
-				break
+	if dir == "" {
+		// Reasons to set '-dir':
+		//    - Using -fuse
+		//    - Using the metadata to get a list of instances
+		//    - Having an instance that uses a 'unix' network
+		if useFuse {
+			return nil, errors.New("must set -dir because -fuse was set")
+		} else if instancesSrc != "" {
+			return nil, errors.New("must set -dir because -instances_metadata was set")
+		} else {
+			for _, v := range cfgs {
+				if v.Network == "unix" {
+					return nil, fmt.Errorf("must set -dir: using a unix socket for %v", v.Instance)
+				}
 			}
 		}
+		// Otherwise it's safe to not set -dir
 	}
 
-	if dir == "" && needDirReason != "" {
-		return nil, fmt.Errorf("must set -dir because %v", needDirReason)
-	}
 	if useFuse {
 		if len(instances) != 0 || instancesSrc != "" {
 			return nil, errors.New("-fuse is not compatible with -instances or -instances_metadata")

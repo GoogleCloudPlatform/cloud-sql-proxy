@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestCheck(t *testing.T) {
+func TestCreateInstanceConfigs(t *testing.T) {
 	for _, v := range []struct {
 		desc string
 		//inputs
@@ -55,15 +55,15 @@ func TestCheck(t *testing.T) {
 			"", false, nil, "md", true,
 		},
 	} {
-		_, err := Check(v.dir, v.useFuse, v.instances, v.instancesSrc)
+		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc)
 		if v.wantErr {
 			if err == nil {
-				t.Errorf("Check passed when %s, wanted error", v.desc)
+				t.Errorf("CreateInstanceConfigs passed when %s, wanted error", v.desc)
 			}
 			continue
 		}
 		if err != nil {
-			t.Errorf("Check gave error when %s: %v", v.desc, err)
+			t.Errorf("CreateInstanceConfigs gave error when %s: %v", v.desc, err)
 		}
 	}
 }

@@ -89,7 +89,7 @@ func main() {
 		log.Fatal("-instances_metadata unsupported outside of Google Compute Engine")
 	}
 
-	instances, err := Check(*dir, *useFuse, strings.Split(*instances, ","), *instanceSrc)
+	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, strings.Split(*instances, ","), *instanceSrc)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func main() {
 			}()
 		}
 
-		c, err := WatchInstances(*dir, instances, updates)
+		c, err := WatchInstances(*dir, cfgs, updates)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -157,11 +157,6 @@ func main() {
 
 	if *dir != "" {
 		log.Print("Socket prefix: " + *dir)
-	}
-	for _, cfg := range instances {
-		if strings.Contains(cfg.Network, "tcp") {
-			log.Printf("Listening for %v on %v", cfg.Instance, cfg.Address)
-		}
 	}
 
 	src, err := certs.NewCertSource(*host, client, *checkRegion)
