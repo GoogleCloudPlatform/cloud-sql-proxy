@@ -20,6 +20,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -76,6 +77,31 @@ func onGCE() bool {
 
 var versionString = "NO_VERSION_SET"
 
+func checkFlags(onGCE bool) error {
+	if !onGCE {
+		if *instanceSrc != "" {
+			return errors.New("-instances_metadata unsupported outside of Google Compute Engine")
+		}
+		return nil
+	}
+	scopes, err := metadata.Scopes("default")
+	if err != nil {
+		return fmt.Errorf("error checking scopes: %v", err)
+	}
+
+	ok := false
+	for _, sc := range scopes {
+		if sc == "https://www.googleapis.com/auth/sqladmin" || sc == "https://www.googleapis.com/auth/cloud-platform" {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return errors.New("ensure that the sqladmin scope is enabled on the Compute Engine VM")
+	}
+	return nil
+}
+
 func main() {
 	flag.Parse()
 
@@ -85,8 +111,31 @@ func main() {
 	}
 
 	onGCE := onGCE()
-	if !onGCE && *instanceSrc != "" {
-		log.Fatal("-instances_metadata unsupported outside of Google Compute Engine")
+	if err := checkFlags(onGCE); err != nil {
+		log.Fatal(err)
+	}
+
+	// Use the environment variable only if the flag hasn't been set.
+	if *tokenFile == "" {
+		*tokenFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	}
+
+	var client *http.Client
+	if file := *tokenFile; file != "" {
+		all, err := ioutil.ReadFile(file)
+		if err != nil {
+			log.Fatalf("invalid json file %q: %v", file, err)
+		}
+		cfg, err := goauth.JWTConfigFromJSON(all, sqlScope)
+		if err != nil {
+			log.Fatalf("invalid json file %q: %v", file, err)
+		}
+		client = auth.NewClientFrom(cfg.TokenSource(context.Background()))
+	} else if *token != "" || onGCE {
+		// Passing token == "" causes the GCE metadata server to be used.
+		client = auth.NewAuthenticatedClient(*token)
+	} else {
+		log.Fatal("No authentication method available! When not running on Google Compute Engine, provide the -credential_file flag.")
 	}
 
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, strings.Split(*instances, ","), *instanceSrc)
@@ -130,29 +179,6 @@ func main() {
 			log.Fatal(err)
 		}
 		connSrc = c
-	}
-
-	// Use the environment variable only if the flag hasn't been set.
-	if *tokenFile == "" {
-		*tokenFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	}
-
-	var client *http.Client
-	if file := *tokenFile; file != "" {
-		all, err := ioutil.ReadFile(file)
-		if err != nil {
-			log.Fatalf("invalid json file %q: %v", file, err)
-		}
-		cfg, err := goauth.JWTConfigFromJSON(all, sqlScope)
-		if err != nil {
-			log.Fatalf("invalid json file %q: %v", file, err)
-		}
-		client = auth.NewClientFrom(cfg.TokenSource(context.Background()))
-	} else if *token != "" || onGCE {
-		// Passing token == "" causes the GCE metadata server to be used.
-		client = auth.NewAuthenticatedClient(*token)
-	} else {
-		log.Fatal("No authentication method available! When not running on Google Compute Engine, provide the -credential_file flag.")
 	}
 
 	if *dir != "" {
