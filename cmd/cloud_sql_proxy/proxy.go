@@ -27,8 +27,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/Carrotman42/cloudsql-proxy/proxy/fuse"
+	"github.com/Carrotman42/cloudsql-proxy/proxy/proxy"
 )
 
 // WatchInstances handles the lifecycle of local sockets used for proxying

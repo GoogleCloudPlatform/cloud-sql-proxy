@@ -31,10 +31,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/gcp/auth"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/Carrotman42/cloudsql-proxy/gcp/auth"
+	"github.com/Carrotman42/cloudsql-proxy/proxy/certs"
+	"github.com/Carrotman42/cloudsql-proxy/proxy/fuse"
+	"github.com/Carrotman42/cloudsql-proxy/proxy/proxy"
 
 	"golang.org/x/net/context"
 	goauth "golang.org/x/oauth2/google"
@@ -66,7 +66,7 @@ const sqlScope = "https://www.googleapis.com/auth/sqlservice.admin"
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
-// See https://github.com/GoogleCloudPlatform/gcloud-golang/issues/194
+// See https://github.com/Carrotman42/gcloud-golang/issues/194
 func onGCE() bool {
 	res, err := http.Get("http://metadata.google.internal")
 	if err != nil {

@@ -46,7 +46,7 @@ import (
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/Carrotman42/cloudsql-proxy/proxy/proxy"
 	"golang.org/x/net/context"
 )
 

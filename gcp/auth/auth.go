@@ -27,8 +27,8 @@ import (
 	"os/user"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/gcp/metadata"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/util/prettyprint"
+	"github.com/Carrotman42/cloudsql-proxy/gcp/metadata"
+	"github.com/Carrotman42/cloudsql-proxy/util/prettyprint"
 	"golang.org/x/oauth2"
 )
 
