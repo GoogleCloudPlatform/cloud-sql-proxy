@@ -100,21 +100,29 @@ const (
 	backoffRetries = 5
 )
 
-func backoffAPIRetry(desc string, do func() error) error {
+func backoffAPIRetry(desc, instance string, do func() error) error {
 	var err error
 	for i := 0; i < backoffRetries; i++ {
 		err = do()
-		// Only Server-level HTTP errors are immediately retryable.
-		// 'ok' will also be false if err is nil.
 		gErr, ok := err.(*googleapi.Error)
-		if !ok || gErr.Code < 500 {
+		switch {
+		case !ok:
+			// 'ok' will also be false if err is nil.
+			return err
+		case gErr.Code == 403 && len(gErr.Errors) > 0 && gErr.Errors[0].Reason == "insufficientPermissions":
+			// The case where the admin API has not yet been enabled.
+			return fmt.Errorf("ensure that the Cloud SQL API is enabled for your project (https://console.cloud.google.com/flows/enableapi?apiid=sqladmin). Error during %s %s: %v", desc, instance, err)
+		case gErr.Code == 404 || gErr.Code == 403:
+			return fmt.Errorf("ensure that the account has access to %q (and make sure there's no typo in that name). Error during %s %s: %v", instance, desc, instance, err)
+		case gErr.Code < 500:
+			// Only Server-level HTTP errors are immediately retryable.
 			return err
 		}
 
 		// sleep = baseBackoff * backoffMult^(retries + randomFactor)
 		exp := float64(i+1) + mrand.Float64()
 		sleep := time.Duration(baseBackoff * math.Pow(backoffMult, exp))
-		log.Printf("Error in %s: %v; retrying in %v", desc, err, sleep)
+		log.Printf("Error in %s %s: %v; retrying in %v", desc, instance, err, sleep)
 		time.Sleep(sleep)
 	}
 	return err
@@ -136,7 +144,7 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 	)
 
 	var data *sqladmin.SslCert
-	err = backoffAPIRetry("createEphemeral for "+instance, func() error {
+	err = backoffAPIRetry("createEphemeral for", instance, func() error {
 		data, err = req.Do()
 		return err
 	})
@@ -169,7 +177,7 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	req := s.serv.Instances.Get(p, n)
 
 	var data *sqladmin.DatabaseInstance
-	err = backoffAPIRetry("get instance "+instance, func() error {
+	err = backoffAPIRetry("get instance", instance, func() error {
 		data, err = req.Do()
 		return err
 	})
