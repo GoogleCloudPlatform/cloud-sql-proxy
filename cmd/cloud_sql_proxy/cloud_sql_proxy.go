@@ -97,7 +97,7 @@ func checkFlags(onGCE bool) error {
 		}
 	}
 	if !ok {
-		return errors.New("ensure that the sqladmin scope is enabled on the Compute Engine VM")
+		return errors.New(`the default Compute Engine service account is not configured with sufficient permissions to access the Cloud SQL API from this VM. Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credentials_file parameter`)
 	}
 	return nil
 }
@@ -115,20 +115,21 @@ func main() {
 		log.Fatal(err)
 	}
 
+	credentialFile := *tokenFile
 	// Use the environment variable only if the flag hasn't been set.
-	if *tokenFile == "" {
-		*tokenFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	if credentialFile == "" {
+		credentialFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 	}
 
 	var client *http.Client
-	if file := *tokenFile; file != "" {
-		all, err := ioutil.ReadFile(file)
+	if credentialFile != "" {
+		all, err := ioutil.ReadFile(credentialFile)
 		if err != nil {
-			log.Fatalf("invalid json file %q: %v", file, err)
+			log.Fatalf("invalid json file %q: %v", credentialFile, err)
 		}
 		cfg, err := goauth.JWTConfigFromJSON(all, sqlScope)
 		if err != nil {
-			log.Fatalf("invalid json file %q: %v", file, err)
+			log.Fatalf("invalid json file %q: %v", credentialFile, err)
 		}
 		client = auth.NewClientFrom(cfg.TokenSource(context.Background()))
 	} else if *token != "" || onGCE {
