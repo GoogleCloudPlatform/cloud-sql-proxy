@@ -47,12 +47,63 @@ func (d dbgConn) Close() error {
 	return err
 }
 
-func copyThenClose(dbg string, dst io.WriteCloser, src io.ReadCloser) {
-	if _, err := io.Copy(dst, src); err != nil {
-		log.Printf("%s: %v", dbg, err)
+// myCopy is similar to io.Copy, but reports whether the returned error was due
+// to a bad read or write. The returned error will never be nil
+func myCopy(dst io.Writer, src io.Reader) (readErr bool, err error) {
+	buf := make([]byte, 4096)
+	for {
+		n, err := src.Read(buf)
+		if n > 0 {
+			if _, werr := dst.Write(buf[:n]); werr != nil {
+				if err == nil {
+					return false, werr
+				}
+				// Read and write error; just report read error (it happened first).
+				return true, err
+			}
+		}
+		if err != nil {
+			return true, err
+		}
 	}
-	src.Close()
-	dst.Close()
+}
+
+func copyThenClose(thingA, thingB io.ReadWriteCloser, descA, descB string) {
+	firstErr := make(chan error, 1)
+
+	go func() {
+		readErr, err := myCopy(thingA, thingB)
+		select {
+		case firstErr <- err:
+			var desc string
+			if readErr {
+				desc = "Reading data from " + descB
+			} else {
+				desc = "Writing data to " + descA
+			}
+			log.Printf("%v had error: %v", desc, err)
+			thingA.Close()
+			thingB.Close()
+		default:
+		}
+	}()
+
+	readErr, err := myCopy(thingB, thingA)
+	select {
+	case firstErr <- err:
+		var desc string
+		if readErr {
+			desc = "Reading data from " + descA
+		} else {
+			desc = "Writing data to " + descB
+		}
+		log.Printf("%v had error: %v", desc, err)
+		thingA.Close()
+		thingB.Close()
+	case <-firstErr:
+		// In this case, the other goroutine exited first and already printed its
+		// error (and closed the things).
+	}
 }
 
 // NewConnSet initializes a new ConnSet and returns it.

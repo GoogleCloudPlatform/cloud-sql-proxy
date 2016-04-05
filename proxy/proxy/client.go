@@ -105,10 +105,8 @@ func (c *Client) handleConn(conn Conn) {
 		conn.Conn = dbgConn{conn.Conn}
 	}
 
-	suffix := fmt.Sprintf(" %q via %s", conn.Instance, server.RemoteAddr())
 	c.Conns.Add(conn.Instance, conn.Conn)
-	go copyThenClose("to"+suffix, server, conn.Conn)
-	copyThenClose("from"+suffix, conn.Conn, server)
+	copyThenClose(server, conn.Conn, conn.Instance, "local connection on "+conn.Conn.LocalAddr().String())
 	if err := c.Conns.Remove(conn.Instance, conn.Conn); err != nil {
 		log.Print(err)
 	}
