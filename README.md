@@ -97,7 +97,7 @@ $ kubectl create -f secret.json
 
 * Create an emptydir volume named `cloudsql` for the SQL proxy to place it's socket:
 ```
-  - name: mysql-persistent-storage
+  - name: cloudsql
     emptyDir:
 ```
 
