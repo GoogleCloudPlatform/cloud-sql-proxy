@@ -31,12 +31,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/gcp/auth"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	goauth "golang.org/x/oauth2/google"
 	"google.golang.org/cloud/compute/metadata"
 )
@@ -102,6 +102,25 @@ func checkFlags(onGCE bool) error {
 	return nil
 }
 
+func authenticatedClient(ctx context.Context) (*http.Client, error) {
+	if f := *tokenFile; f != "" {
+		all, err := ioutil.ReadFile(f)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+		}
+		cfg, err := goauth.JWTConfigFromJSON(all, sqlScope)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+		}
+		return cfg.Client(ctx), nil
+	} else if tok := *token; tok != "" {
+		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
+		return oauth2.NewClient(ctx, src), nil
+	}
+
+	return goauth.DefaultClient(ctx, sqlScope)
+}
+
 func main() {
 	flag.Parse()
 
@@ -115,28 +134,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	credentialFile := *tokenFile
-	// Use the environment variable only if the flag hasn't been set.
-	if credentialFile == "" {
-		credentialFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	}
-
-	var client *http.Client
-	if credentialFile != "" {
-		all, err := ioutil.ReadFile(credentialFile)
-		if err != nil {
-			log.Fatalf("invalid json file %q: %v", credentialFile, err)
-		}
-		cfg, err := goauth.JWTConfigFromJSON(all, sqlScope)
-		if err != nil {
-			log.Fatalf("invalid json file %q: %v", credentialFile, err)
-		}
-		client = auth.NewClientFrom(cfg.TokenSource(context.Background()))
-	} else if *token != "" || onGCE {
-		// Passing token == "" causes the GCE metadata server to be used.
-		client = auth.NewAuthenticatedClient(*token)
-	} else {
-		log.Fatal("No authentication method available! When not running on Google Compute Engine, provide the -credential_file flag.")
+	ctx := context.Background()
+	client, err := authenticatedClient(ctx)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, strings.Split(*instances, ","), *instanceSrc)
