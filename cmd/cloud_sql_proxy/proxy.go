@@ -264,9 +264,6 @@ func parseInstanceConfigs(dir string, instances []string) ([]instanceConfig, err
 // for the proxy for the platform and system and then returns a slice of valid
 // instanceConfig.
 func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instancesSrc string) ([]instanceConfig, error) {
-	if len(instances) == 1 && instances[0] == "" {
-		instances = nil
-	}
 	if useFuse && !fuse.Supported() {
 		return nil, errors.New("FUSE not supported on this system")
 	}
@@ -297,16 +294,16 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 
 	if useFuse {
 		if len(instances) != 0 || instancesSrc != "" {
-			return nil, errors.New("-fuse is not compatible with -instances or -instances_metadata")
+			return nil, errors.New("-fuse is not compatible with -projects (or -infer_projects), -instances, or -instances_metadata")
 		}
 		return nil, nil
 	}
 	// FUSE disabled.
 	if len(instances) == 0 && instancesSrc == "" {
 		if fuse.Supported() {
-			return nil, errors.New("must specify -fuse, -instances, or -instances_metadata")
+			return nil, errors.New("must specify -projects (or -infer_projects), -fuse, or -instances")
 		}
-		return nil, errors.New("must specify -instances")
+		return nil, errors.New("must specify -projects, -infer_projects, or -instances")
 	}
 	return cfgs, nil
 }
