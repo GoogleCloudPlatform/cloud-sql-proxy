@@ -294,16 +294,16 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 
 	if useFuse {
 		if len(instances) != 0 || instancesSrc != "" {
-			return nil, errors.New("-fuse is not compatible with -projects (or -infer_projects), -instances, or -instances_metadata")
+			return nil, errors.New("-fuse is not compatible with -projects, -instances, or -instances_metadata")
 		}
 		return nil, nil
 	}
 	// FUSE disabled.
 	if len(instances) == 0 && instancesSrc == "" {
 		if fuse.Supported() {
-			return nil, errors.New("must specify -projects (or -infer_projects), -fuse, or -instances")
+			return nil, errors.New("must specify -projects, -fuse, or -instances")
 		}
-		return nil, errors.New("must specify -projects, -infer_projects, or -instances")
+		return nil, errors.New("must specify -projects or -instances")
 	}
 	return cfgs, nil
 }

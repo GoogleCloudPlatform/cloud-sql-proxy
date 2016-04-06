@@ -20,6 +20,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -27,6 +29,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -39,7 +42,6 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	goauth "golang.org/x/oauth2/google"
-	crm "google.golang.org/api/cloudresourcemanager/v1beta1"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	"google.golang.org/cloud/compute/metadata"
 )
@@ -54,11 +56,9 @@ var (
 	checkRegion = flag.Bool("check_region", false, "If specified, the 'region' portion of the connection string is required for connections. If this is false and a region is not specified only a log is printed.")
 
 	// Settings for how to choose which instance to connect to.
-	dir           = flag.String("dir", "", "Directory to use for placing UNIX sockets representing database instances")
-	inferProjects = flag.Bool("infer_projects", false, "Open a socket for each instance in each project the proxy can see. WARNING: if the Proxy is restarted often, setting this flag may cause you to accidentally exhaust your quota. In a production setting, -instances or -instances_metadata is suggested")
-	projects      = flag.String("projects", "", "In addition to the instances specified in -instances and -instances_metadata, open sockets for each Cloud SQL Instance in the projects specified here (comma-separated list)")
-	// TODO(chowski): should I also support refreshing the list of instances periodically?
-	instances   = flag.String("instances", "", "Comma-separated list of fully qualified instances (project:name) to connect to. If the name has the suffix '=tcp:port', a TCP server is opened on the specified port to proxy to that instance. Otherwise, one socket file per instance is opened in 'dir'; ignored if -fuse is set")
+	dir         = flag.String("dir", "", "Directory to use for placing UNIX sockets representing database instances")
+	projects    = flag.String("projects", "", "Open sockets for each Cloud SQL Instance in the projects specified here (comma-separated list)")
+	instances   = flag.String("instances", "", "Comma-separated list of fully qualified instances (project:region:name) to connect to. If the name has the suffix '=tcp:port', a TCP server is opened on the specified port to proxy to that instance. Otherwise, one socket file per instance is opened in 'dir'; ignored if -fuse is set")
 	instanceSrc = flag.String("instances_metadata", "", "If provided, it is treated as a path to a metadata value which is polled for a comma-separated list of instances to connect to; ignored if -fuse is set. For example, to use the instance metadata value named 'cloud-sql-instances' you would provide 'instance/attributes/cloud-sql-instances'.")
 	useFuse     = flag.Bool("fuse", false, "Mount a directory at 'dir' using FUSE for accessing instances. Note that the directory at 'dir' must be empty before this program is started.")
 	fuseTmp     = flag.String("fuse_tmp", defaultTmp, "Used as a temporary directory if -fuse is set. Note that files in this directory can be removed automatically by this program.")
@@ -68,10 +68,7 @@ var (
 	tokenFile = flag.String("credential_file", "", "If provided, this json file will be used to retrieve Service Account credentials; you may also set the GOOGLE_APPLICATION_CREDENTIALS environment variable to avoid the need to pass this flag.")
 )
 
-const (
-	sqlScope     = "https://www.googleapis.com/auth/sqlservice.admin"
-	projectScope = "https://www.googleapis.com/auth/cloud-platform.read-only"
-)
+const sqlScope = "https://www.googleapis.com/auth/sqlservice.admin"
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
@@ -111,17 +108,13 @@ func checkFlags(onGCE bool) error {
 	return nil
 }
 
-func authenticatedClient(ctx context.Context, projScope bool) (*http.Client, error) {
-	scopes := []string{sqlScope}
-	if projScope {
-		scopes = append(scopes, projectScope)
-	}
+func authenticatedClient(ctx context.Context) (*http.Client, error) {
 	if f := *tokenFile; f != "" {
 		all, err := ioutil.ReadFile(f)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
-		cfg, err := goauth.JWTConfigFromJSON(all, scopes...)
+		cfg, err := goauth.JWTConfigFromJSON(all, sqlScope)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
@@ -131,7 +124,7 @@ func authenticatedClient(ctx context.Context, projScope bool) (*http.Client, err
 		return oauth2.NewClient(ctx, src), nil
 	}
 
-	return goauth.DefaultClient(ctx, scopes...)
+	return goauth.DefaultClient(ctx, sqlScope)
 }
 
 func stringList(s string) []string {
@@ -142,42 +135,21 @@ func stringList(s string) []string {
 	return spl
 }
 
-func inferInstances(ctx context.Context, cl *http.Client, projects []string, inferProjects bool) ([]string, error) {
-	m, err := crm.New(cl)
-	if err != nil {
-		return nil, err
+func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]string, error) {
+	if len(projects) == 0 {
+		// No projects requested.
+		return nil, nil
 	}
+
 	sql, err := sqladmin.New(cl)
 	if err != nil {
 		return nil, err
 	}
 
-	pmap := make(map[string]bool, len(projects))
-	for _, proj := range projects {
-		pmap[proj] = true
-	}
-	if inferProjects {
-		err := m.Projects.List().Pages(ctx, func(r *crm.ListProjectsResponse) error {
-			for _, proj := range r.Projects {
-				pmap[proj.ProjectId] = true
-			}
-			return nil
-		})
-		if err != nil {
-			return nil, fmt.Errorf("while listing projects: %v", err)
-		} else if len(pmap) == 0 {
-			return nil, fmt.Errorf("could find any projects this account has access to; consider using -projects or -instances")
-		}
-	}
-	if len(pmap) == 0 {
-		// No projects to look info
-		return nil, nil
-	}
-
 	ch := make(chan string)
 	var wg sync.WaitGroup
-	wg.Add(len(pmap))
-	for proj := range pmap {
+	wg.Add(len(projects))
+	for _, proj := range projects {
 		proj := proj
 		go func() {
 			err := sql.Instances.List(proj).Pages(ctx, func(r *sqladmin.InstancesListResponse) error {
@@ -204,9 +176,37 @@ func inferInstances(ctx context.Context, cl *http.Client, projects []string, inf
 		ret = append(ret, x)
 	}
 	if len(ret) == 0 {
-		return nil, fmt.Errorf("no Cloud SQL Instances found in these projects: %v", pmap)
+		return nil, fmt.Errorf("no Cloud SQL Instances found in these projects: %v", projects)
 	}
 	return ret, nil
+}
+
+func gcloudProject() []string {
+	buf := new(bytes.Buffer)
+	cmd := exec.Command("gcloud", "--format", "json", "config", "list", "core/project")
+	cmd.Stdout = buf
+
+	if err := cmd.Run(); err != nil {
+		if strings.Contains(err.Error(), "executable file not found") {
+			// gcloud not installed; ignore the error
+			return nil
+		}
+		log.Printf("Error detecting gcloud project: %v", err)
+		return nil
+	}
+
+	var data struct {
+		Core struct {
+			Project string
+		}
+	}
+
+	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
+		log.Printf("Failed to unmarshal bytes from gcloud: %v", err)
+		log.Printf("   gcloud returned:\n%s", buf)
+		return nil
+	}
+	return []string{data.Core.Project}
 }
 
 func main() {
@@ -217,9 +217,12 @@ func main() {
 		return
 	}
 
-	infer := *inferProjects
 	instList := stringList(*instances)
 	projList := stringList(*projects)
+	// TODO: it'd be really great to consolidate flag verification in one place.
+	if len(instList) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
+		projList = gcloudProject()
+	}
 
 	onGCE := onGCE()
 	if err := checkFlags(onGCE); err != nil {
@@ -227,12 +230,12 @@ func main() {
 	}
 
 	ctx := context.Background()
-	client, err := authenticatedClient(ctx, infer)
+	client, err := authenticatedClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ins, err := inferInstances(ctx, client, projList, infer)
+	ins, err := listInstances(ctx, client, projList)
 	if err != nil {
 		log.Fatal(err)
 	}
