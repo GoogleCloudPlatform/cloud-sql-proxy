@@ -68,39 +68,45 @@ func myCopy(dst io.Writer, src io.Reader) (readErr bool, err error) {
 	}
 }
 
-func copyThenClose(thingA, thingB io.ReadWriteCloser, descA, descB string) {
+func copyError(readDesc, writeDesc string, readErr bool, err error) {
+	var desc string
+	if readErr {
+		desc = "Reading data from " + readDesc
+	} else {
+		desc = "Writing data to " + writeDesc
+	}
+	log.Printf("%v had error: %v", desc, err)
+}
+
+func copyThenClose(remote, local io.ReadWriteCloser, remoteDesc, localDesc string) {
 	firstErr := make(chan error, 1)
 
 	go func() {
-		readErr, err := myCopy(thingA, thingB)
+		readErr, err := myCopy(remote, local)
 		select {
 		case firstErr <- err:
-			var desc string
-			if readErr {
-				desc = "Reading data from " + descB
+			if readErr && err == io.EOF {
+				log.Printf("Client closed %v", localDesc)
 			} else {
-				desc = "Writing data to " + descA
+				copyError(localDesc, remoteDesc, readErr, err)
 			}
-			log.Printf("%v had error: %v", desc, err)
-			thingA.Close()
-			thingB.Close()
+			remote.Close()
+			local.Close()
 		default:
 		}
 	}()
 
-	readErr, err := myCopy(thingB, thingA)
+	readErr, err := myCopy(local, remote)
 	select {
 	case firstErr <- err:
-		var desc string
-		if readErr {
-			desc = "Reading data from " + descA
+		if readErr && err == io.EOF {
+			log.Printf("Instance %v closed connection", remoteDesc)
 		} else {
-			desc = "Writing data to " + descB
+			copyError(remoteDesc, localDesc, readErr, err)
 		}
-		log.Printf("%v had error: %v", desc, err)
-		thingA.Close()
-		thingB.Close()
-	case <-firstErr:
+		remote.Close()
+		local.Close()
+	default:
 		// In this case, the other goroutine exited first and already printed its
 		// error (and closed the things).
 	}
