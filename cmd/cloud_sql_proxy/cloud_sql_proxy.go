@@ -121,6 +121,16 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 	return goauth.DefaultClient(ctx, sqlScope)
 }
 
+// Main executes the main function of the proxy, allowing it to be called from tests.
+// TODO: maybe have this return an error instead of letting 'main' exit on its own?
+func Main() {
+	go func() {
+		time.Sleep(time.Minute)
+		panic("injected error: proxy stayed open after test ended")
+	}()
+	main()
+}
+
 func main() {
 	flag.Parse()
 
@@ -183,9 +193,7 @@ func main() {
 		connSrc = c
 	}
 
-	if *dir != "" {
-		log.Print("Socket prefix: " + *dir)
-	}
+	log.Print("Ready for new connections")
 
 	src, err := certs.NewCertSource(*host, client, *checkRegion)
 	if err != nil {
