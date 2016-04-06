@@ -51,7 +51,7 @@ func TestGCE(t *testing.T) {
 	// Upload a copy of this binary to the remote host
 	this, err := os.Open(os.Args[0])
 	if err != nil {
-		t.Fatalf("Couldn't open %v for reading: %v", os.Args[0])
+		t.Fatalf("Couldn't open %v for reading: %v", os.Args[0], err)
 	}
 	if err := sshRun(ssh, "bash -c 'cat >cloud_sql_proxy; chmod +x cloud_sql_proxy; mkdir -p cloudsql'", this, nil, nil); err != nil {
 		t.Fatalf("couldn't scp to remote machine: %v", err)
