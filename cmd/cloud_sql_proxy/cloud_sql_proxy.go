@@ -20,6 +20,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -27,8 +29,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
@@ -38,6 +42,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	goauth "golang.org/x/oauth2/google"
+	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	"google.golang.org/cloud/compute/metadata"
 )
 
@@ -51,8 +56,9 @@ var (
 	checkRegion = flag.Bool("check_region", false, "If specified, the 'region' portion of the connection string is required for connections. If this is false and a region is not specified only a log is printed.")
 
 	// Settings for how to choose which instance to connect to.
-	dir         = flag.String("dir", "", "Directory to use for placing instance sockets. Exactly what ends up in this directory depends on other flags.")
-	instances   = flag.String("instances", "", "Comma-separated list of fully qualified instances (project:name) to connect to. If the name has the suffix '=tcp:port', a TCP server is opened on the specified port to proxy to that instance. Otherwise, one socket file per instance is opened in 'dir'; ignored if -fuse is set")
+	dir         = flag.String("dir", "", "Directory to use for placing UNIX sockets representing database instances")
+	projects    = flag.String("projects", "", "Open sockets for each Cloud SQL Instance in the projects specified here (comma-separated list)")
+	instances   = flag.String("instances", "", "Comma-separated list of fully qualified instances (project:region:name) to connect to. If the name has the suffix '=tcp:port', a TCP server is opened on the specified port to proxy to that instance. Otherwise, one socket file per instance is opened in 'dir'; ignored if -fuse is set")
 	instanceSrc = flag.String("instances_metadata", "", "If provided, it is treated as a path to a metadata value which is polled for a comma-separated list of instances to connect to; ignored if -fuse is set. For example, to use the instance metadata value named 'cloud-sql-instances' you would provide 'instance/attributes/cloud-sql-instances'.")
 	useFuse     = flag.Bool("fuse", false, "Mount a directory at 'dir' using FUSE for accessing instances. Note that the directory at 'dir' must be empty before this program is started.")
 	fuseTmp     = flag.String("fuse_tmp", defaultTmp, "Used as a temporary directory if -fuse is set. Note that files in this directory can be removed automatically by this program.")
@@ -121,12 +127,103 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 	return goauth.DefaultClient(ctx, sqlScope)
 }
 
+func stringList(s string) []string {
+	spl := strings.Split(s, ",")
+	if len(spl) == 1 && spl[0] == "" {
+		return nil
+	}
+	return spl
+}
+
+func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]string, error) {
+	if len(projects) == 0 {
+		// No projects requested.
+		return nil, nil
+	}
+
+	sql, err := sqladmin.New(cl)
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan string)
+	var wg sync.WaitGroup
+	wg.Add(len(projects))
+	for _, proj := range projects {
+		proj := proj
+		go func() {
+			err := sql.Instances.List(proj).Pages(ctx, func(r *sqladmin.InstancesListResponse) error {
+				for _, in := range r.Items {
+					// The Proxy is only support on Second Gen
+					if in.BackendType == "SECOND_GEN" {
+						ch <- fmt.Sprintf("%s:%s:%s", in.Project, in.Region, in.Name)
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				log.Printf("Error listing instances in %v: %v", proj, err)
+			}
+			wg.Done()
+		}()
+	}
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+	var ret []string
+	for x := range ch {
+		ret = append(ret, x)
+	}
+	if len(ret) == 0 {
+		return nil, fmt.Errorf("no Cloud SQL Instances found in these projects: %v", projects)
+	}
+	return ret, nil
+}
+
+func gcloudProject() []string {
+	buf := new(bytes.Buffer)
+	cmd := exec.Command("gcloud", "--format", "json", "config", "list", "core/project")
+	cmd.Stdout = buf
+
+	if err := cmd.Run(); err != nil {
+		if strings.Contains(err.Error(), "executable file not found") {
+			// gcloud not installed; ignore the error
+			return nil
+		}
+		log.Printf("Error detecting gcloud project: %v", err)
+		return nil
+	}
+
+	var data struct {
+		Core struct {
+			Project string
+		}
+	}
+
+	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
+		log.Printf("Failed to unmarshal bytes from gcloud: %v", err)
+		log.Printf("   gcloud returned:\n%s", buf)
+		return nil
+	}
+
+	log.Printf("Using gcloud's active project: %v", data.Core.Project)
+	return []string{data.Core.Project}
+}
+
 func main() {
 	flag.Parse()
 
 	if *version {
 		fmt.Println("Cloud SQL Proxy:", versionString)
 		return
+	}
+
+	instList := stringList(*instances)
+	projList := stringList(*projects)
+	// TODO: it'd be really great to consolidate flag verification in one place.
+	if len(instList) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
+		projList = gcloudProject()
 	}
 
 	onGCE := onGCE()
@@ -140,7 +237,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, strings.Split(*instances, ","), *instanceSrc)
+	ins, err := listInstances(ctx, client, projList)
+	if err != nil {
+		log.Fatal(err)
+	}
+	instList = append(instList, ins...)
+
+	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc)
 	if err != nil {
 		log.Fatal(err)
 	}
