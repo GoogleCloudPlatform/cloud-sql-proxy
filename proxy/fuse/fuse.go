@@ -71,12 +71,12 @@ func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.C
 	if err := fuse.Unmount(mountdir); err != nil {
 		// The error is too verbose to be useful to print out
 	}
-	log.Printf("Mounting %q...", mountdir)
+	log.Printf("Mounting %v...", mountdir)
 	c, err := fuse.Mount(mountdir, fuse.AllowOther())
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot mount %q: %v", mountdir, err)
 	}
-	log.Printf("Mounted %q", mountdir)
+	log.Printf("Mounted %v", mountdir)
 
 	if connset == nil {
 		// Make a dummy one.
@@ -111,6 +111,7 @@ func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.C
 		if err := root.Close(); err != nil {
 			log.Printf("root.Close() error: %v", err)
 		}
+		log.Printf("FUSE exited")
 	}()
 
 	return conns, root, nil

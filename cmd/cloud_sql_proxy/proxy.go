@@ -180,7 +180,7 @@ var validNets = func() map[string]bool {
 		// Open any port to see if the net is valid.
 		x, err := net.Listen(n, addr+":")
 		if err != nil {
-			log.Printf("Protocol %v not supported: %v", n, err)
+			// Error is too verbose to be useful.
 			continue
 		}
 		x.Close()

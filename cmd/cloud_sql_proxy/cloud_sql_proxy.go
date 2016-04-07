@@ -83,6 +83,8 @@ func onGCE() bool {
 
 var versionString = "NO_VERSION_SET"
 
+const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credentials_file parameter`
+
 func checkFlags(onGCE bool) error {
 	if !onGCE {
 		if *instanceSrc != "" {
@@ -92,7 +94,10 @@ func checkFlags(onGCE bool) error {
 	}
 	scopes, err := metadata.Scopes("default")
 	if err != nil {
-		return fmt.Errorf("error checking scopes: %v", err)
+		if _, ok := err.(metadata.NotDefinedError); ok {
+			return errors.New("no service account found for this Compute Engine VM. " + accountErrorSuffix)
+		}
+		return fmt.Errorf("error checking scopes: %T %v | %+v", err, err, err)
 	}
 
 	ok := false
@@ -103,7 +108,7 @@ func checkFlags(onGCE bool) error {
 		}
 	}
 	if !ok {
-		return errors.New(`the default Compute Engine service account is not configured with sufficient permissions to access the Cloud SQL API from this VM. Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credentials_file parameter`)
+		return errors.New(`the default Compute Engine service account is not configured with sufficient permissions to access the Cloud SQL API from this VM. ` + accountErrorSuffix)
 	}
 	return nil
 }
