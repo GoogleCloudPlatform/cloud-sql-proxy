@@ -112,8 +112,9 @@ func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string
 }
 
 func remove(path string) {
-	err := os.Remove(path)
-	log.Printf("Remove(%q) error: %v", path, err)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		log.Printf("Remove(%q) error: %v", path, err)
+	}
 }
 
 // listenInstance starts listening on a new unix socket in dir to connect to the
@@ -141,7 +142,7 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 				l.Close()
 				return
 			}
-			log.Printf("Got a connection for %q", cfg.Instance)
+			log.Printf("New connection to %q requested", cfg.Instance)
 			dst <- proxy.Conn{cfg.Instance, c}
 		}
 	}()

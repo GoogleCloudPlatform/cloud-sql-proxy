@@ -69,7 +69,7 @@ func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.C
 	}
 
 	if err := fuse.Unmount(mountdir); err != nil {
-		log.Printf("couldn't unmount fuse directory %q: %#v", mountdir, err)
+		// The error is too verbose to be useful to print out
 	}
 	log.Printf("Mounting %q...", mountdir)
 	c, err := fuse.Mount(mountdir, fuse.AllowOther())
