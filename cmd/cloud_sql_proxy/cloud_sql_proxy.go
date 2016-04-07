@@ -206,6 +206,8 @@ func gcloudProject() []string {
 		log.Printf("   gcloud returned:\n%s", buf)
 		return nil
 	}
+
+	log.Printf("Using gcloud's active project: %v", data.Core.Project)
 	return []string{data.Core.Project}
 }
 
