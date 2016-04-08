@@ -53,7 +53,7 @@ var (
 UNIX socket-based connections.`)
 
 	// Settings for how to choose which instance to connect to.
-	dir      = flag.String("dir", "", "`Directory` to use for placing UNIX sockets representing database instances")
+	dir      = flag.String("dir", "", "Directory to use for placing UNIX sockets representing database instances")
 	projects = flag.String("projects", "", `Open sockets for each Cloud SQL Instance in the projects specified
 (comma-separated list)`)
 	instances = flag.String("instances", "", `Comma-separated list of fully qualified instances (project:region:name)
@@ -104,7 +104,6 @@ Authorization:
 
 
 Connection:
-
   -instances
     To connect to a specific list of instances, set the instances flag to a
     comma-separated list of instance connection strings. For example:
@@ -137,6 +136,7 @@ Connection:
     When using UNIX sockets (the default for systems which support them), the
     Proxy places the sockets in the directory specified by the -dir flag.
 
+
 Automatic instance discovery:
     If gcloud is installed on the local machine and no instance connection flags
     are specified, the proxy connects to all instances in the gcloud active
@@ -146,8 +146,8 @@ Automatic instance discovery:
 Information for all flags:
 `)
 		flag.VisitAll(func(f *flag.Flag) {
-			name, usage := flag.UnquoteUsage(f)
-			fmt.Fprintf(os.Stderr, "  -%s %s\n    %s\n\n", f.Name, name, strings.Replace(usage, "\n", "\n    ", -1))
+			usage := strings.Replace(f.Usage, "\n", "\n    ", -1)
+			fmt.Fprintf(os.Stderr, "  -%s\n    %s\n\n", f.Name, usage)
 		})
 	}
 }
