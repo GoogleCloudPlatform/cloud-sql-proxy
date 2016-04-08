@@ -49,24 +49,108 @@ import (
 var (
 	version = flag.Bool("version", false, "Print the version of the proxy and exit")
 
-	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "API endpoint to use")
-
-	port = flag.Int("remote_port", 3307, "Port to use when connecting to instances")
-
-	checkRegion = flag.Bool("check_region", false, "If specified, the 'region' portion of the connection string is required for connections. If this is false and a region is not specified only a log is printed.")
+	checkRegion = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
+UNIX socket-based connections.`)
 
 	// Settings for how to choose which instance to connect to.
-	dir         = flag.String("dir", "", "Directory to use for placing UNIX sockets representing database instances")
-	projects    = flag.String("projects", "", "Open sockets for each Cloud SQL Instance in the projects specified here (comma-separated list)")
-	instances   = flag.String("instances", "", "Comma-separated list of fully qualified instances (project:region:name) to connect to. If the name has the suffix '=tcp:port', a TCP server is opened on the specified port to proxy to that instance. Otherwise, one socket file per instance is opened in 'dir'; ignored if -fuse is set")
-	instanceSrc = flag.String("instances_metadata", "", "If provided, it is treated as a path to a metadata value which is polled for a comma-separated list of instances to connect to; ignored if -fuse is set. For example, to use the instance metadata value named 'cloud-sql-instances' you would provide 'instance/attributes/cloud-sql-instances'.")
-	useFuse     = flag.Bool("fuse", false, "Mount a directory at 'dir' using FUSE for accessing instances. Note that the directory at 'dir' must be empty before this program is started.")
-	fuseTmp     = flag.String("fuse_tmp", defaultTmp, "Used as a temporary directory if -fuse is set. Note that files in this directory can be removed automatically by this program.")
+	dir      = flag.String("dir", "", "`Directory` to use for placing UNIX sockets representing database instances")
+	projects = flag.String("projects", "", `Open sockets for each Cloud SQL Instance in the projects specified
+(comma-separated list)`)
+	instances = flag.String("instances", "", `Comma-separated list of fully qualified instances (project:region:name)
+to connect to. If the name has the suffix '=tcp:port', a TCP server is opened
+on the specified port to proxy to that instance. Otherwise, one socket file per
+instance is opened in 'dir'. Not compatible with -fuse`)
+	instanceSrc = flag.String("instances_metadata", "", `If provided, it is treated as a path to a metadata value which
+is polled for a comma-separated list of instances to connect to. For example,
+to use the instance metadata value named 'cloud-sql-instances' you would
+provide 'instance/attributes/cloud-sql-instances'. Not compatible with -fuse`)
+	useFuse = flag.Bool("fuse", false, `Mount a directory at 'dir' using FUSE for accessing instances. Note that the
+directory at 'dir' must be empty before this program is started.`)
+	fuseTmp = flag.String("fuse_tmp", defaultTmp, `Used as a temporary directory if -fuse is set. Note that files in this directory
+can be removed automatically by this program.`)
 
 	// Settings for authentication.
-	token     = flag.String("token", "", "By default, requests are authorized under the identity of the default service account. Setting this flag causes requests to include this Bearer token instead.")
-	tokenFile = flag.String("credential_file", "", "If provided, this json file will be used to retrieve Service Account credentials; you may also set the GOOGLE_APPLICATION_CREDENTIALS environment variable to avoid the need to pass this flag.")
+	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
+	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
+You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 )
+
+const (
+	host = "https://www.googleapis.com/sql/v1beta4/"
+	port = 3307
+)
+
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, `
+The Cloud SQL Proxy allows simple, secure connectivity to Google Cloud SQL. It
+is a long-running process that opens local sockets (either TCP or UNIX sockets)
+according to the flags passed to it. A local application connects to a Cloud
+SQL instance by using the corresponding socket.
+
+
+Authorization:
+  * On Google Compute Engine, the default service account is used.
+    The Cloud SQL API must be enabled for the VM.
+
+  * When gcloud is installed on the local machine, the "active account" is used
+    for authentication. Run 'gcloud auth list' to see which accounts are
+    installed on your local machine and 'gcloud config list account' to view
+    the active account.
+
+  * To configure the proxy using a service account, pass the -credential_file
+    flag or set the GOOGLE_APPLICATION_CREDENTIALS environment variable. This
+    will override gcloud or GCE credentials (if they exist).
+
+
+Connection:
+
+  -instances
+    To connect to a specific list of instances, set the instances flag to a
+    comma-separated list of instance connection strings. For example:
+
+           -instances my-project:my-region:my-instance
+
+    For connectivity over TCP, you must specify a tcp port as part of the
+    instance string. For example, the following example opens a loopback TCP
+    socket on port 3306, which will be proxied to connect to the instance
+    'my-instance' in project 'my-project':
+
+            -instances my-project:my-region:my-instance=tcp:3306
+
+     When connecting over TCP, the -instances flag is required.
+
+  -projects
+    To direct the proxy to connect to all instances in a specific project, set
+    the projects flag:
+
+       -projects my-project
+
+  -fuse
+    If your local environment has FUSE installed, you can specify the -fuse
+    flag to avoid the requirement to specify instances in advance. With FUSE,
+    any attempts to open a UNIX socket in the directory specified by -dir
+    automatically creates that socket and connects to the corresponding
+    instance.
+
+  -dir
+    When using UNIX sockets (the default for systems which support them), the
+    Proxy places the sockets in the directory specified by the -dir flag.
+
+Automatic instance discovery:
+    If gcloud is installed on the local machine and no instance connection flags
+    are specified, the proxy connects to all instances in the gcloud active
+    project, Run 'gcloud config list project' to display the active project.
+
+
+Information for all flags:
+`)
+		flag.VisitAll(func(f *flag.Flag) {
+			name, usage := flag.UnquoteUsage(f)
+			fmt.Fprintf(os.Stderr, "  -%s %s\n    %s\n\n", f.Name, name, strings.Replace(usage, "\n", "\n    ", -1))
+		})
+	}
+}
 
 const sqlScope = "https://www.googleapis.com/auth/sqlservice.admin"
 
@@ -295,13 +379,13 @@ func main() {
 		log.Print("Socket prefix: " + *dir)
 	}
 
-	src, err := certs.NewCertSource(*host, client, *checkRegion)
+	src, err := certs.NewCertSource(host, client, *checkRegion)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	(&proxy.Client{
-		Port:  *port,
+		Port:  port,
 		Certs: src,
 		Conns: connset,
 	}).Run(connSrc)
