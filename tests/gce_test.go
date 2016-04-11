@@ -1,3 +1,16 @@
+// gce_test is an integration test meant to verify the Cloud SQL Proxy works as
+// expected on a Google Compute Engine VM. It provisions a GCE VM, loads a
+// newly-compiled proxy client onto that VM, and then does some connectivity tests.
+//
+// If the VM specified by -vm_name doesn't exist already a new VM is created.
+// If a VM does already exist, its 'sshKeys' metadata value is set to a newly
+// generated key.
+//
+// Required flags:
+//    -db_name, -project
+//
+// Example invocation:
+//     go test -v . -args -project=my-project -db_name=my-project:the-region:sql-name
 package tests
 
 import (
@@ -5,6 +18,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -24,56 +38,66 @@ import (
 )
 
 var (
-	runProxy = flag.Bool("proxy_mode", false, "When set, this binary will invoke the cloud_sql_proxy process instead of just running tests")
-	project  = flag.String("project", "", "Project to create the GCE test VM in")
-	zone     = flag.String("zone", "us-central1-f", "Zone in which to create the VM")
-	osImage  = flag.String("os", defaultOS, "OS image to use when creating a VM")
-	vmName   = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
+	project      = flag.String("project", "", "Project to create the GCE test VM in")
+	zone         = flag.String("zone", "us-central1-f", "Zone in which to create the VM")
+	osImage      = flag.String("os", defaultOS, "OS image to use when creating a VM")
+	vmName       = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
+	databaseName = flag.String("db_name", "", "Fully-qualified Cloud SQL Instance (in the form of 'project:region:instance-name')")
+
+	runProxy = flag.Bool("run_proxy", false, "When set, this binary will invoke the cloud_sql_proxy process instead of just running tests; used by tests, should not be set when running tests.")
 )
 
-const defaultOS = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160329"
+const (
+	defaultOS   = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160329"
+	testTimeout = 3 * time.Minute
+)
 
 // TestGCE provisions a new GCE VM and verifies that the proxy works on it.
 // It uses application default credentials.
 func TestGCE(t *testing.T) {
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+
 	cl, err := google.DefaultClient(ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ssh, err := newOrReuseVM(t, cl)
+	ssh, err := newOrReuseVM(t.Logf, cl)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	log.Printf("Copy binary to %v...", *vmName)
-	// Upload a copy of this binary to the remote host
-	this, err := os.Open(os.Args[0])
-	if err != nil {
-		t.Fatalf("Couldn't open %v for reading: %v", os.Args[0], err)
-	}
-	if err := sshRun(ssh, "bash -c 'cat >cloud_sql_proxy; chmod +x cloud_sql_proxy; mkdir -p cloudsql'", this, nil, nil); err != nil {
-		t.Fatalf("couldn't scp to remote machine: %v", err)
-	}
-	this.Close()
-
-	logs, err := startProxy(ssh, "./cloud_sql_proxy -proxy_mode -dir cloudsql -instances speckle-dogfood-chowski:perf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	go io.Copy(ioutil.Discard, logs)
+	t.Logf("SSH to %s:%s succeeded", *project, *vmName)
 
 	log.Printf("Install mysql client...")
-	defer logs.Close()
-
 	if err := sshRun(ssh, "sudo apt-get install -y mysql-client-5.5", nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
-	var sout, serr bytes.Buffer
-	err = sshRun(ssh, `mysql -uroot --password=asdf -S cloudsql/speckle-dogfood-chowski:perf -e "select * from mysql.user\\G"`, nil, &sout, &serr)
+	log.Printf("Copy binary to %s:%s...", *project, *vmName)
+	this, err := os.Open(os.Args[0])
 	if err != nil {
+		t.Fatalf("Couldn't open %v for reading: %v", os.Args[0], err)
+	}
+	err = sshRun(ssh, "bash -c 'cat >cloud_sql_proxy; chmod +x cloud_sql_proxy; mkdir -p cloudsql'", this, nil, nil)
+	this.Close()
+	if err != nil {
+		t.Fatalf("couldn't scp to remote machine: %v", err)
+	}
+
+	logs, err := startProxy(ssh, "./cloud_sql_proxy -run_proxy -dir cloudsql -instances "+*databaseName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer logs.Close()
+	// TODO: Instead of discarding all of the logs, verify that certain logs
+	// happen during connects/disconnects.
+	go io.Copy(ioutil.Discard, logs)
+	t.Logf("Cloud SQL Proxy started on remote host")
+
+	cmd := fmt.Sprintf(`mysql -uroot -S cloudsql/%s -e "select 1\\G"`, *databaseName)
+	var sout, serr bytes.Buffer
+	if err = sshRun(ssh, cmd, nil, &sout, &serr); err != nil {
 		t.Fatalf("Error running mysql: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
 	}
 	t.Log(&sout)
@@ -96,18 +120,26 @@ func (p *process) Close() error {
 	return p.sess.Close()
 }
 
+// startProxy executes the cloud_sql_proxy via ssh. The returned ReadCloser
+// must be serviced and closed when finished, otherwise the SSH connection may
+// block.
 func startProxy(ssh *ssh.Client, args string) (io.ReadCloser, error) {
 	sess, err := ssh.NewSession()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't open new session: %v", err)
 	}
-	pr, pw := io.Pipe()
-	sess.Stderr = pw
+	pr, err := sess.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
 	log.Printf("Running proxy...")
 	if err := sess.Start(args); err != nil {
 		return nil, err
 	}
 
+	// The proxy prints "Ready for new connections" after it starts up
+	// correctly. Start a new goroutine looking for that value so that we can
+	// time-out appropriately (in case something weird is going on).
 	in := bufio.NewReader(pr)
 	buf := new(bytes.Buffer)
 	errCh := make(chan error, 1)
@@ -116,10 +148,10 @@ func startProxy(ssh *ssh.Client, args string) (io.ReadCloser, error) {
 			bs, err := in.ReadBytes('\n')
 			if err != nil {
 				if err == io.EOF {
-					log.Print("reading stderr gave EOF")
+					log.Print("reading stderr gave EOF (remote process closed)")
 					err = sess.Wait()
 				}
-				errCh <- fmt.Errorf("failed to run `%s`: %v", args, sess.Wait())
+				errCh <- fmt.Errorf("failed to run `%s`: %v", args, err)
 				return
 			}
 			buf.Write(bs)
@@ -135,23 +167,33 @@ func startProxy(ssh *ssh.Client, args string) (io.ReadCloser, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// Proxy process startup succeeded.
+		return &process{
+			io.MultiReader(buf, in),
+			sess,
+		}, nil
 	case <-time.After(3 * time.Second):
-		err := sess.Close()
-		select {
-		case waitErr := <-errCh:
-			if err == nil {
-				err = waitErr
-			}
-		case <-time.After(2 * time.Second):
-			log.Printf("Timeout while waiting for process")
-		}
 		log.Printf("Timeout starting up `%v`", args)
-		return nil, fmt.Errorf("timeout waiting for `%v`: error from close: %v; output was:\n\n%s", args, sess.Close(), buf)
 	}
-	return &process{
-		io.MultiReader(buf, in),
-		sess,
-	}, nil
+
+	// Starting the proxy timed out, so we should close the SSH session and
+	// return an error after the process exits.
+	// TODO: the sess.Signal method doesn't seem to work... that's what we
+	// really want to do.
+	err = sess.Close()
+	select {
+	case waitErr := <-errCh:
+		if err == nil {
+			err = waitErr
+		}
+	case <-time.After(2 * time.Second):
+		log.Printf("Timeout while waiting for process after closing SSH session.")
+		if err == nil {
+			err = errors.New("timeout waiting for SSH connection to close")
+		}
+	}
+	return nil, fmt.Errorf("timeout waiting for `%v`: error from close: %v; output was:\n\n%s", args, err, buf)
 }
 
 func sshRun(ssh *ssh.Client, cmd string, stdin io.Reader, stdout, stderr io.Writer) error {
@@ -173,21 +215,23 @@ func sshRun(ssh *ssh.Client, cmd string, stdin io.Reader, stdout, stderr io.Writ
 	return sess.Run(cmd)
 }
 
-func newOrReuseVM(t *testing.T, cl *http.Client) (*ssh.Client, error) {
+func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Client, error) {
 	c, err := compute.New(cl)
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 
 	user := "test-user"
-	pub, auth := sshKey()
+	pub, auth, err := sshKey()
+	if err != nil {
+		return nil, err
+	}
 	sshPubKey := user + ":" + pub
 
 	var op *compute.Operation
 
 	if inst, err := c.Instances.Get(*project, *zone, *vmName).Do(); err != nil {
-		t.Logf("Get instance %v (in project %v and zone %v) failed: %v", *vmName, *project, *zone, err)
-		t.Logf("Creating new instance...")
+		logf("Creating new instance (getting instance %v in project %v and zone %v failed: %v)", *vmName, *project, *zone, err)
 		instProto := &compute.Instance{
 			Name:        *vmName,
 			MachineType: "zones/" + *zone + "/machineTypes/g1-small",
@@ -215,8 +259,11 @@ func newOrReuseVM(t *testing.T, cl *http.Client) (*ssh.Client, error) {
 			}},
 		}
 		op, err = c.Instances.Insert(*project, *zone, instProto).Do()
+		if err != nil {
+			return nil, err
+		}
 	} else {
-		t.Logf("attempting to reuse instance %v (in project %v and zone %v)...", *vmName, *project, *zone)
+		logf("attempting to reuse instance %v (in project %v and zone %v)...", *vmName, *project, *zone)
 		set := false
 		md := inst.Metadata
 		for _, v := range md.Items {
@@ -230,14 +277,14 @@ func newOrReuseVM(t *testing.T, cl *http.Client) (*ssh.Client, error) {
 			md.Items = append(md.Items, &compute.MetadataItems{Key: "sshKeys", Value: &sshPubKey})
 		}
 		op, err = c.Instances.SetMetadata(*project, *zone, *vmName, md).Do()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for {
-		if err == nil && op.Error != nil && len(op.Error.Errors) > 0 {
-			err = fmt.Errorf("errors: %v", op.Error.Errors)
-		}
-		if err != nil {
-			t.Fatalf("Could not set up instance: %v\n\n%v", err, op)
+		if op.Error != nil && len(op.Error.Errors) > 0 {
+			return nil, fmt.Errorf("errors: %v", op.Error.Errors)
 		}
 
 		log.Printf("%v %v (%v)", op.OperationType, op.TargetLink, op.Status)
@@ -247,11 +294,14 @@ func newOrReuseVM(t *testing.T, cl *http.Client) (*ssh.Client, error) {
 		time.Sleep(5 * time.Second)
 
 		op, err = c.ZoneOperations.Get(*project, *zone, op.Name).Do()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	inst, err := c.Instances.Get(*project, *zone, *vmName).Do()
 	if err != nil {
-		t.Fatalf("Error getting instance after it's created: %v", err)
+		return nil, fmt.Errorf("error getting instance after it was created: %v", err)
 	}
 	ip := inst.NetworkInterfaces[0].AccessConfigs[0].NatIP
 
@@ -265,31 +315,33 @@ func newOrReuseVM(t *testing.T, cl *http.Client) (*ssh.Client, error) {
 	return ssh, nil
 }
 
-func sshKey() (pubKey string, auth ssh.AuthMethod) {
+func sshKey() (pubKey string, auth ssh.AuthMethod, err error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		panic(err)
+		return "", nil, err
 	}
 	signer, err := ssh.NewSignerFromKey(key)
 	if err != nil {
-		panic(err)
+		return "", nil, err
 	}
 	pub, err := ssh.NewPublicKey(&key.PublicKey)
 	if err != nil {
-		panic(err)
+		return "", nil, err
 	}
-	return string(ssh.MarshalAuthorizedKey(pub)), ssh.PublicKeys(signer)
+	return string(ssh.MarshalAuthorizedKey(pub)), ssh.PublicKeys(signer), nil
 }
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if *runProxy {
-		proxybinary.Main()
+		proxybinary.Main(testTimeout)
 		return
 	}
-	fmt.Println(os.Args)
-	if *project == "" {
+	switch "" {
+	case *project:
 		log.Fatal("Must set -project")
+	case *databaseName:
+		log.Fatal("Must set -db_name")
 	}
 
 	os.Exit(m.Run())
