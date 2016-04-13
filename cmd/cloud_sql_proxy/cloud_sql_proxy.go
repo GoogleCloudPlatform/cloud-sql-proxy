@@ -300,6 +300,23 @@ func gcloudProject() []string {
 	return []string{data.Core.Project}
 }
 
+// Main executes the main function of the proxy, allowing it to be called from tests.
+//
+// Setting timeout to a value greater than 0 causes the process to panic after
+// that amount of time. This is to sidestep an issue where sending a Signal to
+// the process (via the SSH library) doesn't seem to have an effect, and
+// closing the SSH session causes the process to get leaked. This timeout will
+// at least cause the proxy to exit eventually.
+func Main(timeout time.Duration) {
+	if timeout > 0 {
+		go func() {
+			time.Sleep(timeout)
+			panic("timeout exceeded")
+		}()
+	}
+	main()
+}
+
 func main() {
 	flag.Parse()
 
@@ -375,9 +392,7 @@ func main() {
 		connSrc = c
 	}
 
-	if *dir != "" {
-		log.Print("Socket prefix: " + *dir)
-	}
+	log.Print("Ready for new connections")
 
 	src, err := certs.NewCertSource(host, client, *checkRegion)
 	if err != nil {
