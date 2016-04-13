@@ -70,7 +70,7 @@ func TestGCE(t *testing.T) {
 	t.Logf("SSH to %s:%s succeeded", *project, *vmName)
 
 	log.Printf("Install mysql client...")
-	if err := sshRun(ssh, "sudo apt-get install -y mysql-client-5.5", nil, nil, nil); err != nil {
+	if err := sshRun(ssh, "sudo apt-get install -y mysql-client", nil, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
