@@ -142,12 +142,12 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 				l.Close()
 				return
 			}
-			log.Printf("New connection to %q requested", cfg.Instance)
+			log.Printf("New connection for %q", cfg.Instance)
 			dst <- proxy.Conn{cfg.Instance, c}
 		}
 	}()
 
-	log.Printf("Open socket for %q at %q", cfg.Instance, cfg.Address)
+	log.Printf("Listening on %s for %s", cfg.Address, cfg.Instance)
 	return l, nil
 }
 
