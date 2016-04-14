@@ -64,6 +64,13 @@ type Client struct {
 	// left nil.
 	Dialer func(net, addr string) (net.Conn, error)
 
+	// RefreshCfgThrottle is the amount of time to wait between configuration
+	// refreshes. If not set, it defaults to 1 minute.
+	//
+	// This is to prevent quota exhaustion in the case of client-side
+	// malfunction.
+	RefreshCfgThrottle time.Duration
+
 	// The cfgCache holds the most recent connection configuration keyed by
 	// instance. Relevant functions are refreshCfg and cachedCfg. It is
 	// protected by cfgL.
@@ -119,7 +126,12 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 	c.cfgL.Lock()
 	defer c.cfgL.Unlock()
 
-	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < refreshCfgThrottle {
+	throttle := c.RefreshCfgThrottle
+	if throttle == 0 {
+		throttle = refreshCfgThrottle
+	}
+
+	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < throttle {
 		log.Printf("Thottling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
 		// Refresh was called too recently, just reuse the result.
 		return old.addr, old.cfg, old.err
