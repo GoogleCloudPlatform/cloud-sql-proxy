@@ -14,6 +14,7 @@ import (
 const port = 3307
 
 var dialClient struct {
+	// This client is initialized in Init/InitClient/InitDefault and read in Dial.
 	c *Client
 	sync.Mutex
 }
@@ -43,13 +44,16 @@ func Dial(instance string) (net.Conn, error) {
 	return c.Dial(instance)
 }
 
+// Dialer is a convenience type to model the standard 'Dial' function.
+type Dialer func(net, addr string) (net.Conn, error)
+
 // Init must be called before Dial is called. This is a more flexible version
 // of InitDefault, but allows you to set more fields.
 //
 // The http.Client is used to authenticate API requests.
 // The connset parameter is optional.
 // If the dialer is nil, net.Conn is used.
-func Init(auth *http.Client, connset *ConnSet, dialer func(net, addr string) (net.Conn, error)) {
+func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 	if connset == nil {
 		connset = NewConnSet()
 	}

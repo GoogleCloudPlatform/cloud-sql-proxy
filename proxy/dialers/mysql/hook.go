@@ -31,6 +31,21 @@ func Dial(instance, user string) (*sql.DB, error) {
 	})
 }
 
+// DialPassword is similar to Dial, but allows you to specify a password.
+//
+// Note that using a password with the proxy is not necessary as long as the
+// user's hostname is 'cloudsqlproxy~'. For more information, see:
+//    https://cloud.google.com/sql/docs/sql-proxy#user
+func DialPassword(instance, user, password string) (*sql.DB, error) {
+	return DialCfg(&mysql.Config{
+		User:   user,
+		Passwd: password,
+		Addr:   instance,
+		// Set in DialCfg:
+		// Net: "cloudsql",
+	})
+}
+
 // DialCfg opens up a SQL connection to a Cloud SQL Instance specified by the
 // provided configuration. It is otherwise the same as Dial.
 //
