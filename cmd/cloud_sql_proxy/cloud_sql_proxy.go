@@ -186,7 +186,7 @@ func checkFlags(onGCE bool) error {
 
 	ok := false
 	for _, sc := range scopes {
-		if sc == "https://www.googleapis.com/auth/sqladmin" || sc == "https://www.googleapis.com/auth/cloud-platform" {
+		if sc == sqlScope || sc == "https://www.googleapis.com/auth/cloud-platform" {
 			ok = true
 			break
 		}
