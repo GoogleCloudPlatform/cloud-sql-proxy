@@ -33,7 +33,8 @@ are not compatible with the `-fuse` flag.
 
 By default, the proxy will authenticate under the default service account of the
 Compute Engine VM it is running on. Therefore, the VM must have at least the
-sql-admin API scope and the associated project must have the SQL Admin API
+sqlservice.admin API scope ("https://www.googleapis.com/auth/sqlservice.admin") 
+and the associated project must have the SQL Admin API
 enabled.  The default service account must also have at least WRITER/EDITOR
 priviledges to any projects of target SQL instances.
 
