@@ -36,16 +36,16 @@ import (
 
 // NewCertSource returns a CertSource which can be used to authenticate using
 // the provided oauth token. The provided client must not be nil.
-func NewCertSource(host string, c *http.Client, checkRegion bool) (*RemoteCertSource, error) {
+func NewCertSource(host string, c *http.Client, checkRegion bool) *RemoteCertSource {
 	pkey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		panic(err) // very unexpected.
 	}
 	serv, err := sqladmin.New(c)
 	if err != nil {
-		return nil, err
+		panic(err) // Only will happen if the provided client is nil.
 	}
-	return &RemoteCertSource{pkey, host + "projects/", serv, checkRegion}, nil
+	return &RemoteCertSource{pkey, host + "projects/", serv, checkRegion}
 }
 
 // RemoteCertSource implements a CertSource, using Cloud SQL APIs to
