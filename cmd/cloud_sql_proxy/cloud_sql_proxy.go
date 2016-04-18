@@ -394,14 +394,9 @@ func main() {
 
 	log.Print("Ready for new connections")
 
-	src, err := certs.NewCertSource(host, client, *checkRegion)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	(&proxy.Client{
 		Port:  port,
-		Certs: src,
+		Certs: certs.NewCertSource(host, client, *checkRegion),
 		Conns: connset,
 	}).Run(connSrc)
 }

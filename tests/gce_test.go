@@ -10,7 +10,7 @@
 //    -db_name, -project
 //
 // Example invocation:
-//     go test -v . -args -project=my-project -db_name=my-project:the-region:sql-name
+//     go test -v gce_test.go -args -project=my-project -db_name=my-project:the-region:sql-name
 package tests
 
 import (
