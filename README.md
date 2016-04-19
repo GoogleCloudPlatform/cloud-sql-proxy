@@ -33,7 +33,7 @@ are not compatible with the `-fuse` flag.
 
 By default, the proxy will authenticate under the default service account of the
 Compute Engine VM it is running on. Therefore, the VM must have at least the
-sqlservice.admin API scope ("https://www.googleapis.com/auth/sqlservice.admin") 
+sqlservice.admin API scope ("https://www.googleapis.com/auth/sqlservice.admin")
 and the associated project must have the SQL Admin API
 enabled.  The default service account must also have at least WRITER/EDITOR
 priviledges to any projects of target SQL instances.
@@ -56,6 +56,10 @@ JSON file. You may also set the GOOGLE_APPLICATION_CREDENTIALS environment varia
     # For programs which do not support using Unix Domain Sockets, specify tcp:
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:3306 &
     mysql -u root -h 127.0.0.1
+
+    # For specifying another host:
+    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:0.0.0.0:3306 &
+    mysql -u root -h 0.0.0.0
 
 ## To use from Kubernetes:
 
