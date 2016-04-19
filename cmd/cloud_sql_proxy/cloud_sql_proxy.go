@@ -167,7 +167,7 @@ func onGCE() bool {
 
 var versionString = "NO_VERSION_SET"
 
-const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credentials_file parameter`
+const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
 
 func checkFlags(onGCE bool) error {
 	if !onGCE {
