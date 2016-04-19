@@ -176,6 +176,11 @@ func checkFlags(onGCE bool) error {
 		}
 		return nil
 	}
+
+	if *token != "" || *tokenFile != "" || os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") != "" {
+		return nil
+	}
+
 	scopes, err := metadata.Scopes("default")
 	if err != nil {
 		if _, ok := err.(metadata.NotDefinedError); ok {
