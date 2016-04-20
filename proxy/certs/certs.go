@@ -45,7 +45,10 @@ func NewCertSource(host string, c *http.Client, checkRegion bool) *RemoteCertSou
 	if err != nil {
 		panic(err) // Only will happen if the provided client is nil.
 	}
-	return &RemoteCertSource{pkey, host + "projects/", serv, checkRegion}
+	if host != "" {
+		serv.BasePath = host
+	}
+	return &RemoteCertSource{pkey, serv, checkRegion}
 }
 
 // RemoteCertSource implements a CertSource, using Cloud SQL APIs to
@@ -55,8 +58,6 @@ func NewCertSource(host string, c *http.Client, checkRegion bool) *RemoteCertSou
 type RemoteCertSource struct {
 	// key is the private key used for certificates returned by Local.
 	key *rsa.PrivateKey
-	// basepath is the URL prefix for Cloud SQL API calls.
-	basepath string
 	// serv is used to make authenticated API calls to Cloud SQL.
 	serv *sqladmin.Service
 	// If set, providing an incorrect region in their connection string will be
@@ -199,6 +200,7 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 			return nil, "", "", err
 		}
 		log.Print(err)
+		log.Print("WARNING: specifying the correct region in an instance string will become required in a future version!")
 	}
 	if len(data.IpAddresses) == 0 || data.IpAddresses[0].IpAddress == "" {
 		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
