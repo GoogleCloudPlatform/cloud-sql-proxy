@@ -57,9 +57,11 @@ JSON file. You may also set the GOOGLE_APPLICATION_CREDENTIALS environment varia
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:3306 &
     mysql -u root -h 127.0.0.1
 
-    # For specifying another host:
-    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:0.0.0.0:3306 &
-    mysql -u root -h 0.0.0.0
+    # Caution: This should be executed in a closed network. If executing on a system without a correctly configured firewall this could potentially allow anything on the internet to access the database.
+    # For accessing from another host in a network, specify host:
+    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:0.0.0.0:3306
+    # From another host:
+    mysql -u root -h [proxy-machine-ip]
 
 ## To use from Kubernetes:
 
