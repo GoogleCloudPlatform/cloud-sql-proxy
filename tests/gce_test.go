@@ -255,7 +255,7 @@ func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Clie
 			Tags: &compute.Tags{Items: []string{"ssh"}},
 			ServiceAccounts: []*compute.ServiceAccount{{
 				Email:  "default",
-				Scopes: []string{"https://www.googleapis.com/auth/cloud-platform"},
+				Scopes: []string{proxybinary.SQLScope},
 			}},
 		}
 		op, err = c.Instances.Insert(*project, *zone, instProto).Do()

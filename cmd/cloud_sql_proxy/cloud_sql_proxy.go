@@ -152,7 +152,7 @@ Information for all flags:
 	}
 }
 
-const sqlScope = "https://www.googleapis.com/auth/sqlservice.admin"
+const SQLScope = "https://www.googleapis.com/auth/sqlservice.admin"
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
@@ -191,7 +191,7 @@ func checkFlags(onGCE bool) error {
 
 	ok := false
 	for _, sc := range scopes {
-		if sc == sqlScope || sc == "https://www.googleapis.com/auth/cloud-platform" {
+		if sc == SQLScope || sc == "https://www.googleapis.com/auth/cloud-platform" {
 			ok = true
 			break
 		}
@@ -208,7 +208,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
-		cfg, err := goauth.JWTConfigFromJSON(all, sqlScope)
+		cfg, err := goauth.JWTConfigFromJSON(all, SQLScope)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
@@ -218,7 +218,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		return oauth2.NewClient(ctx, src), nil
 	}
 
-	return goauth.DefaultClient(ctx, sqlScope)
+	return goauth.DefaultClient(ctx, SQLScope)
 }
 
 func stringList(s string) []string {
