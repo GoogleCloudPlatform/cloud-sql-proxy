@@ -152,6 +152,8 @@ Information for all flags:
 	}
 }
 
+// SQLScope is the Google Cloud Platform scope required for executing API
+// calls to Cloud SQL.
 const SQLScope = "https://www.googleapis.com/auth/sqlservice.admin"
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
