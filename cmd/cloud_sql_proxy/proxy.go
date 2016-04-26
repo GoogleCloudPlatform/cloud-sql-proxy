@@ -178,7 +178,7 @@ var validNets = func() map[string]bool {
 			panic(fmt.Sprintf("no loopback address found for %v", n))
 		}
 		// Open any port to see if the net is valid.
-		x, err := net.Listen(n, addr+":")
+		x, err := net.Listen(n, addr+":0")
 		if err != nil {
 			// Error is too verbose to be useful.
 			continue
