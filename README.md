@@ -63,6 +63,13 @@ JSON file. You may also set the GOOGLE_APPLICATION_CREDENTIALS environment varia
     # From another host:
     mysql -u root -h [proxy-machine-ip]
 
+## To use inside a Go program:
+If your program is written in [Go](https://golang.org) you can use the Cloud SQL Proxy as a library,
+avoiding the need to start the Proxy as a companion process. If you're using the the [go-sql-driver](https://github.com/go-sql-driver/mysql)
+you can use helper functions found in the [`proxy/dialers/mysql` package](https://godoc.org/github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql). See [example usage](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/tests/dialers_test.go).
+
+I'm open to adding more drivers, feel free to file an issue.
+
 ## To use from Kubernetes:
 
 Kubernetes does not support the metadata server that is used by default for credentials, so we have to manually
