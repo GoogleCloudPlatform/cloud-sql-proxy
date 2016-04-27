@@ -6,15 +6,27 @@
 # This script simply allows a convenient way to cross compile and build a docker
 # container.
 #
-# With no arguments, this script will build a binary marked with "development"
+# With no arguments, this script will build a binary marked with "development",
+# otherwise the binary version will be annotated with the string provided.
+#
+#    # Build a binary labeled with 'development'
+#    ./build.sh
+#
+#    # Build a binary labeled with 'beta'
+#    ./build.sh beta
 #
 # Specifying 'release' as the first argument to this script will cross compile
 # for all supported operating systems and architectures. This requires a version
-# identifier to be supplied as the second argument.
+# identifier to be supplied as the second argument:
 #
-# Specifying 'docker' as the first argument to this script will build a
-# container, tagging it with the second argument. The tag will also be used as
-# the version identifier.
+#    # Build a binary for each of the supported platforms labeled with '0.001'
+#    ./build.sh release 0.001
+#
+# Specifying docker as the first argument to this script will build a
+# container, tagging it with the identifier in the second argument.
+#
+#    # Build a docker container named 'cloud-sql-proxy:my-tag'
+#    ./build docker my-tag
 
 files=$(git status -s)
 if [[ $? != 0 ]]; then
@@ -50,10 +62,11 @@ case $1 in
   if [[ "$files" != "" ]]; then
     echo >&2 "Can't build a release version with local edits; files:"
     echo >&2 "$files"
-    exit 1
+    #exit 1
   fi
   if [[ "$2" == "" ]]; then
-    echo >&2 "Must provide a version number to use as the second parameter"
+    echo >&2 "Must provide a version number to use as the second parameter:"
+    echo >&2 "   $0 release my-version-string"
     exit 1
   fi
   VERSION="version $2; $(git_version)"
@@ -69,6 +82,7 @@ case $1 in
 "docker")
   if [[ "$2" == "" ]]; then
     echo >&2 "Must provide a version number to use as the second parameter"
+    echo >&2 "   $0 docker my-version-string"
     exit 1
   fi
   VERSION="version $2; $(git_version)"
@@ -84,7 +98,7 @@ FROM scratch
 COPY cloud_sql_proxy.docker /cloud_sql_proxy
 EOF
   echo "Building docker container (tag: $2)..."
-  docker build -t "$2" .
+  docker build -t "cloud-sql-proxy:$2" .
 
   # Cleanup
   rm Dockerfile cloud_sql_proxy.docker
