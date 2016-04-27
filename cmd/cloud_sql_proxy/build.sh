@@ -62,7 +62,7 @@ case $1 in
   if [[ "$files" != "" ]]; then
     echo >&2 "Can't build a release version with local edits; files:"
     echo >&2 "$files"
-    #exit 1
+    exit 1
   fi
   if [[ "$2" == "" ]]; then
     echo >&2 "Must provide a version number to use as the second parameter:"
