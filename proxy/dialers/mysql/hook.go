@@ -61,6 +61,19 @@ func DialPassword(instance, user, password string) (*sql.DB, error) {
 	})
 }
 
+// Cfg returns the effective *mysql.Config to represent connectivity to the
+// provided instance via the given user and password. The config can be
+// modified and passed to DialCfg to connect. If you don't modify the returned
+// config before dialing, consider using Dial or DialPassword.
+func Cfg(instance, user, password string) *mysql.Config {
+	return &mysql.Config{
+		Addr:   instance,
+		User:   user,
+		Passwd: password,
+		Net:    "cloudsql",
+	}
+}
+
 // DialCfg opens up a SQL connection to a Cloud SQL Instance specified by the
 // provided configuration. It is otherwise the same as Dial.
 //
