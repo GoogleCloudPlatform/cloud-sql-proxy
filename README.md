@@ -1,7 +1,7 @@
 
 ## Cloud SQL Proxy
 The Cloud SQL Proxy allows a user with the appropriate permissions to connect
-to a Cloud SQL database without having to deal with IP whitelisting or SSL
+to a Second Generation Cloud SQL database without having to deal with IP whitelisting or SSL
 certificates manually. It works by opening unix/tcp sockets on the local machine
 and proxying connections to the associated Cloud SQL instances when the sockets
 are used.
@@ -117,7 +117,7 @@ $ kubectl create -f secret.json
 
 * Add the SQL proxy container to your pod, and mount the `sqlcreds` and 'ssl-certs' volumes, making sure to pass the correct instance and project.
 ```
-  - image: b.gcr.io/cloudsql-docker/gce-proxy
+  - image: b.gcr.io/cloudsql-docker/gce-proxy:1.05
     volumeMounts:
     - name: cloudsql
       mountPath: /cloudsql
