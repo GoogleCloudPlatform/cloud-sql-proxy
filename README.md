@@ -1,7 +1,7 @@
 
 ## Cloud SQL Proxy
 The Cloud SQL Proxy allows a user with the appropriate permissions to connect
-to a Cloud SQL database without having to deal with IP whitelisting or SSL
+to a Second Generation Cloud SQL database without having to deal with IP whitelisting or SSL
 certificates manually. It works by opening unix/tcp sockets on the local machine
 and proxying connections to the associated Cloud SQL instances when the sockets
 are used.
@@ -72,10 +72,10 @@ I'm open to adding more drivers, feel free to file an issue.
 
 ## To use from Kubernetes:
 
-Kubernetes does not support the metadata server that is used by default for credentials, so we have to manually
-pass the credentials to the proxy as a Kubernetes [Secret](http://kubernetes.io/v1.1/docs/user-guide/secrets.html).
-At a high level, we have to create a Secret, add it as a Volume in a Pod and mount that Volume into the proxy container.
-Here are some detailed steps:
+[Kubernetes](http://kubernetes.io) does not support the metadata server that is used by default for credentials,
+so we have to manually pass the credentials to the proxy as a Kubernetes
+[Secret](http://kubernetes.io/v1.1/docs/user-guide/secrets.html). At a high level, we have to create a Secret,
+add it as a Volume in a Pod and mount that Volume into the proxy container. Here are some detailed steps:
 
 * Create a Service Account and download the JSON credential file, following [these steps](https://cloud.google.com/docs/authentication#developer_workflow).
 * Create a local Kubernetes Secret named `sqlcreds` from this file by base64 encoding the Service Account file, and creating a Secret file with that content:
@@ -117,7 +117,7 @@ $ kubectl create -f secret.json
 
 * Add the SQL proxy container to your pod, and mount the `sqlcreds` and 'ssl-certs' volumes, making sure to pass the correct instance and project.
 ```
-  - image: b.gcr.io/cloudsql-docker/gce-proxy
+  - image: b.gcr.io/cloudsql-docker/gce-proxy:1.05
     volumeMounts:
     - name: cloudsql
       mountPath: /cloudsql
