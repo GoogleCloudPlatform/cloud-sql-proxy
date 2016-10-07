@@ -214,6 +214,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
+		log.Printf("using credential file for authentication; email=%s", cfg.Email)
 		return cfg.Client(ctx), nil
 	} else if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
