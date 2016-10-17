@@ -132,7 +132,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 	}
 
 	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < throttle {
-		log.Printf("Thottling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
+		log.Printf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
 		// Refresh was called too recently, just reuse the result.
 		return old.addr, old.cfg, old.err
 	}
