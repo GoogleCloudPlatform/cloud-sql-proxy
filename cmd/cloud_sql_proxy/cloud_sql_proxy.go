@@ -39,11 +39,11 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
+	"cloud.google.com/go/cloud/compute/metadata"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	goauth "golang.org/x/oauth2/google"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
-	"google.golang.org/cloud/compute/metadata"
 )
 
 var (
