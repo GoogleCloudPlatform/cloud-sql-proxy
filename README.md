@@ -125,7 +125,7 @@ $ kubectl create -f secret.json
       mountPath: /secret/
     - name: ssl-certs
       mountPath: /etc/ssl/certs
-    command: ["/cloud_sql_proxy", "-dir=/cloudsql", "-credential_file=/secret/file.json", "-instances=$MYPROJECT:MYINSTANCE"]
+    command: ["/cloud_sql_proxy", "-dir=/cloudsql", "-credentials_file=/secret/file.json", "-instances=$MYPROJECT:MYINSTANCE"]
 ```
 Note that we pass the path to the secret file in the command line arguments to the proxy.
 We also pass the project and Cloud SQL instance name we want to connect to using the "--instances" flag.
