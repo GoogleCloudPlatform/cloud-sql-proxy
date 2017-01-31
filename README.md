@@ -117,7 +117,7 @@ $ kubectl create -f secret.json
 
 * Add the SQL proxy container to your pod, and mount the `sqlcreds` and 'ssl-certs' volumes, making sure to pass the correct instance and project.
 ```
-  - image: b.gcr.io/cloudsql-docker/gce-proxy:1.05
+  - image: gcr.io/cloudsql-docker/gce-proxy:1.06
     volumeMounts:
     - name: cloudsql
       mountPath: /cloudsql
