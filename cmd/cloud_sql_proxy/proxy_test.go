@@ -15,8 +15,20 @@
 package main
 
 import (
+	"bytes"
+	"io/ioutil"
+	"net/http"
 	"testing"
 )
+
+type mockTripper struct {
+}
+
+func (m *mockTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	return &http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))}, nil
+}
+
+var mockClient = &http.Client{Transport: &mockTripper{}}
 
 func TestCreateInstanceConfigs(t *testing.T) {
 	for _, v := range []struct {
@@ -69,7 +81,7 @@ func TestCreateInstanceConfigs(t *testing.T) {
 			"", false, nil, "md", true,
 		},
 	} {
-		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc)
+		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient)
 		if v.wantErr {
 			if err == nil {
 				t.Errorf("CreateInstanceConfigs passed when %s, wanted error", v.desc)
@@ -120,7 +132,7 @@ func TestParseInstanceConfig(t *testing.T) {
 			true,
 		},
 	} {
-		got, err := parseInstanceConfig(v.dir, v.instance)
+		got, err := parseInstanceConfig(v.dir, v.instance, mockClient)
 		if v.wantErr {
 			if err == nil {
 				t.Errorf("parseInstanceConfig(%s, %s) = %+v, wanted error", got)
