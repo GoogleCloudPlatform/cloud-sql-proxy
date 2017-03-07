@@ -357,7 +357,7 @@ func main() {
 	}
 	instList = append(instList, ins...)
 
-	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc)
+	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -393,7 +393,7 @@ func main() {
 			}()
 		}
 
-		c, err := WatchInstances(*dir, cfgs, updates)
+		c, err := WatchInstances(*dir, cfgs, updates, client)
 		if err != nil {
 			log.Fatal(err)
 		}
