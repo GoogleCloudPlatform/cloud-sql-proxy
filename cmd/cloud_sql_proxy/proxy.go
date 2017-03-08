@@ -30,6 +30,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 
 // WatchInstances handles the lifecycle of local sockets used for proxying
