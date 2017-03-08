@@ -241,9 +241,6 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		}
 		if strings.HasPrefix(strings.ToLower(in.DatabaseVersion), "postgres") {
 			path := filepath.Join(dir, instance)
-			if _, err := os.Stat(path); !os.IsNotExist(err) {
-				return instanceConfig{}, err
-			}
 			if err := os.MkdirAll(path, 0755); err != nil {
 				return instanceConfig{}, err
 			}
