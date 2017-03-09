@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        command: ["/cloud_sql_proxy", "--dir=/cloudsql",
+                  "-instances={{ .Values.database.project }}:{{ .Values.database.region }}:{{ .Values.database.instance }}=tcp:0.0.0.0:{{ .Values.service.internalPort }}",
+                  "-credential_file=/secrets/cloudsql/credentials.json"]
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        volumeMounts:
+        - name: cloudsql-oauth-credentials
+          mountPath: /secrets/cloudsql
+          readOnly: true
+        - name: ssl-certs
+          mountPath: /etc/ssl/certs
+        - name: cloudsql
+          mountPath: /cloudsql
