@@ -227,15 +227,28 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 			ret.Address = fmt.Sprintf("%s:%s", spl[1], spl[2])
 		}
 	} else {
-		ret.Instance = instance
-		// Default to unix socket.
-		ret.Network = "unix"
-		spl := strings.SplitN(instance, ":", 3)
 		sql, err := sqladmin.New(cl)
 		if err != nil {
 			return instanceConfig{}, err
 		}
-		in, err := sql.Instances.Get(spl[0], spl[2]).Do()
+
+		ret.Instance = instance
+		// Default to unix socket.
+		ret.Network = "unix"
+		spl := strings.SplitN(instance, ":", 3)
+
+		var proj, name string
+		if len(spl) < 2 {
+			return instanceConfig{}, fmt.Errorf("invalid instance name: must be in the form `project:region:instance-name`; invalid name was %q", instance)
+		} else if len(spl) == 2 {
+			// We allow people to omit the region due to historical reasons. It'll
+			// fail later in the code if this isn't allowed, so just assume it's
+			// allowed until we actually need the region in this API call.
+			proj, name = spl[0], spl[1]
+		} else { // if len(spl) == 3
+			proj, name = spl[0], spl[2]
+		}
+		in, err := sql.Instances.Get(proj, name).Do()
 		if err != nil {
 			return instanceConfig{}, err
 		}
