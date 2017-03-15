@@ -51,28 +51,28 @@ func TestCreateInstanceConfigs(t *testing.T) {
 			"", true, nil, "", true,
 		}, {
 			"setting -fuse, -dir, and -instances",
-			"dir", true, []string{"x"}, "", true,
+			"dir", true, []string{"proj:reg:x"}, "", true,
 		}, {
 			"setting -fuse, -dir, and -instances_metadata",
 			"dir", true, nil, "md", true,
 		}, {
 			"setting -dir and -instances (unix socket)",
-			"dir", false, []string{"x"}, "", false,
+			"dir", false, []string{"proj:reg:x"}, "", false,
 		}, {
 			"Seting -instance (unix socket)",
-			"", false, []string{"x"}, "", true,
+			"", false, []string{"proj:reg:x"}, "", true,
 		}, {
 			"setting -instance (tcp socket)",
-			"", false, []string{"x=tcp:1234"}, "", false,
+			"", false, []string{"proj:reg:x=tcp:1234"}, "", false,
 		}, {
 			"setting -instance (tcp socket) and -instances_metadata",
-			"", false, []string{"x=tcp:1234"}, "md", true,
+			"", false, []string{"proj:reg:x=tcp:1234"}, "md", true,
 		}, {
 			"setting -dir, -instance (tcp socket), and -instances_metadata",
-			"dir", false, []string{"x=tcp:1234"}, "md", false,
+			"dir", false, []string{"proj:reg:x=tcp:1234"}, "md", false,
 		}, {
 			"setting -dir, -instance (unix socket), and -instances_metadata",
-			"dir", false, []string{"x"}, "md", false,
+			"dir", false, []string{"proj:reg:x"}, "md", false,
 		}, {
 			"setting -dir and -instances_metadata",
 			"dir", false, nil, "md", false,
@@ -103,31 +103,31 @@ func TestParseInstanceConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"/x", "my-instance",
-			instanceConfig{"my-instance", "unix", "/x/my-instance"},
+			"/x", "my-proj:my-reg:my-instance",
+			instanceConfig{"my-proj:my-reg:my-instance", "unix", "/x/my-proj:my-reg:my-instance"},
 			false,
 		}, {
-			"/x", "my-instance=tcp:1234",
-			instanceConfig{"my-instance", "tcp", "127.0.0.1:1234"},
+			"/x", "my-proj:my-reg:my-instance=tcp:1234",
+			instanceConfig{"my-proj:my-reg:my-instance", "tcp", "127.0.0.1:1234"},
 			false,
 		}, {
-			"/x", "my-instance=tcp:my-host:1111",
-			instanceConfig{"my-instance", "tcp", "my-host:1111"},
+			"/x", "my-proj:my-reg:my-instance=tcp:my-host:1111",
+			instanceConfig{"my-proj:my-reg:my-instance", "tcp", "my-host:1111"},
 			false,
 		}, {
-			"/x", "my-instance=",
+			"/x", "my-proj:my-reg:my-instance=",
 			instanceConfig{},
 			true,
 		}, {
-			"/x", "my-instance=cool network",
+			"/x", "my-proj:my-reg:my-instance=cool network",
 			instanceConfig{},
 			true,
 		}, {
-			"/x", "my-instance=cool network:1234",
+			"/x", "my-proj:my-reg:my-instance=cool network:1234",
 			instanceConfig{},
 			true,
 		}, {
-			"/x", "my-instance=oh:so:many:colons",
+			"/x", "my-proj:my-reg:my-instance=oh:so:many:colons",
 			instanceConfig{},
 			true,
 		},
@@ -137,6 +137,9 @@ func TestParseInstanceConfig(t *testing.T) {
 			if err == nil {
 				t.Errorf("parseInstanceConfig(%s, %s) = %+v, wanted error", got)
 			}
+			continue
+		} else if err != nil {
+			t.Errorf("parseInstanceConfig(%s, %s) had unexpected error: %v", v.dir, v.instance, err)
 			continue
 		}
 		if got != v.wantCfg {
