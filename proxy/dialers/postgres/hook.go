@@ -39,21 +39,21 @@ type drv struct{}
 
 type dialer struct{}
 
+// instanceRegexp is used to parse the addr returned by lib/pq.
+// lib/pq returns the format '[project:region:instance]:port'
+var instanceRegexp = regexp.MustCompile(`^\[(.+)\]:[0-9]+$`)
+
 func (d dialer) Dial(ntw, addr string) (net.Conn, error) {
-	// Drop the port number at the end (:5432) from the address
-	addr = regexp.MustCompile(":[0-9]+$").ReplaceAllString(addr, "")
-	// lib/pq converts the instance to the format '[project:region:instance]'
-	// format, so we need to drop the first and last character before we
-	// pass it to thr proxy dialer
-	if len(addr) < 2 {
-		return nil, fmt.Errorf("Failed to parse instance name: %q", addr)
+	matches := instanceRegexp.FindStringSubmatch(addr)
+	if len(matches) != 2 {
+		return nil, fmt.Errorf("failed to parse addr: %q. It should conform to the regular expression %q", addr, instanceRegexp)
 	}
-	addr = addr[1 : len(addr)-1]
-	return proxy.Dial(addr)
+	instance := matches[1]
+	return proxy.Dial(instance)
 }
 
 func (d dialer) DialTimeout(ntw, addr string, timeout time.Duration) (net.Conn, error) {
-	return nil, fmt.Errorf("Timeout is not currently supported for cloudsqlpostgres dialer")
+	return nil, fmt.Errorf("timeout is not currently supported for cloudsqlpostgres dialer")
 }
 
 func (d *drv) Open(name string) (driver.Conn, error) {
