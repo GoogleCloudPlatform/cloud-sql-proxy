@@ -78,7 +78,7 @@ so we have to manually pass the credentials to the proxy as a Kubernetes
 add it as a Volume in a Pod and mount that Volume into the proxy container. Here are some detailed steps:
 
 * Create a Service Account and download the JSON credential file, following [these steps](https://cloud.google.com/docs/authentication#developer_workflow).
-* Create a local Kubernetes Secret named `sqlcreds` from this file by base64 encoding the Service Account file, and creating a Secret file with that content:
+* Create a local Kubernetes Secret named `sqlcreds` from this file by base64 encoding the Service Account file, and creating a secret.yaml file with that content:
 ```
 apiVersion: v1
 kind: Secret
@@ -91,7 +91,7 @@ data:
 
 * Create this Secret using `kubectl create`.
 ```
-$ kubectl create -f secret.json
+$ kubectl create -f secret.yaml
 ```
 
 * Add the `sqlcreds` Secret in your Pod by creating a volume like this:
