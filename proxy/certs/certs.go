@@ -29,7 +29,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/cloudsqlutil"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 	"google.golang.org/api/googleapi"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
@@ -110,7 +110,7 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 		return ret, err
 	}
 
-	p, _, n := cloudsqlutil.SplitName(instance)
+	p, _, n := util.SplitName(instance)
 	req := s.serv.SslCerts.CreateEphemeral(p, n,
 		&sqladmin.SslCertsCreateEphemeralRequest{
 			PublicKey: string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"})),
@@ -147,7 +147,7 @@ func parseCert(pemCert string) (*x509.Certificate, error) {
 
 // Remote returns the specified instance's CA certificate, address, and name.
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name string, err error) {
-	p, region, n := cloudsqlutil.SplitName(instance)
+	p, region, n := util.SplitName(instance)
 	req := s.serv.Instances.Get(p, n)
 
 	var data *sqladmin.DatabaseInstance

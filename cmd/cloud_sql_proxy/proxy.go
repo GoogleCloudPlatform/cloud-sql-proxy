@@ -28,9 +28,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/cloudsqlutil"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 
@@ -237,7 +237,7 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		// Default to unix socket.
 		ret.Network = "unix"
 
-		proj, _, name := cloudsqlutil.SplitName(instance)
+		proj, _, name := util.SplitName(instance)
 		if proj == "" || name == "" {
 			return instanceConfig{}, fmt.Errorf("invalid instance name: must be in the form `project:region:instance-name`; invalid name was %q", instance)
 		}

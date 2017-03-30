@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cloudsqlutil contains utility functions for use throughout the Cloud
-// SQL Proxy.
-package cloudsqlutil
+// Package util contains utility functions for use throughout the Cloud SQL Proxy.
+package util
 
 import "strings"
 
