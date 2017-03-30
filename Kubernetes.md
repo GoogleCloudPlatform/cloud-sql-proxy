@@ -23,9 +23,6 @@ In order to set-up the Cloud SQL you will need,
   [the documentation](https://cloud.google.com/docs/authentication#developer_workflow)
   to get the json credential file.
 
-- You need CA Certificates. You can download it from [CURL](https://curl.haxx.se/ca/cacert.pem).
-  We will assume that the file is located as `$HOME/cacert.pem`.
-
 - Your `$HOME/.kube/config` points to your cluster and the namespace you
   want to use.
 
@@ -38,20 +35,14 @@ node. We will use [Kubernetes DNS
 service](http://kubernetes.io/docs/admin/dns/) to connect to the proxy
 seamlessly.
 
-Setting-up the credentials and certificates
--------------------------------------------
+Setting-up the credentials
+--------------------------
 
 We need to create a secret to store the credentials that the Cloud Proxy
 needs to connect to the project database instances:
 
 ```
 kubectl create secret generic service-account-token --from-file=credentials.json=$HOME/credentials.json
-```
-
-You will also need to install CA Certificates. We will set-up the file as a configmap:
-
-```
-kubectl create configmap ca-certificates --from-file=ca-certificates.crt=$HOME/cacert.pem
 ```
 
 Creating the Cloud SLQ Proxy deployment
@@ -92,17 +83,12 @@ spec:
           name: cloudsql
         - mountPath: /credentials
           name: service-account-token
-        - mountPath: /etc/ssl/certs
-          name: ca-certificates
       volumes:
       - name: cloudsql
         emptyDir:
       - name: service-account-token
         secret:
           secretName: service-account-token
-      - name: ca-certificates
-        configMap:
-          name: ca-certificates
 ```
 
 And then, create the deployment:
