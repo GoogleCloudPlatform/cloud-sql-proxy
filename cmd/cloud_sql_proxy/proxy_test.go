@@ -103,6 +103,10 @@ func TestParseInstanceConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			"/x", "domain.com:my-proj:my-reg:my-instance",
+			instanceConfig{"domain.com:my-proj:my-reg:my-instance", "unix", "/x/domain.com:my-proj:my-reg:my-instance"},
+			false,
+		}, {
 			"/x", "my-proj:my-reg:my-instance",
 			instanceConfig{"my-proj:my-reg:my-instance", "unix", "/x/my-proj:my-reg:my-instance"},
 			false,
