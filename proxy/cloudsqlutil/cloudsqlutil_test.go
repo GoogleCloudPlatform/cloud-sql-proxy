@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This file contains tests for certs.go
-
-package certs
+package cloudsqlutil
 
 import "testing"
 
@@ -26,7 +24,7 @@ func TestSplitName(t *testing.T) {
 	}
 
 	for _, test := range table {
-		gotProj, gotRegion, gotInstance := splitName(test.in)
+		gotProj, gotRegion, gotInstance := SplitName(test.in)
 		if gotProj != test.wantProj {
 			t.Errorf("splitName(%q): got %v for project, want %v", test.in, gotProj, test.wantProj)
 		}

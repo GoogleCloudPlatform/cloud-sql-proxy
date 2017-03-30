@@ -27,9 +27,9 @@ import (
 	"math"
 	mrand "math/rand"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/cloudsqlutil"
 	"google.golang.org/api/googleapi"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
@@ -64,33 +64,6 @@ type RemoteCertSource struct {
 	// treated as an error. This is to provide the same functionality that will
 	// occur when API calls require the region.
 	checkRegion bool
-}
-
-// splitName splits a fully qualified instance into its project, region, and
-// instance name components. While we make the transition to regionalized
-// metadata, the region is optional.
-//
-// Examples:
-//    "proj:region:my-db" -> ("proj", "region", "my-db")
-//		"google.com:project:region:instance" -> ("google.com:project", "region", "instance")
-//		"google.com:missing:part" -> ("google.com:missing", "", "part")
-func splitName(instance string) (project, region, name string) {
-	spl := strings.Split(instance, ":")
-	if len(spl) < 2 {
-		return "", "", instance
-	}
-	if dot := strings.Index(spl[0], "."); dot != -1 {
-		spl[1] = spl[0] + ":" + spl[1]
-		spl = spl[1:]
-	}
-	switch {
-	case len(spl) < 2:
-		return "", "", instance
-	case len(spl) == 2:
-		return spl[0], "", spl[1]
-	default:
-		return spl[0], spl[1], spl[2]
-	}
 }
 
 // Constants for backoffAPIRetry. These cause the retry logic to scale the
@@ -137,7 +110,7 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 		return ret, err
 	}
 
-	p, _, n := splitName(instance)
+	p, _, n := cloudsqlutil.SplitName(instance)
 	req := s.serv.SslCerts.CreateEphemeral(p, n,
 		&sqladmin.SslCertsCreateEphemeralRequest{
 			PublicKey: string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"})),
@@ -174,7 +147,7 @@ func parseCert(pemCert string) (*x509.Certificate, error) {
 
 // Remote returns the specified instance's CA certificate, address, and name.
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name string, err error) {
-	p, region, n := splitName(instance)
+	p, region, n := cloudsqlutil.SplitName(instance)
 	req := s.serv.Instances.Get(p, n)
 
 	var data *sqladmin.DatabaseInstance

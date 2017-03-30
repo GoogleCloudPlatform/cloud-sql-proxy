@@ -28,6 +28,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/cloudsqlutil"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
@@ -235,19 +236,14 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		ret.Instance = instance
 		// Default to unix socket.
 		ret.Network = "unix"
-		spl := strings.SplitN(instance, ":", 3)
 
-		var proj, name string
-		if len(spl) < 2 {
+		proj, _, name := cloudsqlutil.SplitName(instance)
+		if proj == "" || name == "" {
 			return instanceConfig{}, fmt.Errorf("invalid instance name: must be in the form `project:region:instance-name`; invalid name was %q", instance)
-		} else if len(spl) == 2 {
-			// We allow people to omit the region due to historical reasons. It'll
-			// fail later in the code if this isn't allowed, so just assume it's
-			// allowed until we actually need the region in this API call.
-			proj, name = spl[0], spl[1]
-		} else { // if len(spl) == 3
-			proj, name = spl[0], spl[2]
 		}
+		// We allow people to omit the region due to historical reasons. It'll
+		// fail later in the code if this isn't allowed, so just assume it's
+		// allowed until we actually need the region in this API call.
 		in, err := sql.Instances.Get(proj, name).Do()
 		if err != nil {
 			return instanceConfig{}, err
