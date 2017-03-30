@@ -235,7 +235,7 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		ret.Instance = instance
 		// Default to unix socket.
 		ret.Network = "unix"
-		spl := strings.SplitN(instance, ":", 3)
+		spl := strings.SplitN(instance, ":", 4)
 
 		var proj, name string
 		if len(spl) < 2 {
@@ -245,8 +245,12 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 			// fail later in the code if this isn't allowed, so just assume it's
 			// allowed until we actually need the region in this API call.
 			proj, name = spl[0], spl[1]
-		} else { // if len(spl) == 3
+		} else if len(spl) == 3 {
 			proj, name = spl[0], spl[2]
+		} else {
+			// Some project ids include organization prefix like google.com:Project_ID
+			// Merging first 2 parts again with colon to revert it back to original project id
+			proj, name = spl[0] + ":" + spl[1], spl[3]
 		}
 		in, err := sql.Instances.Get(proj, name).Do()
 		if err != nil {
