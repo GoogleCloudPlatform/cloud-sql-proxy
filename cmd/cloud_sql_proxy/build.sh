@@ -93,7 +93,9 @@ case $1 in
   build
 
   cat >Dockerfile <<EOF
-FROM scratch
+FROM alpine:3.5
+
+RUN apk add --no-cache ca-certificates && update-ca-certificates
 
 COPY cloud_sql_proxy.docker /cloud_sql_proxy
 EOF

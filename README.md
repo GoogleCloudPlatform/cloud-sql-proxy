@@ -108,20 +108,13 @@ $ kubectl create -f secret.yaml
       secretName: sqlcreds
 ```
 
-* You'll also need to create a `hostPath` volume allowing the SQL proxy to read SSL certificates:
-```
-- name: ssl-certs
-  hostPath:
-    path: /etc/ssl/certs
-```
-
 * Create an emptydir volume named `cloudsql` for the SQL proxy to place it's socket:
 ```
   - name: cloudsql
     emptyDir:
 ```
 
-* Add the SQL proxy container to your pod, and mount the `sqlcreds` and 'ssl-certs' volumes, making sure to pass the correct instance and project.
+* Add the SQL proxy container to your pod, and mount the `sqlcreds` volume, making sure to pass the correct instance and project.
 ```
   - image: gcr.io/cloudsql-docker/gce-proxy:1.06
     volumeMounts:
@@ -129,8 +122,6 @@ $ kubectl create -f secret.yaml
       mountPath: /cloudsql
     - name: secret-volume
       mountPath: /secret/
-    - name: ssl-certs
-      mountPath: /etc/ssl/certs
     command: ["/cloud_sql_proxy", "-dir=/cloudsql", "-credential_file=/secret/file.json", "-instances=MYPROJECT:MYREGION:MYINSTANCE"]
 ```
 Note that we pass the path to the secret file in the command line arguments to the proxy.
