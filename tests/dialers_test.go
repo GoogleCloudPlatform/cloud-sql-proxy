@@ -19,8 +19,13 @@
 // Required flags:
 //    -db_name
 //
-// Example invocation:
+// Example invocations:
+//   Using default credentials
 //     go test -v dialers_test.go -args -db_name=my-project:the-region:instance-name
+//   Using a service account credentials json file
+//     go test -v dialers_test.go -args -db_name=my-project:the-region:instance-name -credential_file /path/to/credentials.json
+//   Using an access token
+//     go test -v dialers_test.go -args -db_name=my-project:the-region:instance-name -token "an access token"
 package tests
 
 import (
@@ -28,13 +33,23 @@ import (
 	"flag"
 	"testing"
 
+	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
+	goauth "golang.org/x/oauth2/google"
 )
 
 var (
 	databaseName = flag.String("db_name", "", "Fully-qualified Cloud SQL Instance (in the form of 'project:region:instance-name')")
 	dbUser       = flag.String("db_user", "root", "Name of user to use during test")
 	dbPassword   = flag.String("db_pass", "", "Password for user; be careful when entering a password on the command line (it may go into your terminal's history). Also note that using a password along with the Cloud SQL Proxy is not necessary as long as you set the hostname of the user appropriately (see https://cloud.google.com/sql/docs/sql-proxy#user)")
+	tokenFile    = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials. You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+	token        = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 )
 
 // TestDialer verifies that the mysql dialer works as expected. It assumes that
@@ -42,6 +57,15 @@ var (
 func TestDialer(t *testing.T) {
 	if *databaseName == "" {
 		t.Fatal("Must set -db_name")
+	}
+
+	if *token != "" || *tokenFile != "" {
+		client, err := clientFromCredentials()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		proxy.Init(client, nil, nil)
 	}
 
 	var db *sql.DB
@@ -58,4 +82,39 @@ func TestDialer(t *testing.T) {
 	// The mysql.Dial already did a Ping, so we know the connection is valid if
 	// there was no error returned.
 	db.Close()
+}
+
+func clientFromCredentials() (*http.Client, error) {
+
+	const SQLScope = "https://www.googleapis.com/auth/sqlservice.admin"
+
+	ctx := context.Background()
+
+	var client *http.Client
+
+	if f := *tokenFile; f != "" {
+
+		all, err := ioutil.ReadFile(f)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+		}
+		cfg, err := goauth.JWTConfigFromJSON(all, SQLScope)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+		}
+		t, _ := cfg.TokenSource(ctx).Token()
+		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: t.AccessToken})
+		client = oauth2.NewClient(ctx, src)
+
+		if err != nil {
+			return nil, fmt.Errorf("invalid goauth client %v", err)
+		}
+	} else if tok := *token; tok != "" {
+
+		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
+		client = oauth2.NewClient(ctx, src)
+	}
+
+	return client, nil
+
 }
