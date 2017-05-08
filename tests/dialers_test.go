@@ -59,6 +59,8 @@ func TestDialer(t *testing.T) {
 		t.Fatal("Must set -db_name")
 	}
 
+	//if token/tokenFile are not set, the github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql library
+	//will automatically attempt to find default authentication via proxy.InitDefault */
 	if *token != "" || *tokenFile != "" {
 		client, err := clientFromCredentials()
 		if err != nil {
@@ -98,13 +100,13 @@ func clientFromCredentials() (*http.Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
+
 		cfg, err := goauth.JWTConfigFromJSON(all, SQLScope)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
-		t, _ := cfg.TokenSource(ctx).Token()
-		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: t.AccessToken})
-		client = oauth2.NewClient(ctx, src)
+
+		client = cfg.Client(ctx)
 
 		if err != nil {
 			return nil, fmt.Errorf("invalid goauth client %v", err)
