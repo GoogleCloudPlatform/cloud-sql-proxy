@@ -108,9 +108,6 @@ func clientFromCredentials() (*http.Client, error) {
 
 		client = cfg.Client(ctx)
 
-		if err != nil {
-			return nil, fmt.Errorf("invalid goauth client %v", err)
-		}
 	} else if tok := *token; tok != "" {
 
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
