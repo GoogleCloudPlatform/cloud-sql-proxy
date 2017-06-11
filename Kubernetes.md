@@ -45,7 +45,7 @@ needs to connect to the project database instances:
 kubectl create secret generic service-account-token --from-file=credentials.json=$HOME/credentials.json
 ```
 
-Creating the Cloud SLQ Proxy deployment
+Creating the Cloud SQL Proxy deployment
 ---------------------------------------
 
 We need to create a deployment that will keep the Cloud SQL Proxy
