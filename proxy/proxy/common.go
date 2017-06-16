@@ -20,9 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"sync"
+
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 )
 
 type dbgConn struct {
@@ -31,19 +32,19 @@ type dbgConn struct {
 
 func (d dbgConn) Write(b []byte) (int, error) {
 	x, y := d.Conn.Write(b)
-	log.Printf("write(%q) => (%v, %v)", b, x, y)
+	logging.Verbosef("write(%q) => (%v, %v)", b, x, y)
 	return x, y
 }
 
 func (d dbgConn) Read(b []byte) (int, error) {
 	x, y := d.Conn.Read(b)
-	log.Printf("read: (%v, %v) => %q", x, y, b[:x])
+	logging.Verbosef("read: (%v, %v) => %q", x, y, b[:x])
 	return x, y
 }
 
 func (d dbgConn) Close() error {
 	err := d.Conn.Close()
-	log.Printf("close: %v", err)
+	logging.Verbosef("close: %v", err)
 	return err
 }
 
@@ -75,7 +76,7 @@ func copyError(readDesc, writeDesc string, readErr bool, err error) {
 	} else {
 		desc = "Writing data to " + writeDesc
 	}
-	log.Printf("%v had error: %v", desc, err)
+	logging.Errorf("%v had error: %v", desc, err)
 }
 
 func copyThenClose(remote, local io.ReadWriteCloser, remoteDesc, localDesc string) {
@@ -86,7 +87,7 @@ func copyThenClose(remote, local io.ReadWriteCloser, remoteDesc, localDesc strin
 		select {
 		case firstErr <- err:
 			if readErr && err == io.EOF {
-				log.Printf("Client closed %v", localDesc)
+				logging.Verbosef("Client closed %v", localDesc)
 			} else {
 				copyError(localDesc, remoteDesc, readErr, err)
 			}
@@ -100,7 +101,7 @@ func copyThenClose(remote, local io.ReadWriteCloser, remoteDesc, localDesc strin
 	select {
 	case firstErr <- err:
 		if readErr && err == io.EOF {
-			log.Printf("Instance %v closed connection", remoteDesc)
+			logging.Verbosef("Instance %v closed connection", remoteDesc)
 		} else {
 			copyError(remoteDesc, localDesc, readErr, err)
 		}

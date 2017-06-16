@@ -19,10 +19,11 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 )
 
 const (
@@ -94,14 +95,14 @@ func (c *Client) Run(connSrc <-chan Conn) {
 	}
 
 	if err := c.Conns.Close(); err != nil {
-		log.Printf("closing client had error: %v", err)
+		logging.Errorf("closing client had error: %v", err)
 	}
 }
 
 func (c *Client) handleConn(conn Conn) {
 	server, err := c.Dial(conn.Instance)
 	if err != nil {
-		log.Printf("couldn't connect to %q: %v", conn.Instance, err)
+		logging.Errorf("couldn't connect to %q: %v", conn.Instance, err)
 		conn.Conn.Close()
 		return
 	}
@@ -115,7 +116,7 @@ func (c *Client) handleConn(conn Conn) {
 	c.Conns.Add(conn.Instance, conn.Conn)
 	copyThenClose(server, conn.Conn, conn.Instance, "local connection on "+conn.Conn.LocalAddr().String())
 	if err := c.Conns.Remove(conn.Instance, conn.Conn); err != nil {
-		log.Print(err)
+		logging.Errorf("%s", err)
 	}
 }
 
@@ -132,7 +133,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 	}
 
 	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < throttle {
-		log.Printf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
+		logging.Errorf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
 		// Refresh was called too recently, just reuse the result.
 		return old.addr, old.cfg, old.err
 	}
@@ -217,12 +218,12 @@ func (c *Client) tryConnect(addr string, cfg *tls.Config) (net.Conn, error) {
 
 	if s, ok := conn.(setKeepAliver); ok {
 		if err := s.SetKeepAlive(true); err != nil {
-			log.Printf("Couldn't set KeepAlive to true: %v", err)
+			logging.Verbosef("Couldn't set KeepAlive to true: %v", err)
 		} else if err := s.SetKeepAlivePeriod(keepAlivePeriod); err != nil {
-			log.Printf("Couldn't set KeepAlivePeriod to %v", keepAlivePeriod)
+			logging.Verbosef("Couldn't set KeepAlivePeriod to %v", keepAlivePeriod)
 		}
 	} else {
-		log.Printf("KeepAlive not supported: long-running tcp connections may be killed by the OS.")
+		logging.Verbosef("KeepAlive not supported: long-running tcp connections may be killed by the OS.")
 	}
 
 	ret := tls.Client(conn, cfg)
@@ -243,7 +244,7 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 		for {
 			c, err := l.Accept()
 			if err != nil {
-				log.Printf("listener (%#v) had error: %v", l, err)
+				logging.Errorf("listener (%#v) had error: %v", l, err)
 				l.Close()
 				close(ch)
 				return

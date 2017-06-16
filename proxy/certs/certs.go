@@ -23,12 +23,12 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	mrand "math/rand"
 	"net/http"
 	"time"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 	"google.golang.org/api/googleapi"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
@@ -96,7 +96,7 @@ func backoffAPIRetry(desc, instance string, do func() error) error {
 		// sleep = baseBackoff * backoffMult^(retries + randomFactor)
 		exp := float64(i+1) + mrand.Float64()
 		sleep := time.Duration(baseBackoff * math.Pow(backoffMult, exp))
-		log.Printf("Error in %s %s: %v; retrying in %v", desc, instance, err, sleep)
+		logging.Errorf("Error in %s %s: %v; retrying in %v", desc, instance, err, sleep)
 		time.Sleep(sleep)
 	}
 	return err
@@ -172,8 +172,8 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 		if s.checkRegion {
 			return nil, "", "", err
 		}
-		log.Print(err)
-		log.Print("WARNING: specifying the correct region in an instance string will become required in a future version!")
+		logging.Errorf("%v", err)
+		logging.Errorf("WARNING: specifying the correct region in an instance string will become required in a future version!")
 	}
 	if len(data.IpAddresses) == 0 || data.IpAddresses[0].IpAddress == "" {
 		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
