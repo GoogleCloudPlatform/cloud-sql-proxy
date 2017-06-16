@@ -49,11 +49,11 @@ import (
 
 var (
 	version = flag.Bool("version", false, "Print the version of the proxy and exit")
+	verbose = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
 	quiet   = flag.Bool("quiet", false, "Disable log messages")
 
 	checkRegion = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
 UNIX socket-based connections.`)
-	verbose = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
 
 	// Settings for how to choose which instance to connect to.
 	dir      = flag.String("dir", "", "Directory to use for placing UNIX sockets representing database instances")
