@@ -35,6 +35,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
@@ -51,6 +52,7 @@ var (
 
 	checkRegion = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
 UNIX socket-based connections.`)
+	verbose = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
 
 	// Settings for how to choose which instance to connect to.
 	dir      = flag.String("dir", "", "Directory to use for placing UNIX sockets representing database instances")
@@ -214,7 +216,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
-		log.Printf("using credential file for authentication; email=%s", cfg.Email)
+		logging.Infof("using credential file for authentication; email=%s", cfg.Email)
 		return cfg.Client(ctx), nil
 	} else if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
@@ -259,7 +261,7 @@ func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]s
 				return nil
 			})
 			if err != nil {
-				log.Printf("Error listing instances in %v: %v", proj, err)
+				logging.Errorf("Error listing instances in %v: %v", proj, err)
 			}
 			wg.Done()
 		}()
@@ -288,7 +290,7 @@ func gcloudProject() []string {
 			// gcloud not installed; ignore the error
 			return nil
 		}
-		log.Printf("Error detecting gcloud project: %v", err)
+		logging.Errorf("Error detecting gcloud project: %v", err)
 		return nil
 	}
 
@@ -299,12 +301,12 @@ func gcloudProject() []string {
 	}
 
 	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
-		log.Printf("Failed to unmarshal bytes from gcloud: %v", err)
-		log.Printf("   gcloud returned:\n%s", buf)
+		logging.Errorf("Failed to unmarshal bytes from gcloud: %v", err)
+		logging.Errorf("   gcloud returned:\n%s", buf)
 		return nil
 	}
 
-	log.Printf("Using gcloud's active project: %v", data.Core.Project)
+	logging.Infof("Using gcloud's active project: %v", data.Core.Project)
 	return []string{data.Core.Project}
 }
 
@@ -331,6 +333,10 @@ func main() {
 	if *version {
 		fmt.Println("Cloud SQL Proxy:", versionString)
 		return
+	}
+
+	if *verbose {
+		logging.Verbosef = func(string, ...interface{}) {}
 	}
 
 	instList := stringList(*instances)
@@ -386,7 +392,7 @@ func main() {
 						return nil
 					})
 					if err != nil {
-						log.Print(err)
+						logging.Errorf("Error on receiving new instances from metadata: %v", err)
 					}
 					time.Sleep(5 * time.Second)
 				}
@@ -400,7 +406,7 @@ func main() {
 		connSrc = c
 	}
 
-	log.Print("Ready for new connections")
+	logging.Infof("Ready for new connections")
 
 	(&proxy.Client{
 		Port:  port,

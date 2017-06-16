@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -28,6 +27,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
@@ -64,7 +64,7 @@ func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string
 	for instances := range updates {
 		list, err := parseInstanceConfigs(dir, strings.Split(instances, ","), cl)
 		if err != nil {
-			log.Print(err)
+			logging.Errorf("%v", err)
 		}
 
 		stillOpen := make(map[string]net.Listener)
@@ -85,7 +85,7 @@ func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string
 
 			l, err := listenInstance(dst, cfg)
 			if err != nil {
-				log.Printf("Couldn't open socket for %q: %v", instance, err)
+				logging.Errorf("Couldn't open socket for %q: %v", instance, err)
 				continue
 			}
 			stillOpen[instance] = l
@@ -95,7 +95,7 @@ func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string
 		// update. Clean up those instances' sockets by closing them; note that
 		// this does not affect any existing connections instance.
 		for instance, listener := range dynamicInstances {
-			log.Printf("Closing socket for instance %v", instance)
+			logging.Infof("Closing socket for instance %v", instance)
 			listener.Close()
 		}
 
@@ -104,19 +104,19 @@ func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string
 
 	for _, v := range static {
 		if err := v.Close(); err != nil {
-			log.Printf("Error closing %q: %v", v.Addr(), err)
+			logging.Errorf("Error closing %q: %v", v.Addr(), err)
 		}
 	}
 	for _, v := range dynamicInstances {
 		if err := v.Close(); err != nil {
-			log.Printf("Error closing %q: %v", v.Addr(), err)
+			logging.Errorf("Error closing %q: %v", v.Addr(), err)
 		}
 	}
 }
 
 func remove(path string) {
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		log.Printf("Remove(%q) error: %v", path, err)
+		logging.Infof("Remove(%q) error: %v", path, err)
 	}
 }
 
@@ -133,7 +133,7 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 	}
 	if unix {
 		if err := os.Chmod(cfg.Address, 0777|os.ModeSocket); err != nil {
-			log.Printf("couldn't update permissions for socket file %q: %v; other users may not be unable to connect", cfg.Address, err)
+			logging.Errorf("couldn't update permissions for socket file %q: %v; other users may not be unable to connect", cfg.Address, err)
 		}
 	}
 
@@ -141,16 +141,16 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 		for {
 			c, err := l.Accept()
 			if err != nil {
-				log.Printf("Error in accept for %q on %v: %v", cfg, cfg.Address, err)
+				logging.Errorf("Error in accept for %q on %v: %v", cfg, cfg.Address, err)
 				l.Close()
 				return
 			}
-			log.Printf("New connection for %q", cfg.Instance)
+			logging.Verbosef("New connection for %q", cfg.Instance)
 			dst <- proxy.Conn{cfg.Instance, c}
 		}
 	}()
 
-	log.Printf("Listening on %s for %s", cfg.Address, cfg.Instance)
+	logging.Infof("Listening on %s for %s", cfg.Address, cfg.Instance)
 	return l, nil
 }
 

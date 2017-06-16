@@ -38,7 +38,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -46,6 +45,7 @@ import (
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 	"golang.org/x/net/context"
 )
@@ -71,12 +71,12 @@ func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.C
 	if err := fuse.Unmount(mountdir); err != nil {
 		// The error is too verbose to be useful to print out
 	}
-	log.Printf("Mounting %v...", mountdir)
+	logging.Verbosef("Mounting %v...", mountdir)
 	c, err := fuse.Mount(mountdir, fuse.AllowOther())
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot mount %q: %v", mountdir, err)
 	}
-	log.Printf("Mounted %v", mountdir)
+	logging.Infof("Mounted %v", mountdir)
 
 	if connset == nil {
 		// Make a dummy one.
@@ -95,23 +95,23 @@ func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.C
 	server := fs.New(c, &fs.Config{
 		Debug: func(msg interface{}) {
 			if false {
-				log.Print(msg)
+				logging.Verbosef("%s", msg)
 			}
 		},
 	})
 
 	go func() {
 		if err := server.Serve(root); err != nil {
-			log.Printf("serve %q exited due to error: %v", mountdir, err)
+			logging.Errorf("serve %q exited due to error: %v", mountdir, err)
 		}
 		// The server exited but we don't know whether this is because of a
 		// graceful reason (via root.Close) or via an external force unmounting.
 		// Closing the root will ensure the 'dst' chan is closed correctly to
 		// signify that no new connections are possible.
 		if err := root.Close(); err != nil {
-			log.Printf("root.Close() error: %v", err)
+			logging.Errorf("root.Close() error: %v", err)
 		}
-		log.Printf("FUSE exited")
+		logging.Infof("FUSE exited")
 	}()
 
 	return conns, root, nil
@@ -168,17 +168,17 @@ func (r *fsRoot) newConn(instance string, c net.Conn) {
 	if ch := r.dst; ch != nil {
 		ch <- proxy.Conn{instance, c}
 	} else {
-		log.Printf("Ignored new conn request to %q: system has been closed", instance)
+		logging.Errorf("Ignored new conn request to %q: system has been closed", instance)
 	}
 	r.RUnlock()
 }
 
 func (r *fsRoot) Forget() {
-	log.Printf("Forget called on %q", r.linkDir)
+	logging.Verbosef("Forget called on %q", r.linkDir)
 }
 
 func (r *fsRoot) Destroy() {
-	log.Printf("Destroy called on %q", r.linkDir)
+	logging.Verbosef("Destroy called on %q", r.linkDir)
 }
 
 func (r *fsRoot) Close() error {
@@ -193,7 +193,7 @@ func (r *fsRoot) Close() error {
 	}
 	r.Unlock()
 
-	log.Printf("unmount %q", r.linkDir)
+	logging.Infof("unmount %q", r.linkDir)
 	if err := fuse.Unmount(r.linkDir); err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (r *fsRoot) Close() error {
 	if errs.Len() == 0 {
 		return nil
 	}
-	log.Printf("Close %q: %v", r.linkDir, errs.String())
+	logging.Errorf("Close %q: %v", r.linkDir, errs.String())
 	return errors.New(errs.String())
 }
 
@@ -247,11 +247,11 @@ func (r *fsRoot) Lookup(_ context.Context, req *fuse.LookupRequest, resp *fuse.L
 	os.Remove(path) // Best effort; the following will fail if this does.
 	sock, err := net.Listen("unix", path)
 	if err != nil {
-		log.Printf("couldn't listen at %q: %v", path, err)
+		logging.Errorf("couldn't listen at %q: %v", path, err)
 		return nil, fuse.EEXIST
 	}
 	if err := os.Chmod(path, 0777|os.ModeSocket); err != nil {
-		log.Printf("couldn't update permissions for socket file %q: %v; other users may be unable to connect", path, err)
+		logging.Errorf("couldn't update permissions for socket file %q: %v; other users may be unable to connect", path, err)
 	}
 
 	go r.listenerLifecycle(sock, instance, path)
@@ -272,7 +272,7 @@ func (r *fsRoot) removeListener(instance, path string) {
 	if ok && string(v) == path {
 		delete(r.links, instance)
 	} else {
-		log.Printf("Removing a listener for %q at %q which was already replaced", instance, path)
+		logging.Errorf("Removing a listener for %q at %q which was already replaced", instance, path)
 	}
 	r.sockLock.Unlock()
 }
@@ -283,7 +283,7 @@ func (r *fsRoot) listenerLifecycle(l net.Listener, instance, path string) {
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.Printf("error in Accept for %q: %v", instance, err)
+			logging.Errorf("error in Accept for %q: %v", instance, err)
 			break
 		}
 		r.newConn(instance, c)
@@ -291,7 +291,7 @@ func (r *fsRoot) listenerLifecycle(l net.Listener, instance, path string) {
 	r.removeListener(instance, path)
 	l.Close()
 	if err := os.Remove(path); err != nil {
-		log.Printf("couldn't remove %q: %v", path, err)
+		logging.Errorf("couldn't remove %q: %v", path, err)
 	}
 }
 
