@@ -49,6 +49,7 @@ import (
 
 var (
 	version = flag.Bool("version", false, "Print the version of the proxy and exit")
+	quiet   = flag.Bool("quiet", false, "Disable log messages")
 
 	checkRegion = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
 UNIX socket-based connections.`)
@@ -104,6 +105,11 @@ Authorization:
     flag or set the GOOGLE_APPLICATION_CREDENTIALS environment variable. This
     will override gcloud or GCE credentials (if they exist).
 
+General:
+	-quiet
+		Disable log messages (e.g. when new connections are established).
+		WARNING: this option disables ALL logging output (including connection
+		errors), which will likely make debugging difficult.
 
 Connection:
   -instances
@@ -335,8 +341,14 @@ func main() {
 		return
 	}
 
-	if *verbose {
+	if !*verbose {
 		logging.Verbosef = func(string, ...interface{}) {}
+	}
+
+	if *quiet {
+		log.Println("Cloud SQL Proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
 	}
 
 	instList := stringList(*instances)
