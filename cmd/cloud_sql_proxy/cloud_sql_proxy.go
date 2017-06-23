@@ -444,7 +444,7 @@ func main() {
 	(&proxy.Client{
 		Port: port,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
-			Host:         host,
+			APIBasePath:  host,
 			IgnoreRegion: !*checkRegion,
 			UserAgent:    userAgentFromVersionString(),
 		}),
