@@ -1,0 +1,19 @@
+# Default values for cloud-sql-proxy.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+app:
+  namespace: my-namespace
+database:
+  project: project-name
+  region: region-name
+  instance: database-name
+  username: username
+  password: password
+image:
+  repository: gcr.io/cloudsql-docker/gce-proxy
+  tag: 1.06
+service:
+  name: cloudsql-proxy
+  externalPort: 3306
+  internalPort: 3306

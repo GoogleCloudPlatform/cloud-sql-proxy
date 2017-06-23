@@ -1,0 +1,7 @@
+apiVersion: v1
+name: cloudsql-proxy
+description: Deploys a Google Cloud SQL proxy as a Kubernetes service
+version: 0.1.0
+maintainers:
+  - name: Tan Jay Jun
+    email: tan@jayjun.com
