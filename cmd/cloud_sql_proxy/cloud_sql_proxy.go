@@ -175,7 +175,28 @@ func onGCE() bool {
 	return res.Header.Get("Metadata-Flavor") == "Google"
 }
 
-var versionString = "NO_VERSION_SET"
+const defaultVersionString = "NO_VERSION_SET"
+
+var versionString = defaultVersionString
+
+// userAgentFromVersionString returns an appropriate user agent string for
+// identifying this proxy process, or a blank string if versionString was not
+// set to an interesting value.
+func userAgentFromVersionString() string {
+	if versionString == defaultVersionString {
+		return ""
+	}
+
+	// Example versionString (see build.sh):
+	//    version 1.05; sha 0f69d99588991aba0879df55f92562f7e79d7ca1 built Mon May  2 17:57:05 UTC 2016
+	//
+	// We just want the part before the semicolon.
+	semi := strings.IndexByte(versionString, ';')
+	if semi == -1 {
+		return ""
+	}
+	return "cloud_sql_proxy " + versionString[:semi]
+}
 
 const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
 
@@ -421,8 +442,12 @@ func main() {
 	logging.Infof("Ready for new connections")
 
 	(&proxy.Client{
-		Port:  port,
-		Certs: certs.NewCertSource(host, client, *checkRegion),
+		Port: port,
+		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
+			APIBasePath:  host,
+			IgnoreRegion: !*checkRegion,
+			UserAgent:    userAgentFromVersionString(),
+		}),
 		Conns: connset,
 	}).Run(connSrc)
 }
