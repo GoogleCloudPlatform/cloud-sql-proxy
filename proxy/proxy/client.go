@@ -80,6 +80,10 @@ type Client struct {
 	// protected by cfgL.
 	cfgCache map[string]cacheEntry
 	cfgL     sync.RWMutex
+
+	// MaxConnections is the maximum number of connections to establish
+	// before refusing new connections. 0 means no limit.
+	MaxConnections int
 }
 
 type cacheEntry struct {
@@ -94,6 +98,11 @@ type cacheEntry struct {
 // proxy them to the destination instance. It blocks until connSrc is closed.
 func (c *Client) Run(connSrc <-chan Conn) {
 	for conn := range connSrc {
+		if c.MaxConnections > 0 && len(c.Conns.m) >= c.MaxConnections {
+			logging.Errorf("Too many open connections (max %d)", c.MaxConnections)
+			conn.Conn.Close()
+			continue
+		}
 		go c.handleConn(conn)
 	}
 

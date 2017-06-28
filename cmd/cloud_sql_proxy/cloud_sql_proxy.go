@@ -73,6 +73,9 @@ directory at 'dir' must be empty before this program is started.`)
 	fuseTmp = flag.String("fuse_tmp", defaultTmp, `Used as a temporary directory if -fuse is set. Note that files in this directory
 can be removed automatically by this program.`)
 
+	// Settings for limits
+	maxConnections = flag.Int("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
+
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
@@ -409,7 +412,7 @@ func main() {
 	}
 	instList = append(instList, ins...)
 
-	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
+	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, *maxConnections, client)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -462,6 +465,7 @@ func main() {
 
 	(&proxy.Client{
 		Port: port,
+		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
 			APIBasePath:  host,
 			IgnoreRegion: !*checkRegion,

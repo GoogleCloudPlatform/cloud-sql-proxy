@@ -292,7 +292,7 @@ func parseInstanceConfigs(dir string, instances []string, cl *http.Client) ([]in
 // CreateInstanceConfigs verifies that the parameters passed to it are valid
 // for the proxy for the platform and system and then returns a slice of valid
 // instanceConfig.
-func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instancesSrc string, cl *http.Client) ([]instanceConfig, error) {
+func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instancesSrc string, maxConnections int, cl *http.Client) ([]instanceConfig, error) {
 	if useFuse && !fuse.Supported() {
 		return nil, errors.New("FUSE not supported on this system")
 	}
