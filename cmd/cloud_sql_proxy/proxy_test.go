@@ -38,7 +38,7 @@ func TestCreateInstanceConfigs(t *testing.T) {
 		useFuse        bool
 		instances      []string
 		instancesSrc   string
-		maxConnections int
+		maxConnections uint64
 
 		// We don't need to check the []instancesConfig return value, we already
 		// have a TestParseInstanceConfig.

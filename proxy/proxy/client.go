@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -35,6 +36,10 @@ const (
 // cache. It is an internal detail and is not actually ever returned to the
 // user.
 var errNotCached = errors.New("instance was not found in cache")
+
+// connectionsCounter is used to enforce the optional maxConnections limit
+var connectionsCounter uint64 = 0
+var connectionsCounterL sync.RWMutex
 
 // Conn represents a connection from a client to a specific instance.
 type Conn struct {
@@ -83,7 +88,7 @@ type Client struct {
 
 	// MaxConnections is the maximum number of connections to establish
 	// before refusing new connections. 0 means no limit.
-	MaxConnections int
+	MaxConnections uint64
 }
 
 type cacheEntry struct {
@@ -98,11 +103,6 @@ type cacheEntry struct {
 // proxy them to the destination instance. It blocks until connSrc is closed.
 func (c *Client) Run(connSrc <-chan Conn) {
 	for conn := range connSrc {
-		if c.MaxConnections > 0 && len(c.Conns.m) >= c.MaxConnections {
-			logging.Errorf("Too many open connections (max %d)", c.MaxConnections)
-			conn.Conn.Close()
-			continue
-		}
 		go c.handleConn(conn)
 	}
 
@@ -112,6 +112,27 @@ func (c *Client) Run(connSrc <-chan Conn) {
 }
 
 func (c *Client) handleConn(conn Conn) {
+	// Track connections count only if a maximum connections limit is set to avoid useless overhead
+	if c.MaxConnections > 0 {
+		// Acquire exclusive lock
+		connectionsCounterL.Lock()
+		if atomic.LoadUint64(&connectionsCounter) >= c.MaxConnections {
+			logging.Errorf("Too many open connections (max %d)", c.MaxConnections)
+			conn.Conn.Close()
+			connectionsCounterL.Unlock()
+			return
+		}
+
+		// Increment connectionsCounter then release exclusive lock
+		atomic.AddUint64(&connectionsCounter, 1)
+		connectionsCounterL.Unlock()
+
+		// Deferred decrement of connectionsCounter upon connection closing
+		defer func() {
+			atomic.AddUint64(&connectionsCounter, ^uint64(0))
+		}()
+	}
+
 	server, err := c.Dial(conn.Instance)
 	if err != nil {
 		logging.Errorf("couldn't connect to %q: %v", conn.Instance, err)
@@ -127,6 +148,7 @@ func (c *Client) handleConn(conn Conn) {
 
 	c.Conns.Add(conn.Instance, conn.Conn)
 	copyThenClose(server, conn.Conn, conn.Instance, "local connection on "+conn.Conn.LocalAddr().String())
+
 	if err := c.Conns.Remove(conn.Instance, conn.Conn); err != nil {
 		logging.Errorf("%s", err)
 	}

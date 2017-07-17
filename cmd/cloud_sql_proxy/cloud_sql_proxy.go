@@ -74,7 +74,7 @@ directory at 'dir' must be empty before this program is started.`)
 can be removed automatically by this program.`)
 
 	// Settings for limits
-	maxConnections = flag.Int("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
+	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
@@ -464,7 +464,7 @@ func main() {
 	logging.Infof("Ready for new connections")
 
 	(&proxy.Client{
-		Port: port,
+		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
 			APIBasePath:  host,
