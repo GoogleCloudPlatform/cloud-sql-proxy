@@ -160,10 +160,6 @@ Information for all flags:
 	}
 }
 
-// SQLScope is the Google Cloud Platform scope required for executing API
-// calls to Cloud SQL.
-const SQLScope = "https://www.googleapis.com/auth/sqlservice.admin"
-
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // See https://github.com/GoogleCloudPlatform/gcloud-golang/issues/194
@@ -222,7 +218,7 @@ func checkFlags(onGCE bool) error {
 
 	ok := false
 	for _, sc := range scopes {
-		if sc == SQLScope || sc == "https://www.googleapis.com/auth/cloud-platform" {
+		if sc == proxy.SQLScope || sc == "https://www.googleapis.com/auth/cloud-platform" {
 			ok = true
 			break
 		}
@@ -239,7 +235,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
-		cfg, err := goauth.JWTConfigFromJSON(all, SQLScope)
+		cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
@@ -250,7 +246,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		return oauth2.NewClient(ctx, src), nil
 	}
 
-	return goauth.DefaultClient(ctx, SQLScope)
+	return goauth.DefaultClient(ctx, proxy.SQLScope)
 }
 
 func stringList(s string) []string {
@@ -401,12 +397,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// All active connections are stored in this variable.
-	connset := proxy.NewConnSet()
+	// We only need to store connections in a ConnSet if FUSE is used; otherwise
+	// it is not efficient to do so.
+	var connset *proxy.ConnSet
 
 	// Initialize a source of new connections to Cloud SQL instances.
 	var connSrc <-chan proxy.Conn
 	if *useFuse {
+		connset = proxy.NewConnSet()
 		c, fuse, err := fuse.NewConnSrc(*dir, *fuseTmp, connset)
 		if err != nil {
 			log.Fatalf("Could not start fuse directory at %q: %v", *dir, err)

@@ -26,6 +26,10 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 )
 
+// SQLScope is the Google Cloud Platform scope required for executing API
+// calls to Cloud SQL.
+const SQLScope = "https://www.googleapis.com/auth/sqlservice.admin"
+
 type dbgConn struct {
 	net.Conn
 }
@@ -119,6 +123,7 @@ func NewConnSet() *ConnSet {
 }
 
 // A ConnSet tracks net.Conns associated with a provided ID.
+// A nil ConnSet will be a no-op for all methods called on it.
 type ConnSet struct {
 	sync.RWMutex
 	m map[string][]net.Conn
@@ -126,6 +131,9 @@ type ConnSet struct {
 
 // String returns a debug string for the ConnSet.
 func (c *ConnSet) String() string {
+	if c == nil {
+		return "<nil>"
+	}
 	var b bytes.Buffer
 
 	c.RLock()
@@ -143,6 +151,9 @@ func (c *ConnSet) String() string {
 // Add saves the provided conn and associates it with the given string
 // identifier.
 func (c *ConnSet) Add(id string, conn net.Conn) {
+	if c == nil {
+		return
+	}
 	c.Lock()
 	c.m[id] = append(c.m[id], conn)
 	c.Unlock()
@@ -150,6 +161,9 @@ func (c *ConnSet) Add(id string, conn net.Conn) {
 
 // IDs returns a slice of all identifiers which still have active connections.
 func (c *ConnSet) IDs() []string {
+	if c == nil {
+		return nil
+	}
 	ret := make([]string, 0, len(c.m))
 
 	c.RLock()
@@ -163,6 +177,9 @@ func (c *ConnSet) IDs() []string {
 
 // Conns returns all active connections associated with the provided ids.
 func (c *ConnSet) Conns(ids ...string) []net.Conn {
+	if c == nil {
+		return nil
+	}
 	var ret []net.Conn
 
 	c.RLock()
@@ -177,6 +194,9 @@ func (c *ConnSet) Conns(ids ...string) []net.Conn {
 // Remove undoes an Add operation to have the set forget about a conn. Do not
 // Remove an id/conn pair more than it has been Added.
 func (c *ConnSet) Remove(id string, conn net.Conn) error {
+	if c == nil {
+		return nil
+	}
 	c.Lock()
 	defer c.Unlock()
 
@@ -204,6 +224,9 @@ func (c *ConnSet) Remove(id string, conn net.Conn) error {
 
 // Close closes every net.Conn contained in the set.
 func (c *ConnSet) Close() error {
+	if c == nil {
+		return nil
+	}
 	var errs bytes.Buffer
 
 	c.Lock()
