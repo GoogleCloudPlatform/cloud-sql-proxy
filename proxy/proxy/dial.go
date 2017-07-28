@@ -68,9 +68,6 @@ type Dialer func(net, addr string) (net.Conn, error)
 // The connset parameter is optional.
 // If the dialer is nil, net.Conn is used.
 func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
-	if connset == nil {
-		connset = NewConnSet()
-	}
 	dialClient.Lock()
 	dialClient.c = &Client{
 		Port:   port,

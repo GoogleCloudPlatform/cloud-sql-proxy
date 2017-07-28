@@ -57,8 +57,11 @@ type Client struct {
 	// Port designates which remote port should be used when connecting to
 	// instances. This value is defined by the server-side code, but for now it
 	// should always be 3307.
-	Port  int
+	Port int
+	// Required; specifies how certificates are obtained.
 	Certs CertSource
+	// Optionally tracks connections through this client. If nil, connections
+	// are not tracked and will not be closed before method Run exits.
 	Conns *ConnSet
 	// Dialer should return a new connection to the provided address. It is
 	// called on each new connection to an instance. net.Dial will be used if
