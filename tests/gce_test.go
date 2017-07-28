@@ -40,10 +40,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 	"time"
 
-	proxybinary "github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
@@ -57,13 +59,12 @@ var (
 	osImage      = flag.String("os", defaultOS, "OS image to use when creating a VM")
 	vmName       = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
 	databaseName = flag.String("db_name", "", "Fully-qualified Cloud SQL Instance (in the form of 'project:region:instance-name')")
-
-	runProxy = flag.Bool("run_proxy", false, "When set, this binary will invoke the cloud_sql_proxy process instead of just running tests; used by tests, should not be set when running tests.")
 )
 
 const (
-	defaultOS   = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160329"
-	testTimeout = 3 * time.Minute
+	defaultOS       = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160329"
+	testTimeout     = 3 * time.Minute
+	buildShLocation = "cmd/cloud_sql_proxy/build.sh"
 )
 
 // TestGCE provisions a new GCE VM and verifies that the proxy works on it.
@@ -71,6 +72,13 @@ const (
 func TestGCE(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
+
+	proxyBinary, err := compileProxy()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Built new cloud_sql_proxy binary")
+	defer os.Remove(proxyBinary)
 
 	cl, err := google.DefaultClient(ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
@@ -93,9 +101,9 @@ func TestGCE(t *testing.T) {
 	}
 
 	log.Printf("Copy binary to %s:%s...", *project, *vmName)
-	this, err := os.Open(os.Args[0])
+	this, err := os.Open(proxyBinary)
 	if err != nil {
-		t.Fatalf("Couldn't open %v for reading: %v", os.Args[0], err)
+		t.Fatalf("Couldn't open %v for reading: %v", proxyBinary, err)
 	}
 	err = sshRun(ssh, "bash -c 'cat >cloud_sql_proxy; chmod +x cloud_sql_proxy; mkdir -p cloudsql'", this, nil, nil)
 	this.Close()
@@ -103,7 +111,7 @@ func TestGCE(t *testing.T) {
 		t.Fatalf("couldn't scp to remote machine: %v", err)
 	}
 
-	logs, err := startProxy(ssh, "./cloud_sql_proxy -run_proxy -dir cloudsql -instances "+*databaseName)
+	logs, err := startProxy(ssh, "./cloud_sql_proxy -dir cloudsql -instances "+*databaseName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,6 +144,31 @@ type process struct {
 // what's wrong.
 func (p *process) Close() error {
 	return p.sess.Close()
+}
+
+func compileProxy() (binaryPath string, _ error) {
+	// Find the 'build.sh' script by looking for it in cwd, cwd/.., and cwd/../..
+	var buildSh string
+
+	var parentPath []string
+	for parents := 0; parents < 2; parents++ {
+		cur := filepath.Join(append(parentPath, buildShLocation)...)
+		if _, err := os.Stat(cur); err == nil {
+			buildSh = cur
+			break
+		}
+		parentPath = append(parentPath, "..")
+	}
+	if buildSh == "" {
+		return "", fmt.Errorf("couldn't find %q; please cd into the local repository", buildShLocation)
+	}
+
+	cmd := exec.Command(buildSh)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return "", fmt.Errorf("error during build.sh execution: %v;\n%s", err, out)
+	}
+
+	return "cloud_sql_proxy", nil
 }
 
 // startProxy executes the cloud_sql_proxy via ssh. The returned ReadCloser
@@ -273,7 +306,7 @@ func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Clie
 			Tags: &compute.Tags{Items: []string{"ssh"}},
 			ServiceAccounts: []*compute.ServiceAccount{{
 				Email:  "default",
-				Scopes: []string{proxybinary.SQLScope},
+				Scopes: []string{proxy.SQLScope},
 			}},
 		}
 		op, err = c.Instances.Insert(*project, *zone, instProto).Do()
@@ -351,10 +384,6 @@ func sshKey() (pubKey string, auth ssh.AuthMethod, err error) {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	if *runProxy {
-		proxybinary.Main(testTimeout)
-		return
-	}
 	switch "" {
 	case *project:
 		log.Fatal("Must set -project")
