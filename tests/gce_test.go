@@ -42,7 +42,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -150,12 +149,15 @@ func (p *process) Close() error {
 func compileProxy() (binaryPath string, _ error) {
 	// Find the 'build.sh' script by looking for it in cwd, cwd/.., and cwd/../..
 	var buildSh string
+
+	var parentPath []string
 	for parents := 0; parents < 2; parents++ {
-		cur := filepath.Join(strings.Repeat(".."+string(filepath.Separator), parents), buildShLocation)
+		cur := filepath.Join(append(parentPath, buildShLocation)...)
 		if _, err := os.Stat(cur); err == nil {
 			buildSh = cur
 			break
 		}
+		parentPath = append(parentPath, "..")
 	}
 	if buildSh == "" {
 		return "", fmt.Errorf("couldn't find %q; please cd into the local repository", buildShLocation)
