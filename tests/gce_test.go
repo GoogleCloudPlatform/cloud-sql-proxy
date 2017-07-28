@@ -60,8 +60,6 @@ var (
 	osImage      = flag.String("os", defaultOS, "OS image to use when creating a VM")
 	vmName       = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
 	databaseName = flag.String("db_name", "", "Fully-qualified Cloud SQL Instance (in the form of 'project:region:instance-name')")
-
-	runProxy = flag.Bool("run_proxy", false, "When set, this binary will invoke the cloud_sql_proxy process instead of just running tests; used by tests, should not be set when running tests.")
 )
 
 const (
