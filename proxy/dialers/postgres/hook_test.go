@@ -18,7 +18,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"testing"
 	"time"
 
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
