@@ -37,10 +37,6 @@ const (
 // user.
 var errNotCached = errors.New("instance was not found in cache")
 
-// connectionsCounter is used to enforce the optional maxConnections limit
-var connectionsCounter uint64 = 0
-var connectionsCounterL sync.RWMutex
-
 // Conn represents a connection from a client to a specific instance.
 type Conn struct {
 	Instance string
@@ -89,6 +85,9 @@ type Client struct {
 	// MaxConnections is the maximum number of connections to establish
 	// before refusing new connections. 0 means no limit.
 	MaxConnections uint64
+
+	// ConnectionsCounter is used to enforce the optional maxConnections limit
+	ConnectionsCounter uint64
 }
 
 type cacheEntry struct {
@@ -114,23 +113,15 @@ func (c *Client) Run(connSrc <-chan Conn) {
 func (c *Client) handleConn(conn Conn) {
 	// Track connections count only if a maximum connections limit is set to avoid useless overhead
 	if c.MaxConnections > 0 {
-		// Acquire exclusive lock
-		connectionsCounterL.Lock()
-		if atomic.LoadUint64(&connectionsCounter) >= c.MaxConnections {
-			logging.Errorf("Too many open connections (max %d)", c.MaxConnections)
+		active := atomic.AddUint64(&c.ConnectionsCounter, 1)
+
+		// Deferred decrement of ConnectionsCounter upon connection closing
+		defer atomic.AddUint64(&c.ConnectionsCounter, ^uint64(0))
+
+		if active > c.MaxConnections {
 			conn.Conn.Close()
-			connectionsCounterL.Unlock()
-			return
+			logging.Errorf("Too many open connections (max %d)", c.MaxConnections)
 		}
-
-		// Increment connectionsCounter then release exclusive lock
-		atomic.AddUint64(&connectionsCounter, 1)
-		connectionsCounterL.Unlock()
-
-		// Deferred decrement of connectionsCounter upon connection closing
-		defer func() {
-			atomic.AddUint64(&connectionsCounter, ^uint64(0))
-		}()
 	}
 
 	server, err := c.Dial(conn.Instance)
