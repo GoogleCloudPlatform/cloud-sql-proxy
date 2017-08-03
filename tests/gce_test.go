@@ -45,6 +45,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"golang.org/x/crypto/ssh"
@@ -356,14 +357,23 @@ func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Clie
 	}
 	ip := inst.NetworkInterfaces[0].AccessConfigs[0].NatIP
 
-	ssh, err := ssh.Dial("tcp", ip+":22", &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{auth},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("couldn't ssh to %v (IP=%v): %v", *vmName, ip, err)
+	var lastErr error
+	for try := 0; try < 10; try++ {
+		if lastErr != nil {
+			const sleepTime = 10 * time.Second
+			logging.Errorf("%v; sleeping for %v then retrying", lastErr, sleepTime)
+			time.Sleep(sleepTime)
+		}
+		ssh, err := ssh.Dial("tcp", ip+":22", &ssh.ClientConfig{
+			User: user,
+			Auth: []ssh.AuthMethod{auth},
+		})
+		if err == nil {
+			return ssh, nil
+		}
+		lastErr = fmt.Errorf("couldn't ssh to %v (IP=%v): %v", *vmName, ip, err)
 	}
-	return ssh, nil
+	return nil, lastErr
 }
 
 func sshKey() (pubKey string, auth ssh.AuthMethod, err error) {
