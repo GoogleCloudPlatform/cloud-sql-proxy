@@ -120,7 +120,8 @@ func (c *Client) handleConn(conn Conn) {
 
 		if active > c.MaxConnections {
 			conn.Conn.Close()
-			logging.Errorf("Too many open connections (max %d)", c.MaxConnections)
+			logging.Errorf("too many open connections (max %d)", c.MaxConnections)
+			return
 		}
 	}
 
