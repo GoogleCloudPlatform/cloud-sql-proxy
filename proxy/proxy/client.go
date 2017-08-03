@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	refreshCfgThrottle = time.Minute
-	keepAlivePeriod    = time.Minute
+	DefaultRefreshCfgThrottle = time.Minute
+	keepAlivePeriod           = time.Minute
 )
 
 // errNotCached is returned when the instance was not found in the Client's
@@ -132,7 +132,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 
 	throttle := c.RefreshCfgThrottle
 	if throttle == 0 {
-		throttle = refreshCfgThrottle
+		throttle = DefaultRefreshCfgThrottle
 	}
 
 	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < throttle {
