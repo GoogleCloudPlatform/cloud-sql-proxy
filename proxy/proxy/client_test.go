@@ -146,13 +146,17 @@ func TestMaximumConnectionsCount(t *testing.T) {
 		MaxConnections: maxConnections,
 	}
 
-	var wg sync.WaitGroup
-
+	// Build certSource.values before creating goroutines to avoid concurrent map read and map write
+	instanceNames := make([]string, numConnections)
 	for i := 0; i < numConnections; i++ {
 		// Vary instance name to bypass config cache and avoid second call to Client.tryConnect() in Client.Dial()
 		instanceName := fmt.Sprintf("%s-%d", instance, i)
 		certSource.values[instanceName] = b
+		instanceNames[i] = instanceName
+	}
 
+	var wg sync.WaitGroup
+	for _, instanceName := range instanceNames {
 		wg.Add(1)
 		go func(instanceName string) {
 			defer wg.Done()
