@@ -123,7 +123,12 @@ $ kubectl create -f secret.yaml
 
 * Add the SQL proxy container to your pod, and mount the `sqlcreds` volume, making sure to pass the correct instance and project.
 ```
-  - image: gcr.io/cloudsql-docker/gce-proxy:1.09
+  # Make sure to specify image tag in production
+  # Check out the newest version in release page
+  # https://github.com/GoogleCloudPlatform/cloudsql-proxy/releases
+  - image: gcr.io/cloudsql-docker/gce-proxy:latest
+  # 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+    imagePullPolicy: Always
     volumeMounts:
     - name: cloudsql
       mountPath: /cloudsql
