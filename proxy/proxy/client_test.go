@@ -19,7 +19,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -175,7 +174,7 @@ func TestMaximumConnectionsCount(t *testing.T) {
 	case dials > maxConnections:
 		t.Errorf("client should have refused to dial new connection on %dth attempt when the maximum of %d connections was reached (%d dials)", numConnections, maxConnections, dials)
 	case dials == maxConnections:
-		logging.Infof("client has correctly refused to dial new connection on %dth attempt when the maximum of %d connections was reached (%d dials)\n", numConnections, maxConnections, dials)
+		t.Logf("client has correctly refused to dial new connection on %dth attempt when the maximum of %d connections was reached (%d dials)\n", numConnections, maxConnections, dials)
 	case dials < maxConnections:
 		t.Errorf("client should have dialed exactly the maximum of %d connections (%d connections, %d dials)", maxConnections, numConnections, dials)
 	}
