@@ -132,13 +132,14 @@ func TestMaximumConnectionsCount(t *testing.T) {
 	b := &fakeCerts{}
 	certSource := blockingCertSource{
 		map[string]*fakeCerts{}}
+	firstDialExited := make(chan struct{})
 	c := &Client{
 		Certs: &certSource,
 		Dialer: func(string, string) (net.Conn, error) {
 			atomic.AddUint64(&dials, 1)
 
-			// Wait a second to ensure the max connections count is reached by concurrent dialers
-			time.Sleep(time.Second)
+			// Wait until the first dial fails to ensure the max connections count is reached by a concurrent dialer
+			<-firstDialExited
 
 			return nil, errFakeDial
 		},
@@ -155,6 +156,7 @@ func TestMaximumConnectionsCount(t *testing.T) {
 	}
 
 	var wg sync.WaitGroup
+	var firstDialOnce sync.Once
 	for _, instanceName := range instanceNames {
 		wg.Add(1)
 		go func(instanceName string) {
@@ -165,6 +167,8 @@ func TestMaximumConnectionsCount(t *testing.T) {
 				Conn:     &dummyConn{},
 			}
 			c.handleConn(conn)
+
+			firstDialOnce.Do(func() { close(firstDialExited) })
 		}(instanceName)
 	}
 
