@@ -129,7 +129,6 @@ func TestMaximumConnectionsCount(t *testing.T) {
 	const maxConnections = 10
 	const numConnections = maxConnections + 1
 	var dials uint64 = 0
-	var dialsLock sync.RWMutex
 
 	b := &fakeCerts{}
 	certSource := blockingCertSource{
@@ -138,16 +137,16 @@ func TestMaximumConnectionsCount(t *testing.T) {
 		Certs: &certSource,
 		Dialer: func(string, string) (net.Conn, error) {
 			atomic.AddUint64(&dials, 1)
-			dialsLock.RLock()
+
+			// Wait a second to ensure the max connections count is reached by concurrent dialers
+			time.Sleep(time.Second)
+
 			return nil, errFakeDial
 		},
 		MaxConnections: maxConnections,
 	}
 
 	var wg sync.WaitGroup
-
-	// Block dialers to reach max connections count
-	dialsLock.Lock()
 
 	for i := 0; i < numConnections; i++ {
 		// Vary instance name to bypass config cache and avoid second call to Client.tryConnect() in Client.Dial()
@@ -166,7 +165,6 @@ func TestMaximumConnectionsCount(t *testing.T) {
 		}(instanceName)
 	}
 
-	dialsLock.Unlock()
 	wg.Wait()
 
 	switch {
