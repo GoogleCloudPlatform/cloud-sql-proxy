@@ -88,7 +88,6 @@ type Client struct {
 
 	// ConnectionsCounter is used to enforce the optional maxConnections limit
 	ConnectionsCounter  uint64
-	ConnectionsCounterL sync.RWMutex
 }
 
 type cacheEntry struct {
