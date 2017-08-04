@@ -26,6 +26,10 @@ var c1, c2, c3 = &dummyConn{}, &dummyConn{}, &dummyConn{}
 
 type dummyConn struct{ net.Conn }
 
+func (c dummyConn) Close() error {
+	return nil
+}
+
 func TestConnSetAdd(t *testing.T) {
 	s := NewConnSet()
 

@@ -19,8 +19,10 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"net"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -121,4 +123,58 @@ func TestConcurrentRefresh(t *testing.T) {
 		t.Errorf("called %d times, want called 1 time", b.called)
 	}
 	b.Unlock()
+}
+
+func TestMaximumConnectionsCount(t *testing.T) {
+	const maxConnections = 10
+	const numConnections = maxConnections + 1
+	var dials uint64 = 0
+	var dialsLock sync.RWMutex
+
+	b := &fakeCerts{}
+	certSource := blockingCertSource{
+		map[string]*fakeCerts{}}
+	c := &Client{
+		Certs: &certSource,
+		Dialer: func(string, string) (net.Conn, error) {
+			atomic.AddUint64(&dials, 1)
+			dialsLock.RLock()
+			return nil, errFakeDial
+		},
+		MaxConnections: maxConnections,
+	}
+
+	var wg sync.WaitGroup
+
+	// Block dialers to reach max connections count
+	dialsLock.Lock()
+
+	for i := 0; i < numConnections; i++ {
+		// Vary instance name to bypass config cache and avoid second call to Client.tryConnect() in Client.Dial()
+		instanceName := fmt.Sprintf("%s-%d", instance, i)
+		certSource.values[instanceName] = b
+
+		wg.Add(1)
+		go func(instanceName string) {
+			defer wg.Done()
+
+			conn := Conn{
+				Instance: instanceName,
+				Conn:     &dummyConn{},
+			}
+			c.handleConn(conn)
+		}(instanceName)
+	}
+
+	dialsLock.Unlock()
+	wg.Wait()
+
+	switch {
+	case dials > maxConnections:
+		t.Errorf("client should have refused to dial new connection on %dth attempt when the maximum of %d connections was reached (%d dials)", numConnections, maxConnections, dials)
+	case dials == maxConnections:
+		logging.Infof("client has correctly refused to dial new connection on %dth attempt when the maximum of %d connections was reached (%d dials)\n", numConnections, maxConnections, dials)
+	case dials < maxConnections:
+		t.Errorf("client should have dialed exactly the maximum of %d connections (%d connections, %d dials)", maxConnections, numConnections, dials)
+	}
 }
