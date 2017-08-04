@@ -119,8 +119,8 @@ func (c *Client) handleConn(conn Conn) {
 		defer atomic.AddUint64(&c.ConnectionsCounter, ^uint64(0))
 
 		if active > c.MaxConnections {
-			conn.Conn.Close()
 			logging.Errorf("too many open connections (max %d)", c.MaxConnections)
+			conn.Conn.Close()
 			return
 		}
 	}
