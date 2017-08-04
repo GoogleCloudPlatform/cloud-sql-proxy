@@ -412,7 +412,7 @@ func main() {
 	}
 	instList = append(instList, ins...)
 
-	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, *maxConnections, client)
+	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
 	if err != nil {
 		log.Fatal(err)
 	}
