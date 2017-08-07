@@ -52,7 +52,8 @@ var (
 	verbose = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
 	quiet   = flag.Bool("quiet", false, "Disable log messages")
 
-	checkRegion = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
+	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle, "If set, this flag specifies the amount of forced sleep between successive API calls in order to protect client API quota. Minimum allowed value is "+minimumRefreshCfgThrottle.String())
+	checkRegion        = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
 UNIX socket-based connections.`)
 
 	// Settings for how to choose which instance to connect to.
@@ -79,6 +80,8 @@ You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same
 )
 
 const (
+	minimumRefreshCfgThrottle = time.Second
+
 	host = "https://www.googleapis.com/sql/v1beta4/"
 	port = 3307
 )
@@ -437,6 +440,10 @@ func main() {
 		connSrc = c
 	}
 
+	refreshCfgThrottle := *refreshCfgThrottle
+	if refreshCfgThrottle < minimumRefreshCfgThrottle {
+		refreshCfgThrottle = minimumRefreshCfgThrottle
+	}
 	logging.Infof("Ready for new connections")
 
 	(&proxy.Client{
@@ -446,6 +453,7 @@ func main() {
 			IgnoreRegion: !*checkRegion,
 			UserAgent:    userAgentFromVersionString(),
 		}),
-		Conns: connset,
+		Conns:              connset,
+		RefreshCfgThrottle: refreshCfgThrottle,
 	}).Run(connSrc)
 }
