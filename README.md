@@ -78,6 +78,13 @@ I'm open to adding more drivers, feel free to file an issue.
 
 ## To use from Kubernetes:
 
+### Using Deployment and Service
+Follow this [instruction](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/Kubernetes.md)
+
+### Using Helm
+Follow this [instruction](https://github.com/kubernetes/charts/tree/master/stable/gcloud-sqlproxy)
+
+### Create a SQL proxy container in the pod
 [Kubernetes](http://kubernetes.io) does not support the metadata server that is used by default for credentials,
 so we have to manually pass the credentials to the proxy as a Kubernetes
 [Secret](http://kubernetes.io/v1.1/docs/user-guide/secrets.html). At a high level, we have to create a Secret,
@@ -116,7 +123,12 @@ $ kubectl create -f secret.yaml
 
 * Add the SQL proxy container to your pod, and mount the `sqlcreds` volume, making sure to pass the correct instance and project.
 ```
-  - image: gcr.io/cloudsql-docker/gce-proxy:1.09
+  # Make sure to specify image tag in production
+  # Check out the newest version in release page
+  # https://github.com/GoogleCloudPlatform/cloudsql-proxy/releases
+  - image: gcr.io/cloudsql-docker/gce-proxy:latest
+  # 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+    imagePullPolicy: Always
     volumeMounts:
     - name: cloudsql
       mountPath: /cloudsql

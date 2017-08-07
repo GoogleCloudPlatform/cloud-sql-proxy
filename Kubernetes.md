@@ -66,7 +66,12 @@ spec:
         app: cloudsqlproxy
     spec:
       containers:
-      - image: b.gcr.io/cloudsql-docker/gce-proxy:1.05
+       # Make sure to specify image tag in production
+       # Check out the newest version in release page
+       # https://github.com/GoogleCloudPlatform/cloudsql-proxy/releases
+      - image: b.gcr.io/cloudsql-docker/gce-proxy:latest
+       # 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
+        imagePullPolicy: Always
         name: cloudsqlproxy
         command:
         - /cloud_sql_proxy
