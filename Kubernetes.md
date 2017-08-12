@@ -79,9 +79,9 @@ spec:
         - -instances=project:database1=tcp:0.0.0.0:3306,project:database2=tcp:0.0.0.0:3307
         - -credential_file=/credentials/credentials.json
         ports:
-        - name: sqlproxy-port-database1
+        - name: port-database1
           containerPort: 3306
-	- name: sqlproxy-port-database2
+	- name: port-database2
 	  containerPort: 3307
         volumeMounts:
         - mountPath: /cloudsql
@@ -124,7 +124,7 @@ metadata:
 spec:
   ports:
   - port: 3306
-    targetPort: sqlproxy-port-database1
+    targetPort: port-database1
   selector:
     app: cloudsqlproxy
 ---
@@ -135,7 +135,7 @@ metadata:
 spec:
   ports:
   - port: 3306
-    targetPort: sqlproxy-port-database2
+    targetPort: port-database2
   selector:
     app: cloudsqlproxy
 ```
