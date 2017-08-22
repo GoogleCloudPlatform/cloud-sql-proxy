@@ -89,7 +89,7 @@ func setupGCEProxy(t *testing.T, proxyArgs []string) (error, *ssh.Client) {
 		t.Fatal("Failed 'sudo apt-get install -y mysql-client' on remote machine: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
 	}
 	if err = sshRun(ssh, "pkill cloud_sql_proxy", nil, &sout, &serr); err != nil {
-		t.Logf("Failed to kill any cloud_sql_proxy process: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
+		t.Logf("Failed to kill any cloud_sql_proxy process.")
 	} else {
 		t.Logf("Killed already running cloud_sql_proxy process.")
 	}
