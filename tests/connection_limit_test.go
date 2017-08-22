@@ -24,7 +24,7 @@
 //    -db_name, -project
 //
 // Example invocation:
-//     go test -v -run TestGCE -args -project=my-project -db_name=my-project:the-region:sql-name
+//     go test -v -run TestConnectionLimit -args -project=my-project -db_name=my-project:the-region:sql-name
 package tests
 
 import (
@@ -33,11 +33,12 @@ import (
 	"testing"
 )
 
-// TestGCE provisions a new GCE VM and verifies that the proxy works on it.
+// TestConnectionLimit provisions a new GCE VM and verifies that the proxy works on it.
 // It uses application default credentials.
-func TestGCE(t *testing.T) {
+func TestConnectionLimit(t *testing.T) {
 	err, ssh := setupGCEProxy(t, nil)
 
+	// TODO: implement actual test
 	cmd := fmt.Sprintf(`mysql -uroot -S cloudsql/%s -e "select 1\\G"`, *databaseName)
 	var sout, serr bytes.Buffer
 	if err = sshRun(ssh, cmd, nil, &sout, &serr); err != nil {

@@ -21,11 +21,11 @@
 //
 // Example invocations:
 //   Using default credentials
-//     go test -v dialers_test.go -args -db_name=my-project:the-region:instance-name
+//     go test -v -run TestDialer -args -db_name=my-project:the-region:instance-name
 //   Using a service account credentials json file
-//     go test -v dialers_test.go -args -db_name=my-project:the-region:instance-name -credential_file /path/to/credentials.json
+//     go test -v -run TestDialer -args -db_name=my-project:the-region:instance-name -credential_file /path/to/credentials.json
 //   Using an access token
-//     go test -v dialers_test.go -args -db_name=my-project:the-region:instance-name -token "an access token"
+//     go test -v -run TestDialer -args -db_name=my-project:the-region:instance-name -token "an access token"
 package tests
 
 import (
@@ -45,11 +45,10 @@ import (
 )
 
 var (
-	databaseName = flag.String("db_name", "", "Fully-qualified Cloud SQL Instance (in the form of 'project:region:instance-name')")
-	dbUser       = flag.String("db_user", "root", "Name of user to use during test")
-	dbPassword   = flag.String("db_pass", "", "Password for user; be careful when entering a password on the command line (it may go into your terminal's history). Also note that using a password along with the Cloud SQL Proxy is not necessary as long as you set the hostname of the user appropriately (see https://cloud.google.com/sql/docs/sql-proxy#user)")
-	tokenFile    = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials. You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
-	token        = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
+	dbUser     = flag.String("db_user", "root", "Name of user to use during test")
+	dbPassword = flag.String("db_pass", "", "Password for user; be careful when entering a password on the command line (it may go into your terminal's history). Also note that using a password along with the Cloud SQL Proxy is not necessary as long as you set the hostname of the user appropriately (see https://cloud.google.com/sql/docs/sql-proxy#user)")
+	tokenFile  = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials. You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+	token      = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 )
 
 // TestDialer verifies that the mysql dialer works as expected. It assumes that
