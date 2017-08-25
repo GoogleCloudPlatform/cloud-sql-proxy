@@ -54,10 +54,10 @@ var (
 
 	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle, "If set, this flag specifies the amount of forced sleep between successive API calls in order to protect client API quota. Minimum allowed value is "+minimumRefreshCfgThrottle.String())
 	checkRegion        = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
-UNIX socket-based connections.`)
+Unix socket-based connections.`)
 
 	// Settings for how to choose which instance to connect to.
-	dir      = flag.String("dir", "", "Directory to use for placing UNIX sockets representing database instances")
+	dir      = flag.String("dir", "", "Directory to use for placing Unix sockets representing database instances")
 	projects = flag.String("projects", "", `Open sockets for each Cloud SQL Instance in the projects specified
 (comma-separated list)`)
 	instances = flag.String("instances", "", `Comma-separated list of fully qualified instances (project:region:name)
@@ -90,68 +90,82 @@ func init() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `
 The Cloud SQL Proxy allows simple, secure connectivity to Google Cloud SQL. It
-is a long-running process that opens local sockets (either TCP or UNIX sockets)
-according to the flags passed to it. A local application connects to a Cloud
-SQL instance by using the corresponding socket.
+is a long-running process that opens local sockets (either TCP or Unix sockets)
+according to the parameters passed to it. A local application connects to a
+Cloud SQL instance by using the corresponding socket.
 
 
 Authorization:
   * On Google Compute Engine, the default service account is used.
     The Cloud SQL API must be enabled for the VM.
 
-  * When gcloud is installed on the local machine, the "active account" is used
-    for authentication. Run 'gcloud auth list' to see which accounts are
-    installed on your local machine and 'gcloud config list account' to view
-    the active account.
+  * When the gcloud command-line tool is installed on the local machine, the
+    "active account" is used for authentication. Run 'gcloud auth list' to see
+    which accounts are installed on your local machine and
+    'gcloud config list account' to view the active account.
 
   * To configure the proxy using a service account, pass the -credential_file
-    flag or set the GOOGLE_APPLICATION_CREDENTIALS environment variable. This
-    will override gcloud or GCE credentials (if they exist).
+    parameter or set the GOOGLE_APPLICATION_CREDENTIALS environment variable.
+    This will override gcloud or GCE (Google Compute Engine) credentials,
+    if they exist.
 
 General:
-	-quiet
-		Disable log messages (e.g. when new connections are established).
-		WARNING: this option disables ALL logging output (including connection
-		errors), which will likely make debugging difficult.
+  -quiet
+    Disable log messages (e.g. when new connections are established).
+    WARNING: this option disables ALL logging output (including connection
+    errors), which will likely make debugging difficult. The -quiet flag takes
+    precedence over the -verbose flag.
+  -verbose
+    When explicitly set to false, disable log messages that are not errors nor
+    first-time startup messages (e.g. when new connections are established).
 
 Connection:
   -instances
-    To connect to a specific list of instances, set the instances flag to a
-    comma-separated list of instance connection strings. For example:
+    To connect to a specific list of instances, set the instances parameter
+    to a comma-separated list of instance connection strings. For example:
 
-           -instances my-project:my-region:my-instance
+           -instances=my-project:my-region:my-instance
 
     For connectivity over TCP, you must specify a tcp port as part of the
     instance string. For example, the following example opens a loopback TCP
     socket on port 3306, which will be proxied to connect to the instance
     'my-instance' in project 'my-project':
 
-            -instances my-project:my-region:my-instance=tcp:3306
+            -instances=my-project:my-region:my-instance=tcp:3306
 
-     When connecting over TCP, the -instances flag is required.
+     When connecting over TCP, the -instances parameter is required.
+
+  -instances_metadata
+     When running on GCE (Google Compute Engine) you can avoid the need to
+     specify the list of instances on the command line by using the Metadata
+     server. This parameter specifies a path to a metadata value which is then
+     interpreted as a list of instances in the exact same way as the -instances
+     parameter. Updates to the metadata value will be observed and acted on by
+     the Proxy.
 
   -projects
-    To direct the proxy to connect to all instances in a specific project, set
-    the projects flag:
+    To direct the proxy to allow connections to all instances in specific
+    projects, set the projects parameter:
 
-       -projects my-project
+       -projects=my-project
 
   -fuse
     If your local environment has FUSE installed, you can specify the -fuse
     flag to avoid the requirement to specify instances in advance. With FUSE,
-    any attempts to open a UNIX socket in the directory specified by -dir
+    any attempts to open a Unix socket in the directory specified by -dir
     automatically creates that socket and connects to the corresponding
     instance.
 
   -dir
-    When using UNIX sockets (the default for systems which support them), the
-    Proxy places the sockets in the directory specified by the -dir flag.
+    When using Unix sockets (the default for systems which support them), the
+    Proxy places the sockets in the directory specified by the -dir parameter.
 
 
 Automatic instance discovery:
-    If gcloud is installed on the local machine and no instance connection flags
-    are specified, the proxy connects to all instances in the gcloud active
-    project, Run 'gcloud config list project' to display the active project.
+   If the Google Cloud SQL is installed on the local machine and no instance
+   connection flags are specified, the proxy connects to all instances in the
+   gcloud tool's active project. Run 'gcloud config list project' to
+   display the active project.
 
 
 Information for all flags:
