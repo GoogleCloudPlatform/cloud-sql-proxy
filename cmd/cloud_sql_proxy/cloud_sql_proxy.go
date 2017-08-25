@@ -99,21 +99,22 @@ Authorization:
   * On Google Compute Engine, the default service account is used.
     The Cloud SQL API must be enabled for the VM.
 
-  * When the Google Cloud SDK is installed on the local machine, the
+  * When the gcloud command-line tool is installed on the local machine, the
     "active account" is used for authentication. Run 'gcloud auth list' to see
     which accounts are installed on your local machine and
     'gcloud config list account' to view the active account.
 
   * To configure the proxy using a service account, pass the -credential_file
     parameter or set the GOOGLE_APPLICATION_CREDENTIALS environment variable.
-    This will override Cloud SDK or GCE (Google Compute Engine) credentials,
+    This will override gcloud or GCE (Google Compute Engine) credentials,
     if they exist.
 
 General:
   -quiet
     Disable log messages (e.g. when new connections are established).
     WARNING: this option disables ALL logging output (including connection
-    errors), which will likely make debugging difficult.
+    errors), which will likely make debugging difficult. The -quiet flag takes
+    precedence over the -verbose flag.
   -verbose
     When explicitly set to false, disable log messages that are not errors nor
     first-time startup messages (e.g. when new connections are established).
@@ -163,7 +164,7 @@ Connection:
 Automatic instance discovery:
    If the Google Cloud SQL is installed on the local machine and no instance
    connection flags are specified, the proxy connects to all instances in the
-   Google Cloud SDK active project, Run 'gcloud config list project' to
+   gcloud tool's active project. Run 'gcloud config list project' to
    display the active project.
 
 
