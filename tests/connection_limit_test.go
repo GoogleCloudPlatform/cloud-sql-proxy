@@ -48,7 +48,7 @@ func TestConnectionLimit(t *testing.T) {
 			log.Print("Starting blocking mysql command")
 			var sout, serr bytes.Buffer
 			if err = sshRun(ssh, cmd, nil, &sout, &serr); err != nil {
-				t.Fatalf("Error running mysql: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
+				t.Errorf("Error running mysql: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
 			}
 			t.Logf("Blocking command output %s", &sout)
 		}()
