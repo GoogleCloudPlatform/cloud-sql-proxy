@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -121,4 +122,64 @@ func TestConcurrentRefresh(t *testing.T) {
 		t.Errorf("called %d times, want called 1 time", b.called)
 	}
 	b.Unlock()
+}
+
+func TestMaximumConnectionsCount(t *testing.T) {
+	const maxConnections = 10
+	const numConnections = maxConnections + 1
+	var dials uint64 = 0
+
+	b := &fakeCerts{}
+	certSource := blockingCertSource{
+		map[string]*fakeCerts{}}
+	firstDialExited := make(chan struct{})
+	c := &Client{
+		Certs: &certSource,
+		Dialer: func(string, string) (net.Conn, error) {
+			atomic.AddUint64(&dials, 1)
+
+			// Wait until the first dial fails to ensure the max connections count is reached by a concurrent dialer
+			<-firstDialExited
+
+			return nil, errFakeDial
+		},
+		MaxConnections: maxConnections,
+	}
+
+	// Build certSource.values before creating goroutines to avoid concurrent map read and map write
+	instanceNames := make([]string, numConnections)
+	for i := 0; i < numConnections; i++ {
+		// Vary instance name to bypass config cache and avoid second call to Client.tryConnect() in Client.Dial()
+		instanceName := fmt.Sprintf("%s-%d", instance, i)
+		certSource.values[instanceName] = b
+		instanceNames[i] = instanceName
+	}
+
+	var wg sync.WaitGroup
+	var firstDialOnce sync.Once
+	for _, instanceName := range instanceNames {
+		wg.Add(1)
+		go func(instanceName string) {
+			defer wg.Done()
+
+			conn := Conn{
+				Instance: instanceName,
+				Conn:     &dummyConn{},
+			}
+			c.handleConn(conn)
+
+			firstDialOnce.Do(func() { close(firstDialExited) })
+		}(instanceName)
+	}
+
+	wg.Wait()
+
+	switch {
+	case dials > maxConnections:
+		t.Errorf("client should have refused to dial new connection on %dth attempt when the maximum of %d connections was reached (%d dials)", numConnections, maxConnections, dials)
+	case dials == maxConnections:
+		t.Logf("client has correctly refused to dial new connection on %dth attempt when the maximum of %d connections was reached (%d dials)\n", numConnections, maxConnections, dials)
+	case dials < maxConnections:
+		t.Errorf("client should have dialed exactly the maximum of %d connections (%d connections, %d dials)", maxConnections, numConnections, dials)
+	}
 }

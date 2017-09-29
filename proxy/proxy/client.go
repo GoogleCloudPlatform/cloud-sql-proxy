@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -80,6 +81,13 @@ type Client struct {
 	// protected by cfgL.
 	cfgCache map[string]cacheEntry
 	cfgL     sync.RWMutex
+
+	// MaxConnections is the maximum number of connections to establish
+	// before refusing new connections. 0 means no limit.
+	MaxConnections uint64
+
+	// ConnectionsCounter is used to enforce the optional maxConnections limit
+	ConnectionsCounter uint64
 }
 
 type cacheEntry struct {
@@ -103,6 +111,20 @@ func (c *Client) Run(connSrc <-chan Conn) {
 }
 
 func (c *Client) handleConn(conn Conn) {
+	// Track connections count only if a maximum connections limit is set to avoid useless overhead
+	if c.MaxConnections > 0 {
+		active := atomic.AddUint64(&c.ConnectionsCounter, 1)
+
+		// Deferred decrement of ConnectionsCounter upon connection closing
+		defer atomic.AddUint64(&c.ConnectionsCounter, ^uint64(0))
+
+		if active > c.MaxConnections {
+			logging.Errorf("too many open connections (max %d)", c.MaxConnections)
+			conn.Conn.Close()
+			return
+		}
+	}
+
 	server, err := c.Dial(conn.Instance)
 	if err != nil {
 		logging.Errorf("couldn't connect to %q: %v", conn.Instance, err)
@@ -118,6 +140,7 @@ func (c *Client) handleConn(conn Conn) {
 
 	c.Conns.Add(conn.Instance, conn.Conn)
 	copyThenClose(server, conn.Conn, conn.Instance, "local connection on "+conn.Conn.LocalAddr().String())
+
 	if err := c.Conns.Remove(conn.Instance, conn.Conn); err != nil {
 		logging.Errorf("%s", err)
 	}

@@ -24,24 +24,42 @@
 //    -db_name, -project
 //
 // Example invocation:
-//     go test -v -run TestGCE -args -project=my-project -db_name=my-project:the-region:sql-name
+//     go test -v -run TestConnectionLimit -args -project=my-project -db_name=my-project:the-region:sql-name
 package tests
 
 import (
 	"bytes"
 	"fmt"
 	"testing"
+	"time"
+	"log"
 )
 
-// TestGCE provisions a new GCE VM and verifies that the proxy works on it.
+// TestConnectionLimit provisions a new GCE VM and verifies that the proxy works on it.
 // It uses application default credentials.
-func TestGCE(t *testing.T) {
-	err, ssh := setupGCEProxy(t, nil)
+func TestConnectionLimit(t *testing.T) {
+	err, ssh := setupGCEProxy(t, []string{"-max_connections", "5"})
 
-	cmd := fmt.Sprintf(`mysql -uroot -S cloudsql/%s -e "select 1\\G"`, *databaseName)
-	var sout, serr bytes.Buffer
-	if err = sshRun(ssh, cmd, nil, &sout, &serr); err != nil {
-		t.Fatalf("Error running mysql: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
+	cmd := fmt.Sprintf(`mysql -uroot -S cloudsql/%s -e "SELECT 1; SELECT SLEEP(120);"`, *databaseName)
+
+	// Use less than the sshd MaxStartups configuration (defaults to 10)
+	for i := 0; i < 5; i++ {
+		go func() {
+			log.Print("Starting blocking mysql command")
+			var sout, serr bytes.Buffer
+			if err = sshRun(ssh, cmd, nil, &sout, &serr); err != nil {
+				t.Errorf("Error running mysql: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
+			}
+			t.Logf("Blocking command output %s", &sout)
+		}()
 	}
-	t.Log(&sout)
+
+	time.Sleep(time.Second * 5)
+	var sout, serr bytes.Buffer
+	log.Print("Test connection refusal")
+	cmd = fmt.Sprintf(`mysql -uroot -S cloudsql/%s -e "SELECT 1;"`, *databaseName)
+	if err = sshRun(ssh, cmd, nil, &sout, &serr); err == nil {
+		t.Fatalf("Mysql connection should have been refused:\n\nstandard out:\n%s\nstandard err:\n%s", &sout, &serr)
+	}
+	t.Logf("Test command output %s", &sout)
 }
