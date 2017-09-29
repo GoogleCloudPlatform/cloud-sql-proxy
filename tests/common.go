@@ -340,7 +340,7 @@ func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Clie
 	if err != nil {
 		return nil, fmt.Errorf("error getting instance after it was created: %v", err)
 	}
-	ip := inst.NetworkInterfaces[0].AccessConfigs[0].NatIP
+	ip := inst.NetworkInterfaces[0].NetworkIP
 
 	var lastErr error
 	for try := 0; try < 10; try++ {
