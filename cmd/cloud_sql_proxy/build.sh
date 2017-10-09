@@ -95,7 +95,7 @@ case $1 in
   cat >Dockerfile <<EOF
 FROM alpine:3.5
 
-RUN apk add --no-cache ca-certificates && update-ca-certificates
+RUN apk add --no-cache ca-certificates netcat-openbsd && update-ca-certificates
 
 COPY cloud_sql_proxy.docker /cloud_sql_proxy
 EOF
