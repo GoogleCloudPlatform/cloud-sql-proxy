@@ -96,6 +96,8 @@ spec:
           secretName: service-account-token
 ```
 
+**NOTE:** Instance connection strings must use `0.0.0.0` to be available on the interface, otherwise the proxy will bind to `localhost` only.
+
 And then, create the deployment:
 
 ```
