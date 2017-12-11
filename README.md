@@ -40,9 +40,10 @@ priviledges to any projects of target SQL instances.
 
 Specifying the `-credential_file` flag allows use of the proxy outside of
 Google's cloud. Simply [create a new service
-account](https://console.developers.google.com/project/_/apiui/credential/serviceaccount),
+account](https://cloud.google.com/sql/docs/mysql/sql-proxy#create-service-account),
 download the associated JSON file, and set `-credential_file` to the path of the
-JSON file. You may also set the GOOGLE_APPLICATION_CREDENTIALS environment variable instead of passing this flag.
+JSON file. You can also set the GOOGLE_APPLICATION_CREDENTIALS environment variable
+instead of passing this flag.
 
 ## Example invocations:
 
@@ -56,12 +57,6 @@ JSON file. You may also set the GOOGLE_APPLICATION_CREDENTIALS environment varia
     # For programs which do not support using Unix Domain Sockets, specify tcp:
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:3306 &
     mysql -u root -h 127.0.0.1
-
-    # Caution: This should be executed in a closed network. If executing on a system without a correctly configured firewall this could potentially allow anything on the internet to access the database.
-    # For accessing from another host in a network, specify host:
-    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:0.0.0.0:3306
-    # From another host:
-    mysql -u root -h [proxy-machine-ip]
 
 ## To use inside a Go program:
 If your program is written in [Go](https://golang.org) you can use the Cloud SQL Proxy as a library,
@@ -79,69 +74,8 @@ I'm open to adding more drivers, feel free to file an issue.
 ## To use from Kubernetes:
 
 ### Using Deployment and Service
-Follow this [instruction](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/Kubernetes.md)
+Follow this [instruction](https://github.com/GoogleCloudPlatform/kubernetes-engine-samples/tree/master/cloudsql).
 
 ### Using Helm
-Follow this [instruction](https://github.com/kubernetes/charts/tree/master/stable/gcloud-sqlproxy)
+Follow this [instruction](https://github.com/kubernetes/charts/tree/master/stable/gcloud-sqlproxy).
 
-### Create a SQL proxy container in the pod
-[Kubernetes](http://kubernetes.io) does not support the metadata server that is used by default for credentials,
-so we have to manually pass the credentials to the proxy as a Kubernetes
-[Secret](http://kubernetes.io/v1.1/docs/user-guide/secrets.html). At a high level, we have to create a Secret,
-add it as a Volume in a Pod and mount that Volume into the proxy container. Here are some detailed steps:
-
-* Create a Service Account and download the JSON credential file, following [these steps](https://cloud.google.com/docs/authentication#developer_workflow).
-* Create a local Kubernetes Secret named `sqlcreds` from this file by base64 encoding the Service Account file, and creating a secret.yaml file with that content:
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sqlcreds
-type: Opaque
-data:
-  file.json: "BASE64 encoded Service Account credential file."
-```
-
-* Create this Secret using `kubectl create`.
-```
-$ kubectl create -f secret.yaml
-```
-
-* Add the `sqlcreds` Secret in your Pod by creating a volume like this:
-```
-  - name: secret-volume
-    # This GCE PD must already exist.
-    secret:
-      secretName: sqlcreds
-```
-
-* Create an emptydir volume named `cloudsql` for the SQL proxy to place it's socket:
-```
-  - name: cloudsql
-    emptyDir:
-```
-
-* Add the SQL proxy container to your pod, and mount the `sqlcreds` volume, making sure to pass the correct instance and project.
-```
-  # Make sure to specify image tag in production
-  # Check out the newest version in release page
-  # https://github.com/GoogleCloudPlatform/cloudsql-proxy/releases
-  - image: gcr.io/cloudsql-docker/gce-proxy:latest
-  # 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
-    imagePullPolicy: Always
-    volumeMounts:
-    - name: cloudsql
-      mountPath: /cloudsql
-    - name: secret-volume
-      mountPath: /secret/
-    command: ["/cloud_sql_proxy", "-dir=/cloudsql", "-credential_file=/secret/file.json", "-instances=MYPROJECT:MYREGION:MYINSTANCE"]
-```
-Note that we pass the path to the secret file in the command line arguments to the proxy.
-We also pass the project and Cloud SQL instance name we want to connect to using the "--instances" flag.
-
-* To use the proxy from your application container, mount the shared cloudsql volume:
-```
-volumeMounts:
-    - name: cloudsql
-      mountPath: /cloudsql
-```
