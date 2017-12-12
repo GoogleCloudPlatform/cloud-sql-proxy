@@ -73,10 +73,11 @@ I'm open to adding more drivers, feel free to file an issue.
 
 ## To use from Kubernetes:
 
-### Deploying the proxy as a sidecar container
-Follow this [instruction](https://github.com/GoogleCloudPlatform/kubernetes-engine-samples/tree/master/cloudsql).
+### Deploying Cloud SQL Proxy as a sidecar container
+Follow this [page](https://github.com/GoogleCloudPlatform/kubernetes-engine-samples/tree/master/cloudsql). See also
+[Connecting from Google Kubernetes Engine](https://cloud.google.com/sql/docs/mysql/connect-kubernetes-engine).
 
-### Using Helm
+### Deploy Cloud SQL Proxy as a Cluster Service using Helm
 Follow this [instruction](https://github.com/kubernetes/charts/tree/master/stable/gcloud-sqlproxy).
 This chart creates a Deployment and a Service, but we recommend deploying the proxy as a sidecar container in your pods.
 
