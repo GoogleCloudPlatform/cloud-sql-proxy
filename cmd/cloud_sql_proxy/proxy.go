@@ -299,7 +299,7 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 
 	cfgs, err := parseInstanceConfigs(dir, instances, cl)
 	if err != nil {
-		return nil, err
+		logging.Errorf("%v", err)
 	}
 
 	if dir == "" {
