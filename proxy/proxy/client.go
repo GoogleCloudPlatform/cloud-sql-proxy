@@ -225,6 +225,14 @@ func (c *Client) Dial(instance string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+	
+	// Refresh cert 5 minutes before it expires.
+	timer := time.NewTimer(cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now()) - (time.Duration(5) * time.Minute))
+	go func() {
+		<- timer.C
+		c.refreshCfg(instance)
+	}
+
 	return c.tryConnect(addr, cfg)
 }
 
