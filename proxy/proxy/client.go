@@ -32,10 +32,13 @@ const (
 	keepAlivePeriod           = time.Minute
 )
 
-// errNotCached is returned when the instance was not found in the Client's
-// cache. It is an internal detail and is not actually ever returned to the
-// user.
-var errNotCached = errors.New("instance was not found in cache")
+var (
+	// errNotCached is returned when the instance was not found in the Client's
+	// cache. It is an internal detail and is not actually ever returned to the
+	// user.
+	errNotCached      = errors.New("instance was not found in cache")
+	refreshCertBuffer = 5 * time.Minute
+)
 
 // Conn represents a connection from a client to a specific instance.
 type Conn struct {
@@ -225,13 +228,14 @@ func (c *Client) Dial(instance string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Refresh cert 5 minutes before it expires.
-	timer := time.NewTimer(cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now()) - (time.Duration(5) * time.Minute))
+	timer := time.NewTimer(cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now()) - refreshCertBuffer)
 	go func() {
-		<- timer.C
+		<-timer.C
+		logging.Verbosef("Cert for instance %s will expire soon, refreshing now.", instance)
 		c.refreshCfg(instance)
-	}
+	}()
 
 	return c.tryConnect(addr, cfg)
 }
