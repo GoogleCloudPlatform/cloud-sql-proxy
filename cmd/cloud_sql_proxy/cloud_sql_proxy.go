@@ -63,7 +63,8 @@ Unix socket-based connections.`)
 	instances = flag.String("instances", "", `Comma-separated list of fully qualified instances (project:region:name)
 to connect to. If the name has the suffix '=tcp:port', a TCP server is opened
 on the specified port to proxy to that instance. Otherwise, one socket file per
-instance is opened in 'dir'. Not compatible with -fuse`)
+instance is opened in 'dir'. You may use INSTANCES environment variable
+for the same effect. Using both will use value from flag, Not compatible with -fuse`)
 	instanceSrc = flag.String("instances_metadata", "", `If provided, it is treated as a path to a metadata value which
 is polled for a comma-separated list of instances to connect to. For example,
 to use the instance metadata value named 'cloud-sql-instances' you would
@@ -137,6 +138,9 @@ Connection:
             -instances=my-project:my-region:my-instance=tcp:3306
 
      When connecting over TCP, the -instances parameter is required.
+
+     Supplying INSTANCES environment variable achieves the same effect.  One can
+     use that to keep k8s manifest files constant across multiple environments
 
   -instances_metadata
      When running on GCE (Google Compute Engine) you can avoid the need to
@@ -386,6 +390,12 @@ func main() {
 		log.Println("Cloud SQL Proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
+	}
+
+	// TODO: needs a better place for consolidation
+	// if instances is blank and env var INSTANCES is supplied use it
+	if envInstances := os.Getenv("INSTANCES"); *instances == "" && envInstances != "" {
+		*instances = envInstances
 	}
 
 	instList := stringList(*instances)
