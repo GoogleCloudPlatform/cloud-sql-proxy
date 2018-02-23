@@ -142,6 +142,9 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 			c, err := l.Accept()
 			if err != nil {
 				logging.Errorf("Error in accept for %q on %v: %v", cfg, cfg.Address, err)
+				if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+					continue
+				}
 				l.Close()
 				return
 			}

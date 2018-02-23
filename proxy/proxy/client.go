@@ -271,6 +271,9 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 			c, err := l.Accept()
 			if err != nil {
 				logging.Errorf("listener (%#v) had error: %v", l, err)
+				if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+					continue
+				}
 				l.Close()
 				close(ch)
 				return

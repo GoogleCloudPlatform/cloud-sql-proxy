@@ -284,6 +284,9 @@ func (r *fsRoot) listenerLifecycle(l net.Listener, instance, path string) {
 		c, err := l.Accept()
 		if err != nil {
 			logging.Errorf("error in Accept for %q: %v", instance, err)
+			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+				continue
+			}
 			break
 		}
 		r.newConn(instance, c)
