@@ -22,20 +22,18 @@ import (
 	"os"
 )
 
-// Loggers for logging to stdout and stderr
-var (
-	stdout = log.New(os.Stdout, "", log.LstdFlags)
-	stderr = log.New(os.Stderr, "", log.LstdFlags)
-)
-
 // Verbosef is called to write verbose logs, such as when a new connection is
-// established correctly. Logs to srdout.
-var Verbosef = stdout.Printf
+var Verbosef = log.Printf
 
 // Infof is called to write informational logs, such as when startup has
-// completed. Logs to stdout.
-var Infof = stdout.Printf
+var Infof = log.Printf
 
 // Errorf is called to write an error log, such as when a new connection fails.
-// Logs to stderr.
-var Errorf = stderr.Printf
+var Errorf = log.Printf
+
+// LogDebugToStdout updates Verbose and Info logging to use stdout instead of stderr.
+func LogDebugToStdout() {
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	Verbosef = logger.Printf
+	Infof = logger.Printf
+}
