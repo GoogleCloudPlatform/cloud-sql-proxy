@@ -17,15 +17,25 @@
 // control where log messages end up.
 package logging
 
-import "log"
+import (
+	"log"
+	"os"
+)
+
+// Loggers for logging to stdout and stderr
+var (
+	stdout = log.New(os.Stdout, "", log.LstdFlags)
+	stderr = log.New(os.Stderr, "", log.LstdFlags)
+)
 
 // Verbosef is called to write verbose logs, such as when a new connection is
-// established correctly.
-var Verbosef = log.Printf
+// established correctly. Logs to srdout.
+var Verbosef = stdout.Printf
 
 // Infof is called to write informational logs, such as when startup has
-// completed.
-var Infof = log.Printf
+// completed. Logs to stdout.
+var Infof = stdout.Printf
 
 // Errorf is called to write an error log, such as when a new connection fails.
-var Errorf = log.Printf
+// Logs to stderr.
+var Errorf = stderr.Printf
