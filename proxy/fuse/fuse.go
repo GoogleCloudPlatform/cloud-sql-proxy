@@ -42,6 +42,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -281,10 +282,15 @@ func (r *fsRoot) removeListener(instance, path string) {
 // r.newConn is called. After the Listener returns an error it is removed.
 func (r *fsRoot) listenerLifecycle(l net.Listener, instance, path string) {
 	for {
+		start := time.Now()
 		c, err := l.Accept()
 		if err != nil {
 			logging.Errorf("error in Accept for %q: %v", instance, err)
 			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+				d := 10*time.Millisecond - time.Since(start)
+				if d > 0 {
+					time.Sleep(d)
+				}
 				continue
 			}
 			break
