@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
@@ -139,9 +140,17 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 
 	go func() {
 		for {
+			start := time.Now()
 			c, err := l.Accept()
 			if err != nil {
 				logging.Errorf("Error in accept for %q on %v: %v", cfg, cfg.Address, err)
+				if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+					d := 10*time.Millisecond - time.Since(start)
+					if d > 0 {
+						time.Sleep(d)
+					}
+					continue
+				}
 				l.Close()
 				return
 			}
