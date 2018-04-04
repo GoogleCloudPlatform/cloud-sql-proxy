@@ -295,9 +295,17 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 	ch := make(chan Conn)
 	go func() {
 		for {
+			start := time.Now()
 			c, err := l.Accept()
 			if err != nil {
 				logging.Errorf("listener (%#v) had error: %v", l, err)
+				if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+					d := 10*time.Millisecond - time.Since(start)
+					if d > 0 {
+						time.Sleep(d)
+					}
+					continue
+				}
 				l.Close()
 				close(ch)
 				return
