@@ -83,10 +83,10 @@ type Client struct {
 	// instance. Relevant functions are refreshCfg and cachedCfg. It is
 	// protected by cacheL.
 	cfgCache map[string]cacheEntry
-	cacheL   sync.RWMutex
+	cacheL   sync.Mutex
 
-	// cfgL prevents multiple goroutines from contacting the Cloud SQL API at once.
-	cfgL sync.Mutex
+	// refreshCfgL prevents multiple goroutines from contacting the Cloud SQL API at once.
+	refreshCfgL sync.Mutex
 
 	// MaxConnections is the maximum number of connections to establish
 	// before refusing new connections. 0 means no limit.
@@ -156,8 +156,8 @@ func (c *Client) handleConn(conn Conn) {
 // address as well as construct a new tls.Config to connect to the instance. It
 // caches the result.
 func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err error) {
-	c.cfgL.Lock()
-	defer c.cfgL.Unlock()
+	c.refreshCfgL.Lock()
+	defer c.refreshCfgL.Unlock()
 
 	throttle := c.RefreshCfgThrottle
 	if throttle == 0 {
@@ -178,6 +178,9 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 	}
 
 	defer func() {
+		if err != nil && oldok {
+			return
+		}
 		c.cacheL.Lock()
 		c.cfgCache[instance] = cacheEntry{
 			lastRefreshed: time.Now(),
@@ -212,7 +215,9 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 		go func() {
 			<-time.After(timeToRefresh)
 			logging.Verbosef("Cert for instance %s will expire soon, refreshing now.", instance)
-			c.refreshCfg(instance)
+			if _, _, err := c.refreshCfg(instance); err != nil {
+				logging.Errorf("couldn't connect to %q: %v", instance, err)
+			}
 		}()
 	}
 
@@ -220,9 +225,9 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 }
 
 func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
-	c.cacheL.RLock()
+	c.cacheL.Lock()
 	ret, ok := c.cfgCache[instance]
-	c.cacheL.RUnlock()
+	c.cacheL.Unlock()
 
 	// Don't waste time returning an expired/invalid cert.
 	if !ok || ret.err != nil || time.Now().After(ret.cfg.Certificates[0].Leaf.NotAfter) {
