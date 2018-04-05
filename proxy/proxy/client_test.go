@@ -194,8 +194,8 @@ func TestMaximumConnectionsCount(t *testing.T) {
 }
 
 func TestRefreshTimer(t *testing.T) {
-	refreshCertBuffer = time.Second
-	timeToExpire := 2 * time.Second
+	refreshCertBuffer = time.Millisecond * 10
+	timeToExpire := time.Millisecond * 500
 	b := &fakeCerts{}
 	c := &Client{
 		Certs: &blockingCertSource{
@@ -207,7 +207,7 @@ func TestRefreshTimer(t *testing.T) {
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, errFakeDial
 		},
-		RefreshCfgThrottle: 500 * time.Millisecond,
+		RefreshCfgThrottle: 20 * time.Millisecond,
 	}
 
 	// Call Dial to cache the cert.
@@ -215,16 +215,27 @@ func TestRefreshTimer(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
+	c.cacheL.Lock()
 	cached, ok := c.cfgCache[instance]
+	c.cacheL.Unlock()
 	if !ok {
 		t.Error("expected instance to be cached")
 	}
-
-	// Wait for cert to expire.
-	time.Sleep(timeToExpire + time.Second)
+	waitTil := time.After(timeToExpire + (10 * time.Millisecond))
+loop:
+	for {
+		select {
+		case <-waitTil:
+			break loop
+		default:
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 
 	// Verify cert was refreshed in the background, without calling Dial again.
+	c.cacheL.Lock()
 	refreshed, ok := c.cfgCache[instance]
+	c.cacheL.Unlock()
 	if !ok {
 		t.Error("expected instance to be cached")
 	}
