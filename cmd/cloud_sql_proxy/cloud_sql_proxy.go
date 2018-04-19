@@ -51,7 +51,7 @@ var (
 	version        = flag.Bool("version", false, "Print the version of the proxy and exit")
 	verbose        = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
 	quiet          = flag.Bool("quiet", false, "Disable log messages")
-	logDebugStdout = flag.Bool("log_debug_stdout", false, "If true, log messages that are not errors will outout to stdout instead of stderr")
+	logDebugStdout = flag.Bool("log_debug_stdout", false, "If true, log messages that are not errors will output to stdout instead of stderr")
 
 	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle, "If set, this flag specifies the amount of forced sleep between successive API calls in order to protect client API quota. Minimum allowed value is "+minimumRefreshCfgThrottle.String())
 	checkRegion        = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
