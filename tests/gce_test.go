@@ -12,33 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// gce_test is an integration test meant to verify the Cloud SQL Proxy works as
-// expected on a Google Compute Engine VM. It provisions a GCE VM, loads a
-// newly-compiled proxy client onto that VM, and then does some connectivity tests.
-//
-// If the VM specified by -vm_name doesn't exist already a new VM is created.
-// If a VM does already exist, its 'sshKeys' metadata value is set to a newly
-// generated key.
-//
-// Required flags:
-//    -db_name, -project
-//
 // Example invocation:
-//     go test -v -run TestGCE -args -project=my-project -db_name=my-project:the-region:sql-name
+//   go test -v -run TestGCE -args -project=my-project \
+//     -connection_name=my-project:the-region:sql-name
 package tests
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
+	"time"
 )
 
-// TestGCE provisions a new GCE VM and verifies that the proxy works on it.
-// It uses application default credentials.
-func TestGCE(t *testing.T) {
-	err, ssh := setupGCEProxy(t, nil)
+const gceTestTimeout = 3 * time.Minute
 
-	cmd := fmt.Sprintf(`mysql -uroot -S cloudsql/%s -e "select 1\\G"`, *databaseName)
+// TestGCE provisions a new GCE VM and verifies that the proxy works on it.
+func TestGCE(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), gceTestTimeout)
+	defer cancel()
+
+	ssh, err := setupGCEProxy(ctx, t, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := fmt.Sprintf(`mysql -u %s -p%s -S cloudsql/%s -e "select 1\\G"`, *dbUser, *dbPass, *connectionName)
+	t.Logf("Connecting using: %s", cmd)
+
 	var sout, serr bytes.Buffer
 	if err = sshRun(ssh, cmd, nil, &sout, &serr); err != nil {
 		t.Fatalf("Error running mysql: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)

@@ -12,7 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Common test setup code
+// Package tests contains integration tests meant to verify the Cloud SQL Proxy
+// works as expected on a Google Compute Engine VM. It provisions a GCE VM,
+// loads a newly-compiled proxy client onto that VM, and then does some
+// connectivity tests.
+//
+// If the VM specified by -vm_name doesn't exist already a new VM is created.
+// If a VM does already exist, its 'sshKeys' metadata value is set to a newly
+// generated key.
+
+// Required flags:
+//    -connection_name, -project
 package tests
 
 import (
@@ -36,83 +46,100 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
+	"strings"
+
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	compute "google.golang.org/api/compute/v1"
-	"strings"
 )
 
 var (
-	project      = flag.String("project", "", "Project to create the GCE test VM in")
-	zone         = flag.String("zone", "us-central1-f", "Zone in which to create the VM")
-	osImage      = flag.String("os", defaultOS, "OS image to use when creating a VM")
-	vmName       = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
-	databaseName = flag.String("db_name", "", "Fully-qualified Cloud SQL Instance (in the form of 'project:region:instance-name')")
+	// Required flags.
+	project        = flag.String("project", "", "Google Cloud project to create the GCE test VM in")
+	connectionName = flag.String("connection_name", "", "Cloud SQL instance connection name, in the form of 'project:region:instance'")
+
+	// Optional flags.
+	vmName  = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
+	zone    = flag.String("zone", "us-central1-f", "Zone in which to create the VM")
+	osImage = flag.String("os", defaultOS, "OS image to use when creating a VM")
+	dbUser  = flag.String("db_user", "root", "Name of database user to use during test")
+	dbPass  = flag.String("db_pass", "", "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history). Also note that using a password along with the Cloud SQL Proxy is not necessary as long as you set the hostname of the user appropriately (see https://cloud.google.com/sql/docs/sql-proxy#user)")
+
+	// Flags for authn/authz.
+	credentialFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials. You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+	token          = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 )
 
 const (
 	defaultOS       = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160329"
-	testTimeout     = 3 * time.Minute
 	buildShLocation = "cmd/cloud_sql_proxy/build.sh"
 )
 
-func setupGCEProxy(t *testing.T, proxyArgs []string) (error, *ssh.Client) {
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
+type logger interface {
+	Log(args ...interface{})
+	Logf(format string, args ...interface{})
+}
 
+func setupGCEProxy(ctx context.Context, l logger, proxyArgs []string) (*ssh.Client, error) {
 	proxyBinary, err := compileProxy()
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
-	t.Logf("Built new cloud_sql_proxy binary")
+	l.Logf("Built new cloud_sql_proxy binary")
 	defer os.Remove(proxyBinary)
 
-	cl, err := google.DefaultClient(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	cl, err := clientFromCredentials(ctx)
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 
-	ssh, err := newOrReuseVM(t.Logf, cl)
+	ssh, err := newOrReuseVM(l, cl)
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
-	t.Logf("SSH to %s:%s succeeded", *project, *vmName)
+	l.Logf("SSH to %s:%s succeeded", *project, *vmName)
 
 	log.Printf("apt-get update...")
 	var sout, serr bytes.Buffer
 	if err := sshRun(ssh, "sudo apt-get update", nil, &sout, &serr); err != nil {
-		t.Fatal("Failed 'sudo apt-get update' on remote machine: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
+		return nil, fmt.Errorf("Failed 'sudo apt-get update' on remote machine: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
 	}
+
 	log.Printf("Install mysql client...")
 	if err := sshRun(ssh, "sudo apt-get install -y mysql-client", nil, &sout, &serr); err != nil {
-		t.Fatal("Failed 'sudo apt-get install -y mysql-client' on remote machine: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
+		return nil, fmt.Errorf("Failed 'sudo apt-get install -y mysql-client' on remote machine: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
 	}
+
 	if err = sshRun(ssh, "pkill cloud_sql_proxy", nil, &sout, &serr); err != nil {
-		t.Logf("Failed to kill any cloud_sql_proxy process.")
+		l.Logf("Failed to kill any cloud_sql_proxy process.")
 	} else {
-		t.Logf("Killed already running cloud_sql_proxy process.")
+		l.Logf("Killed already running cloud_sql_proxy process.")
 	}
 	log.Printf("Copy binary to %s:%s...", *project, *vmName)
+
 	this, err := os.Open(proxyBinary)
 	if err != nil {
-		t.Fatalf("Couldn't open %v for reading: %v", proxyBinary, err)
+		return nil, fmt.Errorf("Couldn't open %v for reading: %v", proxyBinary, err)
 	}
+
 	err = sshRun(ssh, "bash -c 'cat >cloud_sql_proxy; chmod +x cloud_sql_proxy; mkdir -p cloudsql'", this, &sout, &serr)
 	this.Close()
 	if err != nil {
-		t.Fatalf("Couldn't scp to remote machine: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
+		return nil, fmt.Errorf("Couldn't scp to remote machine: %v\n\nstandard out:\n%s\nstandard err:\n%s", err, &sout, &serr)
 	}
-	logs, err := startProxy(ssh, "./cloud_sql_proxy -dir cloudsql -instances "+strings.Join(append([]string{*databaseName}, proxyArgs...), " "))
+
+	logs, err := startProxy(ssh, "./cloud_sql_proxy -dir cloudsql -instances "+strings.Join(append([]string{*connectionName}, proxyArgs...), " "))
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 	defer logs.Close()
 	// TODO: Instead of discarding all of the logs, verify that certain logs
 	// happen during connects/disconnects.
 	go io.Copy(ioutil.Discard, logs)
-	t.Logf("Cloud SQL Proxy started on remote host")
-	return err, ssh
+	l.Logf("Cloud SQL Proxy started on remote host")
+	return ssh, nil
 }
 
 var _ io.ReadCloser = (*process)(nil)
@@ -132,7 +159,7 @@ func (p *process) Close() error {
 	return p.sess.Close()
 }
 
-func compileProxy() (binaryPath string, _ error) {
+func compileProxy() (string, error) {
 	// Find the 'build.sh' script by looking for it in cwd, cwd/.., and cwd/../..
 	var buildSh string
 
@@ -252,7 +279,7 @@ func sshRun(ssh *ssh.Client, cmd string, stdin io.Reader, stdout, stderr io.Writ
 	return sess.Run(cmd)
 }
 
-func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Client, error) {
+func newOrReuseVM(l logger, cl *http.Client) (*ssh.Client, error) {
 	c, err := compute.New(cl)
 	if err != nil {
 		return nil, err
@@ -268,7 +295,7 @@ func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Clie
 	var op *compute.Operation
 
 	if inst, err := c.Instances.Get(*project, *zone, *vmName).Do(); err != nil {
-		logf("Creating new instance (getting instance %v in project %v and zone %v failed: %v)", *vmName, *project, *zone, err)
+		l.Logf("Creating new instance (getting instance %v in project %v and zone %v failed: %v)", *vmName, *project, *zone, err)
 		instProto := &compute.Instance{
 			Name:        *vmName,
 			MachineType: "zones/" + *zone + "/machineTypes/g1-small",
@@ -300,7 +327,7 @@ func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Clie
 			return nil, err
 		}
 	} else {
-		logf("attempting to reuse instance %v (in project %v and zone %v)...", *vmName, *project, *zone)
+		l.Logf("attempting to reuse instance %v (in project %v and zone %v)...", *vmName, *project, *zone)
 		set := false
 		md := inst.Metadata
 		for _, v := range md.Items {
@@ -340,7 +367,12 @@ func newOrReuseVM(logf func(string, ...interface{}), cl *http.Client) (*ssh.Clie
 	if err != nil {
 		return nil, fmt.Errorf("error getting instance after it was created: %v", err)
 	}
+
+	// Use the external IP if possible.
 	ip := inst.NetworkInterfaces[0].NetworkIP
+	if inst.NetworkInterfaces[0].AccessConfigs[0].NatIP != "" {
+		ip = inst.NetworkInterfaces[0].AccessConfigs[0].NatIP
+	}
 
 	var lastErr error
 	for try := 0; try < 10; try++ {
@@ -378,13 +410,31 @@ func sshKey() (pubKey string, auth ssh.AuthMethod, err error) {
 	return string(ssh.MarshalAuthorizedKey(pub)), ssh.PublicKeys(signer), nil
 }
 
+func clientFromCredentials(ctx context.Context) (*http.Client, error) {
+	if f := *credentialFile; f != "" {
+		all, err := ioutil.ReadFile(f)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+		}
+		cfg, err := google.JWTConfigFromJSON(all, proxy.SQLScope)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+		}
+		return cfg.Client(ctx), nil
+	} else if tok := *token; tok != "" {
+		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
+		return oauth2.NewClient(ctx, src), nil
+	}
+	return google.DefaultClient(ctx, proxy.SQLScope)
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	switch "" {
 	case *project:
 		log.Fatal("Must set -project")
-	case *databaseName:
-		log.Fatal("Must set -db_name")
+	case *connectionName:
+		log.Fatal("Must set -connection_name")
 	}
 
 	os.Exit(m.Run())
