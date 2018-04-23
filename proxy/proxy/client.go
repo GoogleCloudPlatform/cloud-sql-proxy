@@ -83,7 +83,7 @@ type Client struct {
 	// instance. Relevant functions are refreshCfg and cachedCfg. It is
 	// protected by cacheL.
 	cfgCache map[string]cacheEntry
-	cacheL   sync.Mutex
+	cacheL   sync.RWMutex
 
 	// refreshCfgL prevents multiple goroutines from contacting the Cloud SQL API at once.
 	refreshCfgL sync.Mutex
@@ -178,17 +178,16 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 	}
 
 	defer func() {
-		if err != nil && oldok {
-			return
+		if err == nil || (oldok && isExpired(old.cfg)) {
+			c.cacheL.Lock()
+			c.cfgCache[instance] = cacheEntry{
+				lastRefreshed: time.Now(),
+				err:           err,
+				addr:          addr,
+				cfg:           cfg,
+			}
+			c.cacheL.Unlock()
 		}
-		c.cacheL.Lock()
-		c.cfgCache[instance] = cacheEntry{
-			lastRefreshed: time.Now(),
-			err:           err,
-			addr:          addr,
-			cfg:           cfg,
-		}
-		c.cacheL.Unlock()
 	}()
 
 	mycert, err := c.Certs.Local(instance)
@@ -224,13 +223,17 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, nil
 }
 
+func isExpired(cfg *tls.Config) bool {
+	return time.Now().After(cfg.Certificates[0].Leaf.NotAfter)
+}
+
 func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
-	c.cacheL.Lock()
+	c.cacheL.RLock()
 	ret, ok := c.cfgCache[instance]
-	c.cacheL.Unlock()
+	c.cacheL.RUnlock()
 
 	// Don't waste time returning an expired/invalid cert.
-	if !ok || ret.err != nil || time.Now().After(ret.cfg.Certificates[0].Leaf.NotAfter) {
+	if !ok || ret.err != nil || isExpired(ret.cfg) {
 		return "", nil
 	}
 	return ret.addr, ret.cfg
