@@ -32,10 +32,13 @@ const (
 	keepAlivePeriod           = time.Minute
 )
 
-// errNotCached is returned when the instance was not found in the Client's
-// cache. It is an internal detail and is not actually ever returned to the
-// user.
-var errNotCached = errors.New("instance was not found in cache")
+var (
+	// errNotCached is returned when the instance was not found in the Client's
+	// cache. It is an internal detail and is not actually ever returned to the
+	// user.
+	errNotCached      = errors.New("instance was not found in cache")
+	refreshCertBuffer = 5 * time.Minute
+)
 
 // Conn represents a connection from a client to a specific instance.
 type Conn struct {
@@ -78,9 +81,12 @@ type Client struct {
 
 	// The cfgCache holds the most recent connection configuration keyed by
 	// instance. Relevant functions are refreshCfg and cachedCfg. It is
-	// protected by cfgL.
+	// protected by cacheL.
 	cfgCache map[string]cacheEntry
-	cfgL     sync.RWMutex
+	cacheL   sync.Mutex
+
+	// refreshCfgL prevents multiple goroutines from contacting the Cloud SQL API at once.
+	refreshCfgL sync.Mutex
 
 	// MaxConnections is the maximum number of connections to establish
 	// before refusing new connections. 0 means no limit.
@@ -150,32 +156,39 @@ func (c *Client) handleConn(conn Conn) {
 // address as well as construct a new tls.Config to connect to the instance. It
 // caches the result.
 func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err error) {
-	c.cfgL.Lock()
-	defer c.cfgL.Unlock()
+	c.refreshCfgL.Lock()
+	defer c.refreshCfgL.Unlock()
 
 	throttle := c.RefreshCfgThrottle
 	if throttle == 0 {
 		throttle = DefaultRefreshCfgThrottle
 	}
 
-	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < throttle {
+	c.cacheL.Lock()
+	if c.cfgCache == nil {
+		c.cfgCache = make(map[string]cacheEntry)
+	}
+	old, oldok := c.cfgCache[instance]
+	c.cacheL.Unlock()
+
+	if oldok && time.Since(old.lastRefreshed) < throttle {
 		logging.Errorf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
 		// Refresh was called too recently, just reuse the result.
 		return old.addr, old.cfg, old.err
 	}
 
-	if c.cfgCache == nil {
-		c.cfgCache = make(map[string]cacheEntry)
-	}
-
 	defer func() {
+		if err != nil && oldok {
+			return
+		}
+		c.cacheL.Lock()
 		c.cfgCache[instance] = cacheEntry{
 			lastRefreshed: time.Now(),
-
-			err:  err,
-			addr: addr,
-			cfg:  cfg,
+			err:           err,
+			addr:          addr,
+			cfg:           cfg,
 		}
+		c.cacheL.Unlock()
 	}()
 
 	mycert, err := c.Certs.Local(instance)
@@ -195,13 +208,26 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 		Certificates: []tls.Certificate{mycert},
 		RootCAs:      certs,
 	}
+
+	// Refresh cert 5 minutes before it expires.
+	timeToRefresh := cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now()) - refreshCertBuffer
+	if timeToRefresh > 0 {
+		go func() {
+			<-time.After(timeToRefresh)
+			logging.Verbosef("Cert for instance %s will expire soon, refreshing now.", instance)
+			if _, _, err := c.refreshCfg(instance); err != nil {
+				logging.Errorf("couldn't connect to %q: %v", instance, err)
+			}
+		}()
+	}
+
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, nil
 }
 
 func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
-	c.cfgL.RLock()
+	c.cacheL.Lock()
 	ret, ok := c.cfgCache[instance]
-	c.cfgL.RUnlock()
+	c.cacheL.Unlock()
 
 	// Don't waste time returning an expired/invalid cert.
 	if !ok || ret.err != nil || time.Now().After(ret.cfg.Certificates[0].Leaf.NotAfter) {
@@ -225,6 +251,7 @@ func (c *Client) Dial(instance string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return c.tryConnect(addr, cfg)
 }
 
