@@ -25,11 +25,15 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
-	DefaultRefreshCfgThrottle = time.Minute
-	keepAlivePeriod           = time.Minute
+	DefaultRefreshCfgThrottle     = time.Minute
+	keepAlivePeriod               = time.Minute
+	DefaultTerminationGracePeriod = time.Second * 20
 )
 
 // errNotCached is returned when the instance was not found in the Client's
@@ -88,6 +92,15 @@ type Client struct {
 
 	// ConnectionsCounter is used to enforce the optional maxConnections limit
 	ConnectionsCounter uint64
+
+	// TerminationGracePeriod is the amount of time to wait after receiving a
+	// SIGTERM signal before closing connections and exiting.
+	TerminationGracePeriod time.Duration
+
+	// IsTerminating is a bool indicating that a termination signal (SIGTERM)
+	// has been received and that the client is in the process of gracefully
+	// terminating.
+	IsTerminating bool
 }
 
 type cacheEntry struct {
@@ -101,6 +114,7 @@ type cacheEntry struct {
 // Run causes the client to start waiting for new connections to connSrc and
 // proxy them to the destination instance. It blocks until connSrc is closed.
 func (c *Client) Run(connSrc <-chan Conn) {
+	go c.closeOnSigterm()
 	for conn := range connSrc {
 		go c.handleConn(conn)
 	}
@@ -111,6 +125,13 @@ func (c *Client) Run(connSrc <-chan Conn) {
 }
 
 func (c *Client) handleConn(conn Conn) {
+
+	if c.IsTerminating {
+		logging.Errorf("refusing connection - received termination signal")
+		conn.Conn.Close()
+		return
+	}
+
 	// Track connections count only if a maximum connections limit is set to avoid useless overhead
 	if c.MaxConnections > 0 {
 		active := atomic.AddUint64(&c.ConnectionsCounter, 1)
@@ -144,6 +165,27 @@ func (c *Client) handleConn(conn Conn) {
 	if err := c.Conns.Remove(conn.Instance, conn.Conn); err != nil {
 		logging.Errorf("%s", err)
 	}
+}
+
+// closeOnSigterm causes the client to immediately stop accepting new
+// connections and then after a configurable grace period all of the
+// connections are closed and the process exits with 0 (success).
+func (c *Client) closeOnSigterm() {
+	ch := make(chan os.Signal, 10)
+	signal.Notify(ch, os.Signal(syscall.SIGTERM))
+	<-ch
+	logging.Errorf("received SIGTERM, waiting %s before terminating process.\n", c.TerminationGracePeriod)
+	c.IsTerminating = true
+	if c.TerminationGracePeriod == 0 {
+		c.TerminationGracePeriod = DefaultTerminationGracePeriod
+	}
+	time.Sleep(c.TerminationGracePeriod)
+	if err := c.Conns.Close(); err != nil {
+		logging.Errorf("error closing client connections: %v", err)
+	}
+
+	os.Exit(0)
+
 }
 
 // refreshCfg uses the CertSource inside the Client to find the instance's
