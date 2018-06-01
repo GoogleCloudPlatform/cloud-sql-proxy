@@ -338,10 +338,18 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 	}
 	// FUSE disabled.
 	if len(instances) == 0 && instancesSrc == "" {
+		var flags string
 		if fuse.Supported() {
-			return nil, errors.New("must specify -projects, -fuse, or -instances")
+			flags = "-projects, -fuse, or -instances"
+		} else {
+			flags = "-projects or -instances"
 		}
-		return nil, errors.New("must specify -projects or -instances")
+
+		errStr := fmt.Sprintf("no instance selected because none of %s is specified", flags)
+		if gcloudErrStr != "" {
+			errStr = fmt.Sprintf("%s and %s", errStr, gcloudErrStr)
+		}
+		return nil, errors.New(errStr)
 	}
 	return cfgs, nil
 }
