@@ -82,8 +82,17 @@ can be removed automatically by this program.`)
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 
-	// Set when gcloud execution failed.
-	gcloudErrStr string
+	// Set to non-default value when gcloud execution failed.
+	gcloudStatus gcloudStatusCode
+)
+
+type gcloudStatusCode int
+
+const (
+	gcloudOk gcloudStatusCode = iota
+	gcloudNotFound
+	// generic execution failure error not specified above.
+	gcloudExecErr
 )
 
 const (
@@ -338,10 +347,12 @@ func gcloudProject() []string {
 
 	if err := cmd.Run(); err != nil {
 		if strings.Contains(err.Error(), "executable file not found") {
-			gcloudErrStr = "gcloud could not be found in the system path"
+			// gcloud not found (probably not installed). Ignore the error but record
+			// the status for later use.
+			gcloudStatus = gcloudNotFound
 			return nil
 		}
-		gcloudErrStr = gcloudResultErrStr
+		gcloudStatus = gcloudExecErr
 		logging.Errorf("Error detecting gcloud project: %v", err)
 		return nil
 	}
@@ -353,7 +364,7 @@ func gcloudProject() []string {
 	}
 
 	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
-		gcloudErrStr = gcloudResultErrStr
+		gcloudStatus = gcloudExecErr
 		logging.Errorf("Failed to unmarshal bytes from gcloud: %v", err)
 		logging.Errorf("   gcloud returned:\n%s", buf)
 		return nil
