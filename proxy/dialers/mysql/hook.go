@@ -38,12 +38,10 @@ func init() {
 // The returned *sql.DB may be valid even if there's also an error returned
 // (e.g. if there was a transient connection error).
 func Dial(instance, user string) (*sql.DB, error) {
-	return DialCfg(&mysql.Config{
-		User: user,
-		Addr: instance,
-		// Set in DialCfg:
-		// Net: "cloudsql",
-	})
+	cfg := mysql.NewConfig()
+	cfg.User = user
+	cfg.Addr = instance
+	return DialCfg(cfg)
 }
 
 // DialPassword is similar to Dial, but allows you to specify a password.
@@ -53,13 +51,11 @@ func Dial(instance, user string) (*sql.DB, error) {
 // information, see:
 //    https://cloud.google.com/sql/docs/sql-proxy#user
 func DialPassword(instance, user, password string) (*sql.DB, error) {
-	return DialCfg(&mysql.Config{
-		User:   user,
-		Passwd: password,
-		Addr:   instance,
-		// Set in DialCfg:
-		// Net: "cloudsql",
-	})
+	cfg := mysql.NewConfig()
+	cfg.User = user
+	cfg.Passwd = password
+	cfg.Addr = instance
+	return DialCfg(cfg)
 }
 
 // Cfg returns the effective *mysql.Config to represent connectivity to the
@@ -67,12 +63,12 @@ func DialPassword(instance, user, password string) (*sql.DB, error) {
 // modified and passed to DialCfg to connect. If you don't modify the returned
 // config before dialing, consider using Dial or DialPassword.
 func Cfg(instance, user, password string) *mysql.Config {
-	return &mysql.Config{
-		Addr:   instance,
-		User:   user,
-		Passwd: password,
-		Net:    "cloudsql",
-	}
+	cfg := mysql.NewConfig()
+	cfg.User = user
+	cfg.Passwd = password
+	cfg.Addr = instance
+	cfg.Net = "cloudsql"
+	return cfg
 }
 
 // DialCfg opens up a SQL connection to a Cloud SQL Instance specified by the
