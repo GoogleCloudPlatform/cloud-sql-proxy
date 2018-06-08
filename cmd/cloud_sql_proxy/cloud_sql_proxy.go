@@ -81,6 +81,18 @@ can be removed automatically by this program.`)
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+
+	// Set to non-default value when gcloud execution failed.
+	gcloudStatus gcloudStatusCode
+)
+
+type gcloudStatusCode int
+
+const (
+	gcloudOk gcloudStatusCode = iota
+	gcloudNotFound
+	// generic execution failure error not specified above.
+	gcloudExecErr
 )
 
 const (
@@ -334,9 +346,12 @@ func gcloudProject() []string {
 
 	if err := cmd.Run(); err != nil {
 		if strings.Contains(err.Error(), "executable file not found") {
-			// gcloud not installed; ignore the error
+			// gcloud not found (probably not installed). Ignore the error but record
+			// the status for later use.
+			gcloudStatus = gcloudNotFound
 			return nil
 		}
+		gcloudStatus = gcloudExecErr
 		logging.Errorf("Error detecting gcloud project: %v", err)
 		return nil
 	}
@@ -348,6 +363,7 @@ func gcloudProject() []string {
 	}
 
 	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
+		gcloudStatus = gcloudExecErr
 		logging.Errorf("Failed to unmarshal bytes from gcloud: %v", err)
 		logging.Errorf("   gcloud returned:\n%s", buf)
 		return nil

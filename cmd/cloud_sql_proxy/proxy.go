@@ -338,10 +338,24 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 	}
 	// FUSE disabled.
 	if len(instances) == 0 && instancesSrc == "" {
+		// Failure to specifying instance can be caused by following reasons.
+		// 1. not enough information is provided by flags
+		// 2. failed to invoke gcloud
+		var flags string
 		if fuse.Supported() {
-			return nil, errors.New("must specify -projects, -fuse, or -instances")
+			flags = "-projects, -fuse, -instances or -instances_metadata"
+		} else {
+			flags = "-projects, -instances or -instances_metadata"
 		}
-		return nil, errors.New("must specify -projects or -instances")
+
+		errStr := fmt.Sprintf("no instance selected because none of %s is specified", flags)
+		switch gcloudStatus {
+		case gcloudNotFound:
+			errStr = fmt.Sprintf("%s and gcloud could not be found in the system path", errStr)
+		case gcloudExecErr:
+			errStr = fmt.Sprintf("%s and gcloud failed to get the project list", errStr)
+		}
+		return nil, errors.New(errStr)
 	}
 	return cfgs, nil
 }
