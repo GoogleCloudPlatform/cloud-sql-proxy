@@ -343,9 +343,9 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 		// 2. failed to invoke gcloud
 		var flags string
 		if fuse.Supported() {
-			flags = "-projects, -fuse, or -instances"
+			flags = "-projects, -fuse, -instances or -instances_metadata"
 		} else {
-			flags = "-projects or -instances"
+			flags = "-projects, -instances or -instances_metadata"
 		}
 
 		errStr := fmt.Sprintf("no instance selected because none of %s is specified", flags)

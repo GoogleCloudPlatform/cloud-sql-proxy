@@ -340,7 +340,6 @@ func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]s
 }
 
 func gcloudProject() []string {
-	const gcloudResultErrStr = "gcloud failed to get project list. See log for detail."
 	buf := new(bytes.Buffer)
 	cmd := exec.Command("gcloud", "--format", "json", "config", "list", "core/project")
 	cmd.Stdout = buf
