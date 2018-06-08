@@ -32,6 +32,8 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 	"google.golang.org/api/googleapi"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	"flag"
+	"strings"
 )
 
 const defaultUserAgent = "custom cloud_sql_proxy version >= 1.10"
@@ -215,9 +217,29 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 		logging.Errorf("%v", err)
 		logging.Errorf("WARNING: specifying the correct region in an instance string will become required in a future version!")
 	}
-	if len(data.IpAddresses) == 0 || data.IpAddresses[0].IpAddress == "" {
+
+	if len(data.IpAddresses) == 0 {
 		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
 	}
+
+	//Add the option to choose which IP address to use based on user input ip_address_type
+	//Assume IP address type order is not fixed, we need to find the corresponding IP address by iterating IPAddresses
+	userIpAddressType := flag.Lookup("ip_address_type").Value.String()
+	userChosenIpAddress := ""
+	errorMessageIpAddress := ""
+	for _, eachIpAddressOption := range data.IpAddresses {
+		errorMessageIpAddress += "(TYPE: " + eachIpAddressOption.Type + " IP: " + eachIpAddressOption.IpAddress + ") "
+		if(strings.ToLower(eachIpAddressOption.Type) == strings.ToLower(userIpAddressType)) {
+			userChosenIpAddress = eachIpAddressOption.IpAddress
+			break
+		}
+	}
+
+	if userChosenIpAddress == "" {
+		return nil, "", "", fmt.Errorf("IP address type %v does not match the instance %v, the instance's IP addresses are %v", userIpAddressType, instance, errorMessageIpAddress)
+	}
+
 	c, err := parseCert(data.ServerCaCert.Cert)
-	return c, data.IpAddresses[0].IpAddress, p + ":" + n, err
+
+	return c, userChosenIpAddress, p + ":" + n, err
 }

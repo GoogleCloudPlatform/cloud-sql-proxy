@@ -93,13 +93,14 @@ const (
 	gcloudNotFound
 	// generic execution failure error not specified above.
 	gcloudExecErr
+
+	ipAddressType = flag.String("ip_address_type", "Primary", "Default to be primary. Options: Primary, private")
 )
 
 const (
 	minimumRefreshCfgThrottle = time.Second
-
-	host = "https://www.googleapis.com/sql/v1beta4/"
-	port = 3307
+	host                      = "https://www.googleapis.com/sql/v1beta4/"
+	port                      = 3307
 )
 
 func init() {
@@ -437,7 +438,6 @@ func main() {
 		log.Fatal(err)
 	}
 	instList = append(instList, ins...)
-
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
 	if err != nil {
 		log.Fatal(err)
