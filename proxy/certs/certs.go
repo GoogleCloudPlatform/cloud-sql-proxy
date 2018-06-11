@@ -222,14 +222,20 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
 	}
 
-	//Add the option to choose which IP address to use based on user input ip_address_type
-	//Assume IP address type order is not fixed, we need to find the corresponding IP address by iterating IPAddresses
-	userIpAddressType := flag.Lookup("ip_address_type").Value.String()
+	// Add the option to choose which IP address to use based on user input ip_address_type
+	// Assume IP address type order is not fixed, we need to find the corresponding IP address by iterating IPAddresses
+	flagTypeName := "ip_address_type"
+	flagStructure := flag.Lookup(flagTypeName)
+	if flagStructure == nil {
+		return nil, "", "", fmt.Errorf("Could not find the input flag structure based on %v", flagTypeName)
+	}
+
+	userIpAddressType := flagStructure.Value.String()
 	userChosenIpAddress := ""
 	errorMessageIpAddress := ""
 	for _, eachIpAddressOption := range data.IpAddresses {
 		errorMessageIpAddress += "(TYPE: " + eachIpAddressOption.Type + " IP: " + eachIpAddressOption.IpAddress + ") "
-		if(strings.ToLower(eachIpAddressOption.Type) == strings.ToLower(userIpAddressType)) {
+		if strings.ToUpper(eachIpAddressOption.Type) == strings.ToUpper(userIpAddressType) {
 			userChosenIpAddress = eachIpAddressOption.IpAddress
 			break
 		}

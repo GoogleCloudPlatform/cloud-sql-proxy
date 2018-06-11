@@ -82,6 +82,8 @@ can be removed automatically by this program.`)
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 
+	ipAddressType = flag.String("ip_address_type", "PRIMARY", "Default to be PRIMARY. Options: PRIMARY / PUBLIC, PRIVATE")
+
 	// Set to non-default value when gcloud execution failed.
 	gcloudStatus gcloudStatusCode
 )
@@ -179,7 +181,6 @@ Connection:
   -dir
     When using Unix sockets (the default for systems which support them), the
     Proxy places the sockets in the directory specified by the -dir parameter.
-
 
 Automatic instance discovery:
    If the Google Cloud SQL is installed on the local machine and no instance
@@ -407,6 +408,14 @@ func main() {
 		log.Println("Cloud SQL Proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
+	}
+
+	// Add "PUBLIC" as an alias for "PRIMARY"
+	if strings.ToUpper(*ipAddressType) == "PUBLIC" {
+		*ipAddressType = "PRIMARY"
+		if err := flag.Set("ip_address_type", "PRIMARY"); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// TODO: needs a better place for consolidation
