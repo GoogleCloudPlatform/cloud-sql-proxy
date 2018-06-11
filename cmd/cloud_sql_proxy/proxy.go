@@ -238,11 +238,10 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		}
 	} else {
 		sql, err := sqladmin.New(cl)
-		sql.BasePath = *host
 		if err != nil {
 			return instanceConfig{}, err
 		}
-
+		sql.BasePath = *host
 		ret.Instance = instance
 		// Default to unix socket.
 		ret.Network = "unix"
