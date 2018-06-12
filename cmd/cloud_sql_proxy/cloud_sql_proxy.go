@@ -33,7 +33,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -77,7 +76,6 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
-	fdRlimit       = flag.Uint64("fd_rlimit", 0, `If provided, sets the rlimit on the number of open file descriptors for the proxy. Defaults to a value which can support 4K connections to one instance`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
@@ -375,42 +373,6 @@ func gcloudProject() []string {
 	return []string{data.Core.Project}
 }
 
-// Each connection handled by the proxy requires two file descriptors, one for
-// the local end of the connection and one for the remote. So, the proxy
-// process should be able to open at least 8K file descriptors if it is to
-// handle 4K connections to one instance.
-const expectedFDs = 8500
-
-// handleFDLimits reads the rlimits on file descriptors for the current
-// process, and modifies them if required. For now, just throws a warning if it
-// cannot set appropriate limits.
-func handleFDLimits() {
-	curr := &syscall.Rlimit{}
-	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, curr); err != nil {
-		logging.Infof("Failed to read rlimit for max file descriptors: %v", err)
-		return
-	}
-
-	if *fdRlimit == 0 {
-		*fdRlimit = expectedFDs
-	}
-
-	if curr.Max < *fdRlimit {
-		logging.Infof("Max FDs rlimit set to %d, cannot support 4K connections. If you are the system administrator, consider increasing this limit.", curr.Max)
-		return
-	}
-
-	if curr.Cur < *fdRlimit {
-		rlim := &syscall.Rlimit{}
-		rlim.Cur = *fdRlimit
-		if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, rlim); err != nil {
-			logging.Infof("Failed to set rlimit {%v} for max file descriptors: %v", rlim, err)
-			return
-		}
-		logging.Infof("Rlimits for file descriptors set to {%v}", rlim)
-	}
-}
-
 // Main executes the main function of the proxy, allowing it to be called from tests.
 //
 // Setting timeout to a value greater than 0 causes the process to panic after
@@ -445,8 +407,6 @@ func main() {
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
 	}
-
-	handleFDLimits()
 
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
