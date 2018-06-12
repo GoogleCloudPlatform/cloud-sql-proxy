@@ -38,6 +38,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/limits"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"cloud.google.com/go/compute/metadata"
@@ -76,6 +77,7 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
+	fdRlimit       = flag.Uint64("fd_rlimit", 0, `If provided, sets the rlimit on the number of open file descriptors for the proxy. Defaults to a value which can support 4K connections to one instance`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
@@ -100,6 +102,12 @@ const (
 
 	host = "https://www.googleapis.com/sql/v1beta4/"
 	port = 3307
+
+	// Each connection handled by the proxy requires two file descriptors, one
+	// for the local end of the connection and one for the remote. So, the proxy
+	// process should be able to open at least 8K file descriptors if it is to
+	// handle 4K connections to one instance.
+	expectedFDs = 8500
 )
 
 func init() {
@@ -406,6 +414,13 @@ func main() {
 		log.Println("Cloud SQL Proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
+	}
+
+	if *fdRlimit == 0 {
+		*fdRlimit = expectedFDs
+	}
+	if err := limits.SetupFDLimits(*fdRlimit); err != nil {
+		log.Println(err)
 	}
 
 	// TODO: needs a better place for consolidation
