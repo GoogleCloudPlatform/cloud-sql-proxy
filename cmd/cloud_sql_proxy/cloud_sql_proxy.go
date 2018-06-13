@@ -77,7 +77,7 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
-	fdRlimit       = flag.Uint64("fd_rlimit", 0, `If provided, sets the rlimit on the number of open file descriptors for the proxy. Defaults to a value which can support 4K connections to one instance`)
+	fdRlimit       = flag.Uint64("fd_rlimit", expectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
@@ -416,11 +416,10 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
-	if *fdRlimit == 0 {
-		*fdRlimit = expectedFDs
-	}
-	if err := limits.SetupFDLimits(*fdRlimit); err != nil {
-		logging.Infof("failed to setup file descriptor limits: %v", err)
+	if *fdRlimit != 0 {
+		if err := limits.SetupFDLimits(*fdRlimit); err != nil {
+			logging.Infof("failed to setup file descriptor limits: %v", err)
+		}
 	}
 
 	// TODO: needs a better place for consolidation

@@ -18,6 +18,7 @@ package limits
 
 import (
 	"errors"
+	"math"
 	"syscall"
 	"testing"
 )
@@ -50,11 +51,27 @@ func TestSetupFDLimits(t *testing.T) {
 				rlim.Max = 512
 				return nil
 			},
+			setFunc: func(_ int, rlim *syscall.Rlimit) error {
+				if rlim.Cur != 1024 || rlim.Max != 1024 {
+					return errors.New("setrlimit called with unexpected value")
+				}
+				return nil
+			},
+			wantFDs: 1024,
+			wantErr: false,
+		},
+		{
+			desc: "Getrlimit returns rlim_infinity",
+			getFunc: func(_ int, rlim *syscall.Rlimit) error {
+				rlim.Cur = math.MaxUint64
+				rlim.Max = math.MaxUint64
+				return nil
+			},
 			setFunc: func(_ int, _ *syscall.Rlimit) error {
 				panic("shouldn't be called")
 			},
 			wantFDs: 1024,
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			desc: "Getrlimit cur is greater than wantFDs",

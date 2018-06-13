@@ -16,8 +16,6 @@
 // setting limits in windows.
 package limits
 
-import "errors"
-
 func SetupFDLimits(uint64) error {
-	return errors.New("setting file descriptor limits is not supported on windows")
+	return nil
 }
