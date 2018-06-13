@@ -27,8 +27,8 @@ import (
 
 var (
 	// For overriding in unittests.
-	getRlimitFunc = syscall.Getrlimit
-	setRlimitFunc = syscall.Setrlimit
+	syscallGetrlimit = syscall.Getrlimit
+	syscallSetrlimit = syscall.Setrlimit
 )
 
 // SetupFDLimits ensures that the process running the Cloud SQL proxy can have
@@ -36,7 +36,7 @@ var (
 // cannot ensure the same.
 func SetupFDLimits(wantFDs uint64) error {
 	curr := &syscall.Rlimit{}
-	if err := getRlimitFunc(syscall.RLIMIT_NOFILE, curr); err != nil {
+	if err := syscallGetrlimit(syscall.RLIMIT_NOFILE, curr); err != nil {
 		return fmt.Errorf("failed to read rlimit for max file descriptors: %v", err)
 	}
 
@@ -44,14 +44,14 @@ func SetupFDLimits(wantFDs uint64) error {
 		return fmt.Errorf("max FDs rlimit set to %d, cannot support 4K connections. If you are the system administrator, consider increasing this limit.", curr.Max)
 	}
 
-	if curr.Cur > wantFDs {
+	if curr.Cur >= wantFDs {
 		logging.Infof("current FDs rlimit set to %d, wanted limit is %d. Nothing to do here.", curr.Cur, wantFDs)
 		return nil
 	}
 
 	rlim := &syscall.Rlimit{}
 	rlim.Cur = wantFDs
-	if err := setRlimitFunc(syscall.RLIMIT_NOFILE, rlim); err != nil {
+	if err := syscallSetrlimit(syscall.RLIMIT_NOFILE, rlim); err != nil {
 		return fmt.Errorf("failed to set rlimit {%v} for max file descriptors: %v", rlim, err)
 	}
 

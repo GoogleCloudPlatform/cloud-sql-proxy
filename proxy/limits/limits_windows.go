@@ -18,6 +18,6 @@ package limits
 
 import "errors"
 
-func SetupFDLimits(_ uint64) error {
+func SetupFDLimits(uint64) error {
 	return errors.New("setting file descriptor limits is not supported on windows")
 }

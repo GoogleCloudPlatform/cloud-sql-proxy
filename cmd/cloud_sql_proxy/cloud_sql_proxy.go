@@ -420,7 +420,7 @@ func main() {
 		*fdRlimit = expectedFDs
 	}
 	if err := limits.SetupFDLimits(*fdRlimit); err != nil {
-		log.Println(err)
+		logging.Infof("failed to setup file descriptor limits: %v", err)
 	}
 
 	// TODO: needs a better place for consolidation

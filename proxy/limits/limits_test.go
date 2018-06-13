@@ -98,16 +98,16 @@ func TestSetupFDLimits(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		oldGetFunc := getRlimitFunc
-		getRlimitFunc = test.getFunc
+		oldGetFunc := syscallGetrlimit
+		syscallGetrlimit = test.getFunc
 		defer func() {
-			getRlimitFunc = oldGetFunc
+			syscallGetrlimit = oldGetFunc
 		}()
 
-		oldSetFunc := setRlimitFunc
-		setRlimitFunc = test.setFunc
+		oldSetFunc := syscallSetrlimit
+		syscallSetrlimit = test.setFunc
 		defer func() {
-			setRlimitFunc = oldSetFunc
+			syscallSetrlimit = oldSetFunc
 		}()
 
 		gotErr := SetupFDLimits(test.wantFDs)
