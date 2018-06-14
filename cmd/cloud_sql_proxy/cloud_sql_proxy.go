@@ -82,7 +82,7 @@ can be removed automatically by this program.`)
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 
-	ipAddressType = flag.String("ip_address_type", "PRIMARY", "Default to be PRIMARY. Options: PRIMARY / PUBLIC, PRIVATE")
+	ipAddressTypes = flag.String("ip_address_types", "PRIMARY", "Default to be 'PRIMARY'. Options: a list of strings separated by ',', e.g. 'PRIMARY, PRIVATE' ")
 
 	// Set to non-default value when gcloud execution failed.
 	gcloudStatus gcloudStatusCode
@@ -410,13 +410,8 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
-	// Add "PUBLIC" as an alias for "PRIMARY"
-	if strings.ToUpper(*ipAddressType) == "PUBLIC" {
-		*ipAddressType = "PRIMARY"
-		if err := flag.Set("ip_address_type", "PRIMARY"); err != nil {
-			log.Fatal(err)
-		}
-	}
+	// Split the input ipAddressTypes to the slice of string
+	ipAddrTypeOptsInput := strings.Split(*ipAddressTypes, ",")
 
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
@@ -505,6 +500,7 @@ func main() {
 			APIBasePath:  host,
 			IgnoreRegion: !*checkRegion,
 			UserAgent:    userAgentFromVersionString(),
+			IPAddrTypeOpts:   ipAddrTypeOptsInput,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
