@@ -94,8 +94,6 @@ const (
 	gcloudNotFound
 	// generic execution failure error not specified above.
 	gcloudExecErr
-
-	ipAddressType = flag.String("ip_address_type", "Primary", "Default to be primary. Options: Primary, private")
 )
 
 const (
