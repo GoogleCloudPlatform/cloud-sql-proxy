@@ -94,6 +94,8 @@ const (
 	gcloudNotFound
 	// generic execution failure error not specified above.
 	gcloudExecErr
+
+	ipAddressType = flag.String("ip_address_type", "Primary", "Default to be primary. Options: Primary, private")
 )
 
 const (
@@ -431,7 +433,6 @@ func main() {
 	ctx := context.Background()
 	client, err := authenticatedClient(ctx)
 	if err != nil {
-		fmt.Println("mandydebug: error in authentication")
 		log.Fatal(err)
 	}
 
