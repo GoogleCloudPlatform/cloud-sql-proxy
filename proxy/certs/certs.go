@@ -93,10 +93,15 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 	}
 	serv.UserAgent = ua
 
-	// Add "PUBLIC" as an alias for "PRIMARY"
-	for index,ipAddressType := range opts.IPAddrTypeOpts {
-		if strings.ToUpper(ipAddressType) == "PUBLIC" {
-			opts.IPAddrTypeOpts[index] = "PRIMARY"
+	// Set default value to be PRIMARY if input opts.IPAddrTypeOpts is empty
+	if len(opts.IPAddrTypeOpts) < 1 {
+		opts.IPAddrTypeOpts = append(opts.IPAddrTypeOpts, "PRIMARY")
+	} else {
+		// Add "PUBLIC" as an alias for "PRIMARY"
+		for index,ipAddressType := range opts.IPAddrTypeOpts {
+			if strings.ToUpper(ipAddressType) == "PUBLIC" {
+				opts.IPAddrTypeOpts[index] = "PRIMARY"
+			}
 		}
 	}
 
