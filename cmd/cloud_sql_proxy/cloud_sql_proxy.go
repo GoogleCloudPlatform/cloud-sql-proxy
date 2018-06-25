@@ -77,7 +77,7 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
-	fdRlimit       = flag.Uint64("fd_rlimit", limits.expectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
+	fdRlimit       = flag.Uint64("fd_rlimit", limits.ExpectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")

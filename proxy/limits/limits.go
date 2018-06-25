@@ -35,7 +35,7 @@ var (
 // for the local end of the connection and one for the remote. So, the proxy
 // process should be able to open at least 8K file descriptors if it is to
 // handle 4K connections to one instance.
-const expectedFDs = 8500
+const ExpectedFDs = 8500
 
 // SetupFDLimits ensures that the process running the Cloud SQL proxy can have
 // at least wantFDs number of open file descriptors. It returns an error if it
@@ -47,7 +47,7 @@ func SetupFDLimits(wantFDs uint64) error {
 	}
 
 	if rlim.Cur >= wantFDs {
-		logging.Infof("current FDs rlimit set to %d, wanted limit is %d. Nothing to do here.", rlim.Cur, wantFDs)
+		logging.Verbosef("current FDs rlimit set to %d, wanted limit is %d. Nothing to do here.", rlim.Cur, wantFDs)
 		return nil
 	}
 
@@ -66,7 +66,7 @@ func SetupFDLimits(wantFDs uint64) error {
 		rlim2.Max = wantFDs
 		rlim2.Cur = wantFDs
 		if err := syscallSetrlimit(syscall.RLIMIT_NOFILE, rlim2); err == nil {
-			logging.Infof("Rlimits for file descriptors set to {%v}", rlim2)
+			logging.Verbosef("Rlimits for file descriptors set to {%v}", rlim2)
 			return nil
 		}
 	}
@@ -76,6 +76,6 @@ func SetupFDLimits(wantFDs uint64) error {
 		return fmt.Errorf("failed to set rlimit {%v} for max file descriptors: %v", rlim, err)
 	}
 
-	logging.Infof("Rlimits for file descriptors set to {%v}", rlim)
+	logging.Verbosef("Rlimits for file descriptors set to {%v}", rlim)
 	return nil
 }

@@ -19,7 +19,7 @@ package limits
 import "errors"
 
 // We don't support limit on the number of file handles in windows.
-const expectedFDs = 0
+const ExpectedFDs = 0
 
 func SetupFDLimits(wantFDs uint64) error {
 	if wantFDs != 0 {
