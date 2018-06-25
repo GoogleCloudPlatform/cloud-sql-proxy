@@ -31,6 +31,12 @@ var (
 	syscallSetrlimit = syscall.Setrlimit
 )
 
+// Each connection handled by the proxy requires two file descriptors, one
+// for the local end of the connection and one for the remote. So, the proxy
+// process should be able to open at least 8K file descriptors if it is to
+// handle 4K connections to one instance.
+const expectedFDs = 8500
+
 // SetupFDLimits ensures that the process running the Cloud SQL proxy can have
 // at least wantFDs number of open file descriptors. It returns an error if it
 // cannot ensure the same.

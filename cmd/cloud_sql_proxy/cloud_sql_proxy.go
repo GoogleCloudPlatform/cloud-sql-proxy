@@ -77,7 +77,7 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
-	fdRlimit       = flag.Uint64("fd_rlimit", expectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
+	fdRlimit       = flag.Uint64("fd_rlimit", limits.expectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
@@ -104,12 +104,6 @@ const (
 	minimumRefreshCfgThrottle = time.Second
 
 	port = 3307
-
-	// Each connection handled by the proxy requires two file descriptors, one
-	// for the local end of the connection and one for the remote. So, the proxy
-	// process should be able to open at least 8K file descriptors if it is to
-	// handle 4K connections to one instance.
-	expectedFDs = 8500
 )
 
 func init() {

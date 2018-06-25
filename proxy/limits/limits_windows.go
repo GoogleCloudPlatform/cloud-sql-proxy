@@ -16,6 +16,15 @@
 // setting limits in windows.
 package limits
 
-func SetupFDLimits(uint64) error {
+import "errors"
+
+// We don't support limit on the number of file handles in windows.
+const expectedFDs = 0
+
+func SetupFDLimits(wantFDs uint64) error {
+	if wantFDs != 0 {
+		return errors.New("setting limits on the number of file handles is not supported")
+	}
+
 	return nil
 }
