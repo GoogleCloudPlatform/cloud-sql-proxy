@@ -86,6 +86,9 @@ You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same
 
 	// Set to non-default value when gcloud execution failed.
 	gcloudStatus gcloudStatusCode
+
+	// Setting to choose what API to connect to
+	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
 )
 
 type gcloudStatusCode int
@@ -100,7 +103,6 @@ const (
 const (
 	minimumRefreshCfgThrottle = time.Second
 
-	host = "https://www.googleapis.com/sql/v1beta4/"
 	port = 3307
 
 	// Each connection handled by the proxy requires two file descriptors, one
@@ -507,7 +509,7 @@ func main() {
 		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
-			APIBasePath:  host,
+			APIBasePath:  *host,
 			IgnoreRegion: !*checkRegion,
 			UserAgent:    userAgentFromVersionString(),
 		}),
