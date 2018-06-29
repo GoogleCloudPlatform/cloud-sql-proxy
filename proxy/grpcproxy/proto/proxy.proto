@@ -1,0 +1,16 @@
+syntax = "proto3";
+package grpcproxy;
+
+
+service SQLProxy {
+    rpc ProxyConnection(stream ClientSQLMessage) returns (stream DatabaseMessage) {}
+}
+
+
+message ClientSQLMessage {
+    bytes data = 1;
+}
+
+message DatabaseMessage {
+    bytes data = 1;
+}

@@ -146,10 +146,10 @@ func (c *Client) handleConn(conn Conn) {
 	}
 }
 
-// refreshCfg uses the CertSource inside the Client to find the instance's
+// RefreshCfg uses the CertSource inside the Client to find the instance's
 // address as well as construct a new tls.Config to connect to the instance. It
 // caches the result.
-func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err error) {
+func (c *Client) RefreshCfg(instance string) (addr string, cfg *tls.Config, err error) {
 	c.cfgL.Lock()
 	defer c.cfgL.Unlock()
 
@@ -198,7 +198,8 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, nil
 }
 
-func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
+// CachedCfg returns a cached configuration
+func (c *Client) CachedCfg(instance string) (string, *tls.Config) {
 	c.cfgL.RLock()
 	ret, ok := c.cfgCache[instance]
 	c.cfgL.RUnlock()
@@ -214,14 +215,14 @@ func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
 // If this func returns a nil error the connection is correctly authenticated
 // to connect to the instance.
 func (c *Client) Dial(instance string) (net.Conn, error) {
-	if addr, cfg := c.cachedCfg(instance); cfg != nil {
+	if addr, cfg := c.CachedCfg(instance); cfg != nil {
 		ret, err := c.tryConnect(addr, cfg)
 		if err == nil {
 			return ret, err
 		}
 	}
 
-	addr, cfg, err := c.refreshCfg(instance)
+	addr, cfg, err := c.RefreshCfg(instance)
 	if err != nil {
 		return nil, err
 	}

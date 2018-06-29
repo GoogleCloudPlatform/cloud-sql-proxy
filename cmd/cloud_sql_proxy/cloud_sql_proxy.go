@@ -35,6 +35,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/grpcproxy"
+
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
@@ -87,6 +89,9 @@ You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same
 
 	// Setting to choose what API to connect to
 	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
+
+	// Setting to choose whether to use gRPC
+	usegRPC = flag.Bool("grpc", false, "When set to true, the proxy will connect to the proxy server using gRPC")
 )
 
 type gcloudStatusCode int
@@ -101,7 +106,8 @@ const (
 const (
 	minimumRefreshCfgThrottle = time.Second
 
-	port = 3307
+	port     = 3307
+	grpcPort = 3308
 )
 
 func init() {
@@ -491,7 +497,7 @@ func main() {
 	}
 	logging.Infof("Ready for new connections")
 
-	(&proxy.Client{
+	proxyClient := &proxy.Client{
 		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
@@ -501,5 +507,30 @@ func main() {
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
-	}).Run(connSrc)
+	}
+
+	if *usegRPC {
+		logging.Infof("Using gRPC\n")
+
+		for conn := range connSrc {
+			rpcProxy, err := grpcproxy.ObtainProxyConnection(grpcproxy.AuthConfig{
+				ProxyClient: proxyClient,
+				Conn:        conn,
+				Port:        grpcPort})
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			logging.Infof("Making new grpc tunnel")
+			err = rpcProxy.CreateTunnel(conn.Conn)
+			if err != nil {
+				logging.Infof("ohno %v", err)
+			}
+		}
+
+	} else {
+		logging.Infof("Not Using gRPC\n")
+		proxyClient.Run(connSrc)
+	}
+
 }
