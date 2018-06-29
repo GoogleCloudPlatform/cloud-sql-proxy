@@ -42,6 +42,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"cloud.google.com/go/compute/metadata"
+	"github.com/fsnotify/fsnotify"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	goauth "golang.org/x/oauth2/google"
@@ -70,7 +71,8 @@ for the same effect. Using both will use value from flag, Not compatible with -f
 is polled for a comma-separated list of instances to connect to. For example,
 to use the instance metadata value named 'cloud-sql-instances' you would
 provide 'instance/attributes/cloud-sql-instances'. Not compatible with -fuse`)
-	useFuse = flag.Bool("fuse", false, `Mount a directory at 'dir' using FUSE for accessing instances. Note that the
+	instancesFile = flag.String("instances_file", "", `If provided, loads and watches the file path for instance configuration + changes. Not compatible with -fuse`)
+	useFuse       = flag.Bool("fuse", false, `Mount a directory at 'dir' using FUSE for accessing instances. Note that the
 directory at 'dir' must be empty before this program is started.`)
 	fuseTmp = flag.String("fuse_tmp", defaultTmp, `Used as a temporary directory if -fuse is set. Note that files in this directory
 can be removed automatically by this program.`)
@@ -164,7 +166,11 @@ Connection:
      server. This parameter specifies a path to a metadata value which is then
      interpreted as a list of instances in the exact same way as the -instances
      parameter. Updates to the metadata value will be observed and acted on by
-     the Proxy.
+		 the Proxy.
+
+	-instances_file
+		Specify a file to load and watch for instances configuration. It's a comma
+		separated list similar to the -instances param value.
 
   -projects
     To direct the proxy to allow connections to all instances in specific
@@ -418,6 +424,14 @@ func main() {
 		}
 	}
 
+	if *instancesFile != "" {
+		configurationBytes, err := ioutil.ReadFile(*instancesFile)
+		if err != nil {
+			logging.Errorf("Error reading configuration file: %v", err)
+		}
+		*instances = strings.TrimSpace(string(configurationBytes))
+	}
+
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
 	if envInstances := os.Getenv("INSTANCES"); *instances == "" && envInstances != "" {
@@ -484,6 +498,37 @@ func main() {
 					time.Sleep(5 * time.Second)
 				}
 			}()
+		} else if *instancesFile != "" {
+			watcher, err := fsnotify.NewWatcher()
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer watcher.Close()
+
+			go func() {
+				for {
+					select {
+					case event := <-watcher.Events:
+						if event.Op&fsnotify.Write != fsnotify.Write {
+							continue
+						}
+						configurationBytes, err := ioutil.ReadFile(*instancesFile)
+						if err != nil {
+							logging.Errorf("Error reading configuration file: %v", err)
+						}
+						configuration := strings.TrimSpace(string(configurationBytes))
+						logging.Infof("configuration updated: %v", configuration)
+						updates <- configuration
+					case err := <-watcher.Errors:
+						logging.Errorf("Error watching configuration file: %v", err)
+					}
+				}
+			}()
+
+			err = watcher.Add(*instancesFile)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		c, err := WatchInstances(*dir, cfgs, updates, client)
