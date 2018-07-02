@@ -63,7 +63,7 @@ func WatchInstances(dir string, cfgs []instanceConfig, updates <-chan string, cl
 func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string, static map[string]net.Listener, cl *http.Client) {
 	dynamicInstances := make(map[string]net.Listener)
 	for instances := range updates {
-		list, err := parseInstanceConfigs(dir, strings.Split(instances, ","), cl)
+		list, err := parseInstanceConfigs(dir, strings.Split(strings.TrimSpace(instances), ","), cl)
 		if err != nil {
 			logging.Errorf("%v", err)
 		}
