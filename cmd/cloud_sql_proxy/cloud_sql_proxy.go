@@ -296,7 +296,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 }
 
 func stringList(s string) []string {
-	spl := strings.Split(s, ",")
+	spl := strings.Split(strings.TrimSpace(s), ",")
 	if len(spl) == 1 && spl[0] == "" {
 		return nil
 	}
@@ -429,7 +429,7 @@ func main() {
 		if err != nil {
 			logging.Errorf("Error reading configuration file: %v", err)
 		}
-		*instances = strings.TrimSpace(string(configurationBytes))
+		*instances = string(configurationBytes)
 	}
 
 	// TODO: needs a better place for consolidation
@@ -516,7 +516,7 @@ func main() {
 						if err != nil {
 							logging.Errorf("Error reading configuration file: %v", err)
 						}
-						configuration := strings.TrimSpace(string(configurationBytes))
+						configuration := string(configurationBytes)
 						logging.Infof("configuration updated: %v", configuration)
 						updates <- configuration
 					case err := <-watcher.Errors:

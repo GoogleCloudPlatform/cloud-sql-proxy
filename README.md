@@ -28,6 +28,7 @@ cloud_sql_proxy takes a few arguments to configure:
   will be removed from `-dir` as well (unless it was also specified in
   `-instances`), but any existing connections to this instance will NOT be
   terminated.
+* `-instances_file="/path/to/instances/file"`: Specify a file to load and watch for instances configuration changes. It's a comma separated list similar to the `-instances` param value.
 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.
