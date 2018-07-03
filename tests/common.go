@@ -50,8 +50,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
+
 	compute "google.golang.org/api/compute/v1"
 )
 
@@ -408,24 +407,6 @@ func sshKey() (pubKey string, auth ssh.AuthMethod, err error) {
 		return "", nil, err
 	}
 	return string(ssh.MarshalAuthorizedKey(pub)), ssh.PublicKeys(signer), nil
-}
-
-func clientFromCredentials(ctx context.Context) (*http.Client, error) {
-	if f := *credentialFile; f != "" {
-		all, err := ioutil.ReadFile(f)
-		if err != nil {
-			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
-		}
-		cfg, err := google.JWTConfigFromJSON(all, proxy.SQLScope)
-		if err != nil {
-			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
-		}
-		return cfg.Client(ctx), nil
-	} else if tok := *token; tok != "" {
-		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
-		return oauth2.NewClient(ctx, src), nil
-	}
-	return google.DefaultClient(ctx, proxy.SQLScope)
 }
 
 func TestMain(m *testing.M) {
