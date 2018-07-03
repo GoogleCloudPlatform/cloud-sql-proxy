@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -441,7 +442,7 @@ func main() {
 	instList := stringList(*instances)
 	projList := stringList(*projects)
 	// TODO: it'd be really great to consolidate flag verification in one place.
-	if len(instList) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
+	if len(instList) == 0 && *instanceSrc == "" && *instancesFile == "" && len(projList) == 0 && !*useFuse {
 		projList = gcloudProject()
 	}
 
@@ -509,7 +510,7 @@ func main() {
 				for {
 					select {
 					case event := <-watcher.Events:
-						if event.Op&fsnotify.Write != fsnotify.Write {
+						if event.Name != *instancesFile {
 							continue
 						}
 						configurationBytes, err := ioutil.ReadFile(*instancesFile)
@@ -517,7 +518,7 @@ func main() {
 							logging.Errorf("Error reading configuration file: %v", err)
 						}
 						configuration := string(configurationBytes)
-						logging.Infof("configuration updated: %v", configuration)
+						logging.Infof("configuration %v: %v", event.Op.String(), configuration)
 						updates <- configuration
 					case err := <-watcher.Errors:
 						logging.Errorf("Error watching configuration file: %v", err)
@@ -525,7 +526,7 @@ func main() {
 				}
 			}()
 
-			err = watcher.Add(*instancesFile)
+			err = watcher.Add(path.Dir(*instancesFile))
 			if err != nil {
 				log.Fatal(err)
 			}
