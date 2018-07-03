@@ -38,6 +38,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/limits"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"cloud.google.com/go/compute/metadata"
@@ -76,6 +77,7 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
+	fdRlimit       = flag.Uint64("fd_rlimit", limits.ExpectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
@@ -85,6 +87,9 @@ You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same
 
 	// Set to non-default value when gcloud execution failed.
 	gcloudStatus gcloudStatusCode
+
+	// Setting to choose what API to connect to
+	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
 )
 
 type gcloudStatusCode int
@@ -98,8 +103,8 @@ const (
 
 const (
 	minimumRefreshCfgThrottle = time.Second
-	host                      = "https://www.googleapis.com/sql/v1beta4/"
-	port                      = 3307
+  
+	port = 3307
 )
 
 func init() {
@@ -410,6 +415,12 @@ func main() {
 	// Split the input ipAddressTypes to the slice of string
 	ipAddrTypeOptsInput := strings.Split(*ipAddressTypes, ",")
 
+	if *fdRlimit != 0 {
+		if err := limits.SetupFDLimits(*fdRlimit); err != nil {
+			logging.Infof("failed to setup file descriptor limits: %v", err)
+		}
+	}
+
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
 	if envInstances := os.Getenv("INSTANCES"); *instances == "" && envInstances != "" {
@@ -494,7 +505,7 @@ func main() {
 		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
-			APIBasePath:  host,
+			APIBasePath:  *host,
 			IgnoreRegion: !*checkRegion,
 			UserAgent:    userAgentFromVersionString(),
 			IPAddrTypeOpts:   ipAddrTypeOptsInput,

@@ -38,8 +38,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -50,7 +48,6 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
-
 	compute "google.golang.org/api/compute/v1"
 )
 
@@ -71,10 +68,7 @@ var (
 	token          = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 )
 
-const (
-	defaultOS       = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160329"
-	buildShLocation = "cmd/cloud_sql_proxy/build.sh"
-)
+const defaultOS = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160329"
 
 type logger interface {
 	Log(args ...interface{})
@@ -156,31 +150,6 @@ type process struct {
 // what's wrong.
 func (p *process) Close() error {
 	return p.sess.Close()
-}
-
-func compileProxy() (string, error) {
-	// Find the 'build.sh' script by looking for it in cwd, cwd/.., and cwd/../..
-	var buildSh string
-
-	var parentPath []string
-	for parents := 0; parents < 2; parents++ {
-		cur := filepath.Join(append(parentPath, buildShLocation)...)
-		if _, err := os.Stat(cur); err == nil {
-			buildSh = cur
-			break
-		}
-		parentPath = append(parentPath, "..")
-	}
-	if buildSh == "" {
-		return "", fmt.Errorf("couldn't find %q; please cd into the local repository", buildShLocation)
-	}
-
-	cmd := exec.Command(buildSh)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("error during build.sh execution: %v;\n%s", err, out)
-	}
-
-	return "cloud_sql_proxy", nil
 }
 
 // startProxy executes the cloud_sql_proxy via ssh. The returned ReadCloser
