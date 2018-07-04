@@ -98,7 +98,7 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 		opts.IPAddrTypeOpts = append(opts.IPAddrTypeOpts, "PRIMARY")
 	} else {
 		// Add "PUBLIC" as an alias for "PRIMARY"
-		for index,ipAddressType := range opts.IPAddrTypeOpts {
+		for index, ipAddressType := range opts.IPAddrTypeOpts {
 			if strings.ToUpper(ipAddressType) == "PUBLIC" {
 				opts.IPAddrTypeOpts[index] = "PRIMARY"
 			}
@@ -204,6 +204,27 @@ func parseCert(pemCert string) (*x509.Certificate, error) {
 	return x509.ParseCertificate(bl.Bytes)
 }
 
+// Find the first matching IP address by user input IP address types
+func findIpAddr(s *RemoteCertSource, data *sqladmin.DatabaseInstance, instance string) (ipAddrInUse string, err error) {
+	for _, eachIPAddrTypeByUser := range s.IPAddrTypes {
+		for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
+			if strings.ToUpper(eachIPAddrTypeOfInstance.Type) == strings.ToUpper(eachIPAddrTypeByUser) {
+				ipAddrInUse = eachIPAddrTypeOfInstance.IpAddress
+				return ipAddrInUse, nil
+			}
+		}
+	}
+
+	IPAddrTypesOfInstance := ""
+	for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
+		IPAddrTypesOfInstance += fmt.Sprintf("(TYPE=%v, IP_ADDR=%v)", eachIPAddrTypeOfInstance.Type, eachIPAddrTypeOfInstance.IpAddress)
+	}
+
+	IPAddrTypeOfUser := fmt.Sprintf("%v", s.IPAddrTypes)
+
+	return "", fmt.Errorf("User input IP address type %v does not match the instance %v, the instance's IP addresses are %v ", IPAddrTypeOfUser, instance, IPAddrTypesOfInstance)
+}
+
 // Remote returns the specified instance's CA certificate, address, and name.
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name string, err error) {
 	p, region, n := util.SplitName(instance)
@@ -239,39 +260,14 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
 	}
 
-	// Find the first matching IP address type between user input types and the types that the instance has
-	IPAddrInUse := ""
-	isFound := false
-	for _, eachIPAddrTypeByUser := range s.IPAddrTypes {
-		for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
-			if strings.ToUpper(eachIPAddrTypeOfInstance.Type) == strings.ToUpper(eachIPAddrTypeByUser) {
-				IPAddrInUse = eachIPAddrTypeOfInstance.IpAddress
-				isFound = true
-				break
-			}
-		}
-
-		if isFound {
-			break
-		}
-	}
-
-	if IPAddrInUse == "" {
-		IPAddrTypesOfInstance := ""
-		for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
-			IPAddrTypesOfInstance += "(TYPE: " + eachIPAddrTypeOfInstance.Type + " IP: " + eachIPAddrTypeOfInstance.IpAddress + ") "
-		}
-
-		IPAddrTypeOfUser := ""
-		for _, eachIPAddrOpt := range s.IPAddrTypes {
-			IPAddrTypeOfUser += eachIPAddrOpt + ","
-		}
-		IPAddrTypeOfUser = strings.TrimSuffix(IPAddrTypeOfUser, ",")
-
-		return nil, "", "", fmt.Errorf("User input IP address type (%v) does not match the instance %v, the instance's IP addresses are {%v}", IPAddrTypeOfUser, instance, IPAddrTypesOfInstance)
+	// Find the first matching IP address by user input IP address types
+	ipAddrInUse := ""
+	ipAddrInUse, err = findIpAddr(s, data, instance)
+	if err != nil {
+		return nil, "", "", err
 	}
 
 	c, err := parseCert(data.ServerCaCert.Cert)
 
-	return c, IPAddrInUse, p + ":" + n, err
+	return c, ipAddrInUse, p + ":" + n, err
 }
