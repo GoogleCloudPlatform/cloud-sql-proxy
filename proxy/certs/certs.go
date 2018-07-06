@@ -26,13 +26,13 @@ import (
 	"math"
 	mrand "math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 	"google.golang.org/api/googleapi"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
-	"strings"
 )
 
 const defaultUserAgent = "custom cloud_sql_proxy version >= 1.10"
@@ -205,7 +205,7 @@ func parseCert(pemCert string) (*x509.Certificate, error) {
 }
 
 // Find the first matching IP address by user input IP address types
-func findIpAddr(s *RemoteCertSource, data *sqladmin.DatabaseInstance, instance string) (ipAddrInUse string, err error) {
+func (s *RemoteCertSource) findIPAddr(data *sqladmin.DatabaseInstance, instance string) (ipAddrInUse string, err error) {
 	for _, eachIPAddrTypeByUser := range s.IPAddrTypes {
 		for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
 			if strings.ToUpper(eachIPAddrTypeOfInstance.Type) == strings.ToUpper(eachIPAddrTypeByUser) {
@@ -215,14 +215,14 @@ func findIpAddr(s *RemoteCertSource, data *sqladmin.DatabaseInstance, instance s
 		}
 	}
 
-	IPAddrTypesOfInstance := ""
+	ipAddrTypesOfInstance := ""
 	for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
-		IPAddrTypesOfInstance += fmt.Sprintf("(TYPE=%v, IP_ADDR=%v)", eachIPAddrTypeOfInstance.Type, eachIPAddrTypeOfInstance.IpAddress)
+		ipAddrTypesOfInstance += fmt.Sprintf("(TYPE=%v, IP_ADDR=%v)", eachIPAddrTypeOfInstance.Type, eachIPAddrTypeOfInstance.IpAddress)
 	}
 
-	IPAddrTypeOfUser := fmt.Sprintf("%v", s.IPAddrTypes)
+	ipAddrTypeOfUser := fmt.Sprintf("%v", s.IPAddrTypes)
 
-	return "", fmt.Errorf("User input IP address type %v does not match the instance %v, the instance's IP addresses are %v ", IPAddrTypeOfUser, instance, IPAddrTypesOfInstance)
+	return "", fmt.Errorf("User input IP address type %v does not match the instance %v, the instance's IP addresses are %v ", ipAddrTypeOfUser, instance, ipAddrTypesOfInstance)
 }
 
 // Remote returns the specified instance's CA certificate, address, and name.
@@ -262,7 +262,7 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 
 	// Find the first matching IP address by user input IP address types
 	ipAddrInUse := ""
-	ipAddrInUse, err = findIpAddr(s, data, instance)
+	ipAddrInUse, err = s.findIPAddr(data, instance)
 	if err != nil {
 		return nil, "", "", err
 	}
