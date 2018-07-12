@@ -26,6 +26,7 @@ import (
 	"math"
 	mrand "math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -64,6 +65,9 @@ type RemoteOpts struct {
 	// A string for the RemoteCertSource to identify itself when contacting the
 	// sqladmin API.
 	UserAgent string
+
+	// IP address type options
+	IPAddrTypeOpts []string
 }
 
 // NewCertSourceOpts returns a CertSource configured with the provided Opts.
@@ -88,7 +92,20 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 		ua = defaultUserAgent
 	}
 	serv.UserAgent = ua
-	return &RemoteCertSource{pkey, serv, !opts.IgnoreRegion}
+
+	// Set default value to be PRIMARY if input opts.IPAddrTypeOpts is empty
+	if len(opts.IPAddrTypeOpts) < 1 {
+		opts.IPAddrTypeOpts = append(opts.IPAddrTypeOpts, "PRIMARY")
+	} else {
+		// Add "PUBLIC" as an alias for "PRIMARY"
+		for index, ipAddressType := range opts.IPAddrTypeOpts {
+			if strings.ToUpper(ipAddressType) == "PUBLIC" {
+				opts.IPAddrTypeOpts[index] = "PRIMARY"
+			}
+		}
+	}
+
+	return &RemoteCertSource{pkey, serv, !opts.IgnoreRegion, opts.IPAddrTypeOpts}
 }
 
 // RemoteCertSource implements a CertSource, using Cloud SQL APIs to
@@ -104,6 +121,8 @@ type RemoteCertSource struct {
 	// treated as an error. This is to provide the same functionality that will
 	// occur when API calls require the region.
 	checkRegion bool
+	// a list of ip address types that users select
+	IPAddrTypes []string
 }
 
 // Constants for backoffAPIRetry. These cause the retry logic to scale the
@@ -185,6 +204,27 @@ func parseCert(pemCert string) (*x509.Certificate, error) {
 	return x509.ParseCertificate(bl.Bytes)
 }
 
+// Find the first matching IP address by user input IP address types
+func (s *RemoteCertSource) findIPAddr(data *sqladmin.DatabaseInstance, instance string) (ipAddrInUse string, err error) {
+	for _, eachIPAddrTypeByUser := range s.IPAddrTypes {
+		for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
+			if strings.ToUpper(eachIPAddrTypeOfInstance.Type) == strings.ToUpper(eachIPAddrTypeByUser) {
+				ipAddrInUse = eachIPAddrTypeOfInstance.IpAddress
+				return ipAddrInUse, nil
+			}
+		}
+	}
+
+	ipAddrTypesOfInstance := ""
+	for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
+		ipAddrTypesOfInstance += fmt.Sprintf("(TYPE=%v, IP_ADDR=%v)", eachIPAddrTypeOfInstance.Type, eachIPAddrTypeOfInstance.IpAddress)
+	}
+
+	ipAddrTypeOfUser := fmt.Sprintf("%v", s.IPAddrTypes)
+
+	return "", fmt.Errorf("User input IP address type %v does not match the instance %v, the instance's IP addresses are %v ", ipAddrTypeOfUser, instance, ipAddrTypesOfInstance)
+}
+
 // Remote returns the specified instance's CA certificate, address, and name.
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name string, err error) {
 	p, region, n := util.SplitName(instance)
@@ -215,9 +255,19 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 		logging.Errorf("%v", err)
 		logging.Errorf("WARNING: specifying the correct region in an instance string will become required in a future version!")
 	}
-	if len(data.IpAddresses) == 0 || data.IpAddresses[0].IpAddress == "" {
+
+	if len(data.IpAddresses) == 0 {
 		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
 	}
+
+	// Find the first matching IP address by user input IP address types
+	ipAddrInUse := ""
+	ipAddrInUse, err = s.findIPAddr(data, instance)
+	if err != nil {
+		return nil, "", "", err
+	}
+
 	c, err := parseCert(data.ServerCaCert.Cert)
-	return c, data.IpAddresses[0].IpAddress, p + ":" + n, err
+
+	return c, ipAddrInUse, p + ":" + n, err
 }

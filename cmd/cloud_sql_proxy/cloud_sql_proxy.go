@@ -83,6 +83,7 @@ can be removed automatically by this program.`)
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+	ipAddressTypes = flag.String("ip_address_types", "PRIMARY", "Default to be 'PRIMARY'. Options: a list of strings separated by ',', e.g. 'PRIMARY, PRIVATE' ")
 
 	// Set to non-default value when gcloud execution failed.
 	gcloudStatus gcloudStatusCode
@@ -102,7 +103,7 @@ const (
 
 const (
 	minimumRefreshCfgThrottle = time.Second
-
+  
 	port = 3307
 )
 
@@ -182,7 +183,6 @@ Connection:
   -dir
     When using Unix sockets (the default for systems which support them), the
     Proxy places the sockets in the directory specified by the -dir parameter.
-
 
 Automatic instance discovery:
    If the Google Cloud SQL is installed on the local machine and no instance
@@ -412,6 +412,9 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
+	// Split the input ipAddressTypes to the slice of string
+	ipAddrTypeOptsInput := strings.Split(*ipAddressTypes, ",")
+
 	if *fdRlimit != 0 {
 		if err := limits.SetupFDLimits(*fdRlimit); err != nil {
 			logging.Infof("failed to setup file descriptor limits: %v", err)
@@ -447,7 +450,6 @@ func main() {
 		log.Fatal(err)
 	}
 	instList = append(instList, ins...)
-
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
 	if err != nil {
 		log.Fatal(err)
@@ -506,6 +508,7 @@ func main() {
 			APIBasePath:  *host,
 			IgnoreRegion: !*checkRegion,
 			UserAgent:    userAgentFromVersionString(),
+			IPAddrTypeOpts:   ipAddrTypeOptsInput,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
