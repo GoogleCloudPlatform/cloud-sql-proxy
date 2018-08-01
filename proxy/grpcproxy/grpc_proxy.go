@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	pb "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/grpcproxy/proto"
@@ -17,17 +16,17 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// RPCSQLProxyConnection wraps around SQLProxyClient and can create a tunnel between a local connection and its remote RPC server
+// RPCSQLProxyConnection wraps around Mygrpc_ConnectionClient and can create a tunnel between a local connection and its remote RPC server
 type RPCSQLProxyConnection struct {
-	remote pb.SQLProxyClient
+	remote pb.MyGrpcClient
 }
 
 // CreateTunnel establishes a tunnel between remote and the local stream
 func (conn *RPCSQLProxyConnection) CreateTunnel(local io.ReadWriteCloser) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
-	// ctx, cancel := context.WithCancel(context.Background())
+	// ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 
-	forward, err := conn.remote.ProxyConnection(ctx)
+	forward, err := conn.remote.Connection(ctx)
 
 	if err != nil {
 		logging.Infof("Closing connection")
@@ -74,7 +73,7 @@ func ObtainProxyConnection(conf AuthConfig) (RPCSQLProxyConnection, error) {
 		return RPCSQLProxyConnection{}, err
 	}
 
-	remote := pb.NewSQLProxyClient(conn)
+	remote := pb.NewMyGrpcClient(conn)
 
 	return RPCSQLProxyConnection{remote: remote}, nil
 }
@@ -86,7 +85,7 @@ type AuthConfig struct {
 	Conn        proxy.Conn
 }
 
-func copyThenClose(remote pb.SQLProxy_ProxyConnectionClient, local io.ReadWriteCloser, cancel context.CancelFunc) {
+func copyThenClose(remote pb.MyGrpc_ConnectionClient, local io.ReadWriteCloser, cancel context.CancelFunc) {
 	defer cancel()
 
 	firstErr := make(chan error, 1)
@@ -102,6 +101,7 @@ func copyThenClose(remote pb.SQLProxy_ProxyConnectionClient, local io.ReadWriteC
 				// copyError(localDesc, remoteDesc, readErr, err)
 			}
 			// remote.Close()
+			cancel()
 			local.Close()
 		default:
 		}
@@ -116,6 +116,7 @@ func copyThenClose(remote pb.SQLProxy_ProxyConnectionClient, local io.ReadWriteC
 			// copyError(remoteDesc, localDesc, readErr, err)
 		}
 		// remote.Close()
+		cancel()
 		local.Close()
 	default:
 		// In this case, the other goroutine exited first and already printed its
@@ -124,7 +125,7 @@ func copyThenClose(remote pb.SQLProxy_ProxyConnectionClient, local io.ReadWriteC
 	logging.Infof("Closing connection")
 }
 
-func copyBytesToRPC(server io.ReadWriteCloser, client pb.SQLProxy_ProxyConnectionClient, bufferSize int) (readErr bool, err error) {
+func copyBytesToRPC(server io.ReadWriteCloser, client pb.MyGrpc_ConnectionClient, bufferSize int) (readErr bool, err error) {
 	buf := make([]byte, bufferSize)
 	for {
 		len, err := server.Read(buf)
@@ -133,7 +134,7 @@ func copyBytesToRPC(server io.ReadWriteCloser, client pb.SQLProxy_ProxyConnectio
 				return true, err
 			}
 
-			err = client.Send(&pb.ClientSQLMessage{Data: buf[:len]})
+			err = client.Send(&pb.ClientMessage{Data: buf[:len]})
 			if err != nil {
 				return false, err
 			}
@@ -142,7 +143,7 @@ func copyBytesToRPC(server io.ReadWriteCloser, client pb.SQLProxy_ProxyConnectio
 
 }
 
-func copyBytesFromRPC(client pb.SQLProxy_ProxyConnectionClient, server io.ReadWriteCloser, bufferSize int) (readErr bool, err error) {
+func copyBytesFromRPC(client pb.MyGrpc_ConnectionClient, server io.ReadWriteCloser, bufferSize int) (readErr bool, err error) {
 	for {
 		msg, err := client.Recv()
 		if err != nil {

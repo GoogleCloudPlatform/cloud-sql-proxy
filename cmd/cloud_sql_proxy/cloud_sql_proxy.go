@@ -35,11 +35,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/grpcproxy"
-
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/grpcproxy"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"cloud.google.com/go/compute/metadata"
