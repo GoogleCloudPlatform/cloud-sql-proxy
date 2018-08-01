@@ -107,8 +107,8 @@ const (
 
 const (
 	minimumRefreshCfgThrottle = time.Second
-	port     = 3307
-	grpcPort = 3308
+	port                      = 3307
+	grpcPort                  = 3308
 )
 
 func init() {
@@ -509,10 +509,10 @@ func main() {
 		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
-			APIBasePath:  *host,
-			IgnoreRegion: !*checkRegion,
-			UserAgent:    userAgentFromVersionString(),
-			IPAddrTypeOpts:   ipAddrTypeOptsInput,
+			APIBasePath:    *host,
+			IgnoreRegion:   !*checkRegion,
+			UserAgent:      userAgentFromVersionString(),
+			IPAddrTypeOpts: ipAddrTypeOptsInput,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,

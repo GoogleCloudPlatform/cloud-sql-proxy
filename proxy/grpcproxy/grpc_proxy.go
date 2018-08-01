@@ -23,7 +23,6 @@ type RPCSQLProxyConnection struct {
 
 // CreateTunnel establishes a tunnel between remote and the local stream
 func (conn *RPCSQLProxyConnection) CreateTunnel(local io.ReadWriteCloser) error {
-	// ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	forward, err := conn.remote.Connection(ctx)
@@ -54,13 +53,11 @@ func ObtainProxyConnection(conf AuthConfig) (RPCSQLProxyConnection, error) {
 	}
 	addr = addr[:strings.Index(addr, ":")]
 	addr = fmt.Sprintf("%s:%d", addr, conf.Port)
-	logging.Infof("Connecting to server at %s\n", addr)
 
 	// remove region name from instance
 	indexOfColon := strings.Index(instance, ":")
 	secondPortion := instance[indexOfColon+1:]
 	cfg.ServerName = instance[0:indexOfColon] + secondPortion[strings.Index(secondPortion, ":"):]
-	logging.Infof("Connecting to instance %s\n", cfg.ServerName)
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(
