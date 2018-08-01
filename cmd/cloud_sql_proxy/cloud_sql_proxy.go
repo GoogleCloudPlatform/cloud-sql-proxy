@@ -39,6 +39,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/grpcproxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/limits"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"cloud.google.com/go/compute/metadata"
@@ -77,11 +78,13 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
+	fdRlimit       = flag.Uint64("fd_rlimit", limits.ExpectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+	ipAddressTypes = flag.String("ip_address_types", "PRIMARY", "Default to be 'PRIMARY'. Options: a list of strings separated by ',', e.g. 'PRIMARY, PRIVATE' ")
 
 	// Set to non-default value when gcloud execution failed.
 	gcloudStatus gcloudStatusCode
@@ -104,7 +107,6 @@ const (
 
 const (
 	minimumRefreshCfgThrottle = time.Second
-
 	port     = 3307
 	grpcPort = 3308
 )
@@ -185,7 +187,6 @@ Connection:
   -dir
     When using Unix sockets (the default for systems which support them), the
     Proxy places the sockets in the directory specified by the -dir parameter.
-
 
 Automatic instance discovery:
    If the Google Cloud SQL is installed on the local machine and no instance
@@ -415,6 +416,15 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
+	// Split the input ipAddressTypes to the slice of string
+	ipAddrTypeOptsInput := strings.Split(*ipAddressTypes, ",")
+
+	if *fdRlimit != 0 {
+		if err := limits.SetupFDLimits(*fdRlimit); err != nil {
+			logging.Infof("failed to setup file descriptor limits: %v", err)
+		}
+	}
+
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
 	if envInstances := os.Getenv("INSTANCES"); *instances == "" && envInstances != "" {
@@ -444,7 +454,6 @@ func main() {
 		log.Fatal(err)
 	}
 	instList = append(instList, ins...)
-
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
 	if err != nil {
 		log.Fatal(err)
@@ -503,6 +512,7 @@ func main() {
 			APIBasePath:  *host,
 			IgnoreRegion: !*checkRegion,
 			UserAgent:    userAgentFromVersionString(),
+			IPAddrTypeOpts:   ipAddrTypeOptsInput,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
