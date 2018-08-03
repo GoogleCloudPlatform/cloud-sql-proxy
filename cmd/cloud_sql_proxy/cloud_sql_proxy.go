@@ -391,7 +391,7 @@ func main() {
 	}
 
 	if !*verbose {
-		logging.Verbosef = func(string, ...interface{}) {}
+		logging.LogVerboseToNowhere()
 	}
 
 	if *quiet {
