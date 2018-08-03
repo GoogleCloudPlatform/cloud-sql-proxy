@@ -23,6 +23,7 @@ import (
 )
 
 // Verbosef is called to write verbose logs, such as when a new connection is
+// established correctly.
 var Verbosef = log.Printf
 
 // Infof is called to write informational logs, such as when startup has
