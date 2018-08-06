@@ -30,9 +30,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -84,6 +86,8 @@ can be removed automatically by this program.`)
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	ipAddressTypes = flag.String("ip_address_types", "PRIMARY", "Default to be 'PRIMARY'. Options: a list of strings separated by ',', e.g. 'PRIMARY, PRIVATE' ")
+
+	termDelay = flag.Duration("term_delay", 0*time.Second, "If specified delays shutting down for that duration after receiving TERM signal.")
 
 	// Set to non-default value when gcloud execution failed.
 	gcloudStatus gcloudStatusCode
@@ -377,6 +381,24 @@ func gcloudProject() []string {
 	return []string{data.Core.Project}
 }
 
+func setupTermDelay() {
+	terminated := make(chan bool, 0)
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM)
+
+	go func() {
+		<-terminated
+		time.Sleep(*termDelay)
+		os.Exit(0)
+	}()
+
+	go func() {
+		sig := <-sigs
+		log.Printf("Received signal %s, delaying for %s.", sig, *termDelay)
+		terminated <- true
+	}()
+}
+
 // Main executes the main function of the proxy, allowing it to be called from tests.
 //
 // Setting timeout to a value greater than 0 causes the process to panic after
@@ -396,6 +418,10 @@ func Main(timeout time.Duration) {
 
 func main() {
 	flag.Parse()
+
+	if *termDelay != 0*time.Second {
+		setupTermDelay()
+	}
 
 	if *version {
 		fmt.Println("Cloud SQL Proxy:", versionString)
