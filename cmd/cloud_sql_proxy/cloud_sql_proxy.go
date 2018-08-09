@@ -20,8 +20,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,7 +27,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -40,6 +37,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/limits"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
@@ -85,25 +83,13 @@ can be removed automatically by this program.`)
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	ipAddressTypes = flag.String("ip_address_types", "PRIMARY", "Default to be 'PRIMARY'. Options: a list of strings separated by ',', e.g. 'PRIMARY, PRIVATE' ")
 
-	// Set to non-default value when gcloud execution failed.
-	gcloudStatus gcloudStatusCode
-
 	// Setting to choose what API to connect to
 	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
 )
 
-type gcloudStatusCode int
-
-const (
-	gcloudOk gcloudStatusCode = iota
-	gcloudNotFound
-	// generic execution failure error not specified above.
-	gcloudExecErr
-)
-
 const (
 	minimumRefreshCfgThrottle = time.Second
-  
+
 	port = 3307
 )
 
@@ -286,7 +272,17 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		return oauth2.NewClient(ctx, src), nil
 	}
 
-	return goauth.DefaultClient(ctx, proxy.SQLScope)
+	// If flags don't specify an auth source, try either gcloud or application default
+	// credentials.
+	src, err := util.GcloudTokenSource(ctx)
+	if err != nil {
+		src, err = goauth.DefaultTokenSource(ctx, proxy.SQLScope)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return oauth2.NewClient(ctx, src), nil
 }
 
 func stringList(s string) []string {
@@ -343,38 +339,15 @@ func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]s
 	return ret, nil
 }
 
-func gcloudProject() []string {
-	buf := new(bytes.Buffer)
-	cmd := exec.Command("gcloud", "--format", "json", "config", "list", "core/project")
-	cmd.Stdout = buf
-
-	if err := cmd.Run(); err != nil {
-		if strings.Contains(err.Error(), "executable file not found") {
-			// gcloud not found (probably not installed). Ignore the error but record
-			// the status for later use.
-			gcloudStatus = gcloudNotFound
-			return nil
-		}
-		gcloudStatus = gcloudExecErr
-		logging.Errorf("Error detecting gcloud project: %v", err)
-		return nil
+func gcloudProject() ([]string, error) {
+	cfg, err := util.GcloudConfig()
+	if err != nil {
+		return nil, err
 	}
-
-	var data struct {
-		Core struct {
-			Project string
-		}
+	if cfg.Configuration.Properties.Core.Project == "" {
+		return nil, fmt.Errorf("gcloud has no active project, you can set it by running `gcloud config set project <project>`")
 	}
-
-	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
-		gcloudStatus = gcloudExecErr
-		logging.Errorf("Failed to unmarshal bytes from gcloud: %v", err)
-		logging.Errorf("   gcloud returned:\n%s", buf)
-		return nil
-	}
-
-	logging.Infof("Using gcloud's active project: %v", data.Core.Project)
-	return []string{data.Core.Project}
+	return []string{cfg.Configuration.Properties.Core.Project}, nil
 }
 
 // Main executes the main function of the proxy, allowing it to be called from tests.
@@ -431,7 +404,15 @@ func main() {
 	projList := stringList(*projects)
 	// TODO: it'd be really great to consolidate flag verification in one place.
 	if len(instList) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
-		projList = gcloudProject()
+		var err error
+		projList, err = gcloudProject()
+		if err == nil {
+			logging.Infof("Using gcloud's active project: %v", projList)
+		} else if gErr, ok := err.(*util.GcloudError); ok && gErr.Status == util.GcloudNotFound {
+			log.Fatalf("gcloud is not in the path and -instances and -projects are empty")
+		} else {
+			log.Fatalf("unable to retrieve the active gcloud project and -instances and -projects are empty: %v", err)
+		}
 	}
 
 	onGCE := onGCE()
@@ -505,10 +486,10 @@ func main() {
 		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
-			APIBasePath:  *host,
-			IgnoreRegion: !*checkRegion,
-			UserAgent:    userAgentFromVersionString(),
-			IPAddrTypeOpts:   ipAddrTypeOptsInput,
+			APIBasePath:    *host,
+			IgnoreRegion:   !*checkRegion,
+			UserAgent:      userAgentFromVersionString(),
+			IPAddrTypeOpts: ipAddrTypeOptsInput,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
