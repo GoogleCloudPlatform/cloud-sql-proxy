@@ -21,9 +21,7 @@ import (
 	"sync"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
 
@@ -88,18 +86,13 @@ func InitClient(c Client) {
 	dialClient.Unlock()
 }
 
-// InitDefault attempts to initialize the Dial function using either gcloud credentials or the
-// application default credentials.
+// InitDefault attempts to initialize the Dial function using application
+// default credentials.
 func InitDefault(ctx context.Context) error {
-	src, err := util.GcloudTokenSource(ctx)
-	if err != nil {
-		src, err = google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/sqlservice.admin")
-	}
+	cl, err := google.DefaultClient(ctx, "https://www.googleapis.com/auth/sqlservice.admin")
 	if err != nil {
 		return err
 	}
-
-	cl := oauth2.NewClient(ctx, src)
 	Init(cl, nil, nil)
 	return nil
 }
