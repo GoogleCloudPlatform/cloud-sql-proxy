@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"os/exec"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -84,15 +83,11 @@ func GcloudConfig() (*GcloudConfigData, error) {
 	cmd.Stdout = buf
 
 	if err := cmd.Run(); err != nil {
-		if strings.Contains(err.Error(), "executable file not found") {
-			return nil, &GcloudError{err, GcloudNotFound}
-		}
 		logging.Errorf("Error detecting gcloud project: %v", err)
 		return nil, &GcloudError{err, GcloudExecErr}
 	}
 
 	data := &GcloudConfigData{}
-
 	if err := json.Unmarshal(buf.Bytes(), data); err != nil {
 		logging.Errorf("Failed to unmarshal bytes from gcloud: %v", err)
 		logging.Errorf("   gcloud returned:\n%s", buf)
