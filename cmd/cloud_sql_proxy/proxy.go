@@ -158,8 +158,6 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 
 			switch clientConn := c.(type) {
 			case *net.TCPConn:
-				logging.Infof("patching keep-alive parameters on connection from %s", c.RemoteAddr().String())
-				clientConn.SetLinger(2)
 				clientConn.SetKeepAlive(true)
 				clientConn.SetKeepAlivePeriod(1 * time.Minute)
 
