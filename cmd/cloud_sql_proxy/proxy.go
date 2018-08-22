@@ -155,6 +155,13 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 				return
 			}
 			logging.Verbosef("New connection for %q", cfg.Instance)
+
+			switch clientConn := c.(type) {
+			case *net.TCPConn:
+				clientConn.SetKeepAlive(true)
+				clientConn.SetKeepAlivePeriod(1 * time.Minute)
+
+			}
 			dst <- proxy.Conn{cfg.Instance, c}
 		}
 	}()
