@@ -194,8 +194,43 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 		ServerName:   name,
 		Certificates: []tls.Certificate{mycert},
 		RootCAs:      certs,
+		// We need to set InsecureSkipVerify to true due to
+		// https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/194
+		// https://tip.golang.org/doc/go1.11#crypto/x509
+		//
+		// Since we have a secure channel to the Cloud SQL API which we use to retrieve the
+		// certificates, we instead need to implement our own VerifyPeerCertificate function
+		// that will verify that the certificate is OK.
+		InsecureSkipVerify:    true,
+		VerifyPeerCertificate: genVerifyPeerCertificateFunc(name, certs),
 	}
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, nil
+}
+
+// genVerifyPeerCertificateFunc creates a VerifyPeerCertificate func that verifies that the peer
+// certificate is in the cert pool. We need to define our own because of our sketchy non-standard
+// CNs.
+func genVerifyPeerCertificateFunc(instanceName string, pool *x509.CertPool) func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+	return func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+		if len(rawCerts) == 0 {
+			return fmt.Errorf("no certificate to verify")
+		}
+
+		cert, err := x509.ParseCertificate(rawCerts[0])
+		if err != nil {
+			return fmt.Errorf("x509.ParseCertificate(rawCerts[0]) returned error: %v", err)
+		}
+
+		opts := x509.VerifyOptions{Roots: pool}
+		if _, err = cert.Verify(opts); err != nil {
+			return err
+		}
+
+		if cert.Subject.CommonName != instanceName {
+			return fmt.Errorf("certificate had CN %q, expected %q", cert.Subject.CommonName, instanceName)
+		}
+		return nil
+	}
 }
 
 func (c *Client) cachedCfg(instance string) (string, *tls.Config) {

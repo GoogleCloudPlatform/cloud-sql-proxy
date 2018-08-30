@@ -20,8 +20,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,7 +27,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -38,7 +35,9 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/limits"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
@@ -76,17 +75,21 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
+	fdRlimit       = flag.Uint64("fd_rlimit", limits.ExpectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+	ipAddressTypes = flag.String("ip_address_types", "PRIMARY", "Default to be 'PRIMARY'. Options: a list of strings separated by ',', e.g. 'PRIMARY, PRIVATE' ")
+
+	// Setting to choose what API to connect to
+	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
 )
 
 const (
 	minimumRefreshCfgThrottle = time.Second
 
-	host = "https://www.googleapis.com/sql/v1beta4/"
 	port = 3307
 )
 
@@ -166,7 +169,6 @@ Connection:
   -dir
     When using Unix sockets (the default for systems which support them), the
     Proxy places the sockets in the directory specified by the -dir parameter.
-
 
 Automatic instance discovery:
    If the Google Cloud SQL is installed on the local machine and no instance
@@ -270,7 +272,17 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		return oauth2.NewClient(ctx, src), nil
 	}
 
-	return goauth.DefaultClient(ctx, proxy.SQLScope)
+	// If flags don't specify an auth source, try either gcloud or application default
+	// credentials.
+	src, err := util.GcloudTokenSource(ctx)
+	if err != nil {
+		src, err = goauth.DefaultTokenSource(ctx, proxy.SQLScope)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return oauth2.NewClient(ctx, src), nil
 }
 
 func stringList(s string) []string {
@@ -327,34 +339,15 @@ func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]s
 	return ret, nil
 }
 
-func gcloudProject() []string {
-	buf := new(bytes.Buffer)
-	cmd := exec.Command("gcloud", "--format", "json", "config", "list", "core/project")
-	cmd.Stdout = buf
-
-	if err := cmd.Run(); err != nil {
-		if strings.Contains(err.Error(), "executable file not found") {
-			// gcloud not installed; ignore the error
-			return nil
-		}
-		logging.Errorf("Error detecting gcloud project: %v", err)
-		return nil
+func gcloudProject() ([]string, error) {
+	cfg, err := util.GcloudConfig()
+	if err != nil {
+		return nil, err
 	}
-
-	var data struct {
-		Core struct {
-			Project string
-		}
+	if cfg.Configuration.Properties.Core.Project == "" {
+		return nil, fmt.Errorf("gcloud has no active project, you can set it by running `gcloud config set project <project>`")
 	}
-
-	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
-		logging.Errorf("Failed to unmarshal bytes from gcloud: %v", err)
-		logging.Errorf("   gcloud returned:\n%s", buf)
-		return nil
-	}
-
-	logging.Infof("Using gcloud's active project: %v", data.Core.Project)
-	return []string{data.Core.Project}
+	return []string{cfg.Configuration.Properties.Core.Project}, nil
 }
 
 // Main executes the main function of the proxy, allowing it to be called from tests.
@@ -392,6 +385,15 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
+	// Split the input ipAddressTypes to the slice of string
+	ipAddrTypeOptsInput := strings.Split(*ipAddressTypes, ",")
+
+	if *fdRlimit != 0 {
+		if err := limits.SetupFDLimits(*fdRlimit); err != nil {
+			logging.Infof("failed to setup file descriptor limits: %v", err)
+		}
+	}
+
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
 	if envInstances := os.Getenv("INSTANCES"); *instances == "" && envInstances != "" {
@@ -402,7 +404,15 @@ func main() {
 	projList := stringList(*projects)
 	// TODO: it'd be really great to consolidate flag verification in one place.
 	if len(instList) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
-		projList = gcloudProject()
+		var err error
+		projList, err = gcloudProject()
+		if err == nil {
+			logging.Infof("Using gcloud's active project: %v", projList)
+		} else if gErr, ok := err.(*util.GcloudError); ok && gErr.Status == util.GcloudNotFound {
+			log.Fatalf("gcloud is not in the path and -instances and -projects are empty")
+		} else {
+			log.Fatalf("unable to retrieve the active gcloud project and -instances and -projects are empty: %v", err)
+		}
 	}
 
 	onGCE := onGCE()
@@ -421,7 +431,6 @@ func main() {
 		log.Fatal(err)
 	}
 	instList = append(instList, ins...)
-
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
 	if err != nil {
 		log.Fatal(err)
@@ -477,9 +486,10 @@ func main() {
 		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
-			APIBasePath:  host,
-			IgnoreRegion: !*checkRegion,
-			UserAgent:    userAgentFromVersionString(),
+			APIBasePath:    *host,
+			IgnoreRegion:   !*checkRegion,
+			UserAgent:      userAgentFromVersionString(),
+			IPAddrTypeOpts: ipAddrTypeOptsInput,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,

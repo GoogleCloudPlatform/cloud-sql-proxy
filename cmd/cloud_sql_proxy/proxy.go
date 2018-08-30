@@ -155,6 +155,13 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 				return
 			}
 			logging.Verbosef("New connection for %q", cfg.Instance)
+
+			switch clientConn := c.(type) {
+			case *net.TCPConn:
+				clientConn.SetKeepAlive(true)
+				clientConn.SetKeepAlivePeriod(1 * time.Minute)
+
+			}
 			dst <- proxy.Conn{cfg.Instance, c}
 		}
 	}()
@@ -241,7 +248,7 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		if err != nil {
 			return instanceConfig{}, err
 		}
-
+		sql.BasePath = *host
 		ret.Instance = instance
 		// Default to unix socket.
 		ret.Network = "unix"
@@ -338,10 +345,18 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 	}
 	// FUSE disabled.
 	if len(instances) == 0 && instancesSrc == "" {
+		// Failure to specifying instance can be caused by following reasons.
+		// 1. not enough information is provided by flags
+		// 2. failed to invoke gcloud
+		var flags string
 		if fuse.Supported() {
-			return nil, errors.New("must specify -projects, -fuse, or -instances")
+			flags = "-projects, -fuse, -instances or -instances_metadata"
+		} else {
+			flags = "-projects, -instances or -instances_metadata"
 		}
-		return nil, errors.New("must specify -projects or -instances")
+
+		errStr := fmt.Sprintf("no instance selected because none of %s is specified", flags)
+		return nil, errors.New(errStr)
 	}
 	return cfgs, nil
 }
