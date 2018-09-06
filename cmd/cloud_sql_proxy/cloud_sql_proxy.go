@@ -27,9 +27,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -76,6 +78,7 @@ can be removed automatically by this program.`)
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
 	fdRlimit       = flag.Uint64("fd_rlimit", limits.ExpectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
+	termTimeout    = flag.Duration("term_timeout", 0, "When set, the proxy will stop accepting new connections and wait for existing connections to close before terminating. Any connections that haven't closed after the timeout will be dropped")
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
@@ -482,7 +485,7 @@ func main() {
 	}
 	logging.Infof("Ready for new connections")
 
-	(&proxy.Client{
+	proxyClient := &proxy.Client{
 		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
@@ -493,5 +496,27 @@ func main() {
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
-	}).Run(connSrc)
+	}
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM)
+
+	go func() {
+		<-signals
+		logging.Infof("Received TERM signal. Waiting up to %s seconds before terminating.", *termTimeout)
+
+		termTime := time.Now().Add(*termTimeout)
+		for termTime.Before(time.Now()) && proxyClient.ConnectionsCounter > 0 {
+			time.Sleep(1)
+		}
+
+		// Exit cleanly if there are no active connections when we exit
+		if proxyClient.ConnectionsCounter == 0 {
+			os.Exit(0)
+		} else {
+			os.Exit(2)
+		}
+	}()
+
+	proxyClient.Run(connSrc)
 }
