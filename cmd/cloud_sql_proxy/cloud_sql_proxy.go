@@ -506,7 +506,7 @@ func main() {
 		logging.Infof("Received TERM signal. Waiting up to %s seconds before terminating.", *termTimeout)
 
 		termTime := time.Now().Add(*termTimeout)
-		for termTime.Before(time.Now()) && proxyClient.ConnectionsCounter > 0 {
+		for termTime.After(time.Now()) && proxyClient.ConnectionsCounter > 0 {
 			time.Sleep(1)
 		}
 
