@@ -31,6 +31,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -499,22 +500,22 @@ func main() {
 	}
 
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGTERM)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
 		<-signals
 		logging.Infof("Received TERM signal. Waiting up to %s seconds before terminating.", *termTimeout)
 
-    // Don't access new connections while terminating.
-    proxyClient.MaxConnections = 0
+		// Don't access new connections while terminating.
+		proxyClient.MaxConnections = 0
 
 		termTime := time.Now().Add(*termTimeout)
-		for termTime.After(time.Now()) && proxyClient.ConnectionsCounter > 0 {
+		for termTime.After(time.Now()) && atomic.LoadUint64(&proxyClient.ConnectionsCounter) > 0 {
 			time.Sleep(1)
 		}
 
 		// Exit cleanly if there are no active connections when we exit
-		if proxyClient.ConnectionsCounter == 0 {
+		if atomic.LoadUint64(&proxyClient.ConnectionsCounter) == 0 {
 			os.Exit(0)
 		}
 		os.Exit(2)
