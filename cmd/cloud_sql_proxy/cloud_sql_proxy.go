@@ -505,6 +505,9 @@ func main() {
 		<-signals
 		logging.Infof("Received TERM signal. Waiting up to %s seconds before terminating.", *termTimeout)
 
+    // Don't access new connections while terminating.
+    proxyClient.MaxConnections = 0
+
 		termTime := time.Now().Add(*termTimeout)
 		for termTime.After(time.Now()) && proxyClient.ConnectionsCounter > 0 {
 			time.Sleep(1)
@@ -513,9 +516,8 @@ func main() {
 		// Exit cleanly if there are no active connections when we exit
 		if proxyClient.ConnectionsCounter == 0 {
 			os.Exit(0)
-		} else {
-			os.Exit(2)
 		}
+		os.Exit(2)
 	}()
 
 	proxyClient.Run(connSrc)
