@@ -81,7 +81,7 @@ can be removed automatically by this program.`)
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
-	ipAddressTypes = flag.String("ip_address_types", "PRIMARY", "Default to be 'PRIMARY'. Options: a list of strings separated by ',', e.g. 'PRIMARY, PRIVATE' ")
+	ipAddressTypes = flag.String("ip_address_types", "PRIMARY,PRIVATE", "Default to be 'PRIMARY'. Options: a list of strings separated by ',', e.g. 'PRIMARY, PRIVATE' ")
 
 	// Setting to choose what API to connect to
 	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
