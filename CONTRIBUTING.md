@@ -20,15 +20,54 @@ unfamiliar with the process. Here are the specific steps for opening an issue:
 1. In the main editor, describe your issue.
 1. Click the submit button.
 
-Thank you. We will attempt to categorize your issues with an estimate of the
-priority and issue type. We will do our best to comment on your issue within one
-business day. If we believe the issue is a genuine bug, we will try to respond
-with regular updates based on its priority:
+Thank you. We will do our best to triage your issue within one business day, and
+attempt to categorize your issues with an estimate of the priority and issue
+type. We will try to respond with regular updates based on its priority:
 
 * **Critical** respond and update daily, resolve with a week
 * **High** respond and update weekly, resolve within six weeks
 * **Medium** respond and update every three months, best effort resolution
 * **Low** respond and update every six months, best effort resolution
+
+The priority we assign will be roughly a function of the number of users we
+expect to be impacted, as well as its severity. As a rule of thumb:
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2">Severity</th>
+      <th colspan="4">Number of users</th>
+    </tr>
+    <tr>
+      <th>Handful</th>
+      <th>Some</th>
+      <th>Most</th>
+      <th>All</th>
+    </tr>
+  </thead>
+  <tr>
+    <td>Easy, obvious workaround</td>
+    <td>Low</td>
+    <td>Low</td>
+    <td>Medium</td>
+    <td>High
+  </tr>
+  <tr>
+<td>Non-obvious workaround available</td>
+<td>Low</td>
+<td>Medium</td>
+<td>High</td>
+<td>Critical</td>
+  </tr>
+
+  <tr>
+<td>Functionality blocked</td>
+<td>High</td>
+<td>High</td>
+<td>Critical</td>
+<td>Critical</td>
+  </tr>
+</table>
 
 ## Contributor License Agreements
 
