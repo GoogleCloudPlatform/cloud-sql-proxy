@@ -5,12 +5,15 @@
 1. Make sure that your commit messages clearly describe the changes.
 1. Send a pull request.
 
+## Table of contents
+* [Opening an issue](#opening-an-issue)
+* [Contributor License Agreements](#contributor-license-agreements)
+* [Contributor Code of Conduct](#contributor-code-of-conduct)
+
 ## Opening an issue
 
-If you've tried everything in our [Cloud SQL Proxy Client
-docs](https://cloud.google.com/sql/docs/mysql/sql-proxy) and believe you have
-found a bug in the proxy code or an inaccuracy in the documentation, please open
-an issue. GitHub provides a guide, [Mastering
+If you find a bug in the proxy code or an inaccuracy in the documentation,
+please open an issue. GitHub provides a guide, [Mastering
 Issues](https://guides.github.com/features/issues/), that is useful if you are
 unfamiliar with the process. Here are the specific steps for opening an issue:
 
