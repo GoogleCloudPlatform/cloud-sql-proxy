@@ -47,9 +47,10 @@ import (
 )
 
 var (
-	version = flag.Bool("version", false, "Print the version of the proxy and exit")
-	verbose = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
-	quiet   = flag.Bool("quiet", false, "Disable log messages")
+	version        = flag.Bool("version", false, "Print the version of the proxy and exit")
+	verbose        = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
+	quiet          = flag.Bool("quiet", false, "Disable log messages")
+	logDebugStdout = flag.Bool("log_debug_stdout", false, "If true, log messages that are not errors will output to stdout instead of stderr")
 
 	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle, "If set, this flag specifies the amount of forced sleep between successive API calls in order to protect client API quota. Minimum allowed value is "+minimumRefreshCfgThrottle.String())
 	checkRegion        = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
@@ -122,6 +123,9 @@ General:
     WARNING: this option disables ALL logging output (including connection
     errors), which will likely make debugging difficult. The -quiet flag takes
     precedence over the -verbose flag.
+  -log_debug_stdout
+    When explicitly set to true, verbose and info log messages will be directed
+	to stdout as a pose to the default stderr.
   -verbose
     When explicitly set to false, disable log messages that are not errors nor
     first-time startup messages (e.g. when new connections are established).
@@ -375,8 +379,12 @@ func main() {
 		return
 	}
 
+	if *logDebugStdout {
+		logging.LogDebugToStdout()
+	}
+
 	if !*verbose {
-		logging.Verbosef = func(string, ...interface{}) {}
+		logging.LogVerboseToNowhere()
 	}
 
 	if *quiet {
