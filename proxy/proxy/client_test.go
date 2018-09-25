@@ -24,6 +24,11 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+	"os"
+	"os/exec"
+	"io/ioutil"
+	"strings"
+	"syscall"
 )
 
 const instance = "instance-name"
@@ -182,4 +187,95 @@ func TestMaximumConnectionsCount(t *testing.T) {
 	case dials < maxConnections:
 		t.Errorf("client should have dialed exactly the maximum of %d connections (%d connections, %d dials)", maxConnections, numConnections, dials)
 	}
+}
+
+func TestGracefulTermination(t *testing.T) {
+	if os.Getenv("BE_TERMINATOR") == "1" {
+		var dials uint64 = 0
+		t.Logf("dials")
+		b := &fakeCerts{}
+		certSource := blockingCertSource{
+			map[string]*fakeCerts{}}
+		firstDialExited := make(chan struct{})
+		c := &Client{
+			Certs: &certSource,
+			Dialer: func(string, string) (net.Conn, error) {
+				atomic.AddUint64(&dials, 1)
+
+				// Wait until the first dial fails to make sure we get to the point where connections are refused
+				<-firstDialExited
+
+				return nil, errFakeDial
+			},
+			TerminationGracePeriod: time.Second * 1,
+		}
+		go c.closeOnSigterm()
+
+		// 10 connections with a 200 sleep should be a good enough spread if we wait 1 seconds before sending the
+		// sigterm signal - we want to see some refused connections
+		numConnections := 10
+		// Build certSource.values before creating goroutines to avoid concurrent map read and map write
+		instanceNames := make([]string, numConnections)
+		for i := 0; i < numConnections; i++ {
+			// Vary instance name to bypass config cache and avoid second call to Client.tryConnect() in Client.Dial()
+			instanceName := fmt.Sprintf("%s-%d", instance, i)
+			certSource.values[instanceName] = b
+			instanceNames[i] = instanceName
+		}
+
+		var wg sync.WaitGroup
+		var firstDialOnce sync.Once
+		for _, instanceName := range instanceNames {
+			wg.Add(1)
+			go func(instanceName string) {
+				defer wg.Done()
+
+				conn := Conn{
+					Instance: instanceName,
+					Conn:     &dummyConn{},
+				}
+				c.handleConn(conn)
+
+				firstDialOnce.Do(func() { close(firstDialExited) })
+			}(instanceName)
+			time.Sleep(time.Millisecond * 200)
+		}
+
+		wg.Wait()
+	}
+
+	// Start the actual test in a different subprocess
+	cmd := exec.Command(os.Args[0], "-test.run=TestGracefulTermination")
+	cmd.Env = append(os.Environ(), "BE_TERMINATOR=1")
+	stdout, _ := cmd.StderrPipe()
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	time.Sleep(time.Second * 1)
+
+	//syscall.Kill(cmd.Process.Pid, syscall.SIGTERM)
+	cmd.Process.Signal(syscall.SIGTERM)
+
+	// Check that the log fatal message is what we expected
+	gotBytes, _ := ioutil.ReadAll(stdout)
+	got := string(gotBytes)
+
+	expectedStrings := []string{
+		"received SIGTERM, waiting",
+		"refusing connection - received termination signal", // expect at least some refused connections
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("Unexpected log message. Got %s but should contain %s", got, expected)
+		}
+	}
+
+	// Check that the program exited with success (0)
+	err := cmd.Wait()
+	if err != nil {
+		t.Fatalf("Process ran with err %v, want exit status 0", err)
+	}
+
 }

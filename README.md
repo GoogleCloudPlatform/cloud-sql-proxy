@@ -46,6 +46,13 @@ download the associated JSON file, and set `-credential_file` to the path of the
 JSON file. You can also set the GOOGLE_APPLICATION_CREDENTIALS environment variable
 instead of passing this flag.
 
+The `-termination_grace_period` flag may be used to control the amount of time
+that the process will continue to run after receiving a SIGTERM signal. The default
+period is '20s'. During the termination period the proxy will refuse new
+connections. This is useful for rolling updates so that the proxy does not terminate
+until in-progress database operations have had time to finish. The argument must be
+specified as a number and a time unit - e.g. '10s' or '500ms'.
+
 ## Example invocations:
 
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst &

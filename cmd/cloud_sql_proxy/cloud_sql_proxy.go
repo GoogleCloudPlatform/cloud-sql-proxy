@@ -53,6 +53,7 @@ var (
 	logDebugStdout = flag.Bool("log_debug_stdout", false, "If true, log messages that are not errors will output to stdout instead of stderr")
 
 	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle, "If set, this flag specifies the amount of forced sleep between successive API calls in order to protect client API quota. Minimum allowed value is "+minimumRefreshCfgThrottle.String())
+	terminationGracePeriod = flag.Duration("termination_grace_period", proxy.DefaultTerminationGracePeriod, "If set, this flag specifies the amount of sleep between receiving a SIGTERM signal and terminating the process. Otherwise a default of 20s is used.")
 	checkRegion        = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
 Unix socket-based connections.`)
 
@@ -488,6 +489,7 @@ func main() {
 	if refreshCfgThrottle < minimumRefreshCfgThrottle {
 		refreshCfgThrottle = minimumRefreshCfgThrottle
 	}
+	terminationGracePeriod := *terminationGracePeriod
 	logging.Infof("Ready for new connections")
 
 	(&proxy.Client{
@@ -501,5 +503,6 @@ func main() {
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
+		TerminationGracePeriod: terminationGracePeriod,
 	}).Run(connSrc)
 }
