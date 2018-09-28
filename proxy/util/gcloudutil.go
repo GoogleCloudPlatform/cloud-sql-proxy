@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"runtime"
 	"time"
@@ -78,12 +79,14 @@ func GcloudConfig() (*GcloudConfigData, error) {
 		return nil, &GcloudError{err, GcloudNotFound}
 	}
 
-	buf := new(bytes.Buffer)
+	buf, errbuf := new(bytes.Buffer), new(bytes.Buffer)
 	cmd := exec.Command(gcloudCmd, "--format", "json", "config", "config-helper")
 	cmd.Stdout = buf
+	cmd.Stderr = errbuf
 
 	if err := cmd.Run(); err != nil {
-		logging.Errorf("Error detecting gcloud project: %v", err)
+		err = fmt.Errorf("error reading config: %v; stderr was:\n%v", err, errbuf)
+		logging.Errorf("GcloudConfig: %v", err)
 		return nil, &GcloudError{err, GcloudExecErr}
 	}
 
