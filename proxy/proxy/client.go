@@ -334,9 +334,9 @@ func (c *Client) Shutdown(termTimeout time.Duration) error {
 		time.Sleep(1)
 	}
 
-	if atomic.LoadUint64(&c.ConnectionsCounter) == 0 {
+	active := atomic.LoadUint64(&c.ConnectionsCounter)
+	if active == 0 {
 		return nil
 	}
-
-	return errors.New("Active connections still exist")
+	return fmt.Errorf("%d active connections still exist after waiting for %v", active, termTimeout)
 }
