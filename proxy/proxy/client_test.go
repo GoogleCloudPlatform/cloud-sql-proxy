@@ -202,8 +202,15 @@ func TestShutdownTerminatesEarly(t *testing.T) {
 		shutdown <- true
 	}()
 
-	time.Sleep(100 * time.Millisecond)
-	if !<-shutdown {
+	shutdownFinished := false
+
+	// In case the code is actually broken and the client doesn't shut down quickly, don't cause the test to hang until it times out.
+	select {
+	case <-time.After(100 * time.Millisecond):
+	case shutdownFinished = <-shutdown:
+	}
+
+	if !shutdownFinished {
 		t.Errorf("shutdown should have completed quickly because there are no active connections")
 	}
 

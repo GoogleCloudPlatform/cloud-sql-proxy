@@ -322,13 +322,9 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 }
 
 // Shutdown waits up to a given amount of time for all active connections to
-// close. No new connections can be established after calling this method.
-// Returns an error if there are still active connections after waiting for the
-// whole length of the timeout.
+// close. Returns an error if there are still active connections after waiting
+// for the whole length of the timeout.
 func (c *Client) Shutdown(termTimeout time.Duration) error {
-	// Don't allow new connections while terminating.
-	atomic.StoreUint64(&c.MaxConnections, 0)
-
 	termTime := time.Now().Add(termTimeout)
 	for termTime.After(time.Now()) && atomic.LoadUint64(&c.ConnectionsCounter) > 0 {
 		time.Sleep(1)
