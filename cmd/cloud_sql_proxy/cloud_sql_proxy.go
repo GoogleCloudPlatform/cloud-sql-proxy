@@ -265,12 +265,18 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
-		cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope)
+		// First try and load this as a service account config, which allows us to see the service account email:
+		if cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope); err == nil {
+			logging.Infof("using credential file for authentication; email=%s", cfg.Email)
+			return cfg.Client(ctx), nil
+		}
+
+		cred, err := goauth.CredentialsFromJSON(ctx, all, proxy.SQLScope)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 		}
-		logging.Infof("using credential file for authentication; email=%s", cfg.Email)
-		return cfg.Client(ctx), nil
+		logging.Infof("using credential file for authentication; path=%q", f)
+		return oauth2.NewClient(ctx, cred.TokenSource), nil
 	} else if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
 		return oauth2.NewClient(ctx, src), nil
