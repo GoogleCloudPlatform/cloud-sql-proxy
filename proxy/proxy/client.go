@@ -116,7 +116,7 @@ func (c *Client) handleConn(conn Conn) {
 	// Deferred decrement of ConnectionsCounter upon connection closing
 	defer atomic.AddUint64(&c.ConnectionsCounter, ^uint64(0))
 
-	if active > c.MaxConnections && c.MaxConnections > 0 {
+	if c.MaxConnections > 0 && active > c.MaxConnections {
 		logging.Errorf("too many open connections (max %d)", c.MaxConnections)
 		conn.Conn.Close()
 		return
