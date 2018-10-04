@@ -9,7 +9,6 @@ import (
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	pb "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/grpcproxy/proto"
-
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 
 	"google.golang.org/grpc"
@@ -21,6 +20,26 @@ type RPCSQLProxyConnection struct {
 	remote pb.MyGrpcClient
 }
 
+// Run causes the client to start waiting for new connections to connSrc and
+// proxy them to the destination instance. It blocks until connSrc is closed.
+func Run(connSrc <-chan proxy.Conn, grpcPort int, client *proxy.Client) {
+	for conn := range connSrc {
+		rpcProxy, err := ObtainProxyConnection(AuthConfig{
+			ProxyClient: client,
+			Conn:        conn,
+			Port:        grpcPort,
+		})
+		if err != nil {
+			logging.Errorf("Failed to connect to gRPC service: %v", err)
+		}
+
+		err = rpcProxy.CreateTunnel(conn.Conn)
+		if err != nil {
+			logging.Errorf("Failed to create gRPC tunnel: %v", err)
+		}
+	}
+}
+
 // CreateTunnel establishes a tunnel between remote and the local stream
 func (conn *RPCSQLProxyConnection) CreateTunnel(local io.ReadWriteCloser) error {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -28,7 +47,6 @@ func (conn *RPCSQLProxyConnection) CreateTunnel(local io.ReadWriteCloser) error 
 	forward, err := conn.remote.Connection(ctx)
 
 	if err != nil {
-		logging.Infof("Closing connection")
 		cancel()
 		return err
 	}

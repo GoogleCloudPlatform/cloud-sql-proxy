@@ -519,26 +519,9 @@ func main() {
 	}
 
 	if *usegRPC {
-		logging.Infof("Using gRPC\n")
-
-		for conn := range connSrc {
-			rpcProxy, err := grpcproxy.ObtainProxyConnection(grpcproxy.AuthConfig{
-				ProxyClient: proxyClient,
-				Conn:        conn,
-				Port:        grpcPort})
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			logging.Infof("Making new grpc tunnel")
-			err = rpcProxy.CreateTunnel(conn.Conn)
-			if err != nil {
-				logging.Infof("ohno %v", err)
-			}
-		}
+		grpcproxy.Run(connSrc, grpcPort, proxyClient)
 
 	} else {
-		logging.Infof("Not Using gRPC\n")
 		proxyClient.Run(connSrc)
 	}
 
