@@ -183,3 +183,35 @@ func TestMaximumConnectionsCount(t *testing.T) {
 		t.Errorf("client should have dialed exactly the maximum of %d connections (%d connections, %d dials)", maxConnections, numConnections, dials)
 	}
 }
+
+func TestShutdownTerminatesEarly(t *testing.T) {
+	b := &fakeCerts{}
+	c := &Client{
+		Certs: &blockingCertSource{
+			map[string]*fakeCerts{
+				instance: b,
+			}},
+		Dialer: func(string, string) (net.Conn, error) {
+			return nil, nil
+		},
+	}
+
+	shutdown := make(chan bool, 1)
+	go func() {
+		c.Shutdown(1)
+		shutdown <- true
+	}()
+
+	shutdownFinished := false
+
+	// In case the code is actually broken and the client doesn't shut down quickly, don't cause the test to hang until it times out.
+	select {
+	case <-time.After(100 * time.Millisecond):
+	case shutdownFinished = <-shutdown:
+	}
+
+	if !shutdownFinished {
+		t.Errorf("shutdown should have completed quickly because there are no active connections")
+	}
+
+}

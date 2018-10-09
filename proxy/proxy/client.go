@@ -111,18 +111,15 @@ func (c *Client) Run(connSrc <-chan Conn) {
 }
 
 func (c *Client) handleConn(conn Conn) {
-	// Track connections count only if a maximum connections limit is set to avoid useless overhead
-	if c.MaxConnections > 0 {
-		active := atomic.AddUint64(&c.ConnectionsCounter, 1)
+	active := atomic.AddUint64(&c.ConnectionsCounter, 1)
 
-		// Deferred decrement of ConnectionsCounter upon connection closing
-		defer atomic.AddUint64(&c.ConnectionsCounter, ^uint64(0))
+	// Deferred decrement of ConnectionsCounter upon connection closing
+	defer atomic.AddUint64(&c.ConnectionsCounter, ^uint64(0))
 
-		if active > c.MaxConnections {
-			logging.Errorf("too many open connections (max %d)", c.MaxConnections)
-			conn.Conn.Close()
-			return
-		}
+	if c.MaxConnections > 0 && active > c.MaxConnections {
+		logging.Errorf("too many open connections (max %d)", c.MaxConnections)
+		conn.Conn.Close()
+		return
 	}
 
 	server, err := c.Dial(conn.Instance)
@@ -322,4 +319,20 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 		}
 	}()
 	return ch
+}
+
+// Shutdown waits up to a given amount of time for all active connections to
+// close. Returns an error if there are still active connections after waiting
+// for the whole length of the timeout.
+func (c *Client) Shutdown(termTimeout time.Duration) error {
+	termTime := time.Now().Add(termTimeout)
+	for termTime.After(time.Now()) && atomic.LoadUint64(&c.ConnectionsCounter) > 0 {
+		time.Sleep(1)
+	}
+
+	active := atomic.LoadUint64(&c.ConnectionsCounter)
+	if active == 0 {
+		return nil
+	}
+	return fmt.Errorf("%d active connections still exist after waiting for %v", active, termTimeout)
 }
