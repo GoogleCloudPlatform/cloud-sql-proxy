@@ -28,7 +28,10 @@ import (
 
 const instance = "instance-name"
 
-var errFakeDial = errors.New("this error is returned by the dialer")
+var (
+	errFakeDial = errors.New("this error is returned by the dialer")
+	forever     = time.Date(9999, 0, 0, 0, 0, 0, 0, time.UTC)
+)
 
 type fakeCerts struct {
 	sync.Mutex
@@ -36,7 +39,8 @@ type fakeCerts struct {
 }
 
 type blockingCertSource struct {
-	values map[string]*fakeCerts
+	values     map[string]*fakeCerts
+	validUntil time.Time
 }
 
 func (cs *blockingCertSource) Local(instance string) (tls.Certificate, error) {
@@ -48,11 +52,10 @@ func (cs *blockingCertSource) Local(instance string) (tls.Certificate, error) {
 	v.called++
 	v.Unlock()
 
-	validUntil, _ := time.Parse("2006", "9999")
 	// Returns a cert which is valid forever.
 	return tls.Certificate{
 		Leaf: &x509.Certificate{
-			NotAfter: validUntil,
+			NotAfter: cs.validUntil,
 		},
 	}, nil
 }
@@ -67,7 +70,9 @@ func TestClientCache(t *testing.T) {
 		Certs: &blockingCertSource{
 			map[string]*fakeCerts{
 				instance: b,
-			}},
+			},
+			forever,
+		},
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, errFakeDial
 		},
@@ -92,7 +97,9 @@ func TestConcurrentRefresh(t *testing.T) {
 		Certs: &blockingCertSource{
 			map[string]*fakeCerts{
 				instance: b,
-			}},
+			},
+			forever,
+		},
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, errFakeDial
 		},
@@ -131,7 +138,9 @@ func TestMaximumConnectionsCount(t *testing.T) {
 
 	b := &fakeCerts{}
 	certSource := blockingCertSource{
-		map[string]*fakeCerts{}}
+		map[string]*fakeCerts{},
+		forever,
+	}
 	firstDialExited := make(chan struct{})
 	c := &Client{
 		Certs: &certSource,
@@ -190,28 +199,71 @@ func TestShutdownTerminatesEarly(t *testing.T) {
 		Certs: &blockingCertSource{
 			map[string]*fakeCerts{
 				instance: b,
-			}},
+			},
+			forever,
+		},
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, nil
 		},
 	}
-
 	shutdown := make(chan bool, 1)
 	go func() {
 		c.Shutdown(1)
 		shutdown <- true
 	}()
-
 	shutdownFinished := false
-
 	// In case the code is actually broken and the client doesn't shut down quickly, don't cause the test to hang until it times out.
 	select {
 	case <-time.After(100 * time.Millisecond):
 	case shutdownFinished = <-shutdown:
 	}
-
 	if !shutdownFinished {
 		t.Errorf("shutdown should have completed quickly because there are no active connections")
 	}
+}
 
+func TestRefreshTimer(t *testing.T) {
+	oldRefreshCertBuffer := refreshCertBuffer
+	defer func() {
+		refreshCertBuffer = oldRefreshCertBuffer
+	}()
+	refreshCertBuffer = time.Second
+
+	timeToExpire := 5 * time.Second
+	b := &fakeCerts{}
+	certCreated := time.Now()
+	c := &Client{
+		Certs: &blockingCertSource{
+			map[string]*fakeCerts{
+				instance: b,
+			},
+			certCreated.Add(timeToExpire),
+		},
+		Dialer: func(string, string) (net.Conn, error) {
+			return nil, errFakeDial
+		},
+		RefreshCfgThrottle: 20 * time.Millisecond,
+	}
+	// Call Dial to cache the cert.
+	if _, err := c.Dial(instance); err != errFakeDial {
+		t.Fatalf("Dial(%s) failed: %v", instance, err)
+	}
+	c.cacheL.Lock()
+	cfg, ok := c.cfgCache[instance]
+	c.cacheL.Unlock()
+	if !ok {
+		t.Fatalf("expected instance to be cached")
+	}
+
+	time.Sleep(timeToExpire - time.Since(certCreated))
+	// Check if cert was refreshed in the background, without calling Dial again.
+	c.cacheL.Lock()
+	newCfg, ok := c.cfgCache[instance]
+	c.cacheL.Unlock()
+	if !ok {
+		t.Fatalf("expected instance to be cached")
+	}
+	if !newCfg.lastRefreshed.After(cfg.lastRefreshed) {
+		t.Error("expected cert to be refreshed.")
+	}
 }

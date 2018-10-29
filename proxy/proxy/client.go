@@ -32,10 +32,13 @@ const (
 	keepAlivePeriod           = time.Minute
 )
 
-// errNotCached is returned when the instance was not found in the Client's
-// cache. It is an internal detail and is not actually ever returned to the
-// user.
-var errNotCached = errors.New("instance was not found in cache")
+var (
+	// errNotCached is returned when the instance was not found in the Client's
+	// cache. It is an internal detail and is not actually ever returned to the
+	// user.
+	errNotCached      = errors.New("instance was not found in cache")
+	refreshCertBuffer = 30 * time.Second
+)
 
 // Conn represents a connection from a client to a specific instance.
 type Conn struct {
@@ -78,9 +81,12 @@ type Client struct {
 
 	// The cfgCache holds the most recent connection configuration keyed by
 	// instance. Relevant functions are refreshCfg and cachedCfg. It is
-	// protected by cfgL.
+	// protected by cacheL.
 	cfgCache map[string]cacheEntry
-	cfgL     sync.RWMutex
+	cacheL   sync.RWMutex
+
+	// refreshCfgL prevents multiple goroutines from contacting the Cloud SQL API at once.
+	refreshCfgL sync.Mutex
 
 	// MaxConnections is the maximum number of connections to establish
 	// before refusing new connections. 0 means no limit.
@@ -147,32 +153,35 @@ func (c *Client) handleConn(conn Conn) {
 // address as well as construct a new tls.Config to connect to the instance. It
 // caches the result.
 func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err error) {
-	c.cfgL.Lock()
-	defer c.cfgL.Unlock()
+	c.refreshCfgL.Lock()
+	defer c.refreshCfgL.Unlock()
 
 	throttle := c.RefreshCfgThrottle
 	if throttle == 0 {
 		throttle = DefaultRefreshCfgThrottle
 	}
 
-	if old := c.cfgCache[instance]; time.Since(old.lastRefreshed) < throttle {
+	c.cacheL.Lock()
+	if c.cfgCache == nil {
+		c.cfgCache = make(map[string]cacheEntry)
+	}
+	old, oldok := c.cfgCache[instance]
+	c.cacheL.Unlock()
+	if oldok && time.Since(old.lastRefreshed) < throttle {
 		logging.Errorf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
 		// Refresh was called too recently, just reuse the result.
 		return old.addr, old.cfg, old.err
 	}
 
-	if c.cfgCache == nil {
-		c.cfgCache = make(map[string]cacheEntry)
-	}
-
 	defer func() {
+		c.cacheL.Lock()
 		c.cfgCache[instance] = cacheEntry{
 			lastRefreshed: time.Now(),
-
-			err:  err,
-			addr: addr,
-			cfg:  cfg,
+			err:           err,
+			addr:          addr,
+			cfg:           cfg,
 		}
+		c.cacheL.Unlock()
 	}()
 
 	mycert, err := c.Certs.Local(instance)
@@ -201,7 +210,27 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, err 
 		InsecureSkipVerify:    true,
 		VerifyPeerCertificate: genVerifyPeerCertificateFunc(name, certs),
 	}
+
+	expire := mycert.Leaf.NotAfter
+	now := time.Now()
+	timeToRefresh := expire.Sub(now) - refreshCertBuffer
+	if timeToRefresh <= 0 {
+		err = fmt.Errorf("new ephemeral certificate expires too soon: current time: %v, certificate expires: %v", expire, now)
+		logging.Errorf("ephemeral certificate (%+v) error: %v", mycert, err)
+		return "", nil, err
+	}
+	go c.refreshCertAfter(instance, timeToRefresh)
+
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, nil
+}
+
+// refreshCertAfter refreshes the epehemeral certificate of the instance after timeToRefresh.
+func (c *Client) refreshCertAfter(instance string, timeToRefresh time.Duration) {
+	<-time.After(timeToRefresh)
+	logging.Verbosef("ephemeral certificate for instance %s will expire soon, refreshing now.", instance)
+	if _, _, err := c.refreshCfg(instance); err != nil {
+		logging.Errorf("failed to refresh the ephemeral certificate for %s before expering: %v", instance, err)
+	}
 }
 
 // genVerifyPeerCertificateFunc creates a VerifyPeerCertificate func that verifies that the peer
@@ -230,13 +259,17 @@ func genVerifyPeerCertificateFunc(instanceName string, pool *x509.CertPool) func
 	}
 }
 
+func isExpired(cfg *tls.Config) bool {
+	return time.Now().After(cfg.Certificates[0].Leaf.NotAfter)
+}
+
 func (c *Client) cachedCfg(instance string) (string, *tls.Config) {
-	c.cfgL.RLock()
+	c.cacheL.RLock()
 	ret, ok := c.cfgCache[instance]
-	c.cfgL.RUnlock()
+	c.cacheL.RUnlock()
 
 	// Don't waste time returning an expired/invalid cert.
-	if !ok || ret.err != nil || time.Now().After(ret.cfg.Certificates[0].Leaf.NotAfter) {
+	if !ok || ret.err != nil || isExpired(ret.cfg) {
 		return "", nil
 	}
 	return ret.addr, ret.cfg
