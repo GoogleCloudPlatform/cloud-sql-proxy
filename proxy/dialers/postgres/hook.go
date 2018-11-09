@@ -32,10 +32,10 @@ import (
 )
 
 func init() {
-	sql.Register("cloudsqlpostgres", &drv{})
+	sql.Register("cloudsqlpostgres", &Driver{})
 }
 
-type drv struct{}
+type Driver struct{}
 
 type dialer struct{}
 
@@ -56,6 +56,6 @@ func (d dialer) DialTimeout(ntw, addr string, timeout time.Duration) (net.Conn, 
 	return nil, fmt.Errorf("timeout is not currently supported for cloudsqlpostgres dialer")
 }
 
-func (d *drv) Open(name string) (driver.Conn, error) {
+func (d *Driver) Open(name string) (driver.Conn, error) {
 	return pq.DialOpen(dialer{}, name)
 }
