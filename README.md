@@ -1,4 +1,9 @@
 
+# Warning
+This is an experimental branch of the Cloud SQL proxy that uses GRPC
+connections. It is not production ready, and may not contain features already
+included in the master branch.
+
 ## Cloud SQL Proxy
 The Cloud SQL Proxy allows a user with the appropriate permissions to connect
 to a Second Generation Cloud SQL database without having to deal with IP whitelisting or SSL
