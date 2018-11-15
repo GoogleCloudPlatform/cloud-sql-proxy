@@ -182,6 +182,7 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 		return err
 	})
 	if err != nil {
+		logging.Infof("createEphemeral failure \n")
 		return ret, err
 	}
 

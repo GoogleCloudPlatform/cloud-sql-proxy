@@ -1,0 +1,34 @@
+syntax = "proto3";
+package mygrpc;
+
+// The goal of the MyGrpc service is to create an encrypted tunnel between a
+// Cloud SQL instance and its authenticated client to transport bytes associated
+// with the database specific wire protocol.
+//
+// This service will be exposed by the proxy-server running on the same GCE VM
+// as that of the database server. The client for this service will be the
+// proxy-client (from the Internet) and the SFE (from Google production
+// network).
+//
+// The TLS config required to create the encrypted tunnel will be handcrafted by
+// the proxy-server and its clients and passed to the gRPC layer.
+//
+// See go/speckle-proxy-client-grpc for more details.
+service MyGrpc {
+  // A bidirectional streaming RPC to move data between a Cloud SQL instance and
+  // its client.
+  rpc Connection(stream ClientMessage) returns (stream ServerMessage) {
+  }
+}
+
+// ClientMessage represents a message from a client to its Cloud SQL instance.
+message ClientMessage {
+  // The binary representation of a message from a client to the database.
+  bytes data = 1;
+}
+
+// ServerMessage represents a message from a Cloud SQL instance to its client.
+message ServerMessage {
+  // The binary representation of a message from the database to a client.
+  bytes data = 1;
+}
