@@ -241,6 +241,12 @@ func checkFlags(onGCE bool) error {
 		return nil
 	}
 
+	// Check if the gcloud credentials are available.
+	_, err := util.GcloudConfig()
+	if err == nil {
+		return nil
+	}
+
 	scopes, err := metadata.Scopes("default")
 	if err != nil {
 		if _, ok := err.(metadata.NotDefinedError); ok {
