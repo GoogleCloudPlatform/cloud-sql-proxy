@@ -241,6 +241,12 @@ func checkFlags(onGCE bool) error {
 		return nil
 	}
 
+	// Check if gcloud credentials are available and if so, skip checking the GCE VM service account scope.
+	_, err := util.GcloudConfig()
+	if err == nil {
+		return nil
+	}
+
 	scopes, err := metadata.Scopes("default")
 	if err != nil {
 		if _, ok := err.(metadata.NotDefinedError); ok {
