@@ -197,7 +197,10 @@ var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // See https://github.com/GoogleCloudPlatform/gcloud-golang/issues/194
 func onGCE() bool {
-	res, err := http.Get("http://metadata.google.internal")
+    var netClient = &http.Client{
+        Timeout: time.Second * 2,
+    }
+	res, err := netClient.Get("http://metadata.google.internal")
 	if err != nil {
 		return false
 	}
