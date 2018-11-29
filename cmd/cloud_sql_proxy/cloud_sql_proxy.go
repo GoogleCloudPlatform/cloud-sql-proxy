@@ -195,15 +195,6 @@ Information for all flags:
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
-// See https://github.com/GoogleCloudPlatform/gcloud-golang/issues/194
-func onGCE() bool {
-	res, err := http.Get("http://metadata.google.internal")
-	if err != nil {
-		return false
-	}
-	return res.Header.Get("Metadata-Flavor") == "Google"
-}
-
 const defaultVersionString = "NO_VERSION_SET"
 
 var versionString = defaultVersionString
@@ -438,7 +429,7 @@ func main() {
 		}
 	}
 
-	onGCE := onGCE()
+	onGCE := metadata.OnGCE()
 	if err := checkFlags(onGCE); err != nil {
 		log.Fatal(err)
 	}
