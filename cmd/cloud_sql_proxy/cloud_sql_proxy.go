@@ -263,7 +263,11 @@ func checkFlags(onGCE bool) error {
 }
 
 func authenticatedClient(ctx context.Context) (*http.Client, error) {
-	if f := *tokenFile; f != "" {
+	f := *tokenFile
+	if f == "" {
+		f = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	}
+	if f != "" {
 		all, err := ioutil.ReadFile(f)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
