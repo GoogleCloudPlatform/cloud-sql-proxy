@@ -28,6 +28,12 @@ cloud_sql_proxy takes a few arguments to configure:
   will be removed from `-dir` as well (unless it was also specified in
   `-instances`), but any existing connections to this instance will NOT be
   terminated.
+* `-ip_address_types=PUBLIC,PRIVATE`: A comma-delimited list of preferred IP
+  types for connecting to an instance. For example, setting this to PRIVATE will
+  force the proxy to connect to instances using an instance's associated private
+  IP. Defaults to `PUBLIC,PRIVATE`
+* `-term_timeout=30s`: How long to wait for connections to close before shutting
+  down the proxy. Defaults to 0.
 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.
