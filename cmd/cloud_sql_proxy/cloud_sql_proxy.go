@@ -262,34 +262,36 @@ func checkFlags(onGCE bool) error {
 	return nil
 }
 
-func authenticatedClient(ctx context.Context) (*http.Client, error) {
-	f := *tokenFile
-	if f == "" {
-		f = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, error) {
+	all, err := ioutil.ReadFile(f)
+	if err != nil {
+		return nil, fmt.Errorf("invalid json file %q: %v", f, err)
 	}
-	if f != "" {
-		all, err := ioutil.ReadFile(f)
-		if err != nil {
-			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
-		}
-		// First try and load this as a service account config, which allows us to see the service account email:
-		if cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope); err == nil {
-			logging.Infof("using credential file for authentication; email=%s", cfg.Email)
-			return cfg.Client(ctx), nil
-		}
+	// First try and load this as a service account config, which allows us to see the service account email:
+	if cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope); err == nil {
+		logging.Infof("using credential file for authentication; email=%s", cfg.Email)
+		return cfg.Client(ctx), nil
+	}
 
-		cred, err := goauth.CredentialsFromJSON(ctx, all, proxy.SQLScope)
-		if err != nil {
-			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
-		}
-		logging.Infof("using credential file for authentication; path=%q", f)
-		return oauth2.NewClient(ctx, cred.TokenSource), nil
+	cred, err := goauth.CredentialsFromJSON(ctx, all, proxy.SQLScope)
+	if err != nil {
+		return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+	}
+	logging.Infof("using credential file for authentication; path=%q", f)
+	return oauth2.NewClient(ctx, cred.TokenSource), nil
+}
+
+func authenticatedClient(ctx context.Context) (*http.Client, error) {
+	if *tokenFile != "" {
+		authenticatedClientFromPath(*tokenFile)
 	} else if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
 		return oauth2.NewClient(ctx, src), nil
+	} else if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
+		authenticatedClientFromPath(*f)
 	}
 
-	// If flags don't specify an auth source, try either gcloud or application default
+	// If flags or env don't specify an auth source, try either gcloud or application default
 	// credentials.
 	src, err := util.GcloudTokenSource(ctx)
 	if err != nil {
