@@ -280,12 +280,12 @@ func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, e
 
 func authenticatedClient(ctx context.Context) (*http.Client, error) {
 	if *tokenFile != "" {
-		authenticatedClientFromPath(*tokenFile)
+		authenticatedClientFromPath(ctx, *tokenFile)
 	} else if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
 		return oauth2.NewClient(ctx, src), nil
 	} else if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
-		authenticatedClientFromPath(*f)
+		authenticatedClientFromPath(ctx, f)
 	}
 
 	// If flags or env don't specify an auth source, try either gcloud or application default
