@@ -13,7 +13,7 @@ and have set [GOPATH](https://github.com/golang/go/wiki/GOPATH). Then, simply do
 
 The cloud_sql_proxy will be placed in $GOPATH/bin after go get completes.
 
-cloud_sql_proxy takes a few arguments to configure:
+cloud_sql_proxy takes a few arguments to configure what instances to connect to and connection behavior:
 
 * `-fuse`: requires access to `/dev/fuse` as well as the `fusermount` binary. An
   optional `-fuse_tmp` flag can specify where to place temporary files. The
@@ -38,8 +38,21 @@ cloud_sql_proxy takes a few arguments to configure:
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.
 
-By default, the proxy will authenticate under the default service account of the
-Compute Engine VM it is running on. Therefore, the VM must have at least the
+cloud_sql_proxy takes a few arguments to configure authentication:
+
+1. `credential_file` flag
+2. `token` flag
+3. Service account key at path stored in `GOOGLE_APPLICATION_CREDENTIALS`
+4. gcloud _user_ credentials (set from `gcloud auth login`)
+5. Default Application Credentials via goauth:
+   
+   1. `GOOGLE_APPLICATION_CREDENTIALS` (again)
+   2. gcloud _application default_ credentials (set from ` gcloud auth application-default login`)
+   3. appengine.AccessToken (for App Engine Go < =1.9)
+   4. GCE/GAE metadata credentials
+
+When the proxy authenticates under the default service account of the
+Compute Engine VM it is running on the VM must have at least the
 sqlservice.admin API scope ("https://www.googleapis.com/auth/sqlservice.admin")
 and the associated project must have the SQL Admin API
 enabled.  The default service account must also have at least WRITER/EDITOR
