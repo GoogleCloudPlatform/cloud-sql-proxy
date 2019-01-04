@@ -85,6 +85,7 @@ can be removed automatically by this program.`)
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+	skipGCECheck = flag.Bool("skip_gce_check", false, `Don't check GCE metadata presence and fall back to gcloud authorization workflow.`)
 	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
 
 	// Setting to choose what API to connect to
@@ -435,7 +436,7 @@ func main() {
 		}
 	}
 
-	onGCE := metadata.OnGCE()
+	onGCE := *skipGCECheck == false && metadata.OnGCE()
 	if err := checkFlags(onGCE); err != nil {
 		log.Fatal(err)
 	}
