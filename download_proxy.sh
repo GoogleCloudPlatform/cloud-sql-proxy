@@ -9,7 +9,7 @@ mv cloud_sql_proxy.linux.amd64 cloud_sql_proxy
 chmod +x cloud_sql_proxy
 mkdir -p cloudsql
 PROJECT=$(gcloud config list 2>/dev/null | grep project | cut -d\  -f3)
-INSTANCES=$(gcloud sql instances list | awk "{ print \$3,\"$PROJECT:\" \$1 }" | grep "^db-" | cut -d\  -f2 | tr '\n' ',')
+INSTANCES=$(gcloud sql instances list | awk "{ print \$4,\"$PROJECT:\" \$1 }" | grep "^db-" | cut -d\  -f2 | tr '\n' ',')
 if [[ "$INSTANCES" == "" ]]; then
         echo "No Cloud SQL Second Generation instances found:"
         gcloud sql instances list
