@@ -78,6 +78,15 @@ spec:
         - -dir=/cloudsql
         - -instances=project:database1=tcp:0.0.0.0:3306,project:database2=tcp:0.0.0.0:3307
         - -credential_file=/credentials/credentials.json
+        # set term_timeout if require graceful handling of shutdown
+        # NOTE: proxy will stop accepting new connections; only wait on existing connections
+        - term_timeout=10s
+        lifecycle:
+          preStop:
+            exec:
+              # (optional) add a preStop hook so that termination is delayed
+              # this is required if your server still require new connections (e.g., connection pools)
+              command: ['sleep', '10']
         ports:
         - name: port-database1
           containerPort: 3306
