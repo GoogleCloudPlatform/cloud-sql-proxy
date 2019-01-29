@@ -38,7 +38,7 @@ cloud_sql_proxy takes a few arguments to configure what instances to connect to 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.
 
-cloud_sql_proxy takes a few arguments to configure authentication:
+cloud_sql_proxy authentication can be configured in a few different ways. Those listed higher on the list will override options lower on the list:
 
 1. `credential_file` flag
 2. `token` flag
