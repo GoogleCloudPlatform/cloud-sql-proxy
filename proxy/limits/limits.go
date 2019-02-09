@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !windows
+// +build !windows,!freebsd
 
 // Package limits provides routines to check and enforce certain resource
 // limits on the Cloud SQL client proxy process.
