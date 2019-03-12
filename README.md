@@ -22,7 +22,7 @@ cloud_sql_proxy takes a few arguments to configure what instances to connect to 
   of instances to open inside `-dir`. Also supports exposing a tcp port instead of using Unix Domain Sockets; see examples below.
   Same list can be provided via INSTANCES environment variable, in case when both are provided - proxy will use command line flag.
 * `-instances_metadata=metadata_key`: Usable on [GCE](https://cloud.google.com/compute/docs/quickstart) only. The given [GCE metadata](https://cloud.google.com/compute/docs/metadata) key will be
-  polled for a list of instances to open in `-dir`. The format for the value is the same as the 'instances' flag. A hanging-poll strategy is used, meaning that changes to
+  polled for a list of instances to open in `-dir`. The metadata key is relative from `computeMetadata/v1/`. The format for the value is the same as the 'instances' flag. A hanging-poll strategy is used, meaning that changes to
   the metadata value will be reflected in the `-dir` even while the proxy is
   running. When an instance is removed from the list the corresponding socket
   will be removed from `-dir` as well (unless it was also specified in
@@ -68,6 +68,10 @@ instead of passing this flag.
 ## Example invocations:
 
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst &
+    mysql -u root -S /cloudsql/my-project:us-central1:sql-inst
+    
+    # To retrieve instances from a custom metadata value (only when running on GCE)
+    ./cloud_sql_proxy -dir=/cloudsql -instances_metadata instance/attributes/<custom-metadata-key> &
     mysql -u root -S /cloudsql/my-project:us-central1:sql-inst
 
     # For -fuse you do not need to specify instance names ahead of time:
