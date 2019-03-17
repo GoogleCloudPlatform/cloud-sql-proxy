@@ -233,11 +233,19 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 			// No "host" part of the address. Be safe and assume that they want a
 			// loopback address.
 			ret.Network = spl[0]
-			addr, ok := loopbackForNet[spl[0]]
-			if !ok {
-				return ret, fmt.Errorf("invalid %q: unrecognized network %v", instance, spl[0])
+			if spl[0] == "unix" {
+				if strings.HasPrefix(spl[1], "/") {
+					ret.Address = spl[1]
+				} else {
+					ret.Address = filepath.Join(dir, spl[1])
+				}
+			} else {
+				addr, ok := loopbackForNet[spl[0]]
+				if !ok {
+					return ret, fmt.Errorf("invalid %q: unrecognized network %v", instance, spl[0])
+				}
+				ret.Address = fmt.Sprintf("%s:%s", addr, spl[1])
 			}
-			ret.Address = fmt.Sprintf("%s:%s", addr, spl[1])
 		case 3:
 			// User provided a host and port; use that.
 			ret.Network = spl[0]

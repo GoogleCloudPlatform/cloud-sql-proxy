@@ -149,6 +149,18 @@ Connection:
 
      When connecting over TCP, the -instances parameter is required.
 
+    To set a custom socket name, you can specify it as part of the instance
+	string.  The following example opens a unix socket in the directory
+	specified by -dir, which will be proxied to connect to the instance
+    'my-instance' in project 'my-project':
+
+            -instances=my-project:my-region:my-instance=unix:custom-socket-name
+
+	To override the -dir parameter, specify an absolute path as shown in the
+	following example:
+
+            -instances=my-project:my-region:my-instance=unix:/my/custom/sql-socket
+
      Supplying INSTANCES environment variable achieves the same effect.  One can
      use that to keep k8s manifest files constant across multiple environments
 
