@@ -19,7 +19,7 @@ cloud_sql_proxy takes a few arguments to configure what instances to connect to 
   optional `-fuse_tmp` flag can specify where to place temporary files. The
   directory indicated by `-dir` is mounted.
 * `-instances="project1:region:instance1,project3:region:instance1"`: A comma-separated list
-  of instances to open inside `-dir`. Also supports exposing a tcp port instead of using Unix Domain Sockets; see examples below.
+  of instances to open inside `-dir`. Also supports exposing a tcp port and renaming the default Unix Domain Sockets; see examples below.
   Same list can be provided via INSTANCES environment variable, in case when both are provided - proxy will use command line flag.
 * `-instances_metadata=metadata_key`: Usable on [GCE](https://cloud.google.com/compute/docs/quickstart) only. The given [GCE metadata](https://cloud.google.com/compute/docs/metadata) key will be
   polled for a list of instances to open in `-dir`. The metadata key is relative from `computeMetadata/v1/`. The format for the value is the same as the 'instances' flag. A hanging-poll strategy is used, meaning that changes to
@@ -80,6 +80,14 @@ instead of passing this flag.
 
     # For programs which do not support using Unix Domain Sockets, specify tcp:
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:3306 &
+    mysql -u root -h 127.0.0.1
+
+    # For programs which require a certain Unix Domain Socket name:
+    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=unix:custom_socket_name&
+    mysql -u root -h 127.0.0.1
+
+    # For programs which require a the Unix Domain Socket at a specific location, set an absolute path (overrides -dir):
+    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=unix:/my/custom/sql-socket&
     mysql -u root -h 127.0.0.1
 
 ## To use inside a Go program:

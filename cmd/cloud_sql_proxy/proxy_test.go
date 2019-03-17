@@ -112,6 +112,14 @@ func TestParseInstanceConfig(t *testing.T) {
 			instanceConfig{"my-proj:my-reg:my-instance", "unix", "/x/my-proj:my-reg:my-instance"},
 			false, false,
 		}, {
+			"/x", "my-proj:my-reg:my-instance=unix:socket_name",
+			instanceConfig{"my-proj:my-reg:my-instance", "unix", "/x/socket_name"},
+			false, false,
+		}, {
+			"/x", "my-proj:my-reg:my-instance=unix:/my/custom/sql-socket",
+			instanceConfig{"my-proj:my-reg:my-instance", "unix", "/my/custom/sql-socket"},
+			false, false,
+		}, {
 			"/x", "my-proj:my-reg:my-instance=tcp:1234",
 			instanceConfig{"my-proj:my-reg:my-instance", "tcp", "[::1]:1234"},
 			false, true,
