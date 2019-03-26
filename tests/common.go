@@ -60,6 +60,7 @@ var (
 	vmName  = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
 	zone    = flag.String("zone", "us-central1-f", "Zone in which to create the VM")
 	osImage = flag.String("os", defaultOS, "OS image to use when creating a VM")
+	vmNWTag = flag.String("vm_nw_tag", "ssh", "Network tag to apply to the created VM")
 	dbUser  = flag.String("db_user", "root", "Name of database user to use during test")
 	dbPass  = flag.String("db_pass", "", "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history). Also note that using a password along with the Cloud SQL Proxy is not necessary as long as you set the hostname of the user appropriately (see https://cloud.google.com/sql/docs/sql-proxy#user)")
 
@@ -284,7 +285,7 @@ func newOrReuseVM(l logger, cl *http.Client) (*ssh.Client, error) {
 					Key: "sshKeys", Value: &sshPubKey,
 				}},
 			},
-			Tags: &compute.Tags{Items: []string{"ssh"}},
+			Tags: &compute.Tags{Items: []string{*vmNWTag}},
 			ServiceAccounts: []*compute.ServiceAccount{{
 				Email:  "default",
 				Scopes: []string{proxy.SQLScope},
