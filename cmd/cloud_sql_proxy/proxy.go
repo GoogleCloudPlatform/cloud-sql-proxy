@@ -264,6 +264,10 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		if err != nil {
 			return instanceConfig{}, err
 		}
+		if in.BackendType == "FIRST_GEN" {
+			logging.Errorf("WARNING: proxy client does not support first generation Cloud SQL instances.")
+			return instanceConfig{}, fmt.Errorf("%q is a first generation instance", instance)
+		}
 		if strings.HasPrefix(strings.ToLower(in.DatabaseVersion), "postgres") {
 			path := filepath.Join(dir, instance)
 			if err := os.MkdirAll(path, 0755); err != nil {
