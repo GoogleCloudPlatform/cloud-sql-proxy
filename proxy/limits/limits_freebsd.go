@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !windows,!freebsd
+// +build freebsd
 
 // Package limits provides routines to check and enforce certain resource
 // limits on the Cloud SQL client proxy process.
@@ -46,7 +46,7 @@ func SetupFDLimits(wantFDs uint64) error {
 		return fmt.Errorf("failed to read rlimit for max file descriptors: %v", err)
 	}
 
-	if rlim.Cur >= wantFDs {
+	if uint64(rlim.Cur) >= wantFDs {
 		logging.Verbosef("current FDs rlimit set to %d, wanted limit is %d. Nothing to do here.", rlim.Cur, wantFDs)
 		return nil
 	}
@@ -59,19 +59,19 @@ func SetupFDLimits(wantFDs uint64) error {
 	// limit. A privileged process (under Linux: one with the CAP_SYS_RESOURCE
 	// capability in the initial user namespace) may make arbitrary changes to
 	// either limit value.
-	if rlim.Max < wantFDs {
+	if uint64(rlim.Max) < wantFDs {
 		// When the hard limit is less than what is requested, let's just give it a
 		// shot, and if we fail, we fallback and try just setting the softlimit.
 		rlim2 := &syscall.Rlimit{}
-		rlim2.Max = wantFDs
-		rlim2.Cur = wantFDs
+		rlim2.Max = int64(wantFDs)
+		rlim2.Cur = int64(wantFDs)
 		if err := syscallSetrlimit(syscall.RLIMIT_NOFILE, rlim2); err == nil {
 			logging.Verbosef("Rlimits for file descriptors set to {%v}", rlim2)
 			return nil
 		}
 	}
 
-	rlim.Cur = wantFDs
+	rlim.Cur = int64(wantFDs)
 	if err := syscallSetrlimit(syscall.RLIMIT_NOFILE, rlim); err != nil {
 		return fmt.Errorf("failed to set rlimit {%v} for max file descriptors: %v", rlim, err)
 	}
