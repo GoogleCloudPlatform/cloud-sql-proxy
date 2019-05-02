@@ -57,18 +57,20 @@ var (
 	connectionName = flag.String("connection_name", "", "Cloud SQL instance connection name, in the form of 'project:region:instance'")
 
 	// Optional flags.
-	vmName  = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
-	zone    = flag.String("zone", "us-central1-f", "Zone in which to create the VM")
-	osImage = flag.String("os", defaultOS, "OS image to use when creating a VM")
-	dbUser  = flag.String("db_user", "root", "Name of database user to use during test")
-	dbPass  = flag.String("db_pass", "", "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history). Also note that using a password along with the Cloud SQL Proxy is not necessary as long as you set the hostname of the user appropriately (see https://cloud.google.com/sql/docs/sql-proxy#user)")
+	vmName     = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
+	vmPublicIP = flag.Bool("vm_public_ip", true, "Whether the VM should have a public IP or not.")
+	zone       = flag.String("zone", "us-central1-f", "Zone in which to create the VM")
+	osImage    = flag.String("os", defaultOS, "OS image to use when creating a VM")
+	vmNWTag    = flag.String("vm_nw_tag", "ssh", "Network tag to apply to the created VM")
+	dbUser     = flag.String("db_user", "root", "Name of database user to use during test")
+	dbPass     = flag.String("db_pass", "", "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history). Also note that using a password along with the Cloud SQL Proxy is not necessary as long as you set the hostname of the user appropriately (see https://cloud.google.com/sql/docs/sql-proxy#user)")
 
 	// Flags for authn/authz.
 	credentialFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials. You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	token          = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 )
 
-const defaultOS = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-8-jessie-v20160329"
+const defaultOS = "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9"
 
 type logger interface {
 	Log(args ...interface{})
@@ -263,6 +265,11 @@ func newOrReuseVM(l logger, cl *http.Client) (*ssh.Client, error) {
 	var op *compute.Operation
 
 	if inst, err := c.Instances.Get(*project, *zone, *vmName).Do(); err != nil {
+		accessConfig := []*compute.AccessConfig{{
+			Name: "External NAT", Type: "ONE_TO_ONE_NAT"}}
+		if !*vmPublicIP {
+			accessConfig = []*compute.AccessConfig{}
+		}
 		l.Logf("Creating new instance (getting instance %v in project %v and zone %v failed: %v)", *vmName, *project, *zone, err)
 		instProto := &compute.Instance{
 			Name:        *vmName,
@@ -277,14 +284,14 @@ func newOrReuseVM(l logger, cl *http.Client) (*ssh.Client, error) {
 			},
 			NetworkInterfaces: []*compute.NetworkInterface{{
 				Network:       "projects/" + *project + "/global/networks/default",
-				AccessConfigs: []*compute.AccessConfig{{Name: "External NAT", Type: "ONE_TO_ONE_NAT"}},
+				AccessConfigs: accessConfig,
 			}},
 			Metadata: &compute.Metadata{
 				Items: []*compute.MetadataItems{{
 					Key: "sshKeys", Value: &sshPubKey,
 				}},
 			},
-			Tags: &compute.Tags{Items: []string{"ssh"}},
+			Tags: &compute.Tags{Items: []string{*vmNWTag}},
 			ServiceAccounts: []*compute.ServiceAccount{{
 				Email:  "default",
 				Scopes: []string{proxy.SQLScope},

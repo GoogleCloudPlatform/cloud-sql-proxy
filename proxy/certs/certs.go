@@ -259,6 +259,10 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	if len(data.IpAddresses) == 0 {
 		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
 	}
+	if data.BackendType == "FIRST_GEN" {
+		logging.Errorf("WARNING: proxy client does not support first generation Cloud SQL instances.")
+		return nil, "", "", fmt.Errorf("%q is a first generation instance", instance)
+	}
 
 	// Find the first matching IP address by user input IP address types
 	ipAddrInUse := ""
