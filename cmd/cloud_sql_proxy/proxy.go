@@ -155,6 +155,13 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 				return
 			}
 			logging.Verbosef("New connection for %q", cfg.Instance)
+
+			switch clientConn := c.(type) {
+			case *net.TCPConn:
+				clientConn.SetKeepAlive(true)
+				clientConn.SetKeepAlivePeriod(1 * time.Minute)
+
+			}
 			dst <- proxy.Conn{cfg.Instance, c}
 		}
 	}()
@@ -241,7 +248,7 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		if err != nil {
 			return instanceConfig{}, err
 		}
-
+		sql.BasePath = *host
 		ret.Instance = instance
 		// Default to unix socket.
 		ret.Network = "unix"
@@ -256,6 +263,10 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		in, err := sql.Instances.Get(proj, name).Do()
 		if err != nil {
 			return instanceConfig{}, err
+		}
+		if in.BackendType == "FIRST_GEN" {
+			logging.Errorf("WARNING: proxy client does not support first generation Cloud SQL instances.")
+			return instanceConfig{}, fmt.Errorf("%q is a first generation instance", instance)
 		}
 		if strings.HasPrefix(strings.ToLower(in.DatabaseVersion), "postgres") {
 			path := filepath.Join(dir, instance)
@@ -349,12 +360,6 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 		}
 
 		errStr := fmt.Sprintf("no instance selected because none of %s is specified", flags)
-		switch gcloudStatus {
-		case gcloudNotFound:
-			errStr = fmt.Sprintf("%s and gcloud could not be found in the system path", errStr)
-		case gcloudExecErr:
-			errStr = fmt.Sprintf("%s and gcloud failed to get the project list", errStr)
-		}
 		return nil, errors.New(errStr)
 	}
 	return cfgs, nil

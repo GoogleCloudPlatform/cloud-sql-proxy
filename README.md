@@ -13,7 +13,7 @@ and have set [GOPATH](https://github.com/golang/go/wiki/GOPATH). Then, simply do
 
 The cloud_sql_proxy will be placed in $GOPATH/bin after go get completes.
 
-cloud_sql_proxy takes a few arguments to configure:
+cloud_sql_proxy takes a few arguments to configure what instances to connect to and connection behavior:
 
 * `-fuse`: requires access to `/dev/fuse` as well as the `fusermount` binary. An
   optional `-fuse_tmp` flag can specify where to place temporary files. The
@@ -22,18 +22,37 @@ cloud_sql_proxy takes a few arguments to configure:
   of instances to open inside `-dir`. Also supports exposing a tcp port instead of using Unix Domain Sockets; see examples below.
   Same list can be provided via INSTANCES environment variable, in case when both are provided - proxy will use command line flag.
 * `-instances_metadata=metadata_key`: Usable on [GCE](https://cloud.google.com/compute/docs/quickstart) only. The given [GCE metadata](https://cloud.google.com/compute/docs/metadata) key will be
-  polled for a list of instances to open in `-dir`. The format for the value is the same as the 'instances' flag. A hanging-poll strategy is used, meaning that changes to
+  polled for a list of instances to open in `-dir`. The metadata key is relative from `computeMetadata/v1/`. The format for the value is the same as the 'instances' flag. A hanging-poll strategy is used, meaning that changes to
   the metadata value will be reflected in the `-dir` even while the proxy is
   running. When an instance is removed from the list the corresponding socket
   will be removed from `-dir` as well (unless it was also specified in
   `-instances`), but any existing connections to this instance will NOT be
   terminated.
+* `-ip_address_types=PUBLIC,PRIVATE`: A comma-delimited list of preferred IP
+  types for connecting to an instance. For example, setting this to PRIVATE will
+  force the proxy to connect to instances using an instance's associated private
+  IP. Defaults to `PUBLIC,PRIVATE`
+* `-term_timeout=30s`: How long to wait for connections to close before shutting
+  down the proxy. Defaults to 0.
 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.
 
-By default, the proxy will authenticate under the default service account of the
-Compute Engine VM it is running on. Therefore, the VM must have at least the
+cloud_sql_proxy authentication can be configured in a few different ways. Those listed higher on the list will override options lower on the list:
+
+1. `credential_file` flag
+2. `token` flag
+3. Service account key at path stored in `GOOGLE_APPLICATION_CREDENTIALS`
+4. gcloud _user_ credentials (set from `gcloud auth login`)
+5. Default Application Credentials via goauth:
+   
+   1. `GOOGLE_APPLICATION_CREDENTIALS` (again)
+   2. gcloud _application default_ credentials (set from ` gcloud auth application-default login`)
+   3. appengine.AccessToken (for App Engine Go < =1.9)
+   4. GCE/GAE metadata credentials
+
+When the proxy authenticates under the default service account of the
+Compute Engine VM it is running on the VM must have at least the
 sqlservice.admin API scope ("https://www.googleapis.com/auth/sqlservice.admin")
 and the associated project must have the SQL Admin API
 enabled.  The default service account must also have at least WRITER/EDITOR
@@ -49,6 +68,10 @@ instead of passing this flag.
 ## Example invocations:
 
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst &
+    mysql -u root -S /cloudsql/my-project:us-central1:sql-inst
+    
+    # To retrieve instances from a custom metadata value (only when running on GCE)
+    ./cloud_sql_proxy -dir=/cloudsql -instances_metadata instance/attributes/<custom-metadata-key> &
     mysql -u root -S /cloudsql/my-project:us-central1:sql-inst
 
     # For -fuse you do not need to specify instance names ahead of time:

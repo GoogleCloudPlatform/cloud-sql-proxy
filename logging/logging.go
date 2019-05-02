@@ -17,15 +17,29 @@
 // control where log messages end up.
 package logging
 
-import "log"
+import (
+	"log"
+	"os"
+)
 
 // Verbosef is called to write verbose logs, such as when a new connection is
 // established correctly.
 var Verbosef = log.Printf
 
 // Infof is called to write informational logs, such as when startup has
-// completed.
 var Infof = log.Printf
 
 // Errorf is called to write an error log, such as when a new connection fails.
 var Errorf = log.Printf
+
+// LogDebugToStdout updates Verbosef and Info logging to use stdout instead of stderr.
+func LogDebugToStdout() {
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	Verbosef = logger.Printf
+	Infof = logger.Printf
+}
+
+// LogVerboseToNowhere updates Verbosef so verbose log messages are discarded
+func LogVerboseToNowhere() {
+	Verbosef = func(string, ...interface{}) {}
+}

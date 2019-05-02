@@ -20,8 +20,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,16 +27,19 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/limits"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
@@ -48,9 +49,10 @@ import (
 )
 
 var (
-	version = flag.Bool("version", false, "Print the version of the proxy and exit")
-	verbose = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
-	quiet   = flag.Bool("quiet", false, "Disable log messages")
+	version        = flag.Bool("version", false, "Print the version of the proxy and exit")
+	verbose        = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
+	quiet          = flag.Bool("quiet", false, "Disable log messages")
+	logDebugStdout = flag.Bool("log_debug_stdout", false, "If true, log messages that are not errors will output to stdout instead of stderr")
 
 	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle, "If set, this flag specifies the amount of forced sleep between successive API calls in order to protect client API quota. Minimum allowed value is "+minimumRefreshCfgThrottle.String())
 	checkRegion        = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
@@ -76,29 +78,22 @@ can be removed automatically by this program.`)
 
 	// Settings for limits
 	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
+	fdRlimit       = flag.Uint64("fd_rlimit", limits.ExpectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
+	termTimeout    = flag.Duration("term_timeout", 0, "When set, the proxy will wait for existing connections to close before terminating. Any connections that haven't closed after the timeout will be dropped")
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
+	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
 
-	// Set to non-default value when gcloud execution failed.
-	gcloudStatus gcloudStatusCode
-)
-
-type gcloudStatusCode int
-
-const (
-	gcloudOk gcloudStatusCode = iota
-	gcloudNotFound
-	// generic execution failure error not specified above.
-	gcloudExecErr
+	// Setting to choose what API to connect to
+	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
 )
 
 const (
 	minimumRefreshCfgThrottle = time.Second
 
-	host = "https://www.googleapis.com/sql/v1beta4/"
 	port = 3307
 )
 
@@ -131,6 +126,9 @@ General:
     WARNING: this option disables ALL logging output (including connection
     errors), which will likely make debugging difficult. The -quiet flag takes
     precedence over the -verbose flag.
+  -log_debug_stdout
+    When explicitly set to true, verbose and info log messages will be directed
+	to stdout as a pose to the default stderr.
   -verbose
     When explicitly set to false, disable log messages that are not errors nor
     first-time startup messages (e.g. when new connections are established).
@@ -179,7 +177,6 @@ Connection:
     When using Unix sockets (the default for systems which support them), the
     Proxy places the sockets in the directory specified by the -dir parameter.
 
-
 Automatic instance discovery:
    If the Google Cloud SQL is installed on the local machine and no instance
    connection flags are specified, the proxy connects to all instances in the
@@ -197,15 +194,6 @@ Information for all flags:
 }
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
-
-// See https://github.com/GoogleCloudPlatform/gcloud-golang/issues/194
-func onGCE() bool {
-	res, err := http.Get("http://metadata.google.internal")
-	if err != nil {
-		return false
-	}
-	return res.Header.Get("Metadata-Flavor") == "Google"
-}
 
 const defaultVersionString = "NO_VERSION_SET"
 
@@ -244,6 +232,12 @@ func checkFlags(onGCE bool) error {
 		return nil
 	}
 
+	// Check if gcloud credentials are available and if so, skip checking the GCE VM service account scope.
+	_, err := util.GcloudConfig()
+	if err == nil {
+		return nil
+	}
+
 	scopes, err := metadata.Scopes("default")
 	if err != nil {
 		if _, ok := err.(metadata.NotDefinedError); ok {
@@ -265,24 +259,46 @@ func checkFlags(onGCE bool) error {
 	return nil
 }
 
-func authenticatedClient(ctx context.Context) (*http.Client, error) {
-	if f := *tokenFile; f != "" {
-		all, err := ioutil.ReadFile(f)
-		if err != nil {
-			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
-		}
-		cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope)
-		if err != nil {
-			return nil, fmt.Errorf("invalid json file %q: %v", f, err)
-		}
+func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, error) {
+	all, err := ioutil.ReadFile(f)
+	if err != nil {
+		return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+	}
+	// First try and load this as a service account config, which allows us to see the service account email:
+	if cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope); err == nil {
 		logging.Infof("using credential file for authentication; email=%s", cfg.Email)
 		return cfg.Client(ctx), nil
+	}
+
+	cred, err := goauth.CredentialsFromJSON(ctx, all, proxy.SQLScope)
+	if err != nil {
+		return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+	}
+	logging.Infof("using credential file for authentication; path=%q", f)
+	return oauth2.NewClient(ctx, cred.TokenSource), nil
+}
+
+func authenticatedClient(ctx context.Context) (*http.Client, error) {
+	if *tokenFile != "" {
+		return authenticatedClientFromPath(ctx, *tokenFile)
 	} else if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
 		return oauth2.NewClient(ctx, src), nil
+	} else if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
+		return authenticatedClientFromPath(ctx, f)
 	}
 
-	return goauth.DefaultClient(ctx, proxy.SQLScope)
+	// If flags or env don't specify an auth source, try either gcloud or application default
+	// credentials.
+	src, err := util.GcloudTokenSource(ctx)
+	if err != nil {
+		src, err = goauth.DefaultTokenSource(ctx, proxy.SQLScope)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return oauth2.NewClient(ctx, src), nil
 }
 
 func stringList(s string) []string {
@@ -339,38 +355,15 @@ func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]s
 	return ret, nil
 }
 
-func gcloudProject() []string {
-	buf := new(bytes.Buffer)
-	cmd := exec.Command("gcloud", "--format", "json", "config", "list", "core/project")
-	cmd.Stdout = buf
-
-	if err := cmd.Run(); err != nil {
-		if strings.Contains(err.Error(), "executable file not found") {
-			// gcloud not found (probably not installed). Ignore the error but record
-			// the status for later use.
-			gcloudStatus = gcloudNotFound
-			return nil
-		}
-		gcloudStatus = gcloudExecErr
-		logging.Errorf("Error detecting gcloud project: %v", err)
-		return nil
+func gcloudProject() ([]string, error) {
+	cfg, err := util.GcloudConfig()
+	if err != nil {
+		return nil, err
 	}
-
-	var data struct {
-		Core struct {
-			Project string
-		}
+	if cfg.Configuration.Properties.Core.Project == "" {
+		return nil, fmt.Errorf("gcloud has no active project, you can set it by running `gcloud config set project <project>`")
 	}
-
-	if err := json.Unmarshal(buf.Bytes(), &data); err != nil {
-		gcloudStatus = gcloudExecErr
-		logging.Errorf("Failed to unmarshal bytes from gcloud: %v", err)
-		logging.Errorf("   gcloud returned:\n%s", buf)
-		return nil
-	}
-
-	logging.Infof("Using gcloud's active project: %v", data.Core.Project)
-	return []string{data.Core.Project}
+	return []string{cfg.Configuration.Properties.Core.Project}, nil
 }
 
 // Main executes the main function of the proxy, allowing it to be called from tests.
@@ -398,14 +391,27 @@ func main() {
 		return
 	}
 
+	if *logDebugStdout {
+		logging.LogDebugToStdout()
+	}
+
 	if !*verbose {
-		logging.Verbosef = func(string, ...interface{}) {}
+		logging.LogVerboseToNowhere()
 	}
 
 	if *quiet {
 		log.Println("Cloud SQL Proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
 		log.SetFlags(0)
 		log.SetOutput(ioutil.Discard)
+	}
+
+	// Split the input ipAddressTypes to the slice of string
+	ipAddrTypeOptsInput := strings.Split(*ipAddressTypes, ",")
+
+	if *fdRlimit != 0 {
+		if err := limits.SetupFDLimits(*fdRlimit); err != nil {
+			logging.Infof("failed to setup file descriptor limits: %v", err)
+		}
 	}
 
 	// TODO: needs a better place for consolidation
@@ -418,10 +424,18 @@ func main() {
 	projList := stringList(*projects)
 	// TODO: it'd be really great to consolidate flag verification in one place.
 	if len(instList) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
-		projList = gcloudProject()
+		var err error
+		projList, err = gcloudProject()
+		if err == nil {
+			logging.Infof("Using gcloud's active project: %v", projList)
+		} else if gErr, ok := err.(*util.GcloudError); ok && gErr.Status == util.GcloudNotFound {
+			log.Fatalf("gcloud is not in the path and -instances and -projects are empty")
+		} else {
+			log.Fatalf("unable to retrieve the active gcloud project and -instances and -projects are empty: %v", err)
+		}
 	}
 
-	onGCE := onGCE()
+	onGCE := metadata.OnGCE()
 	if err := checkFlags(onGCE); err != nil {
 		log.Fatal(err)
 	}
@@ -437,7 +451,6 @@ func main() {
 		log.Fatal(err)
 	}
 	instList = append(instList, ins...)
-
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
 	if err != nil {
 		log.Fatal(err)
@@ -489,15 +502,33 @@ func main() {
 	}
 	logging.Infof("Ready for new connections")
 
-	(&proxy.Client{
+	proxyClient := &proxy.Client{
 		Port:           port,
 		MaxConnections: *maxConnections,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
-			APIBasePath:  host,
-			IgnoreRegion: !*checkRegion,
-			UserAgent:    userAgentFromVersionString(),
+			APIBasePath:    *host,
+			IgnoreRegion:   !*checkRegion,
+			UserAgent:      userAgentFromVersionString(),
+			IPAddrTypeOpts: ipAddrTypeOptsInput,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
-	}).Run(connSrc)
+	}
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-signals
+		logging.Infof("Received TERM signal. Waiting up to %s before terminating.", *termTimeout)
+
+		err := proxyClient.Shutdown(*termTimeout)
+
+		if err == nil {
+			os.Exit(0)
+		}
+		os.Exit(2)
+	}()
+
+	proxyClient.Run(connSrc)
 }
