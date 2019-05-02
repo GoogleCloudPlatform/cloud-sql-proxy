@@ -80,9 +80,9 @@ func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 
 // InitClient is similar to Init, but allows you to specify the Client
 // directly.
-func InitClient(c Client) {
+func InitClient(c *Client) {
 	dialClient.Lock()
-	dialClient.c = &c
+	dialClient.c = c
 	dialClient.Unlock()
 }
 
