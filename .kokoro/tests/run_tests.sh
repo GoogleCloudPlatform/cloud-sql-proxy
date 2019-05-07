@@ -16,6 +16,13 @@
 # `-e` enables the script to automatically fail when a command fails
 set -e
 
+# Re-organize files into proper Go format
+export GOPATH=$PWD/gopath
+target=$GOPATH/src/github.com/GoogleCloudPlatform
+mkdir -p $target
+mv github/cloud-sql-proxy $target
+cd $target/cloud-sql-proxy
+
 # Get the dependencies
 go get -t -v ./...
 
