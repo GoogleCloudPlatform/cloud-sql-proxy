@@ -1,1 +1,5 @@
+
+# Jetbrains IDE
+.idea/
+
 tests/cloud_sql_proxy
