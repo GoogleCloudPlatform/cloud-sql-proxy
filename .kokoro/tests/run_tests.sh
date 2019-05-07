@@ -23,15 +23,16 @@ mkdir -p $target
 mv github/cloud-sql-proxy $target
 cd $target/cloud-sql-proxy
 
-echo "************ Getting dependencies... ***********"
+echo "******************** Getting dependencies... ********************"
 # Get the dependencies
 go get -t -v ./...
-echo "************ Dependencies complete.  ***********"
+echo -e "\n"
+echo "******************** Dependencies complete.  ********************"
 
-echo -e "\n\n ************ Starting tests. *********** \n"
+echo -e "\n\n******************** Starting tests. ********************"
 
-echo "************ [gofmt] Running... ***********"
+echo "************ [gofmt] running... ***********"
 diff -u <(echo -n) <(gofmt -d .)
-echo "************ [gofmt] Done.  ***********"
+echo "************ [gofmt] complete.  ***********"
 
-echo -e "\n\n ************ Tests complete.. *********** \n"
+echo -e "\n******************** Tests complete.. ********************\n"
