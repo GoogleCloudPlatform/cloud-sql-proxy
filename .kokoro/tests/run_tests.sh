@@ -35,4 +35,4 @@ echo "************ [gofmt] running... ***********"
 diff -u <(echo -n) <(gofmt -d .)
 echo "************ [gofmt] complete.  ***********"
 
-echo -e "\n******************** Tests complete.. ********************\n"
+echo -e "\n******************** Tests complete. ********************\n"
