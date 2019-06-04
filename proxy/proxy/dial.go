@@ -28,7 +28,7 @@ import (
 const port = 3307
 
 var dialClient struct {
-	// This client is initialized in Init/InitWithClient/InitDefault 
+	// This client is initialized in Init/InitWithClient/InitDefault
 	// and read in Dial.
 	c *Client
 	sync.Mutex
@@ -82,19 +82,19 @@ func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 // InitClient is similar to Init, but allows you to specify the Client
 // directly.
 
-// Deprecated: Client contains sync.RWMutex, which should not be copied by value. 
-// use InitWithClient instead. 
+// Deprecated: Client contains sync.RWMutex, which should not be copied by value.
+// use InitWithClient instead.
 func InitClient(c Client) {
 	dialClient.Lock()
 	dialClient.c = &c
 	dialClient.Unlock()
 }
 
-// InitWithClient specifies the Client directly. 
+// InitWithClient specifies the Client directly.
 func InitWithClient(c *Client) {
 	dialClient.Lock()
-        dialClient.c = c
-        dialClient.Unlock()
+	dialClient.c = c
+	dialClient.Unlock()
 }
 
 // InitDefault attempts to initialize the Dial function using application
