@@ -82,8 +82,7 @@ func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 // InitClient is similar to Init, but allows you to specify the Client
 // directly.
 
-// Deprecated: Client contains sync.RWMutex, which should not be copied by value.
-// use InitWithClient instead.
+// Deprecated: Use InitWithClient instead.
 func InitClient(c Client) {
 	dialClient.Lock()
 	dialClient.c = &c
