@@ -82,19 +82,6 @@ instead of passing this flag.
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=tcp:3306 &
     mysql -u root -h 127.0.0.1
 
-## To use inside a Go program:
-If your program is written in [Go](https://golang.org) you can use the Cloud SQL Proxy as a library,
-avoiding the need to start the Proxy as a companion process.
-
-### MySQL
-If you're using the the MySQL [go-sql-driver](https://github.com/go-sql-driver/mysql)
-you can use helper functions found in the [`proxy/dialers/mysql` package](https://godoc.org/github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql). See [example usage](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/tests/dialers_test.go).
-
-### Postgres
-If you're using the the Postgres [lib/pq](https://github.com/lib/pq), you can use the `cloudsqlpostgres` driver from [here](https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/proxy/dialers/postgres). See [example usage](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/proxy/dialers/postgres/hook_test.go).
-
-I'm open to adding more drivers, feel free to file an issue.
-
 ## To use from Kubernetes:
 
 ### Deploying Cloud SQL Proxy as a sidecar container
