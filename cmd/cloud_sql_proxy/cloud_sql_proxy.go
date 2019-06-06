@@ -391,6 +391,12 @@ func main() {
 		return
 	}
 
+	if !strings.HasSuffix(*host, "/") {
+		logging.Errorf("Host name should end with /")
+		flag.PrintDefaults()
+		return
+	}
+
 	if *logDebugStdout {
 		logging.LogDebugToStdout()
 	}
