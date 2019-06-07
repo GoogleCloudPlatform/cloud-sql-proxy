@@ -414,6 +414,12 @@ func main() {
 		}
 	}
 
+	if !strings.HasSuffix(*host, "/") {
+		logging.Errorf("Flag host should always end with /")
+		flag.PrintDefaults()
+		return
+	}
+
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
 	if envInstances := os.Getenv("INSTANCES"); *instances == "" && envInstances != "" {
