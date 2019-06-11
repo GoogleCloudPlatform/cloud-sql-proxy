@@ -34,6 +34,7 @@ cloud_sql_proxy takes a few arguments to configure what instances to connect to 
   IP. Defaults to `PUBLIC,PRIVATE`
 * `-term_timeout=30s`: How long to wait for connections to close before shutting
   down the proxy. Defaults to 0.
+* `-remote_host_override=localhost:3307`: Override the API-supplied IP address for the CloudSQL server and instead connect to the supplied hostname:port. This can be useful when the CloudSQL server has a private IP only, and you are connecting from outside the VPC using SSH port forwarding. Defaults to API supplied IP address.
 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.

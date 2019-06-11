@@ -94,6 +94,11 @@ type Client struct {
 
 	// ConnectionsCounter is used to enforce the optional maxConnections limit
 	ConnectionsCounter uint64
+
+	// RemoteHostOverride overrides the GCP-supplied IP:port combination. Used
+	// when the SQL server has a private IP only, which must be forwarded via a
+	// tunnel.
+	RemoteHostOverride *string
 }
 
 type cacheEntry struct {
@@ -297,6 +302,10 @@ func (c *Client) tryConnect(addr string, cfg *tls.Config) (net.Conn, error) {
 	d := c.Dialer
 	if d == nil {
 		d = net.Dial
+	}
+	if c.RemoteHostOverride != nil {
+		addr = *c.RemoteHostOverride
+		logging.Verbosef("Overriding hostname with: %s", addr)
 	}
 	conn, err := d("tcp", addr)
 	if err != nil {

@@ -87,6 +87,9 @@ can be removed automatically by this program.`)
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
 
+	// Setting to override the SQL server IP supplied by the API
+	remoteHostOverride = flag.String("remote_host_override", "", "An optional host:port combination to override the Cloud API supplied IP address. Useful when SQL server has a private IP only that must be port-forwarded or otherwise proxied.")
+
 	// Setting to choose what API to connect to
 	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
 )
@@ -519,6 +522,7 @@ func main() {
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
+		RemoteHostOverride: remoteHostOverride,
 	}
 
 	signals := make(chan os.Signal, 1)
