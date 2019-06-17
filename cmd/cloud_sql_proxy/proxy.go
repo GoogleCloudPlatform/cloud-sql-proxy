@@ -32,7 +32,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
-	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	"google.golang.org/api/sqladmin/v1beta4"
 )
 
 // WatchInstances handles the lifecycle of local sockets used for proxying
@@ -249,19 +249,19 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		} else {
 			// Listen via the specified dial address.
 			ret.Network = opts[0]
-			switch len(opts){
-				default:
-					return instanceConfig{}, fmt.Errorf(eM, args[1])
-				case 2:
-					// No "host" part of the address. Be safe and assume that they want a loopback address.
-					addr, ok := loopbackForNet[opts[0]]
-					if !ok {
-						return ret, fmt.Errorf("invalid %q: unrecognized network %v", args[1], opts[0])
-					}
-					ret.Address = fmt.Sprintf("%s:%s", addr, opts[1])
-				case 3:
-						// User provided a host and port; use that.
-						ret.Address = fmt.Sprintf("%s:%s", opts[1], opts[2])
+			switch len(opts) {
+			default:
+				return instanceConfig{}, fmt.Errorf(eM, args[1])
+			case 2:
+				// No "host" part of the address. Be safe and assume that they want a loopback address.
+				addr, ok := loopbackForNet[opts[0]]
+				if !ok {
+					return ret, fmt.Errorf("invalid %q: unrecognized network %v", args[1], opts[0])
+				}
+				ret.Address = fmt.Sprintf("%s:%s", addr, opts[1])
+			case 3:
+				// User provided a host and port; use that.
+				ret.Address = fmt.Sprintf("%s:%s", opts[1], opts[2])
 			}
 		}
 	} else {
@@ -299,7 +299,6 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	}
 	return ret, nil
 }
-
 
 // parseInstanceConfigs calls parseInstanceConfig for each instance in the
 // provided slice, collecting errors along the way. There may be valid
