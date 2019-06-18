@@ -231,42 +231,22 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	if proj == "" || name == "" {
 		return instanceConfig{}, fmt.Errorf("invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was %q", args[0])
 	}
-
-	eM := "invalid instance options: must be in the form `unix:/path/to/socket`, `tcp:port`, `tcp:host:port`; invalid option was %q"
 	if len(args) == 1 {
 		// Default to listening via unix socket in specified directory
 		ret.Network = "unix"
 		ret.Address = filepath.Join(dir, instance)
 	} else {
 		// Parse the instance options if present.
-		opts := strings.Split(args[1], ":")
+		opts := strings.SplitN(args[1], ":", 2)
 		ret.Network = opts[0]
+		var err error
 		if ret.Network == "unix" {
-			// Listen via specified unix socket.
-			if len(opts) != 2 {
-				return instanceConfig{}, fmt.Errorf(eM, args[1])
-			}
-			if strings.HasPrefix(opts[1], "/") {
-				ret.Address = opts[1] // Root path.
-			} else {
-				ret.Address = filepath.Join(dir, opts[1])
-			}
+			ret.Address, err = parseUnixOpts(dir, opts)
 		} else {
-			// Listen via the specified dial address.
-			switch len(opts) {
-			case 2:
-				// No "host" part of the address. Be safe and assume that they want a loopback address.
-				addr, ok := loopbackForNet[opts[0]]
-				if !ok {
-					return ret, fmt.Errorf("invalid %q: unrecognized network %v", args[1], opts[0])
-				}
-				ret.Address = net.JoinHostPort(addr, opts[1])
-			case 3:
-				// User provided a host and port; use that.
-				ret.Address = net.JoinHostPort(opts[1], opts[2])
-			default:
-				return instanceConfig{}, fmt.Errorf(eM, args[1])
-			}
+			ret.Address, err = parseTcpOpts(opts)
+		}
+		if err != nil {
+			return instanceConfig{}, err
 		}
 	}
 
@@ -298,6 +278,33 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		return ret, fmt.Errorf("invalid %q: unsupported network: %v", instance, ret.Network)
 	}
 	return ret, nil
+}
+
+// parseUnixOpts parses the instance options when specifying unix socket options.
+func parseUnixOpts(dir string, opts []string) (string, error) {
+	// Listen via specified unix socket.
+	if len(opts) != 2 {
+		return "", fmt.Errorf("invalid instance options: must be in the form `unix:/path/to/socket`, `tcp:port`, `tcp:host:port`; invalid option was %q", strings.Join(opts, ":"))
+	}
+	if strings.HasPrefix(opts[1], "/") {
+		return opts[1], nil // Root path.
+	}
+	return filepath.Join(dir, opts[1]), nil
+}
+
+// parseTcpOpts parses the instance options when specifying tcp port options.
+func parseTcpOpts(opts []string) (string, error) {
+	if strings.Contains(opts[1], ":") {
+		// User provided a host and port; use that.
+		return opts[1], nil
+	} else {
+		// No "host" part of the address. Be safe and assume that they want a loopback address.
+		addr, ok := loopbackForNet[opts[0]]
+		if !ok {
+			return "", fmt.Errorf("invalid %q: unrecognized network %v", strings.Join(opts, ":"), opts[0])
+		}
+		return net.JoinHostPort(addr, opts[1]), nil
+	}
 }
 
 // parseInstanceConfigs calls parseInstanceConfig for each instance in the
