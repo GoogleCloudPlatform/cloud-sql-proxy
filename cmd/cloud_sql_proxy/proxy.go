@@ -231,16 +231,21 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	if proj == "" || name == "" {
 		return instanceConfig{}, fmt.Errorf("invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was %q", args[0])
 	}
-	// Parse the instance options - everything before the "=".
+
 	eM := "invalid instance options: must be in the form `unix:/path/to/socket`, `tcp:port`, `tcp:host:port`; invalid option was %q"
-	if len(args) == 2 {
+	if len(args) == 1 {
+		// Default to listening via unix socket in specified directory
+		ret.Network = "unix"
+		ret.Address = filepath.Join(dir, instance)
+	} else {
+		// Parse the instance options if present.
 		opts := strings.Split(args[1], ":")
-		if opts[0] == "unix" {
+		ret.Network = opts[0]
+		if ret.Network == "unix" {
 			// Listen via specified unix socket.
 			if len(opts) != 2 {
 				return instanceConfig{}, fmt.Errorf(eM, args[1])
 			}
-			ret.Network = "unix"
 			if strings.HasPrefix(opts[1], "/") {
 				ret.Address = opts[1] // Root path.
 			} else {
@@ -248,26 +253,21 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 			}
 		} else {
 			// Listen via the specified dial address.
-			ret.Network = opts[0]
 			switch len(opts) {
-			default:
-				return instanceConfig{}, fmt.Errorf(eM, args[1])
 			case 2:
 				// No "host" part of the address. Be safe and assume that they want a loopback address.
 				addr, ok := loopbackForNet[opts[0]]
 				if !ok {
 					return ret, fmt.Errorf("invalid %q: unrecognized network %v", args[1], opts[0])
 				}
-				ret.Address = fmt.Sprintf("%s:%s", addr, opts[1])
+				ret.Address = net.JoinHostPort(addr, opts[1])
 			case 3:
 				// User provided a host and port; use that.
-				ret.Address = fmt.Sprintf("%s:%s", opts[1], opts[2])
+				ret.Address = net.JoinHostPort(opts[1], opts[2])
+			default:
+				return instanceConfig{}, fmt.Errorf(eM, args[1])
 			}
 		}
-	} else {
-		// Default to listening via unix socket in specified directory
-		ret.Network = "unix"
-		ret.Address = filepath.Join(dir, instance)
 	}
 
 	// Use the SQL Admin API to verify compatibility with the instance.
@@ -287,7 +287,7 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	// Postgres instances use a special suffix on the unix socket.
 	// See https://www.postgresql.org/docs/11/runtime-config-connection.html
 	if ret.Network == "unix" && strings.HasPrefix(strings.ToLower(inst.DatabaseVersion), "postgres") {
-		// Verify the folder exists.
+		// Verify the directory exists.
 		if err := os.MkdirAll(ret.Address, 0755); err != nil {
 			return instanceConfig{}, err
 		}
