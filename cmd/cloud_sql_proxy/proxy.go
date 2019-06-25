@@ -250,7 +250,7 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 				ret.Address = filepath.Join(dir, opts[1])
 			}
 		} else {
-			ret.Address, err = parseTcpOpts(opts[0], opts[1])
+			ret.Address, err = parseTCPOpts(opts[0], opts[1])
 		}
 		if err != nil {
 			return instanceConfig{}, err
@@ -287,8 +287,8 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	return ret, nil
 }
 
-// parseTcpOpts parses the instance options when specifying tcp port options.
-func parseTcpOpts(ntwk, addrOpt string) (string, error) {
+// parseTCPOpts parses the instance options when specifying tcp port options.
+func parseTCPOpts(ntwk, addrOpt string) (string, error) {
 	if strings.Contains(addrOpt, ":") {
 		return addrOpt, nil // User provided a host and port; use that.
 	}
