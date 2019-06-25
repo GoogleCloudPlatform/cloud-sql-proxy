@@ -238,12 +238,19 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	} else {
 		// Parse the instance options if present.
 		opts := strings.SplitN(args[1], ":", 2)
+		if len(opts) != 2 {
+			return instanceConfig{}, fmt.Errorf("invalid instance options: must be in the form `unix:/path/to/socket`, `tcp:port`, `tcp:host:port`; invalid option was %q", strings.Join(opts, ":"))
+		}
 		ret.Network = opts[0]
 		var err error
 		if ret.Network == "unix" {
-			ret.Address, err = parseUnixOpts(dir, opts)
+			if strings.HasPrefix(opts[1], "/") {
+				ret.Address = opts[1] // Root path.
+			} else {
+				ret.Address = filepath.Join(dir, opts[1])
+			}
 		} else {
-			ret.Address, err = parseTcpOpts(opts)
+			ret.Address, err = parseTcpOpts(opts[0], opts[1])
 		}
 		if err != nil {
 			return instanceConfig{}, err
@@ -280,31 +287,17 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	return ret, nil
 }
 
-// parseUnixOpts parses the instance options when specifying unix socket options.
-func parseUnixOpts(dir string, opts []string) (string, error) {
-	// Listen via specified unix socket.
-	if len(opts) != 2 {
-		return "", fmt.Errorf("invalid instance options: must be in the form `unix:/path/to/socket`, `tcp:port`, `tcp:host:port`; invalid option was %q", strings.Join(opts, ":"))
-	}
-	if strings.HasPrefix(opts[1], "/") {
-		return opts[1], nil // Root path.
-	}
-	return filepath.Join(dir, opts[1]), nil
-}
-
 // parseTcpOpts parses the instance options when specifying tcp port options.
-func parseTcpOpts(opts []string) (string, error) {
-	if strings.Contains(opts[1], ":") {
-		// User provided a host and port; use that.
-		return opts[1], nil
-	} else {
-		// No "host" part of the address. Be safe and assume that they want a loopback address.
-		addr, ok := loopbackForNet[opts[0]]
-		if !ok {
-			return "", fmt.Errorf("invalid %q: unrecognized network %v", strings.Join(opts, ":"), opts[0])
-		}
-		return net.JoinHostPort(addr, opts[1]), nil
+func parseTcpOpts(ntwk, addrOpt string) (string, error) {
+	if strings.Contains(addrOpt, ":") {
+		return addrOpt, nil // User provided a host and port; use that.
 	}
+	// No "host" part of the address. Be safe and assume that they want a loopback address.
+	addr, ok := loopbackForNet[ntwk]
+	if !ok {
+		return "", fmt.Errorf("invalid %q:%q: unrecognized network %v", ntwk, addrOpt, ntwk)
+	}
+	return net.JoinHostPort(addr, addrOpt), nil
 }
 
 // parseInstanceConfigs calls parseInstanceConfig for each instance in the
