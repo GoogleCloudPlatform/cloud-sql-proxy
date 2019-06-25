@@ -221,68 +221,83 @@ var validNets = func() map[string]bool {
 
 func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig, error) {
 	var ret instanceConfig
-	eq := strings.Index(instance, "=")
-	if eq != -1 {
-		spl := strings.SplitN(instance[eq+1:], ":", 3)
-		ret.Instance = instance[:eq]
-
-		switch len(spl) {
-		default:
-			return ret, fmt.Errorf("invalid %q: expected 'project:instance=tcp:port'", instance)
-		case 2:
-			// No "host" part of the address. Be safe and assume that they want a
-			// loopback address.
-			ret.Network = spl[0]
-			addr, ok := loopbackForNet[spl[0]]
-			if !ok {
-				return ret, fmt.Errorf("invalid %q: unrecognized network %v", instance, spl[0])
-			}
-			ret.Address = fmt.Sprintf("%s:%s", addr, spl[1])
-		case 3:
-			// User provided a host and port; use that.
-			ret.Network = spl[0]
-			ret.Address = fmt.Sprintf("%s:%s", spl[1], spl[2])
-		}
-	} else {
-		sql, err := sqladmin.New(cl)
-		if err != nil {
-			return instanceConfig{}, err
-		}
-		sql.BasePath = *host
-		ret.Instance = instance
-		// Default to unix socket.
+	args := strings.Split(instance, "=")
+	if len(args) > 2 {
+		return instanceConfig{}, fmt.Errorf("invalid instance argument: must be either form - `<instance_connection_string>` or `<instance_connection_string>=<options>`; invalid arg was %q", instance)
+	}
+	// Parse the instance connection name - everything before the "=".
+	ret.Instance = args[0]
+	proj, _, name := util.SplitName(ret.Instance)
+	if proj == "" || name == "" {
+		return instanceConfig{}, fmt.Errorf("invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was %q", args[0])
+	}
+	if len(args) == 1 {
+		// Default to listening via unix socket in specified directory
 		ret.Network = "unix"
-
-		proj, _, name := util.SplitName(instance)
-		if proj == "" || name == "" {
-			return instanceConfig{}, fmt.Errorf("invalid instance name: must be in the form `project:region:instance-name`; invalid name was %q", instance)
+		ret.Address = filepath.Join(dir, instance)
+	} else {
+		// Parse the instance options if present.
+		opts := strings.SplitN(args[1], ":", 2)
+		if len(opts) != 2 {
+			return instanceConfig{}, fmt.Errorf("invalid instance options: must be in the form `unix:/path/to/socket`, `tcp:port`, `tcp:host:port`; invalid option was %q", strings.Join(opts, ":"))
 		}
-		// We allow people to omit the region due to historical reasons. It'll
-		// fail later in the code if this isn't allowed, so just assume it's
-		// allowed until we actually need the region in this API call.
-		in, err := sql.Instances.Get(proj, name).Do()
+		ret.Network = opts[0]
+		var err error
+		if ret.Network == "unix" {
+			if strings.HasPrefix(opts[1], "/") {
+				ret.Address = opts[1] // Root path.
+			} else {
+				ret.Address = filepath.Join(dir, opts[1])
+			}
+		} else {
+			ret.Address, err = parseTCPOpts(opts[0], opts[1])
+		}
 		if err != nil {
 			return instanceConfig{}, err
 		}
-		if in.BackendType == "FIRST_GEN" {
-			logging.Errorf("WARNING: proxy client does not support first generation Cloud SQL instances.")
-			return instanceConfig{}, fmt.Errorf("%q is a first generation instance", instance)
+	}
+
+	// Use the SQL Admin API to verify compatibility with the instance.
+	sql, err := sqladmin.New(cl)
+	if err != nil {
+		return instanceConfig{}, err
+	}
+	sql.BasePath = *host
+	inst, err := sql.Instances.Get(proj, name).Do()
+	if err != nil {
+		return instanceConfig{}, err
+	}
+	if inst.BackendType == "FIRST_GEN" {
+		logging.Errorf("WARNING: proxy client does not support first generation Cloud SQL instances.")
+		return instanceConfig{}, fmt.Errorf("%q is a first generation instance", instance)
+	}
+	// Postgres instances use a special suffix on the unix socket.
+	// See https://www.postgresql.org/docs/11/runtime-config-connection.html
+	if ret.Network == "unix" && strings.HasPrefix(strings.ToLower(inst.DatabaseVersion), "postgres") {
+		// Verify the directory exists.
+		if err := os.MkdirAll(ret.Address, 0755); err != nil {
+			return instanceConfig{}, err
 		}
-		if strings.HasPrefix(strings.ToLower(in.DatabaseVersion), "postgres") {
-			path := filepath.Join(dir, instance)
-			if err := os.MkdirAll(path, 0755); err != nil {
-				return instanceConfig{}, err
-			}
-			ret.Address = filepath.Join(path, ".s.PGSQL.5432")
-		} else {
-			ret.Address = filepath.Join(dir, instance)
-		}
+		ret.Address = filepath.Join(ret.Address, ".s.PGSQL.5432")
 	}
 
 	if !validNets[ret.Network] {
 		return ret, fmt.Errorf("invalid %q: unsupported network: %v", instance, ret.Network)
 	}
 	return ret, nil
+}
+
+// parseTCPOpts parses the instance options when specifying tcp port options.
+func parseTCPOpts(ntwk, addrOpt string) (string, error) {
+	if strings.Contains(addrOpt, ":") {
+		return addrOpt, nil // User provided a host and port; use that.
+	}
+	// No "host" part of the address. Be safe and assume that they want a loopback address.
+	addr, ok := loopbackForNet[ntwk]
+	if !ok {
+		return "", fmt.Errorf("invalid %q:%q: unrecognized network %v", ntwk, addrOpt, ntwk)
+	}
+	return net.JoinHostPort(addr, addrOpt), nil
 }
 
 // parseInstanceConfigs calls parseInstanceConfig for each instance in the
