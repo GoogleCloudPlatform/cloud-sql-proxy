@@ -89,6 +89,17 @@ instead of passing this flag.
     # For programs which require a the Unix Domain Socket at a specific location, set an absolute path (overrides -dir):
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=unix:/my/custom/sql-socket&
     mysql -u root -h 127.0.0.1
+    
+## Container Images
+
+For convenience, we currently host containerized versions of the proxy in the following GCR repos:
+   * `gcr.io/cloudsql-docker/gce-proxy`
+   * `us.gcr.io/cloudsql-docker/gce-proxy`
+   * `eu.gcr.io/cloudsql-docker/gce-proxy`
+   * `asia.gcr.io/cloudsql-docker/gce-proxy`
+
+Images are tagged to the version of the proxy they contain. It's strongly suggested to use the 
+latest version of the proxy, and to update the version often. 
 
 ## To use from Kubernetes:
 
