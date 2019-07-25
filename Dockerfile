@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Build Stage
+# Use the latest stable golang 1.x to compile to a binary
 FROM golang:1 as build
 
-ARG VERSION="1.14-develop"
+ARG VERSION="1.15-develop"
 
 WORKDIR /go/src/cloudsql-proxy
 COPY . .
 
 RUN go get ./...
-RUN go build -a -tags netgo -ldflags "-w -extldflags "-static" -X 'main.versionString=$VERSION'" \
-      -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+RUN go build -ldflags "-X 'main.versionString=$VERSION'" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
 
 # Final Stage
 FROM gcr.io/distroless/base
