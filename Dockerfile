@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Build Stage
-FROM golang:1.12 as build
+FROM golang:1 as build
 
 RUN apt-get update && apt-get install -y
 
@@ -22,8 +22,9 @@ ARG VERSION="1.14-develop"
 WORKDIR /go/src/cloudsql-proxy
 COPY . .
 
-RUN go get ./cmd/cloud_sql_proxy && go build -ldflags "-X 'main.versionString=$VERSION'" \
-  -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+RUN go get ./...
+RUN go build -a -tags netgo -ldflags "-w -extldflags "-static" -X 'main.versionString=$VERSION'" \
+      -o cloud_sql_proxy ./cmd/cloud_sql_proxy
 
 # Final Stage
 FROM gcr.io/distroless/base
