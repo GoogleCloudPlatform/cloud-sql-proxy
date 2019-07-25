@@ -15,8 +15,6 @@
 # Build Stage
 FROM golang:1 as build
 
-RUN apt-get update && apt-get install -y
-
 ARG VERSION="1.14-develop"
 
 WORKDIR /go/src/cloudsql-proxy
