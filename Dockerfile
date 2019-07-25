@@ -26,4 +26,4 @@ RUN go build -a -tags netgo -ldflags "-w -extldflags "-static" -X 'main.versionS
 
 # Final Stage
 FROM gcr.io/distroless/base
-COPY --from=build /go/src/cloudsql-proxy/cloud_sql_proxy /
+COPY --from=build /go/src/cloudsql-proxy/cloud_sql_proxy /cloud_sql_proxy
