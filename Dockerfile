@@ -11,8 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM alpine:3.10
 
-RUN apk add --no-cache ca-certificates && update-ca-certificates
+# Build Stage
+FROM golang:1.12 as build
 
-COPY cloud_sql_proxy.linux.amd64 /cloud_sql_proxy
+RUN apt-get update && apt-get install -y
+
+ARG VERSION="1.14-develop"
+
+WORKDIR /go/src/cloudsql-proxy
+COPY . .
+
+RUN go get ./cmd/cloud_sql_proxy && go build -ldflags "-X 'main.versionString=$VERSION'" \
+  -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+
+# Final Stage
+FROM gcr.io/distroless/base
+COPY --from=build /go/src/cloudsql-proxy/cloud_sql_proxy /
