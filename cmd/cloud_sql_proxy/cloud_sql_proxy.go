@@ -128,7 +128,7 @@ General:
     precedence over the -verbose flag.
   -log_debug_stdout
     When explicitly set to true, verbose and info log messages will be directed
-	to stdout as a pose to the default stderr.
+	to stdout as opposed to the default stderr.
   -verbose
     When explicitly set to false, disable log messages that are not errors nor
     first-time startup messages (e.g. when new connections are established).
