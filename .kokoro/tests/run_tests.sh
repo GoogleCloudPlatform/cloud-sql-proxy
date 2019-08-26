@@ -16,6 +16,12 @@
 # `-e` enables the script to automatically fail when a command fails
 set -e
 
+# Ensure both ipv4 and ipv6 functionality is tested.
+#
+# Tests will fail if the environment doesn't support both nets and it means we
+# need to find a test env that supports both.
+export EXPECT_IPV4_AND_IPV6=true
+
 # Re-organize files into proper Go format
 export GOPATH=$PWD/gopath
 target=$GOPATH/src/github.com/GoogleCloudPlatform
