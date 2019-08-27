@@ -110,7 +110,7 @@ Follow this [page](https://github.com/GoogleCloudPlatform/kubernetes-engine-samp
 
 ## Third Party
 
-__WARNING__: _These are not an officially supported Google products._
+__WARNING__: _These distributions are not officially supported by Google._
 
 ### Installing via Homebrew
  
