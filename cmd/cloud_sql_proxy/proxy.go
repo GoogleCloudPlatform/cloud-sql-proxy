@@ -180,7 +180,7 @@ type instanceConfig struct {
 // valid loopback address for "tcp".
 var loopbackForNet = map[string]string{
 	"tcp4": "127.0.0.1",
-	"tcp6": "[::1]",
+	"tcp6": "::1",
 }
 
 // validNets tracks the networks that are valid for this platform and machine.
@@ -191,13 +191,13 @@ var validNets = func() map[string]bool {
 
 	anyTCP := false
 	for _, n := range []string{"tcp4", "tcp6"} {
-		addr, ok := loopbackForNet[n]
+		host, ok := loopbackForNet[n]
 		if !ok {
 			// This is effectively a compile-time error.
 			panic(fmt.Sprintf("no loopback address found for %v", n))
 		}
 		// Open any port to see if the net is valid.
-		x, err := net.Listen(n, addr+":0")
+		x, err := net.Listen(n, net.JoinHostPort(host, "0"))
 		if err != nil {
 			// Error is too verbose to be useful.
 			continue
@@ -210,7 +210,7 @@ var validNets = func() map[string]bool {
 			// Set the loopback value for generic tcp if it hasn't already been
 			// set. (If both tcp4/tcp6 are supported the first one in the list
 			// (tcp4's 127.0.0.1) is used.
-			loopbackForNet["tcp"] = addr
+			loopbackForNet["tcp"] = host
 		}
 	}
 	if anyTCP {
