@@ -107,7 +107,18 @@ latest version of the proxy, and to update the version often.
 Follow this [page](https://github.com/GoogleCloudPlatform/kubernetes-engine-samples/tree/master/cloudsql). See also
 [Connecting from Google Kubernetes Engine](https://cloud.google.com/sql/docs/mysql/connect-kubernetes-engine).
 
-### Deploy Cloud SQL Proxy as a Cluster Service using Helm
-Follow this [instruction](https://github.com/kubernetes/charts/tree/master/stable/gcloud-sqlproxy).
-This chart creates a Deployment and a Service, but we recommend deploying the proxy as a sidecar container in your pods.
+
+## Third Party
+
+__WARNING__: _These are not an officially supported Google products._
+
+### Installing via Homebrew
+ 
+  You can find a formula for with Homebrew [here](https://github.com/tclass/homebrew-cloud_sql_proxy). 
+  
+  
+### K8s Cluster Service using Helm
+
+  Follow these [instructions](https://github.com/kubernetes/charts/tree/master/stable/gcloud-sqlproxy).
+  This chart creates a Deployment and a Service, but we recommend deploying the proxy as a sidecar container in your pods.
 
