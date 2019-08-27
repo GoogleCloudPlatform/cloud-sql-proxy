@@ -154,9 +154,7 @@ func TestParseInstanceConfig(t *testing.T) {
 			if os.Getenv("EXPECT_IPV4_AND_IPV6") != "true" {
 				// Skip ipv4 and ipv6 if they are not supported by the machine.
 				// (assumption is that validNets isn't buggy)
-				switch tc.wantCfg.Network {
-				case "tcp4":
-				case "tcp6":
+				if tc.wantCfg.Network == "tcp4" || tc.wantCfg.Network == "tcp6" {
 					if !validNets[tc.wantCfg.Network] {
 						t.Skipf("%q net not supported, skipping", tc.wantCfg.Network)
 					}
