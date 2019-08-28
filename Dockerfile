@@ -15,7 +15,7 @@
 # Use the latest stable golang 1.x to compile to a binary
 FROM golang:1 as build
 
-ARG VERSION="1.15-develop"
+ARG VERSION="1.15"
 
 WORKDIR /go/src/cloudsql-proxy
 COPY . .
