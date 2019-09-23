@@ -66,6 +66,8 @@ func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string
 		list, err := parseInstanceConfigs(dir, strings.Split(instances, ","), cl)
 		if err != nil {
 			logging.Errorf("%v", err)
+			// If we do not have a valid list of instances, skip this update
+			continue
 		}
 
 		stillOpen := make(map[string]net.Listener)
