@@ -66,6 +66,8 @@ func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string
 		list, err := parseInstanceConfigs(dir, strings.Split(instances, ","), cl)
 		if err != nil {
 			logging.Errorf("%v", err)
+			// If we do not have a valid list of instances, skip this update
+			continue
 		}
 
 		stillOpen := make(map[string]net.Listener)
@@ -334,6 +336,7 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 
 	cfgs, err := parseInstanceConfigs(dir, instances, cl)
 	if err != nil {
+		// Error when unable to correctly parse the instance configuration
 		return nil, err
 	}
 
