@@ -83,12 +83,12 @@ instead of passing this flag.
     mysql -u root -h 127.0.0.1
 
     # For programs which require a certain Unix Domain Socket name:
-    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=unix:custom_socket_name&
-    mysql -u root -h 127.0.0.1
+    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=unix:custom_socket_name &
+    mysql -u root -S /cloudsql/custom_socket_name
 
     # For programs which require a the Unix Domain Socket at a specific location, set an absolute path (overrides -dir):
-    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=unix:/my/custom/sql-socket&
-    mysql -u root -h 127.0.0.1
+    ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=unix:/my/custom/sql-socket &
+    mysql -u root -S /my/custom/sql-socket
     
 ## Container Images
 
