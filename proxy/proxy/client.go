@@ -229,7 +229,7 @@ func (c *Client) refreshCertAfter(instance string, timeToRefresh time.Duration) 
 	<-time.After(timeToRefresh)
 	logging.Verbosef("ephemeral certificate for instance %s will expire soon, refreshing now.", instance)
 	if _, _, err := c.refreshCfg(instance); err != nil {
-		logging.Errorf("failed to refresh the ephemeral certificate for %s before expering: %v", instance, err)
+		logging.Errorf("failed to refresh the ephemeral certificate for %s before expiring: %v", instance, err)
 	}
 }
 
