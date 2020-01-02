@@ -328,16 +328,21 @@ func parseInstanceConfigs(dir string, instances []string, cl *http.Client) ([]in
 
 // CreateInstanceConfigs verifies that the parameters passed to it are valid
 // for the proxy for the platform and system and then returns a slice of valid
-// instanceConfig.
+// instanceConfig. It is possible for the instanceConfig to be empty if no valid
+// configurations were specified, however `err` will be set.
 func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instancesSrc string, cl *http.Client) ([]instanceConfig, error) {
+	// Used to signify that there was no valid parsed config
+	var emptyConfigs []instanceConfig
+
 	if useFuse && !fuse.Supported() {
-		return nil, errors.New("FUSE not supported on this system")
+		return emptyConfigs, errors.New("FUSE not supported on this system")
 	}
 
 	cfgs, err := parseInstanceConfigs(dir, instances, cl)
 	if err != nil {
 		// Error when unable to correctly parse the instance configuration
-		return nil, err
+		// However, return the configuration of what was parsed correctly
+		return cfgs, err
 	}
 
 	if dir == "" {
@@ -346,13 +351,13 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 		//    - Using the metadata to get a list of instances
 		//    - Having an instance that uses a 'unix' network
 		if useFuse {
-			return nil, errors.New("must set -dir because -fuse was set")
+			return emptyConfigs, errors.New("must set -dir because -fuse was set")
 		} else if instancesSrc != "" {
-			return nil, errors.New("must set -dir because -instances_metadata was set")
+			return emptyConfigs, errors.New("must set -dir because -instances_metadata was set")
 		} else {
 			for _, v := range cfgs {
 				if v.Network == "unix" {
-					return nil, fmt.Errorf("must set -dir: using a unix socket for %v", v.Instance)
+					return emptyConfigs, fmt.Errorf("must set -dir: using a unix socket for %v", v.Instance)
 				}
 			}
 		}
@@ -361,9 +366,9 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 
 	if useFuse {
 		if len(instances) != 0 || instancesSrc != "" {
-			return nil, errors.New("-fuse is not compatible with -projects, -instances, or -instances_metadata")
+			return emptyConfigs, errors.New("-fuse is not compatible with -projects, -instances, or -instances_metadata")
 		}
-		return nil, nil
+		return emptyConfigs, nil
 	}
 	// FUSE disabled.
 	if len(instances) == 0 && instancesSrc == "" {
@@ -378,7 +383,7 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 		}
 
 		errStr := fmt.Sprintf("no instance selected because none of %s is specified", flags)
-		return nil, errors.New(errStr)
+		return emptyConfigs, errors.New(errStr)
 	}
 	return cfgs, nil
 }

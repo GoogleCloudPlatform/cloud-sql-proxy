@@ -87,6 +87,9 @@ can be removed automatically by this program.`)
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
 
+	skipConfigurationValidation = flag.Bool("skip_startup_validation", false, `Setting this flag will allow you to prevent the proxy from terminating when
+	some configuration could not be loaded. `)
+
 	// Setting to choose what API to connect to
 	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
 )
@@ -471,7 +474,13 @@ func main() {
 	instList = append(instList, ins...)
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client)
 	if err != nil {
-		log.Fatal(err)
+		if *skipConfigurationValidation == true && len(cfgs) > 0 {
+			// Check out the instance array length before going on in Golang; if there are some instances we can go move on
+			logging.Infof(`There was a problem when getting instance configuration but since -skip-startup-validation
+				was set we are ignoring the error since at least one valid configuration was found. Error: %v`, err)
+		} else {
+			log.Fatal(err)
+		}
 	}
 
 	// We only need to store connections in a ConnSet if FUSE is used; otherwise

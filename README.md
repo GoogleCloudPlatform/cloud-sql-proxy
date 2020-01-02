@@ -34,6 +34,8 @@ cloud_sql_proxy takes a few arguments to configure what instances to connect to 
   IP. Defaults to `PUBLIC,PRIVATE`
 * `-term_timeout=30s`: How long to wait for connections to close before shutting
   down the proxy. Defaults to 0.
+* `-skip-startup-validation`: Setting this flag will allow you to prevent the proxy from terminating when
+  some configuration could not be loaded.
 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.
@@ -45,7 +47,7 @@ cloud_sql_proxy authentication can be configured in a few different ways. Those 
 3. Service account key at path stored in `GOOGLE_APPLICATION_CREDENTIALS`
 4. gcloud _user_ credentials (set from `gcloud auth login`)
 5. Default Application Credentials via goauth:
-   
+
    1. `GOOGLE_APPLICATION_CREDENTIALS` (again)
    2. gcloud _application default_ credentials (set from ` gcloud auth application-default login`)
    3. appengine.AccessToken (for App Engine Go < =1.9)
@@ -69,7 +71,7 @@ instead of passing this flag.
 
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst &
     mysql -u root -S /cloudsql/my-project:us-central1:sql-inst
-    
+
     # To retrieve instances from a custom metadata value (only when running on GCE)
     ./cloud_sql_proxy -dir=/cloudsql -instances_metadata instance/attributes/<custom-metadata-key> &
     mysql -u root -S /cloudsql/my-project:us-central1:sql-inst
@@ -89,7 +91,7 @@ instead of passing this flag.
     # For programs which require a the Unix Domain Socket at a specific location, set an absolute path (overrides -dir):
     ./cloud_sql_proxy -dir=/cloudsql -instances=my-project:us-central1:sql-inst=unix:/my/custom/sql-socket &
     mysql -u root -S /my/custom/sql-socket
-    
+
 ## Container Images
 
 For convenience, we currently host containerized versions of the proxy in the following GCR repos:
@@ -98,8 +100,8 @@ For convenience, we currently host containerized versions of the proxy in the fo
    * `eu.gcr.io/cloudsql-docker/gce-proxy`
    * `asia.gcr.io/cloudsql-docker/gce-proxy`
 
-Images are tagged to the version of the proxy they contain. It's strongly suggested to use the 
-latest version of the proxy, and to update the version often. 
+Images are tagged to the version of the proxy they contain. It's strongly suggested to use the
+latest version of the proxy, and to update the version often.
 
 ## To use from Kubernetes:
 
@@ -113,10 +115,10 @@ Follow this [page](https://github.com/GoogleCloudPlatform/kubernetes-engine-samp
 __WARNING__: _These distributions are not officially supported by Google._
 
 ### Installing via Homebrew
- 
-  You can find a formula for with Homebrew [here](https://github.com/tclass/homebrew-cloud_sql_proxy). 
-  
-  
+
+  You can find a formula for with Homebrew [here](https://github.com/tclass/homebrew-cloud_sql_proxy).
+
+
 ### K8s Cluster Service using Helm
 
   Follow these [instructions](https://github.com/kubernetes/charts/tree/master/stable/gcloud-sqlproxy).

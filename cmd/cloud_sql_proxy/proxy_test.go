@@ -62,6 +62,11 @@ func TestCreateInstanceConfigs(t *testing.T) {
 			"setting -dir and -instances (unix socket)",
 			"dir", false, []string{"proj:reg:x"}, "", false,
 		}, {
+			// tests for the case where invalid configs can still exist,
+			// but require setting error
+			"setting -dir and -instances (unix socket) w/ something invalid",
+			"dir", false, []string{"proj:reg:x", "INVALID_PROJECT_STRING"}, "", true,
+		}, {
 			"Seting -instance (unix socket)",
 			"", false, []string{"proj:reg:x"}, "", true,
 		}, {
