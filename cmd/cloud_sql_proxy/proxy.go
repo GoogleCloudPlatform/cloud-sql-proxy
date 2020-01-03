@@ -63,7 +63,9 @@ func WatchInstances(dir string, cfgs []instanceConfig, updates <-chan string, cl
 func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string, static map[string]net.Listener, cl *http.Client) {
 	dynamicInstances := make(map[string]net.Listener)
 	for instances := range updates {
-		list, err := parseInstanceConfigs(dir, strings.Split(instances, ","), cl)
+		// All instances were legal when we started, so we pass false below to ensure we don't skip them
+		// later if they became unhealthy for some reason; this would be a serious enough problem. 
+		list, err := parseInstanceConfigs(dir, strings.Split(instances, ","), cl, false)
 		if err != nil {
 			logging.Errorf("%v", err)
 			// If we do not have a valid list of instances, skip this update
@@ -305,7 +307,7 @@ func parseTCPOpts(ntwk, addrOpt string) (string, error) {
 // parseInstanceConfigs calls parseInstanceConfig for each instance in the
 // provided slice, collecting errors along the way. There may be valid
 // instanceConfigs returned even if there's an error.
-func parseInstanceConfigs(dir string, instances []string, cl *http.Client) ([]instanceConfig, error) {
+func parseInstanceConfigs(dir string, instances []string, cl *http.Client, skipFailedInstanceConfigs bool) ([]instanceConfig, error) {
 	errs := new(bytes.Buffer)
 	var cfg []instanceConfig
 	for _, v := range instances {
@@ -313,7 +315,14 @@ func parseInstanceConfigs(dir string, instances []string, cl *http.Client) ([]in
 			continue
 		}
 		if c, err := parseInstanceConfig(dir, v, cl); err != nil {
-			fmt.Fprintf(errs, "\n\t%v", err)
+			// Go ahead and add a check here, though I would prefer not to
+			if skipFailedInstanceConfigs == true {
+				logging.Infof("There was a problem when parsing a instance configuration but ignoring due to the configuration. Error: %v", err)
+				// we intentionally don't add to `errs` since we don't want to bubble these
+			} else {
+				fmt.Fprintf(errs, "\n\t%v", err)
+			}
+
 		} else {
 			cfg = append(cfg, c)
 		}
@@ -330,34 +339,31 @@ func parseInstanceConfigs(dir string, instances []string, cl *http.Client) ([]in
 // for the proxy for the platform and system and then returns a slice of valid
 // instanceConfig. It is possible for the instanceConfig to be empty if no valid
 // configurations were specified, however `err` will be set.
-func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instancesSrc string, cl *http.Client) ([]instanceConfig, error) {
+func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instancesSrc string, cl *http.Client, skipFailedInstanceConfigs bool) ([]instanceConfig, error) {
 	// Used to signify that there was no valid parsed config
-	var emptyConfigs []instanceConfig
-
 	if useFuse && !fuse.Supported() {
-		return emptyConfigs, errors.New("FUSE not supported on this system")
+		return nil, errors.New("FUSE not supported on this system")
 	}
 
-	cfgs, err := parseInstanceConfigs(dir, instances, cl)
-	if err != nil {
-		// Error when unable to correctly parse the instance configuration
-		// However, return the configuration of what was parsed correctly
-		return cfgs, err
-	}
-
+	cfgs, err := parseInstanceConfigs(dir, instances, cl, skipFailedInstanceConfigs)
+	if err != nil && len(cfgs) == 0 {
+		// nothing was parsed that was legal; need to fail
+		return nil, err
+	} 
+	
 	if dir == "" {
 		// Reasons to set '-dir':
 		//    - Using -fuse
 		//    - Using the metadata to get a list of instances
 		//    - Having an instance that uses a 'unix' network
 		if useFuse {
-			return emptyConfigs, errors.New("must set -dir because -fuse was set")
+			return nil, errors.New("must set -dir because -fuse was set")
 		} else if instancesSrc != "" {
-			return emptyConfigs, errors.New("must set -dir because -instances_metadata was set")
+			return nil, errors.New("must set -dir because -instances_metadata was set")
 		} else {
 			for _, v := range cfgs {
 				if v.Network == "unix" {
-					return emptyConfigs, fmt.Errorf("must set -dir: using a unix socket for %v", v.Instance)
+					return nil, fmt.Errorf("must set -dir: using a unix socket for %v", v.Instance)
 				}
 			}
 		}
@@ -366,9 +372,9 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 
 	if useFuse {
 		if len(instances) != 0 || instancesSrc != "" {
-			return emptyConfigs, errors.New("-fuse is not compatible with -projects, -instances, or -instances_metadata")
+			return nil, errors.New("-fuse is not compatible with -projects, -instances, or -instances_metadata")
 		}
-		return emptyConfigs, nil
+		return nil, nil
 	}
 	// FUSE disabled.
 	if len(instances) == 0 && instancesSrc == "" {
@@ -383,7 +389,7 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 		}
 
 		errStr := fmt.Sprintf("no instance selected because none of %s is specified", flags)
-		return emptyConfigs, errors.New(errStr)
+		return nil, errors.New(errStr)
 	}
 	return cfgs, nil
 }
