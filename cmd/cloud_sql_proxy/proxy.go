@@ -64,7 +64,7 @@ func watchInstancesLoop(dir string, dst chan<- proxy.Conn, updates <-chan string
 	dynamicInstances := make(map[string]net.Listener)
 	for instances := range updates {
 		// All instances were legal when we started, so we pass false below to ensure we don't skip them
-		// later if they became unhealthy for some reason; this would be a serious enough problem. 
+		// later if they became unhealthy for some reason; this would be a serious enough problem.
 		list, err := parseInstanceConfigs(dir, strings.Split(instances, ","), cl, false)
 		if err != nil {
 			logging.Errorf("%v", err)
@@ -348,8 +348,8 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 	cfgs, err := parseInstanceConfigs(dir, instances, cl, skipFailedInstanceConfigs)
 	if err != nil {
 		return nil, err
-	} 
-	
+	}
+
 	if dir == "" {
 		// Reasons to set '-dir':
 		//    - Using -fuse
