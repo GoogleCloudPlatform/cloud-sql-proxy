@@ -339,7 +339,6 @@ func parseInstanceConfigs(dir string, instances []string, cl *http.Client, skipF
 // instanceConfig. It is possible for the instanceConfig to be empty if no valid
 // configurations were specified, however `err` will be set.
 func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instancesSrc string, cl *http.Client, skipFailedInstanceConfigs bool) ([]instanceConfig, error) {
-	// Used to signify that there was no valid parsed config
 	if useFuse && !fuse.Supported() {
 		return nil, errors.New("FUSE not supported on this system")
 	}
