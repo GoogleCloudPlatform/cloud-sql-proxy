@@ -34,8 +34,8 @@ cloud_sql_proxy takes a few arguments to configure what instances to connect to 
   IP. Defaults to `PUBLIC,PRIVATE`
 * `-term_timeout=30s`: How long to wait for connections to close before shutting
   down the proxy. Defaults to 0.
-* `-skip-startup-validation`: Setting this flag will allow you to prevent the proxy from terminating when
-  some configuration could not be loaded.
+* `--skip_failed_instance_config`: Setting this flag will allow you to prevent the proxy from terminating when
+	some instance configurations could not be parsed and/or are unavailable.
 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.
