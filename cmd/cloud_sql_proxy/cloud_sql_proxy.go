@@ -87,8 +87,8 @@ can be removed automatically by this program.`)
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
 
-	skipInvalidInstanceConfigs = flag.Bool("-skip-failed-instance-config", false, `Setting this flag will allow you to prevent the proxy from terminating when
-	some instance configurations could not be parsed.`)
+	skipInvalidInstanceConfigs = flag.Bool("skip_failed_instance_config", false, `Setting this flag will allow you to prevent the proxy from terminating when
+	some instance configurations could not be parsed and/or are unavailable.`)
 
 	// Setting to choose what API to connect to
 	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
