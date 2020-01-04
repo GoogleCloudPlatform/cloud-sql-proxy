@@ -473,8 +473,8 @@ func main() {
 	}
 	instList = append(instList, ins...)
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client, *skipInvalidInstanceConfigs)
-	if err != nil {		
-		log.Fatal(err)		
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// We only need to store connections in a ConnSet if FUSE is used; otherwise

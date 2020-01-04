@@ -346,8 +346,7 @@ func CreateInstanceConfigs(dir string, useFuse bool, instances []string, instanc
 	}
 
 	cfgs, err := parseInstanceConfigs(dir, instances, cl, skipFailedInstanceConfigs)
-	if err != nil && len(cfgs) == 0 {
-		// nothing was parsed that was legal; need to fail
+	if err != nil {
 		return nil, err
 	} 
 	
