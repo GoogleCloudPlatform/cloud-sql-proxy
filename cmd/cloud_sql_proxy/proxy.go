@@ -315,9 +315,8 @@ func parseInstanceConfigs(dir string, instances []string, cl *http.Client, skipF
 			continue
 		}
 		if c, err := parseInstanceConfig(dir, v, cl); err != nil {
-			if skipFailedInstanceConfigs == true {
+			if skipFailedInstanceConfigs {
 				logging.Infof("There was a problem when parsing a instance configuration but ignoring due to the configuration. Error: %v", err)
-				// we intentionally don't add to `errs` since we don't want to bubble these
 			} else {
 				fmt.Fprintf(errs, "\n\t%v", err)
 			}
