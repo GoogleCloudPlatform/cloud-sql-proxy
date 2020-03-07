@@ -73,7 +73,8 @@ to use the instance metadata value named 'cloud-sql-instances' you would
 provide 'instance/attributes/cloud-sql-instances'. Not compatible with -fuse`)
 	useFuse = flag.Bool("fuse", false, `Mount a directory at 'dir' using FUSE for accessing instances. Note that the
 directory at 'dir' must be empty before this program is started.`)
-	fuseTmp = flag.String("fuse_tmp", defaultTmp, `Used as a temporary directory if -fuse is set. Note that files in this directory
+	performConnectivityTestsOnStartup = flag.Bool("perform_connectivity_tests", false, `Performs connectivity tests on startup to the databases and exits the proxy if one of them fails.`)
+	fuseTmp                           = flag.String("fuse_tmp", defaultTmp, `Used as a temporary directory if -fuse is set. Note that files in this directory
 can be removed automatically by this program.`)
 
 	// Settings for limits
@@ -324,6 +325,27 @@ func stringList(s string) []string {
 	return spl
 }
 
+func checkInstanceConnectivity(instanceName string, public bool, client *proxy.Client) error {
+	// The connectivity test right now is just a basic dial to make sure it is reachable
+	// and nothing more. This will help rule out basic network connectivity problems, though
+	// such as firewalls and the like.
+	conn, err := client.Dial(instanceName)
+
+	if conn != nil {
+		conn.Close()
+	}
+
+	if err != nil {
+		if public {
+			return fmt.Errorf("Performed connectivity test to public instance %v and got an error: %v. Do you have a route to it?", instanceName, err)
+		} else {
+			return fmt.Errorf("Performed connectivity test to private instance %v and got an error: %v. Do you have a route to it?", instanceName, err)
+		}
+	}
+
+	return nil
+}
+
 func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]string, error) {
 	if len(projects) == 0 {
 		// No projects requested.
@@ -524,7 +546,6 @@ func main() {
 	if refreshCfgThrottle < minimumRefreshCfgThrottle {
 		refreshCfgThrottle = minimumRefreshCfgThrottle
 	}
-	logging.Infof("Ready for new connections")
 
 	proxyClient := &proxy.Client{
 		Port:           port,
@@ -538,6 +559,26 @@ func main() {
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
 	}
+
+	if *performConnectivityTestsOnStartup {
+		wg := &sync.WaitGroup{}
+		wg.Add(len(cfgs))
+
+		for index, instanceConfig := range cfgs {
+			logging.Infof("Checking connection to instance %s...", instanceConfig.Instance)
+			go func(index int, instance string, isPublic bool, client *proxy.Client) {
+				defer wg.Done()
+				err := checkInstanceConnectivity(instance, isPublic, client)
+
+				if err != nil {
+					log.Fatalf("%v", instance, err)
+				}
+			}(index, instanceConfig.Instance, instanceConfig.IsPublic, proxyClient)
+		}
+		wg.Wait()
+	}
+
+	logging.Infof("Ready for new connections")
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)

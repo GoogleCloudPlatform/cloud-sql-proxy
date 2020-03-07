@@ -177,6 +177,7 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 type instanceConfig struct {
 	Instance         string
 	Network, Address string
+	IsPublic         bool
 }
 
 // loopbackForNet maps a network (e.g. tcp6) to the loopback address for that
@@ -273,6 +274,15 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	if err != nil {
 		return instanceConfig{}, err
 	}
+
+	// Check to see if one of the addresses is public or not
+	// and mark that on the config
+	for _, mapping := range inst.IpAddresses {
+		if mapping.Type == "PRIMARY" {
+			ret.IsPublic = true
+		}
+	}
+
 	if inst.BackendType == "FIRST_GEN" {
 		logging.Errorf("WARNING: proxy client does not support first generation Cloud SQL instances.")
 		return instanceConfig{}, fmt.Errorf("%q is a first generation instance", instance)

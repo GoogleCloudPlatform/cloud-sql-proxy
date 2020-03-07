@@ -36,6 +36,8 @@ cloud_sql_proxy takes a few arguments to configure what instances to connect to 
   down the proxy. Defaults to 0.
 * `-skip_failed_instance_config`: Setting this flag will allow you to prevent the proxy from terminating when
 	some instance configurations could not be parsed and/or are unavailable.
+* `-perform_connectivity_tests`: Performs connectivity tests on startup to the
+  databases and exits the proxy if one of them fails.
 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.
