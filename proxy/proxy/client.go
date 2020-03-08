@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
+	"golang.org/x/net/proxy"
 )
 
 const (
@@ -296,7 +297,7 @@ func (c *Client) Dial(instance string) (net.Conn, error) {
 func (c *Client) tryConnect(addr string, cfg *tls.Config) (net.Conn, error) {
 	d := c.Dialer
 	if d == nil {
-		d = net.Dial
+		d = proxy.FromEnvironment().Dial
 	}
 	conn, err := d("tcp", addr)
 	if err != nil {
