@@ -20,14 +20,11 @@ set -e
 cd github/cloud-sql-proxy
 
 # Download and verify dependencies are valid
-echo "******************** Verifing dependencies... ********************"
+echo -e "******************** Verifing dependencies... ********************\n"
 go get -t -v ./...
-echo -e "\n"
-echo "******************** Dependencies verified.  ********************"
+echo -e "******************** Dependencies verified.  ********************\n"
 
 # Verify
-echo "******************** Running gofmt... ********************"
-echo -e "\n"
+echo -e "******************** Running gofmt... ********************\n"
 diff -u <(echo -n) <(gofmt -d .)
-echo -e "\n"
-echo "******************** Gofmt complete.  ********************"
+echo -e "******************** Gofmt complete.  ******************** \n"
