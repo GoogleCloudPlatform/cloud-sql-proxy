@@ -16,6 +16,10 @@
 # `-e` enables the script to automatically fail when a command fails
 set -e
 
+# Setup GOPATH
+export GOPATH="$HOME/gopath"
+mkdir -p "$GOPATH/bin"
+
 # Download and verify dependencies are valid
 echo "******************** Verifing dependencies... ********************"
 go get -t -v ./...
