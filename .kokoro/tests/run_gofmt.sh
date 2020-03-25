@@ -16,9 +16,8 @@
 # `-e` enables the script to automatically fail when a command fails
 set -e
 
-# Setup GOPATH
-export GOPATH="$HOME/gopath"
-mkdir -p "$GOPATH/bin"
+# Move into project directory
+cd github/cloud-sql-proxy
 
 # Download and verify dependencies are valid
 echo "******************** Verifing dependencies... ********************"
