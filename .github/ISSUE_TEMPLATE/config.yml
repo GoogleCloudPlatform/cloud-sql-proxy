@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+- name: Cloud SQL Issue tracker
+  url: https://issuetracker.google.com/savedsearches/559773
+  about: Please use the Cloud SQL Issue tracker for problems with Cloud SQL itself.
+- name: StackOverflow
+  url: https://stackoverflow.com/questions/tagged/google-cloud-sql
+  about: Please use the `google-cloud-sql` tag for questions on StackOverflow.
