@@ -45,46 +45,52 @@ func TestCreateInstanceConfigs(t *testing.T) {
 		// We don't need to check the []instancesConfig return value, we already
 		// have a TestParseInstanceConfig.
 		wantErr bool
+
+		skipFailedInstanceConfig bool
 	}{
 		{
 			"setting -fuse and -dir",
-			"dir", true, nil, "", false,
+			"dir", true, nil, "", false, false,
 		}, {
 			"setting -fuse",
-			"", true, nil, "", true,
+			"", true, nil, "", true, false,
 		}, {
 			"setting -fuse, -dir, and -instances",
-			"dir", true, []string{"proj:reg:x"}, "", true,
+			"dir", true, []string{"proj:reg:x"}, "", true, false,
 		}, {
 			"setting -fuse, -dir, and -instances_metadata",
-			"dir", true, nil, "md", true,
+			"dir", true, nil, "md", true, false,
 		}, {
 			"setting -dir and -instances (unix socket)",
-			"dir", false, []string{"proj:reg:x"}, "", false,
+			"dir", false, []string{"proj:reg:x"}, "", false, false,
+		}, {
+			// tests for the case where invalid configs can still exist, when skipped
+			"setting -dir and -instances (unix socket) w/ something invalid",
+			"dir", false, []string{"proj:reg:x", "INVALID_PROJECT_STRING"}, "", false, true,
 		}, {
 			"Seting -instance (unix socket)",
-			"", false, []string{"proj:reg:x"}, "", true,
+			"", false, []string{"proj:reg:x"}, "", true, false,
 		}, {
 			"setting -instance (tcp socket)",
-			"", false, []string{"proj:reg:x=tcp:1234"}, "", false,
+			"", false, []string{"proj:reg:x=tcp:1234"}, "", false, false,
 		}, {
 			"setting -instance (tcp socket) and -instances_metadata",
-			"", false, []string{"proj:reg:x=tcp:1234"}, "md", true,
+			"", false, []string{"proj:reg:x=tcp:1234"}, "md", true, false,
 		}, {
 			"setting -dir, -instance (tcp socket), and -instances_metadata",
-			"dir", false, []string{"proj:reg:x=tcp:1234"}, "md", false,
+			"dir", false, []string{"proj:reg:x=tcp:1234"}, "md", false, false,
 		}, {
 			"setting -dir, -instance (unix socket), and -instances_metadata",
-			"dir", false, []string{"proj:reg:x"}, "md", false,
+			"dir", false, []string{"proj:reg:x"}, "md", false, false,
 		}, {
 			"setting -dir and -instances_metadata",
-			"dir", false, nil, "md", false,
+			"dir", false, nil, "md", false, false,
 		}, {
 			"setting -instances_metadata",
-			"", false, nil, "md", true,
+			"", false, nil, "md", true, false,
 		},
 	} {
-		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient)
+		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient, v.skipFailedInstanceConfig)
 		if v.wantErr {
 			if err == nil {
 				t.Errorf("CreateInstanceConfigs passed when %s, wanted error", v.desc)
