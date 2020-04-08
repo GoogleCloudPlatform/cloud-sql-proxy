@@ -72,7 +72,7 @@ func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 	dialClient.Lock()
 	dialClient.c = &Client{
 		Port:   port,
-		Certs:  certs.NewCertSource("https://www.googleapis.com/sql/v1beta4/", auth, true),
+		Certs:  certs.NewCertSource("", auth, true),
 		Conns:  connset,
 		Dialer: dialer,
 	}

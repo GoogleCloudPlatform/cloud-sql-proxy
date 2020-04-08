@@ -266,7 +266,9 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	if err != nil {
 		return instanceConfig{}, err
 	}
-	sql.BasePath = *host
+	if *host != "" {
+		sql.BasePath = *host
+	}
 	inst, err := sql.Instances.Get(proj, name).Do()
 	if err != nil {
 		return instanceConfig{}, err

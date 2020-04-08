@@ -91,7 +91,7 @@ You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same
 	some instance configurations could not be parsed and/or are unavailable.`)
 
 	// Setting to choose what API to connect to
-	host = flag.String("host", "https://www.googleapis.com/sql/v1beta4/", "When set, the proxy uses this host as the base API path.")
+	host = flag.String("host", "", "When set, the proxy uses this host as the base API path. Example: https://sqladmin.googleapis.com")
 )
 
 const (
@@ -334,6 +334,9 @@ func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]s
 	if err != nil {
 		return nil, err
 	}
+	if *host != "" {
+		sql.BasePath = *host
+	}
 
 	ch := make(chan string)
 	var wg sync.WaitGroup
@@ -429,7 +432,7 @@ func main() {
 		}
 	}
 
-	if !strings.HasSuffix(*host, "/") {
+	if *host != "" && !strings.HasSuffix(*host, "/") {
 		logging.Errorf("Flag host should always end with /")
 		flag.PrintDefaults()
 		return
