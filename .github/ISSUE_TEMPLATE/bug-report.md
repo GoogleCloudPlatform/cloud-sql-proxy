@@ -2,9 +2,8 @@
 name: Bug Report
 about: Report defective or unintentional behavior you've experienced while using the
   proxy.
-title: "[bug] Brief description of the bug or error"
+title: "Brief summary of what bug or error was observed"
 labels: 'type: bug'
-assignees: ''
 
 ---
 

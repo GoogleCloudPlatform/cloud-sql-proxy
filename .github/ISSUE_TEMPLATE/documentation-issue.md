@@ -1,9 +1,8 @@
 ---
 name: Documentation Issue
 about: Report wrong or missing information with the documentation in the repo.
-title: "[doc] Brief description of missing or incorrect information"
+title: "Brief summary of what is missing or incorrect"
 labels: 'type: docs'
-assignees: ''
 
 ---
 

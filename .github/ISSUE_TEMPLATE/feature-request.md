@@ -1,9 +1,8 @@
 ---
 name: Feature Request
 about: Suggest an idea for new or improved behavior.
-title: "[FEATURE] Brief description of the proposed feature"
+title: "Brief summary of the proposed feature"
 labels: 'type: feature request'
-assignees: ''
 
 ---
 
