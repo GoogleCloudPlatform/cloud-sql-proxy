@@ -1,7 +1,6 @@
 ---
 name: Bug Report
-about: Report defective or unintentional behavior you've experienced while using the
-  proxy.
+about: Report defective or unintentional behavior you've experienced.
 title: "Brief summary of what bug or error was observed"
 labels: 'type: bug'
 
@@ -31,7 +30,7 @@ behavior you noticed and why it is defective or unintentional.
 
 ## Example code (or command)
 
-```java
+```
 // example
 ```
 
