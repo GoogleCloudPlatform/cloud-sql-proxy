@@ -16,8 +16,8 @@ filing on GitHub. This will ensure a timely response.
 
 Please run down the following list and make sure you've tried the usual "quick fixes":
 
-  - Search the issues already opened: https://github.com/cloudsql-proxy/issues
-  - Check for answers on StackOverflow: http://stackoverflow.com/questions/google-cloud-sql
+  - Search the issues already opened: https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues
+  - Check for answers on StackOverflow: https://stackoverflow.com/questions/tagged/google-cloud-sql
 
 If you are still having issues, please include as much information as possible:
 
@@ -26,7 +26,7 @@ If you are still having issues, please include as much information as possible:
 ## Bug Description
 
 Please enter a detailed description of the bug, and any information about what 
-behavior you noticed and why it is defective or unintentional. 
+behavior you noticed and how it differs from what you expected. 
 
 ## Example code (or command)
 

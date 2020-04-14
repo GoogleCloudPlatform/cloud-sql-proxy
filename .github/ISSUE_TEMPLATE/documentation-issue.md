@@ -17,7 +17,7 @@ filing on GitHub. This will ensure a timely response.
 Please run down the following list and make sure you've tried the usual "quick fixes":
 
   - Search the issues already opened: https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues
-  - Check for answers on StackOverflow: http://stackoverflow.com/questions/google-cloud-sql
+  - Check for answers on StackOverflow: https://stackoverflow.com/questions/tagged/google-cloud-sql
 
 If you are still having issues, please include as much information as possible:
 
