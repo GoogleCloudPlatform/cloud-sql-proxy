@@ -21,6 +21,12 @@ echo -e "******************** Verifing dependencies... ********************\n"
 go get -t -v ./...
 echo -e "******************** Dependencies verified.  ********************\n"
 
+# Load in secrets
+if [ -n "$KOKORO_GFILE_DIR" ]; then
+  source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
+fi
+
+
 echo -e "******************** Running tests... ********************\n"
 go test -v ./...
 echo -e "******************** Tests complete.  ********************\n"
