@@ -3,4 +3,7 @@
 .idea/
 
 # Compiled binary
-*/cloud_sql_proxy
+cmd/cloud_sql_proxy/cloud_sql_proxy
+
+# Compiled during tests
+tests/cloud_sql_proxy
