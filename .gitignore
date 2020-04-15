@@ -2,4 +2,7 @@
 # Jetbrains IDE
 .idea/
 
+# Binary output
+cmd/cloud_sql_proxy/cloud_sql_proxy
+
 tests/cloud_sql_proxy
