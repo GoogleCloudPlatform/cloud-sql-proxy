@@ -53,8 +53,8 @@ import (
 
 var (
 	// Required flags.
-	project        = flag.String("project", "", "Google Cloud project to create the GCE test VM in")
-	connectionName = flag.String("connection_name", "", "Cloud SQL instance connection name, in the form of 'project:region:instance'")
+	project        = flag.String("project", os.Getenv("GCP_PROJECT"), "Google Cloud project to create the GCE test VM in")
+	connectionName = flag.String("connection_name", os.Getenv("INSTANCE_CONNECTION_NAME"), "Cloud SQL instance connection name, in the form of 'project:region:instance'")
 
 	// Optional flags.
 	vmName     = flag.String("vm_name", "proxy-test-gce", "Name of VM to create")
