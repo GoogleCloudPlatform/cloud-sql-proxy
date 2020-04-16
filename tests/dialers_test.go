@@ -39,6 +39,13 @@ const dialersTestTimeout = time.Minute
 // TestDialer verifies that the mysql dialer works as expected. It assumes that
 // the -connection_name flag has been set to an existing instance.
 func TestDialer(t *testing.T) {
+	if *project == "" {
+		t.Skipf("Test skipped - 'GCP_PROJECT' env var not set.")
+	}
+	if *connectionName == "" {
+		t.Skipf("Test skipped - 'INSTANCE_CONNECTION_NAME' env var not set.")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), dialersTestTimeout)
 	defer cancel()
 
