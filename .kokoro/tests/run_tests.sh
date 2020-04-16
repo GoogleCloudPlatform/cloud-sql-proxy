@@ -16,6 +16,9 @@
 # `-e` enables the script to automatically fail when a command fails
 set -e
 
+# Move into project directory
+cd github/cloud-sql-proxy
+
 # Download and verify dependencies are valid
 echo -e "******************** Verifing dependencies... ********************\n"
 go get -t -v ./...
