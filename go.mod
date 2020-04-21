@@ -3,18 +3,16 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy
 go 1.12
 
 require (
-	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
-	cloud.google.com/go v0.50.0
-	github.com/go-sql-driver/mysql v1.4.1
-	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
+	bazil.org/fuse v0.0.0-20200419173433-3ba628eaf417
+	cloud.google.com/go v0.56.0
+	github.com/go-sql-driver/mysql v1.5.0
+	github.com/golang/protobuf v1.4.0 // indirect
 	github.com/lib/pq v1.3.0
-	go.opencensus.io v0.22.2 // indirect
-	golang.org/x/crypto v0.0.0-20191219195013-becbf705a915
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
-	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
-	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f // indirect
-	google.golang.org/api v0.15.0
-	google.golang.org/appengine v1.6.5 // indirect
-	google.golang.org/genproto v0.0.0-20191220162840-803ea799ed88 // indirect
-	google.golang.org/grpc v1.26.0 // indirect
+	golang.org/x/crypto v0.0.0-20200420201142-3c4aac89819a
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f // indirect
+	google.golang.org/api v0.21.0
+	google.golang.org/genproto v0.0.0-20200420144010-e5e8543f8aeb // indirect
+	google.golang.org/grpc v1.28.1 // indirect
 )
