@@ -1,9 +1,9 @@
 module github.com/GoogleCloudPlatform/cloudsql-proxy
 
-go 1.12
+go 1.13
 
 require (
-	bazil.org/fuse v0.0.0-20200419173433-3ba628eaf417
+	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
 	cloud.google.com/go v0.56.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.4.0 // indirect
