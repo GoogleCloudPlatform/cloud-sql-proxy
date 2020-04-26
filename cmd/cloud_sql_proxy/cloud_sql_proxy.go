@@ -327,10 +327,9 @@ func stringList(s string) []string {
 
 func checkInstanceConnectivity(instanceName string, public bool, client *proxy.Client) error {
 	// The connectivity test right now is just a basic dial to make sure it is reachable
-	// and nothing more. This will help rule out basic network connectivity problems, though
+	// and nothing more. This will help rule out basic network connectivity problems
 	// such as firewalls and the like.
 	conn, err := client.Dial(instanceName)
-
 	if conn != nil {
 		conn.Close()
 	}
