@@ -335,10 +335,11 @@ func checkInstanceConnectivity(instanceName string, public bool, client *proxy.C
 	}
 
 	if err != nil {
-		if public {
-			return fmt.Errorf("Performed connectivity test to public instance %v and got an error: %v. Do you have a route to it?", instanceName, err)
-		} else {
-			return fmt.Errorf("Performed connectivity test to private instance %v and got an error: %v. Do you have a route to it?", instanceName, err)
+		ipType := "public"
+		if !public {
+			ipType = "private"
+		} 
+		return fmt.Errorf("Unable to connect to instance %v via %s IP. Verify you have a valid connection path to the instance's IP. (err: %v). ", instanceName, ipType, err)
 		}
 	}
 
