@@ -29,6 +29,13 @@ const gceTestTimeout = 3 * time.Minute
 
 // TestGCE provisions a new GCE VM and verifies that the proxy works on it.
 func TestGCE(t *testing.T) {
+	if *project == "" {
+		t.Skipf("Test skipped - 'GCP_PROJECT' env var not set.")
+	}
+	if *connectionName == "" {
+		t.Skipf("Test skipped - 'INSTANCE_CONNECTION_NAME' env var not set.")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), gceTestTimeout)
 	defer cancel()
 

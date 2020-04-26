@@ -36,6 +36,13 @@ const (
 // TestConnectionLimit provisions a new GCE VM and verifies that the proxy
 // works on it.  It uses application default credentials.
 func TestConnectionLimit(t *testing.T) {
+	if *project == "" {
+		t.Skipf("Test skipped - 'GCP_PROJECT' env var not set.")
+	}
+	if *connectionName == "" {
+		t.Skipf("Test skipped - 'INSTANCE_CONNECTION_NAME' env var not set.")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), clTestTimeout)
 	defer cancel()
 
