@@ -125,4 +125,5 @@ __WARNING__: _These distributions are not officially supported by Google._
   This chart creates a Deployment and a Service, but we recommend deploying the proxy as a sidecar container in your pods.
 
 ### .Net Proxy Wrapper (Nuget Package)
-Install via Nuget, follow these [instructions](https://github.com/expert1-pty-ltd/cloudsql-proxy#install-via-nuget).
+  
+  Install via Nuget, follow these [instructions](https://github.com/expert1-pty-ltd/cloudsql-proxy#install-via-nuget).
