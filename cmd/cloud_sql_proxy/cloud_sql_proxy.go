@@ -325,7 +325,7 @@ func stringList(s string) []string {
 	return spl
 }
 
-func checkInstanceConnectivity(instanceName string, public bool, client *proxy.Client) error {
+func checkInstanceConnectivity(instanceName string, public bool, private bool, client *proxy.Client) error {
 	// The connectivity test right now is just a basic dial to make sure it is reachable
 	// and nothing more. This will help rule out basic network connectivity problems
 	// such as firewalls and the like.
@@ -335,12 +335,16 @@ func checkInstanceConnectivity(instanceName string, public bool, client *proxy.C
 	}
 
 	if err != nil {
-		ipType := "public"
-		if !public {
+		ipType := "unknown"
+
+		if private && public {
+			ipType = "public and/or private"
+		} else if public {
+			ipType = "public"
+		} else if private {
 			ipType = "private"
-		} 
-		return fmt.Errorf("Unable to connect to instance %v via %s IP. Verify you have a valid connection path to the instance's IP. (err: %v). ", instanceName, ipType, err)
 		}
+		return fmt.Errorf("Unable to connect to instance %v over %s networking. Verify you have a valid connection path to the instance's IP. (err: %v). ", instanceName, ipType, err)
 	}
 
 	return nil
@@ -566,14 +570,14 @@ func main() {
 
 		for index, instanceConfig := range cfgs {
 			logging.Infof("Checking connection to instance %s...", instanceConfig.Instance)
-			go func(index int, instance string, isPublic bool, client *proxy.Client) {
+			go func(index int, instance string, hasPublic bool, hasPrivate bool, client *proxy.Client) {
 				defer wg.Done()
-				err := checkInstanceConnectivity(instance, isPublic, client)
+				err := checkInstanceConnectivity(instance, hasPublic, hasPrivate, client)
 
 				if err != nil {
 					log.Fatalf("%v", instance, err)
 				}
-			}(index, instanceConfig.Instance, instanceConfig.IsPublic, proxyClient)
+			}(index, instanceConfig.Instance, instanceConfig.HasPublic, instanceConfig.HasPrivate, proxyClient)
 		}
 		wg.Wait()
 	}

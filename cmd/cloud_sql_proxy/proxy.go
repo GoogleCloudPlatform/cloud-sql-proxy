@@ -177,7 +177,8 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 type instanceConfig struct {
 	Instance         string
 	Network, Address string
-	IsPublic         bool
+	HasPublic         bool
+	HasPrivate         bool
 }
 
 // loopbackForNet maps a network (e.g. tcp6) to the loopback address for that
@@ -279,7 +280,13 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	// and mark that on the config
 	for _, mapping := range inst.IpAddresses {
 		if mapping.Type == "PRIMARY" {
-			ret.IsPublic = true
+			ret.HasPublic = true
+		}
+
+		if mapping.Type == "PRIMARY" {
+			ret.HasPublic = true
+		} else if mapping.Type == "PRIVATE" {
+			ret.HasPrivate = true
 		}
 	}
 
