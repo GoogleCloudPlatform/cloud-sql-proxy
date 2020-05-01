@@ -361,7 +361,7 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 func (c *Client) Shutdown(termTimeout time.Duration) error {
 	termTime := time.Now().Add(termTimeout)
 	for termTime.After(time.Now()) && atomic.LoadUint64(&c.ConnectionsCounter) > 0 {
-		time.Sleep(1)
+		time.Sleep(time.Second)
 	}
 
 	active := atomic.LoadUint64(&c.ConnectionsCounter)
