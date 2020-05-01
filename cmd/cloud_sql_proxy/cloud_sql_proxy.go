@@ -550,7 +550,8 @@ func main() {
 		if err == nil {
 			os.Exit(0)
 		}
-		log.Fatalf("Error during SIGTERM shutdown: %v", err)
+		logging.Errorf("Error during SIGTERM shutdown: %v", err)
+		os.Exit(2)
 	}()
 
 	proxyClient.Run(connSrc)
