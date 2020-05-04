@@ -547,10 +547,10 @@ func main() {
 		logging.Infof("Received TERM signal. Waiting up to %s before terminating.", *termTimeout)
 
 		err := proxyClient.Shutdown(*termTimeout)
-
 		if err == nil {
 			os.Exit(0)
 		}
+		logging.Errorf("Error during SIGTERM shutdown: %v", err)
 		os.Exit(2)
 	}()
 
