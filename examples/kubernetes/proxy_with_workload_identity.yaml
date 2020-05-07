@@ -1,0 +1,51 @@
+# [START cloud_sql_proxy_k8s_sa]
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: <YOUR-DEPLOYMENT-NAME>
+spec:
+  serviceAccountName: <YOUR-KSA-NAME>
+# [END cloud_sql_proxy_k8s_sa]
+  template:
+    spec:
+      # [START cloud_sql_proxy_k8s_secrets]
+      containers:
+      - name: <YOUR-APPLICATION-NAME>
+        # ... other container configuration
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: username
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: password
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: database
+      # [END cloud_sql_proxy_k8s_secrets]
+      # [START cloud_sql_proxy_k8s_container]
+      - name: cloud-sql-proxy
+        # It is recommended to use the latest version of the Cloud SQL proxy
+        # Make sure to update on a regular schedule!
+        image: gcr.io/cloudsql-docker/gce-proxy:1.17
+        command:
+          - "/cloud_sql_proxy"
+
+          # If connecting from a VPC-native GKE cluster, you can use the
+          # following flag to have the proxy connect over private IP
+          # - "-ip_address_types=PRIVATE"
+
+          # Replace DB_PORT with the port the proxy should listen on
+          # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
+          - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:<DB_PORT>"
+        securityContext:
+          # The default Cloud SQL proxy image is based on distroless, which
+          # runs as the "nonroot" user (uid: 65534) by default.
+          runAsNonRoot: true
+      # [END cloud_sql_proxy_k8s_container]

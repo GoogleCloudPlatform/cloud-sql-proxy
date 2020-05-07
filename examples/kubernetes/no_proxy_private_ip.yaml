@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: <YOUR-DEPLOYMENT-NAME>
+spec:
+  template:
+    spec:
+      containers:
+      - name: <YOUR-APPLICATION-NAME>
+        # ... other container configuration
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: username
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: password
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: database
+        # [START cloud_sql_proxy_secret_host]
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-PRIVATE-IP-SECRET>
+              key: db_host
+        # [END cloud_sql_proxy_secret_host]
+      - name: cloud-sql-proxy
+        # It is recommended to use the latest version of the Cloud SQL proxy
+        # and update on a regular schedule
+        image: gcr.io/cloudsql-docker/gce-proxy:1.17
+        command:
+        - "/cloud_sql_proxy"
+
+        # If connecting from a VPC-native GKE cluster, you can use the
+        # following flag to have the proxy connect over private IP
+        # - "-ip_address_types=PRIVATE"
+
+        # Replace DB_PORT with the port the proxy should listen on
+        # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
+        - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:<DB_PORT>"
+
+        # This flag specifies where the service account key can be found
+        - "-credential_file=/secrets/service_account.json"
+        securityContext:
+          # The default Cloud SQL proxy image is based on distroless, which
+          # runs as the "nonroot" user (uid: 65534) by default.
+          runAsNonRoot: true
+        volumeMounts:
+        - name: <YOUR-SA-SECRET-VOLUME>
+          mountPath: /secrets/
+          readOnly: true
+      volumes:
+      - name: <YOUR-SA-SECRET-VOLUME>
+        secret:
+          secretName: <YOUR-SA-SECRET>
