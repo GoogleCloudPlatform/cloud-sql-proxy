@@ -52,10 +52,10 @@ permissions on a per-application basis.
 
 The service account for your application needs to meet the following criteria:
 
-1. Belong to a project with the [Cloud SQL Admin API][admin-api] enabled.
+1. Belong to a project with the [Cloud SQL Admin API][admin-api] enabled
 1. [Has been granted][grant-sa] the 
    [`Cloud SQL Client` IAM role (or equivalent)][csql-roles]
-   for the project containing the instance you want to connect to.
+   for the project containing the instance you want to connect to
 1. If connecting using private IP, you must use a 
    [VPC-native GKE cluster][vpc-gke], in the same VPC as your Cloud SQL instance
 
@@ -99,7 +99,7 @@ bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account
        <YOUR-KSA-NAME> \
        iam.gke.io/gcp-service-account=<YOUR-GSA-NAME>@<YOUR-GCP-PROJECT>.iam.gserviceaccount.com
     ```
-1. Finally, make sure so specify the service account for the k8s object:
+1. Finally, make sure to specify the service account for the k8s object:
     > [proxy_with_workload_identity.yaml](proxy_with_workload_identity.yaml#L2-L7)
     ```yaml
     apiVersion: v1
