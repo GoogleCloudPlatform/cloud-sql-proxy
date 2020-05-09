@@ -42,6 +42,8 @@ env vars.
 3. Finally, configure your application to use these values. In the example 
 above, the values will be in the env vars `DB_USER`, `DB_PASS`, and `DB_NAME`.
 
+[ksa-secret]: https://kubernetes.io/docs/concepts/configuration/secret/
+
 ## Setting up a service account
 
 The first step to running the Cloud SQL proxy in Kubernetes is creating a 
