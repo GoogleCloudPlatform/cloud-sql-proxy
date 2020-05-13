@@ -2,14 +2,15 @@
 
 The Cloud SQL proxy is the recommended way to connect to Cloud SQL, even when
 using private IP. This is because the proxy provides strong encryption and 
-authentication using IAM, which can help keep your database secure. 
+authentication using IAM, which help keep your database secure. 
 
 ## Configure your application with Secrets
 
-In Kubernetes, [Secrets][ksa-secret] are a secure way to pass configuration 
-details to your application. You can create a Secret with details such as your
-database name, user, and password which can be injected into your application as
-env vars.
+In Kubernetes, [Secrets][ksa-secret] are a secure way to pass configuration
+details to your application. Each Secret object can contain multiple key/value
+pairs that can be pass to your application in multiple ways. When connecting to
+a database, you can create a Secret with details such as your database name,
+user, and password which can be injected into your application as env vars.
 
 1. Create a secret with information needed to access your database:
     ```shell
@@ -46,7 +47,7 @@ above, the values will be in the env vars `DB_USER`, `DB_PASS`, and `DB_NAME`.
 
 ## Setting up a service account
 
-The first step to running the Cloud SQL proxy in Kubernetes is creating a 
+The first step to running the Cloud SQL proxy in Kubernetes is creating a
 service account to represent your application. It is recommended that you create
 a service account unique to each application, instead of using the same service
 account everywhere. This model is more secure since it allows your to limit
@@ -75,7 +76,7 @@ Cloud SQL Proxy. There are two recommended ways to do this.
 
 If you are using [Google Kubernetes Engine][gke],  the preferred method is to
 use GKE's [Workload Identity][workload-id] feature. This method allows you to
-bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account 
+bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account
 (GSA). The GSA will then be accessible to applications using the matching KSA.
 
 1. [Enable Workload Identity for your cluster][enable-wi]
