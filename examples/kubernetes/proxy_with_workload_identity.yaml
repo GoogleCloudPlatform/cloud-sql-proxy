@@ -4,7 +4,13 @@ kind: Deployment
 metadata:
   name: <YOUR-DEPLOYMENT-NAME>
 spec:
+  selector:
+    matchLabels:
+      app: <YOUR-APPLICATION-NAME>
   template:
+    metadata:
+      labels:
+        app: <YOUR-APPLICATION-NAME>
     spec:
       serviceAccountName: <YOUR-KSA-NAME>
       # [END cloud_sql_proxy_k8s_sa]
