@@ -102,15 +102,23 @@ bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account
        <YOUR-KSA-NAME> \
        iam.gke.io/gcp-service-account=<YOUR-GSA-NAME>@<YOUR-GCP-PROJECT>.iam.gserviceaccount.com
     ```
-1. Finally, make sure to specify the service account for the k8s object:
-    > [proxy_with_workload_identity.yaml](proxy_with_workload_identity.yaml#L2-L7)
+1. Finally, make sure to specify the service account for the k8s pod spec:
+    > [proxy_with_workload_identity.yaml](proxy_with_workload_identity.yaml#L2-L15)
     ```yaml
-    apiVersion: v1
+    apiVersion: apps/v1
     kind: Deployment
     metadata:
       name: <YOUR-DEPLOYMENT-NAME>
     spec:
-      serviceAccountName: <YOUR-KSA-NAME>
+      selector:
+        matchLabels:
+          app: <YOUR-APPLICATION-NAME>
+      template:
+        metadata:
+          labels:
+            app: <YOUR-APPLICATION-NAME>
+        spec:
+          serviceAccountName: <YOUR-KSA-NAME>
     ```
 
 [gke]: https://cloud.google.com/kubernetes-engine

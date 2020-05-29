@@ -1,13 +1,19 @@
 # [START cloud_sql_proxy_k8s_sa]
-apiVersion: v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: <YOUR-DEPLOYMENT-NAME>
 spec:
-  serviceAccountName: <YOUR-KSA-NAME>
-# [END cloud_sql_proxy_k8s_sa]
+  selector:
+    matchLabels:
+      app: <YOUR-APPLICATION-NAME>
   template:
+    metadata:
+      labels:
+        app: <YOUR-APPLICATION-NAME>
     spec:
+      serviceAccountName: <YOUR-KSA-NAME>
+      # [END cloud_sql_proxy_k8s_sa]
       # [START cloud_sql_proxy_k8s_secrets]
       containers:
       - name: <YOUR-APPLICATION-NAME>

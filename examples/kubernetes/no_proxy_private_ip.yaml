@@ -1,9 +1,15 @@
-apiVersion: v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: <YOUR-DEPLOYMENT-NAME>
 spec:
+  selector:
+    matchLabels:
+      app: <YOUR-APPLICATION-NAME>
   template:
+    metadata:
+      labels:
+        app: <YOUR-APPLICATION-NAME>
     spec:
       containers:
       - name: <YOUR-APPLICATION-NAME>
