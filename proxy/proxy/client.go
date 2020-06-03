@@ -359,9 +359,17 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 // close. Returns an error if there are still active connections after waiting
 // for the whole length of the timeout.
 func (c *Client) Shutdown(termTimeout time.Duration) error {
-	termTime := time.Now().Add(termTimeout)
-	for termTime.After(time.Now()) && atomic.LoadUint64(&c.ConnectionsCounter) > 0 {
-		time.Sleep(time.Second)
+	term, ticker := time.After(termTimeout), time.NewTicker(100*time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			if atomic.LoadUint64(&c.ConnectionsCounter) > 0 {
+				continue
+			}
+		case <-term:
+		}
+		break
 	}
 
 	active := atomic.LoadUint64(&c.ConnectionsCounter)
