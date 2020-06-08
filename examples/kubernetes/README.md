@@ -176,7 +176,7 @@ as a separate service for several reasons:
   scales
    
 1. Add the Cloud SQL proxy to the pod configuration under `containers:` :
-    > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L33-L50)
+    > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L33-L549)
     ```yaml
     - name: cloud-sql-proxy
     # It is recommended to use the latest version of the Cloud SQL proxy
@@ -193,8 +193,8 @@ as a separate service for several reasons:
       # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
       - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:<DB_PORT>"
     securityContext:
-      # The default Cloud SQL proxy image is based on distroless, which
-      # runs as the "nonroot" user (uid: 65534) by default.
+      # The default Cloud SQL proxy image runs as the
+      # "nonroot" user and group (uid: 65532) by default.
       runAsNonRoot: true
     ```
    If you are using a service account key, specify your secret volume and add
@@ -205,8 +205,8 @@ as a separate service for several reasons:
       # This flag specifies where the service account key can be found
       - "-credential_file=/secrets/service_account.json"
     securityContext:
-      # The default Cloud SQL proxy image is based on distroless, which
-      # runs as the "nonroot" user (uid: 65534) by default.
+      # The default Cloud SQL proxy image runs as the
+      # "nonroot" user and group (uid: 65532) by default.
       runAsNonRoot: true
     volumeMounts:
     - name: <YOUR-SA-SECRET-VOLUME>
