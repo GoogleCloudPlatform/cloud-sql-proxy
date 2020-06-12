@@ -15,9 +15,9 @@ user, and password which can be injected into your application as env vars.
 1. Create a secret with information needed to access your database:
     ```shell
     kubectl create secret generic <YOUR-DB-SECRET> \
-        --from-literal=db_user=<YOUR-DATABASE-USER> \
-        --from-literal=db_password=<YOUR-DATABASE-PASSWORD> \
-        --from-literal=db_name=<YOUR-DATABASE-NAME>
+        --from-literal=username=<YOUR-DATABASE-USER> \
+        --from-literal=password=<YOUR-DATABASE-PASSWORD> \
+        --from-literal=database=<YOUR-DATABASE-NAME>
     ```
 2. Next, configure your application's container to mount the secrets as env 
    vars:
@@ -28,17 +28,17 @@ user, and password which can be injected into your application as env vars.
           valueFrom:
             secretKeyRef:
               name: <YOUR-DB-SECRET>
-              key: db_user
+              key: username
         - name: DB_PASS
           valueFrom:
             secretKeyRef:
               name: <YOUR-DB-SECRET>
-              key: db_password
+              key: password
         - name: DB_NAME
           valueFrom:
             secretKeyRef:
               name: <YOUR-DB-SECRET>
-              key: db_name
+              key: database
     ```
 3. Finally, configure your application to use these values. In the example 
 above, the values will be in the env vars `DB_USER`, `DB_PASS`, and `DB_NAME`.
