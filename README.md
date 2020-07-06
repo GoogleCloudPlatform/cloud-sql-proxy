@@ -121,7 +121,7 @@ __WARNING__: _These distributions are not officially supported by Google._
 
 ### K8s Cluster Service using Helm
 
-  Follow these [instructions](https://github.com/kubernetes/charts/tree/master/stable/gcloud-sqlproxy).
+  Follow these [instructions](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy).
   This chart creates a Deployment and a Service, but we recommend deploying the proxy as a sidecar container in your pods.
 
 ### .Net Proxy Wrapper (Nuget Package)
