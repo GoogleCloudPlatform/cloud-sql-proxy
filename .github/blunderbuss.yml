@@ -1,11 +1,7 @@
 assign_issues:
-  - dmahugh
-#  - jsimonweb
-#  - shubha-rajan
+  - shubha-rajan
 #  - kurtisvg
 
 assign_prs:
-#  - dmahugh
-#  - jsimonweb
-#  - shubha-rajan
-  - kurtisvg
+  - shubha-rajan
+#  - kurtisvg
