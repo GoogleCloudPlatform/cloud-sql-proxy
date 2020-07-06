@@ -37,7 +37,3 @@ spec:
               name: <YOUR-PRIVATE-IP-SECRET>
               key: db_host
         # [END cloud_sql_proxy_secret_host]
-      volumes:
-      - name: <YOUR-SA-SECRET-VOLUME>
-        secret:
-          secretName: <YOUR-SA-SECRET>
