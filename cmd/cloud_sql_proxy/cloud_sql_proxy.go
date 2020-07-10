@@ -225,12 +225,14 @@ func userAgentFromVersionString() string {
 	// Example versionString (see build.sh):
 	//    version 1.05; sha 0f69d99588991aba0879df55f92562f7e79d7ca1 built Mon May  2 17:57:05 UTC 2016
 	//
+	// Remove the "version " text from versionString.
+	versionString = strings.Replace(versionString, "version ", "", 1)
 	// We just want the part before the semicolon.
 	semi := strings.IndexByte(versionString, ';')
 	if semi == -1 {
 		return ""
 	}
-	return "cloud_sql_proxy " + versionString[:semi]
+	return "cloud_sql_proxy/" + versionString[:semi]
 }
 
 const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
