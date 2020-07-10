@@ -94,7 +94,8 @@ instead of passing this flag.
 
 ## Container Images
 
-For convenience, we maintain several containerized versions. These images are currently hosted in the following GCR repositories:
+For convenience, we maintain several containerized versions. These images are 
+currently hosted in the following GCR repositories:
    * `gcr.io/cloudsql-docker/gce-proxy`
    * `us.gcr.io/cloudsql-docker/gce-proxy`
    * `eu.gcr.io/cloudsql-docker/gce-proxy`
