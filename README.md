@@ -94,14 +94,27 @@ instead of passing this flag.
 
 ## Container Images
 
-For convenience, we currently host containerized versions of the proxy in the following GCR repos:
+For convenience, we maintain several containerized versions. These images are currently hosted in the following GCR repositories:
    * `gcr.io/cloudsql-docker/gce-proxy`
    * `us.gcr.io/cloudsql-docker/gce-proxy`
    * `eu.gcr.io/cloudsql-docker/gce-proxy`
    * `asia.gcr.io/cloudsql-docker/gce-proxy`
 
-Images are tagged to the version of the proxy they contain. It's strongly suggested to use the
-latest version of the proxy, and to update the version often.
+__Note:__ 
+
+Each image is tagged with the version of the proxy it was released with. The 
+following tags are currently supported:
+  * `v$VERSION` - default image (recommended)
+  * `v$VERSION-alpine` - uses [`alpine:3`](https://hub.docker.com/_/alpine) as a base image
+  * `v$VERSION-buster` - uses [`debain:buster`](https://hub.docker.com/_/debian) as a base image
+
+__Note:__ We strongly recommend to always use the latest version of the proxy,
+and to update the version regularly. However, we recommend pinning to a
+specific tag and avoid the `latest` tag. Additionally, please note that
+the tagged version is _only_ that of the proxy - changes in base images may 
+break specific setups, even on non-major version increments. As such,
+it's a best practice to test changes before deployment, and use automated
+rollbacks to revert potential failures. 
 
 ## To use from Kubernetes:
 
