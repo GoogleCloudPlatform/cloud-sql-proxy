@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,8 +23,14 @@ COPY . .
 RUN go get ./...
 RUN go build -ldflags "-X 'main.versionString=$VERSION'" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
 
-# Final Stage
-FROM gcr.io/distroless/base-debian10:nonroot
-COPY --from=build --chown=nonroot /go/src/cloudsql-proxy/cloud_sql_proxy /cloud_sql_proxy
+# Final stage
+FROM alpine:3
+RUN apk add --no-cache \ 
+    ca-certificates \
+    libc6-compat
+# Add a non-root user matching the nonroot user from the main container
+RUN addgroup -g 65532 -S nonroot && adduser -u 65532 -S nonroot -G nonroot
 # set the uid as an integer for compatibility with runAsNonRoot in Kubernetes
 USER 65532
+
+COPY --from=build --chown=nonroot /go/src/cloudsql-proxy/cloud_sql_proxy /cloud_sql_proxy
