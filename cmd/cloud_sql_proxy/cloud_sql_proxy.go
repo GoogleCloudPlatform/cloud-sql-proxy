@@ -485,12 +485,32 @@ func main() {
 	// We only need to store connections in a ConnSet if FUSE is used; otherwise
 	// it is not efficient to do so.
 	var connset *proxy.ConnSet
+	if *useFuse {
+		connset = proxy.NewConnSet()
+	}
+
+	// Create proxy client first; fuse uses its cache to resolve database version.
+	refreshCfgThrottle := *refreshCfgThrottle
+	if refreshCfgThrottle < minimumRefreshCfgThrottle {
+		refreshCfgThrottle = minimumRefreshCfgThrottle
+	}
+	proxyClient := &proxy.Client{
+		Port:           port,
+		MaxConnections: *maxConnections,
+		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
+			APIBasePath:    *host,
+			IgnoreRegion:   !*checkRegion,
+			UserAgent:      userAgentFromVersionString(),
+			IPAddrTypeOpts: ipAddrTypeOptsInput,
+		}),
+		Conns:              connset,
+		RefreshCfgThrottle: refreshCfgThrottle,
+	}
 
 	// Initialize a source of new connections to Cloud SQL instances.
 	var connSrc <-chan proxy.Conn
 	if *useFuse {
-		connset = proxy.NewConnSet()
-		c, fuse, err := fuse.NewConnSrc(*dir, *fuseTmp, connset)
+		c, fuse, err := fuse.NewConnSrc(*dir, *fuseTmp, proxyClient, connset)
 		if err != nil {
 			log.Fatalf("Could not start fuse directory at %q: %v", *dir, err)
 		}
@@ -522,24 +542,7 @@ func main() {
 		connSrc = c
 	}
 
-	refreshCfgThrottle := *refreshCfgThrottle
-	if refreshCfgThrottle < minimumRefreshCfgThrottle {
-		refreshCfgThrottle = minimumRefreshCfgThrottle
-	}
 	logging.Infof("Ready for new connections")
-
-	proxyClient := &proxy.Client{
-		Port:           port,
-		MaxConnections: *maxConnections,
-		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
-			APIBasePath:    *host,
-			IgnoreRegion:   !*checkRegion,
-			UserAgent:      userAgentFromVersionString(),
-			IPAddrTypeOpts: ipAddrTypeOptsInput,
-		}),
-		Conns:              connset,
-		RefreshCfgThrottle: refreshCfgThrottle,
-	}
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)

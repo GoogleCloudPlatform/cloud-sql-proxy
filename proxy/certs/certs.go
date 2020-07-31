@@ -226,7 +226,7 @@ func (s *RemoteCertSource) findIPAddr(data *sqladmin.DatabaseInstance, instance 
 }
 
 // Remote returns the specified instance's CA certificate, address, and name.
-func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name string, err error) {
+func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
 	p, region, n := util.SplitName(instance)
 	req := s.serv.Instances.Get(p, n)
 
@@ -236,7 +236,7 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 		return err
 	})
 	if err != nil {
-		return nil, "", "", err
+		return nil, "", "", "", err
 	}
 
 	// TODO(chowski): remove this when us-central is removed.
@@ -250,28 +250,28 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 			err = fmt.Errorf(`for connection string "%s": got region %q, want %q`, instance, region, data.Region)
 		}
 		if s.checkRegion {
-			return nil, "", "", err
+			return nil, "", "", "", err
 		}
 		logging.Errorf("%v", err)
 		logging.Errorf("WARNING: specifying the correct region in an instance string will become required in a future version!")
 	}
 
 	if len(data.IpAddresses) == 0 {
-		return nil, "", "", fmt.Errorf("no IP address found for %v", instance)
+		return nil, "", "", "", fmt.Errorf("no IP address found for %v", instance)
 	}
 	if data.BackendType == "FIRST_GEN" {
 		logging.Errorf("WARNING: proxy client does not support first generation Cloud SQL instances.")
-		return nil, "", "", fmt.Errorf("%q is a first generation instance", instance)
+		return nil, "", "", "", fmt.Errorf("%q is a first generation instance", instance)
 	}
 
 	// Find the first matching IP address by user input IP address types
 	ipAddrInUse := ""
 	ipAddrInUse, err = s.findIPAddr(data, instance)
 	if err != nil {
-		return nil, "", "", err
+		return nil, "", "", "", err
 	}
 
 	c, err := parseCert(data.ServerCaCert.Cert)
 
-	return c, ipAddrInUse, p + ":" + n, err
+	return c, ipAddrInUse, p + ":" + n, data.DatabaseVersion, err
 }
