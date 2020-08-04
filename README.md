@@ -105,9 +105,9 @@ __Note:__
 
 Each image is tagged with the version of the proxy it was released with. The 
 following tags are currently supported:
-  * `v$VERSION` - default image (recommended)
-  * `v$VERSION-alpine` - uses [`alpine:3`](https://hub.docker.com/_/alpine) as a base image
-  * `v$VERSION-buster` - uses [`debian:buster`](https://hub.docker.com/_/debian) as a base image
+  * `$VERSION` - default image (recommended)
+  * `$VERSION-alpine` - uses [`alpine:3`](https://hub.docker.com/_/alpine) as a base image (only supported from v1.17 up)
+  * `$VERSION-buster` - uses [`debian:buster`](https://hub.docker.com/_/debian) as a base image (only supported from v1.17 up)
 
 __Note:__ We strongly recommend to always use the latest version of the proxy,
 and to update the version regularly. However, we recommend pinning to a
