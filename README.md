@@ -9,9 +9,9 @@ are used.
 To build from source, ensure you have [go installed](https://golang.org/doc/install)
 and have set [GOPATH](https://github.com/golang/go/wiki/GOPATH). Then, simply do a go get:
 
-    go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
+    GO111MODULE=on go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
 
-The cloud_sql_proxy will be placed in $GOPATH/bin after go get completes.
+The cloud_sql_proxy will be placed in `$GOPATH/bin` after `go get` completes.
 
 cloud_sql_proxy takes a few arguments to configure what instances to connect to and connection behavior:
 
