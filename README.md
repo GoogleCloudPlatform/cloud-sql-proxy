@@ -9,9 +9,9 @@ are used.
 To build from source, ensure you have [go installed](https://golang.org/doc/install)
 and have set [GOPATH](https://github.com/golang/go/wiki/GOPATH). Then, simply do a go get:
 
-    go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
+    GO111MODULE=on go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
 
-The cloud_sql_proxy will be placed in $GOPATH/bin after go get completes.
+The cloud_sql_proxy will be placed in `$GOPATH/bin` after `go get` completes.
 
 cloud_sql_proxy takes a few arguments to configure what instances to connect to and connection behavior:
 
@@ -105,9 +105,9 @@ __Note:__
 
 Each image is tagged with the version of the proxy it was released with. The 
 following tags are currently supported:
-  * `v$VERSION` - default image (recommended)
-  * `v$VERSION-alpine` - uses [`alpine:3`](https://hub.docker.com/_/alpine) as a base image
-  * `v$VERSION-buster` - uses [`debain:buster`](https://hub.docker.com/_/debian) as a base image
+  * `$VERSION` - default image (recommended)
+  * `$VERSION-alpine` - uses [`alpine:3`](https://hub.docker.com/_/alpine) as a base image (only supported from v1.17 up)
+  * `$VERSION-buster` - uses [`debian:buster`](https://hub.docker.com/_/debian) as a base image (only supported from v1.17 up)
 
 __Note:__ We strongly recommend to always use the latest version of the proxy,
 and to update the version regularly. However, we recommend pinning to a
