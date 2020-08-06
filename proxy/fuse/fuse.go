@@ -253,10 +253,12 @@ func (r *fsRoot) Lookup(_ context.Context, req *fuse.LookupRequest, resp *fuse.L
 
 	// MySQL expects a Unix domain socket at the symlinked path whereas Postgres expects
 	// a socket named ".s.PGSQL.5432" in the directory given by the database path.
+	// Look up instance database version to determine the correct socket path.
+	// Client is nil in unit tests.
 	if r.client != nil {
 		version, err := r.client.InstanceVersion(instance)
 		if err != nil {
-			return nil, fuse.EIO
+			return nil, fuse.ENOENT
 		}
 		if strings.HasPrefix(strings.ToLower(version), "postgres") {
 			if err := os.MkdirAll(path, 0755); err != nil {
