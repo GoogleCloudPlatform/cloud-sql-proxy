@@ -41,6 +41,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -64,7 +65,7 @@ func Supported() bool {
 // error, the returned chan will be closed.
 //
 // The connset parameter is optional.
-func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.Conn, io.Closer, error) {
+func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.ConnSet) (<-chan proxy.Conn, io.Closer, error) {
 	if err := os.MkdirAll(tmpdir, 0777); err != nil {
 		return nil, nil, err
 	}
@@ -91,6 +92,7 @@ func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.C
 		links:   make(map[string]symlink),
 		closers: []io.Closer{c},
 		connset: connset,
+		client:  client,
 	}
 
 	server := fs.New(c, &fs.Config{
@@ -142,6 +144,7 @@ func (symlink) Attr(ctx context.Context, a *fuse.Attr) error {
 type fsRoot struct {
 	tmpDir, linkDir string
 
+	client  *proxy.Client
 	connset *proxy.ConnSet
 
 	// sockLock protects fields in this struct related to sockets; specifically
@@ -245,7 +248,26 @@ func (r *fsRoot) Lookup(_ context.Context, req *fuse.LookupRequest, resp *fuse.L
 	}
 
 	path := filepath.Join(r.tmpDir, instance)
-	os.Remove(path) // Best effort; the following will fail if this does.
+	os.RemoveAll(path) // Best effort; the following will fail if this does.
+	linkpath := path
+
+	// MySQL expects a Unix domain socket at the symlinked path whereas Postgres expects
+	// a socket named ".s.PGSQL.5432" in the directory given by the database path.
+	// Look up instance database version to determine the correct socket path.
+	// Client is nil in unit tests.
+	if r.client != nil {
+		version, err := r.client.InstanceVersion(instance)
+		if err != nil {
+			return nil, fuse.ENOENT
+		}
+		if strings.HasPrefix(strings.ToLower(version), "postgres") {
+			if err := os.MkdirAll(path, 0755); err != nil {
+				return nil, fuse.EIO
+			}
+			path = filepath.Join(linkpath, ".s.PGSQL.5432")
+		}
+	}
+
 	sock, err := net.Listen("unix", path)
 	if err != nil {
 		logging.Errorf("couldn't listen at %q: %v", path, err)
@@ -257,7 +279,7 @@ func (r *fsRoot) Lookup(_ context.Context, req *fuse.LookupRequest, resp *fuse.L
 
 	go r.listenerLifecycle(sock, instance, path)
 
-	ret := symlink(path)
+	ret := symlink(linkpath)
 	r.links[instance] = ret
 	// TODO(chowski): memory leak when listeners exit on their own via removeListener.
 	r.closers = append(r.closers, sock)

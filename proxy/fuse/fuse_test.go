@@ -37,7 +37,7 @@ var (
 )
 
 func TestFuseClose(t *testing.T) {
-	src, fuse, err := NewConnSrc(dir, tmpdir, nil)
+	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestFuseClose(t *testing.T) {
 
 // TestBadDir verifies that the fuse module does not create directories, only simple files.
 func TestBadDir(t *testing.T) {
-	_, fuse, err := NewConnSrc(dir, tmpdir, nil)
+	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestBadDir(t *testing.T) {
 }
 
 func TestReadme(t *testing.T) {
-	_, fuse, err := NewConnSrc(dir, tmpdir, nil)
+	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestReadme(t *testing.T) {
 }
 
 func TestSingleInstance(t *testing.T) {
-	src, fuse, err := NewConnSrc(dir, tmpdir, nil)
+	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestSingleInstance(t *testing.T) {
 }
 
 func BenchmarkNewConnection(b *testing.B) {
-	src, fuse, err := NewConnSrc(dir, tmpdir, nil)
+	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -60,8 +60,8 @@ func (cs *blockingCertSource) Local(instance string) (tls.Certificate, error) {
 	}, nil
 }
 
-func (cs *blockingCertSource) Remote(instance string) (cert *x509.Certificate, addr, name string, err error) {
-	return &x509.Certificate{}, "fake address", "fake name", nil
+func (cs *blockingCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
+	return &x509.Certificate{}, "fake address", "fake name", "fake version", nil
 }
 
 func TestClientCache(t *testing.T) {
