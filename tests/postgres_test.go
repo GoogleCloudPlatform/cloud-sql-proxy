@@ -20,7 +20,10 @@ package tests
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"path"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -48,8 +51,22 @@ func requirePostgresVars(t *testing.T) {
 	}
 }
 
+func TestPostgresSocket(t *testing.T) {
+	requirePostgresVars(t)
+
+	dir, err := ioutil.TempDir("", "csql-proxy-tests")
+	if err != nil {
+		log.Fatalf("unable to create tmp dir: %s", err)
+	}
+	defer os.RemoveAll(dir)
+
+	dsn := fmt.Sprintf("user=%s password=%s database=%s host=%s", *postgresUser, *postgresPass, *postgresDb, path.Join(dir, *postgresConnName))
+	proxyConnTest(t, *postgresConnName, "postgres", dsn, 0, dir)
+}
+
 func TestPostgresTcp(t *testing.T) {
 	requirePostgresVars(t)
-	dsn := fmt.Sprintf("postgres://%s:%s@127.0.0.1:%d/%s?sslmode=disable", *postgresUser, *postgresPass, postgresPort, *postgresDb)
-	proxyTCPTest(t, *postgresConnName, "postgres", dsn, postgresPort)
+	
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
+	proxyConnTest(t, *postgresConnName, "postgres", dsn, postgresPort, "")
 }

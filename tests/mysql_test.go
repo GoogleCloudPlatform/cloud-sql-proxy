@@ -19,7 +19,10 @@ package tests
 
 import (
 	"flag"
+	"io/ioutil"
+	"log"
 	"os"
+	"path"
 	"testing"
 
 	mysql "github.com/go-sql-driver/mysql"
@@ -47,14 +50,33 @@ func requireMysqlVars(t *testing.T) {
 	}
 }
 
+func TestMysqlSocket(t *testing.T) {
+	requireMysqlVars(t)
+
+	dir, err := ioutil.TempDir("", "csql-proxy-tests")
+	if err != nil {
+		log.Fatalf("unable to create tmp dir: %s", err)
+	}
+	defer os.RemoveAll(dir)
+
+	cfg := mysql.Config{
+		User:                 *mysqlUser,
+		Passwd:               *mysqlPass,
+		Net:                  "unix",
+		Addr:                 path.Join(dir, *mysqlConnName),
+		DBName:               *mysqlDb,
+		AllowNativePasswords: true,
+	}
+	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), 0, dir)
+}
+
 func TestMysqlTcp(t *testing.T) {
 	requireMysqlVars(t)
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
 		Passwd:               *mysqlPass,
-		Addr:                 "127.0.0.1",
 		DBName:               *mysqlDb,
 		AllowNativePasswords: true,
 	}
-	proxyTCPTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort)
+	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort, "")
 }

@@ -22,12 +22,19 @@ import (
 	"testing"
 )
 
-// proxyTCPTest is a test helper to verify the proxy works with a TCP port.
-func proxyTCPTest(t *testing.T, connName, driver, dsn string, port int) {
+// proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
+func proxyConnTest(t *testing.T, connName, driver, dsn string, port int, dir string) {
 	ctx := context.Background()
-	// defer cancel()
+
+	var args []string
+	if dir != "" { // unix port
+		args = append(args, fmt.Sprintf("-dir=%s", dir), fmt.Sprintf("-instances=%s", connName))
+	} else { // tcp socket
+		args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", connName, port))
+	}
+
 	// Start the proxy
-	p, err := StartProxy(ctx, fmt.Sprintf("-instances=%s=tcp:%d", connName, port))
+	p, err := StartProxy(ctx, args...)
 	if err != nil {
 		t.Fatalf("unable to start proxy: %v", err)
 	}
@@ -36,6 +43,7 @@ func proxyTCPTest(t *testing.T, connName, driver, dsn string, port int) {
 	if err != nil {
 		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
 	}
+
 	// Connect to the instance
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
