@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build sqlserver
+// +build !skip_sqlserver
 
 // sqlserver_test runs various tests against a SqlServer flavored Cloud SQL instance.
 package tests

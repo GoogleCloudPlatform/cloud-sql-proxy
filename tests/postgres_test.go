@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build postgres
+// +build !skip_postgres
 
 // postgres_test runs various tests against a Postgres flavored Cloud SQL instance.
 package tests
