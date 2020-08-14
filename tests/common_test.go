@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 	os.Exit(rtn)
 }
 
-// compileProxy compiles the binary into a temporary directory, and returns the path to the file or any error that occured. 
+// compileProxy compiles the binary into a temporary directory, and returns the path to the file or any error that occured.
 func compileProxy() (string, error) {
 	// get path of the cmd pkg
 	_, f, _, ok := runtime.Caller(0)
@@ -82,11 +82,11 @@ func compileProxy() (string, error) {
 type ProxyExec struct {
 	Out io.ReadCloser
 
-	cmd    *exec.Cmd
-	cancel context.CancelFunc
+	cmd     *exec.Cmd
+	cancel  context.CancelFunc
 	closers []io.Closer
-	done   chan bool // closed once the cmd is completed
-	err error
+	done    chan bool // closed once the cmd is completed
+	err     error
 }
 
 // StartProxy returns a proxyExec representing a running instance of the proxy.

@@ -26,5 +26,5 @@ echo -e "******************** Dependencies verified.  ********************\n"
 
 # Verify
 echo -e "******************** Running gofmt... ********************\n"
-diff -u <(echo -n) <(gofmt -d .)
+diff -u <(echo -n) <(goimports -d .)
 echo -e "******************** Gofmt complete.  ******************** \n"
