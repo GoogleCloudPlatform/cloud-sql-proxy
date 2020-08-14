@@ -35,7 +35,7 @@ var (
 	sqlserverPort = 1434
 )
 
-func requireSqlServerVars(t *testing.T) {
+func requireSqlserverVars(t *testing.T) {
 	switch "" {
 	case *sqlserverConnName:
 		t.Fatal("'sqlserver_conn_name' not set")
@@ -49,8 +49,8 @@ func requireSqlServerVars(t *testing.T) {
 }
 
 func TestSqlServerTcp(t *testing.T) {
-	requireSqlServerVars(t)
+	requireSqlserverVars(t)
 
-	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1:%d/%s", *sqlserverUser, *sqlserverPass, sqlserverPort, *sqlserverDb)
+	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1/%s", *sqlserverUser, *sqlserverPass, *sqlserverDb)
 	proxyConnTest(t, *sqlserverConnName, "sqlserver", dsn, sqlserverPort, "")
 }

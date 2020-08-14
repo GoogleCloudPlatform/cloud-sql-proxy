@@ -48,14 +48,14 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("failed to compile proxy: %s", err)
 	}
-	// Run tetss and cleanup
+	// Run tests and cleanup
 	rtn := m.Run()
 	os.RemoveAll(binPath)
 
 	os.Exit(rtn)
 }
 
-// compileProxy compiles the binary into a temporary directory, and returns the path to the file, a
+// compileProxy compiles the binary into a temporary directory, and returns the path to the file or any error that occured. 
 func compileProxy() (string, error) {
 	// get path of the cmd pkg
 	_, f, _, ok := runtime.Caller(0)

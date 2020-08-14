@@ -19,16 +19,11 @@ set -e
 # Move into project directory
 cd github/cloud-sql-proxy
 
-# Download and verify dependencies are valid
-echo -e "******************** Verifing dependencies... ********************\n"
-go get -t -v ./...
-echo -e "******************** Dependencies verified.  ********************\n"
-
 # Load in secrets
 if [ -n "$KOKORO_GFILE_DIR" ]; then
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
+  export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
 fi
-
 
 echo -e "******************** Running tests... ********************\n"
 go test -v ./...
