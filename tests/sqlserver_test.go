@@ -32,7 +32,7 @@ var (
 	sqlserverPass     = flag.String("sqlserver_pass", os.Getenv("SQLSERVER_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
 	sqlserverDb       = flag.String("sqlserver_db", os.Getenv("SQLSERVER_DB"), "Name of the database to connect to.")
 
-	sqlserverPort = 1434
+	sqlserverPort = 1433
 )
 
 func requireSqlserverVars(t *testing.T) {
@@ -51,6 +51,6 @@ func requireSqlserverVars(t *testing.T) {
 func TestSqlServerTcp(t *testing.T) {
 	requireSqlserverVars(t)
 
-	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1/%s", *sqlserverUser, *sqlserverPass, *sqlserverDb)
+	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1:%d/%s", *sqlserverUser, *sqlserverPass, sqlserverPort, *sqlserverDb)
 	proxyConnTest(t, *sqlserverConnName, "sqlserver", dsn, sqlserverPort, "")
 }
