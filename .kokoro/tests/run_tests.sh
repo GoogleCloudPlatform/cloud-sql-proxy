@@ -21,7 +21,7 @@ cd github/cloud-sql-proxy
 
 # Load in secrets
 if [ -n "$KOKORO_GFILE_DIR" ]; then
-  apt -qq install fuse3
+  apt-get -qq update && apt-get -qq install fuse -y
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
   export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
 fi
