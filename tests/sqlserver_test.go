@@ -54,3 +54,10 @@ func TestSqlServerTcp(t *testing.T) {
 	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1:%d/%s", *sqlserverUser, *sqlserverPass, sqlserverPort, *sqlserverDb)
 	proxyConnTest(t, *sqlserverConnName, "sqlserver", dsn, sqlserverPort, "")
 }
+
+func TestSqlserverConnLimit(t *testing.T) {
+	requireSqlserverVars(t)
+
+	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1:%d/%s", *sqlserverUser, *sqlserverPass, sqlserverPort, *sqlserverDb)
+	proxyConnLimitTest(t, *sqlserverConnName, "sqlserver", dsn, sqlserverPort)
+}

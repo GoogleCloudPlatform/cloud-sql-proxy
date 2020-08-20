@@ -50,6 +50,12 @@ func requirePostgresVars(t *testing.T) {
 		t.Fatal("'postgres_db' not set")
 	}
 }
+func TestPostgresTcp(t *testing.T) {
+	requirePostgresVars(t)
+
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
+	proxyConnTest(t, *postgresConnName, "postgres", dsn, postgresPort, "")
+}
 
 func TestPostgresSocket(t *testing.T) {
 	requirePostgresVars(t)
@@ -64,9 +70,9 @@ func TestPostgresSocket(t *testing.T) {
 	proxyConnTest(t, *postgresConnName, "postgres", dsn, 0, dir)
 }
 
-func TestPostgresTcp(t *testing.T) {
+func TestPostgresConnLimit(t *testing.T) {
 	requirePostgresVars(t)
-	
+
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
-	proxyConnTest(t, *postgresConnName, "postgres", dsn, postgresPort, "")
+	proxyConnLimitTest(t, *postgresConnName, "postgres", dsn, postgresPort)
 }

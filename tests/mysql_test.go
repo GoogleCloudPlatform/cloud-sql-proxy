@@ -50,6 +50,17 @@ func requireMysqlVars(t *testing.T) {
 	}
 }
 
+func TestMysqlTcp(t *testing.T) {
+	requireMysqlVars(t)
+	cfg := mysql.Config{
+		User:                 *mysqlUser,
+		Passwd:               *mysqlPass,
+		DBName:               *mysqlDb,
+		AllowNativePasswords: true,
+	}
+	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort, "")
+}
+
 func TestMysqlSocket(t *testing.T) {
 	requireMysqlVars(t)
 
@@ -70,7 +81,7 @@ func TestMysqlSocket(t *testing.T) {
 	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), 0, dir)
 }
 
-func TestMysqlTcp(t *testing.T) {
+func TestMysqlConnLimit(t *testing.T) {
 	requireMysqlVars(t)
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
@@ -78,5 +89,5 @@ func TestMysqlTcp(t *testing.T) {
 		DBName:               *mysqlDb,
 		AllowNativePasswords: true,
 	}
-	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort, "")
+	proxyConnLimitTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort)
 }

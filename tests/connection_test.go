@@ -19,6 +19,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -54,5 +55,70 @@ func proxyConnTest(t *testing.T, connName, driver, dsn string, port int, dir str
 	if err != nil {
 
 		t.Fatalf("unable to exec on db: %s", err)
+	}
+}
+
+func proxyConnLimitTest(t *testing.T, connName, driver, dsn string, port int) {
+	ctx := context.Background()
+
+	maxConn, totConn := 5, 10
+
+	// Start the proxy
+	p, err := StartProxy(ctx, fmt.Sprintf("-instances=%s=tcp:%d", connName, port), fmt.Sprintf("-max_connections=%d", maxConn))
+	if err != nil {
+		t.Fatalf("unable to start proxy: %v", err)
+	}
+	defer p.Close()
+	output, err := p.WaitForServe(ctx)
+	if err != nil {
+		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
+	}
+
+	// Create connection pool
+	var stmt string
+	switch driver {
+	case "mysql":
+		stmt = "SELECT sleep(2);"
+	case "postgres":
+		stmt = "SELECT pg_sleep(2);"
+	case "sqlserver":
+		stmt = "WAITFOR DELAY '00:00:02'"
+	default:
+		t.Fatalf("unsupported driver: no sleep query found")
+	}
+	db, err := sql.Open(driver, dsn)
+	if err != nil {
+		t.Fatalf("unable to connect to db: %s", err)
+	}
+	db.SetMaxIdleConns(0)
+	defer db.Close()
+
+	// Connect with up to totConn and count errors
+	var wg sync.WaitGroup
+	c := make(chan error, totConn)
+	for i := 0; i < totConn; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err = db.ExecContext(ctx, stmt)
+			if err != nil {
+				c <- err
+			}
+		}()
+	}
+	wg.Wait()
+	close(c)
+
+	var errs []error
+	for e := range c {
+		errs = append(errs, e)
+	}
+	want, got := totConn-maxConn, len(errs)
+	if want != got {
+		t.Errorf("wrong errCt - want: %d, got %d", want, got)
+		for _, e := range errs {
+			t.Errorf("%s\n", e)
+		}
+		t.Fail()
 	}
 }
