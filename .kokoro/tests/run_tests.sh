@@ -16,16 +16,15 @@
 # `-e` enables the script to automatically fail when a command fails
 set -e
 
-# Download and verify dependencies are valid
-echo -e "******************** Verifing dependencies... ********************\n"
-go get -t -v ./...
-echo -e "******************** Dependencies verified.  ********************\n"
+# Move into project directory
+cd github/cloud-sql-proxy
 
 # Load in secrets
 if [ -n "$KOKORO_GFILE_DIR" ]; then
+  apt-get -qq update && apt-get -qq install fuse -y
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
+  export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
 fi
-
 
 echo -e "******************** Running tests... ********************\n"
 go test -v ./...
