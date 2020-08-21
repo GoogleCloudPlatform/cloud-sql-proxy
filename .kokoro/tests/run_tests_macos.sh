@@ -18,12 +18,12 @@ set -e
 
 export GO111MODULE=on
 
-# Kokoro setup
+# kokoro setup
 if [ -n "$KOKORO_GFILE_DIR" ]; then
-  # Move into project directory
+  # move into project directory
   cd github/cloud-sql-proxy
   # install fuse project
-  apt-get -qq update && apt-get -qq install fuse -y
+  brew install osxfuse
   # source secrets
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
   export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
