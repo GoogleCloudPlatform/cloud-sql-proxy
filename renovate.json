@@ -1,5 +1,9 @@
 {
   "extends": [
     "config:base"
-  ]
+  ],
+  "prConcurrentLimit": 0,
+  "rebaseStalePrs": true,
+  "masterIssue": true,
+  "semanticCommits": true
 }
