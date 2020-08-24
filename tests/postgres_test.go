@@ -60,7 +60,7 @@ func TestPostgresTcp(t *testing.T) {
 func TestPostgresSocket(t *testing.T) {
 	requirePostgresVars(t)
 
-	dir, err := ioutil.TempDir("", "csql-proxy-tests")
+	dir, err := ioutil.TempDir("", "csql-proxy")
 	if err != nil {
 		log.Fatalf("unable to create tmp dir: %s", err)
 	}
