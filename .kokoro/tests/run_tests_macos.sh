@@ -29,6 +29,8 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
 fi
 
+# On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
+export TMPDIR=$(mktemp -d /tmp/csp-XXXXX)
 echo -e "******************** Running tests... ********************\n"
 go test -v ./...
 echo -e "******************** Tests complete.  ********************\n"
