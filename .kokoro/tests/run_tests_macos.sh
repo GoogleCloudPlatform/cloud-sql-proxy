@@ -18,17 +18,20 @@ set -e
 
 export GO111MODULE=on
 
-# Kokoro setup
+# kokoro setup
 if [ -n "$KOKORO_GFILE_DIR" ]; then
-  # Move into project directory
+  # move into project directory
   cd github/cloud-sql-proxy
   # install fuse project
-  apt-get -qq update && apt-get -qq install fuse -y
+  brew update > /dev/null
+  brew cask install --quiet osxfuse
   # source secrets
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
   export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
 fi
 
+# On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
+export TMPDIR="/tmp"
 echo -e "******************** Running tests... ********************\n"
 go test -v ./...
 echo -e "******************** Tests complete.  ********************\n"
