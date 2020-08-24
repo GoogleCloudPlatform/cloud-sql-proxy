@@ -23,6 +23,7 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   # move into project directory
   cd github/cloud-sql-proxy
   # install fuse project
+  brew update > /dev/null
   brew cask install --quiet osxfuse
   # source secrets
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
