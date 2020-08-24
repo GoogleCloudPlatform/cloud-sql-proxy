@@ -31,7 +31,7 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
 fi
 
 # On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
-export TMPDIR=$(mktemp -d /tmp/csp-XXXXX)
+export TMPDIR="/tmp"
 echo -e "******************** Running tests... ********************\n"
 go test -v ./...
 echo -e "******************** Tests complete.  ********************\n"
