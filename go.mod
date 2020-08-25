@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go v0.64.0
 	github.com/denisenkom/go-mssqldb v0.0.0-20200620013148-b91950f658ec
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/lib/pq v1.3.0
+	github.com/lib/pq v1.8.0
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.30.0
