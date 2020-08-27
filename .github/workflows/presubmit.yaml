@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: lint
+name: presubmit
 on: [pull_request]
 
 jobs:
   build:
-    name: goimports && go mod tidy
+    name: lint
     runs-on: ubuntu-latest
     steps:
     - name: Setup Go
