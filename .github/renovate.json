@@ -8,5 +8,5 @@
   "semanticCommits": true,
   "postUpdateOptions": [
     "gomodTidy"
-  ],
+  ]
 }
