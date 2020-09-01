@@ -25,4 +25,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
-          package-name: release-please-action
+          package-name: cloud-sql-proxy
