@@ -5,5 +5,8 @@
   "prConcurrentLimit": 0,
   "rebaseStalePrs": true,
   "masterIssue": true,
-  "semanticCommits": true
+  "semanticCommits": true,
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
 }
