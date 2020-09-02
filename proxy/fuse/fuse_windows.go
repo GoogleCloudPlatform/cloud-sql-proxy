@@ -26,6 +26,6 @@ func Supported() bool {
 	return false
 }
 
-func NewConnSrc(mountdir, tmpdir string, connset *proxy.ConnSet) (<-chan proxy.Conn, io.Closer, error) {
+func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.ConnSet) (<-chan proxy.Conn, io.Closer, error) {
 	return nil, nil, errors.New("fuse not supported on windows")
 }
