@@ -10,9 +10,8 @@
 
 
 ### Bug Fixes
-
+* Print out any errors during SIGTERM-caused shutdown ([#389](https://github.com/GoogleCloudPlatform/cloudsql-proxy/pull/389))
+* Optimize `-term-timeout` wait ([#391](https://github.com/GoogleCloudPlatform/cloudsql-proxy/pull/391))
 * Add socket suffix for Postgres instances when running in `-fuse` mode ([#426](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/426)) ([20ffaec](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/20ffaec2f0f00a2516206a0453bd0d1c6e62770c))
-* **container:** Specify nonroot user by uid to work with runAsNonRoot ([#402](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/402)) ([c5c0be1](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/c5c0be1b60bfc1c3fa862039619908a328066e5e))
-* **docs:** Update helm chart URL ([#411](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/411)) ([60bab64](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/60bab6481d784761d0b8c36a0ee8b6d53db250f9))
-* **examples:** Remove sidecar from no-proxy example. ([#410](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/410)) ([5f761d7](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/5f761d7ef539bfe4fb65c6856d439496cddbfcc7))
-* **examples/k8s:** Make secret keys consistent ([#405](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/405)) ([54573d5](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/54573d521428a322f8049b117854987830fa082a))
+* **containers:** Specify nonroot user by uid to work with runAsNonRoot ([#402](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/402)) ([c5c0be1](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/c5c0be1b60bfc1c3fa862039619908a328066e5e))
+
