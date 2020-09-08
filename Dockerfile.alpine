@@ -26,8 +26,8 @@ RUN go build -ldflags "-X 'main.versionString=$VERSION'" -o cloud_sql_proxy ./cm
 # Final stage
 FROM alpine:3
 RUN apk add --no-cache \ 
-    fuse \
     ca-certificates \
+    fuse \
     libc6-compat
 # Add a non-root user matching the nonroot user from the main container
 RUN addgroup -g 65532 -S nonroot && adduser -u 65532 -S nonroot -G nonroot
