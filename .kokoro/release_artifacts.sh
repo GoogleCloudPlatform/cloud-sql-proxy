@@ -36,9 +36,9 @@ then
 fi
 
 # Build and push the container images
-# gcloud builds submit --async --config .build/default.yaml --substitutions _VERSION=$VERSION
-# gcloud builds submit --async --config .build/buster.yaml --substitutions _VERSION=$VERSION
-# gcloud builds submit --async --config .build/alpine.yaml --substitutions _VERSION=$VERSION
+gcloud builds submit --async --config .build/default.yaml --substitutions _VERSION=$VERSION
+gcloud builds submit --async --config .build/buster.yaml --substitutions _VERSION=$VERSION
+gcloud builds submit --async --config .build/alpine.yaml --substitutions _VERSION=$VERSION
 
 # Build the binarys and upload to GCS
 gcloud builds submit --config .build/gcs_upload.yaml --substitutions _VERSION=$VERSION
