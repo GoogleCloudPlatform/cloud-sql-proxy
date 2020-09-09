@@ -15,6 +15,7 @@
 options:
   env: 
     - "GOPATH=/workspace/GOPATH"
+    - "CGO_ENABLED=0"
 
 steps:
   - id: linux.amd64
@@ -73,6 +74,6 @@ steps:
       - 'go build -ldflags "-X main.versionString=${_VERSION}" -o cloud_sql_proxy_x86.exe ./cmd/cloud_sql_proxy'
 artifacts:
   objects:
-    location: "gs://cloudsql-proxy/${_VERSION}/"
+    location: "gs://cloudsql-proxy/v${_VERSION}/"
     paths:
       - "cloud_sql_proxy*"
