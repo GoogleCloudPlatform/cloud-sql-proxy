@@ -211,10 +211,10 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
-const versionString = "1.18.1-dev"
+var versionString = "1.18.1-dev"
 
 // metadataString indiciates additional build or distribution metadata.
-const metadataString = ""
+var metadataString = ""
 
 // semanticVersion returns the version of the proxy in a semver format.
 func semanticVersion() string {
