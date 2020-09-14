@@ -21,7 +21,7 @@ WORKDIR /go/src/cloudsql-proxy
 COPY . .
 
 RUN go get ./...
-RUN go build -ldflags "-X 'main.versionString=$VERSION'" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+RUN go build -ldflags "-X 'main.versionString=$VERSION' -X main.metadataString='container'" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
 
 # Final Stage
 FROM gcr.io/distroless/base-debian10:nonroot
