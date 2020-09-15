@@ -210,29 +210,24 @@ Information for all flags:
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
-const defaultVersionString = "NO_VERSION_SET"
+// versionString indiciates the version of the proxy currently in use.
+var versionString = "1.18.1-dev"
 
-var versionString = defaultVersionString
+// metadataString indiciates additional build or distribution metadata.
+var metadataString = ""
 
-// userAgentFromVersionString returns an appropriate user agent string for
-// identifying this proxy process, or a blank string if versionString was not
-// set to an interesting value.
+// semanticVersion returns the version of the proxy in a semver format.
+func semanticVersion() string {
+	v := versionString
+	if metadataString != "" {
+		v += "+" + metadataString
+	}
+	return v
+}
+
+// userAgentFromVersionString returns an appropriate user agent string for identifying this proxy process.
 func userAgentFromVersionString() string {
-	if versionString == defaultVersionString {
-		return ""
-	}
-
-	// Example versionString (see build.sh):
-	//    version 1.05; sha 0f69d99588991aba0879df55f92562f7e79d7ca1 built Mon May  2 17:57:05 UTC 2016
-	//
-	// Remove the "version " text from versionString.
-	versionString = strings.Replace(versionString, "version ", "", 1)
-	// We just want the part before the semicolon.
-	semi := strings.IndexByte(versionString, ';')
-	if semi == -1 {
-		return ""
-	}
-	return "cloud_sql_proxy/" + versionString[:semi]
+	return "cloud_sql_proxy/" + semanticVersion()
 }
 
 const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
@@ -407,7 +402,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("Cloud SQL Proxy:", versionString)
+		fmt.Println("Cloud SQL Proxy:", semanticVersion())
 		return
 	}
 
