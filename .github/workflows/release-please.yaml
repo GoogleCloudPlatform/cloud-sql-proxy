@@ -18,11 +18,12 @@ on:
     branches:
       - master
 jobs:
-  release-please:
+  release-please-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2.1.1
+      - uses: GoogleCloudPlatform/release-please-action@v2.4.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
           package-name: cloud-sql-proxy
+
