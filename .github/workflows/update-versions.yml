@@ -2,8 +2,9 @@
 name: update-version
 on:
   pull_request:
-          types: [opened]
           branches: [master]
+          paths: 
+            - 'version.txt'
 
 jobs:
   update-version-in-pr:
