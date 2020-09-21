@@ -15,13 +15,11 @@
 # Use the latest stable golang 1.x to compile to a binary
 FROM golang:1 as build
 
-ARG VERSION="1.18.1-dev"
-
 WORKDIR /go/src/cloudsql-proxy
 COPY . .
 
 RUN go get ./...
-RUN go build -ldflags "-X main.versionString=$VERSION -X main.metadataString=container.buster" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+RUN go build -ldflags "-X main.metadataString=container.buster" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
 
 # Final stage
 FROM debian:buster
