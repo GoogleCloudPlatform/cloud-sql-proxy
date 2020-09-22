@@ -20,16 +20,8 @@ jobs:
         run: |
           VERSION=$(cat version.txt)
           sed -i -r 's/(var versionString = ")[0-9]+.[0-9]+.[0-9]+(-dev)?/\1'"$VERSION"'/' cmd/cloud_sql_proxy/cloud_sql_proxy.go
-          
-      - if: github.actor == "release-please[bot]"
-        name: setup-git-config
-        run: |
           git config user.name "release-please[bot]"
           git config user.email "55107282+release-please[bot]@users.noreply.github.com"
-          
-      - if: github.actor == "release-please[bot]"
-        name: push-commit
-        run: |
           git add cmd/cloud_sql_proxy/cloud_sql_proxy.go
           git commit -m "Update version"
           git push origin ${{ github.head_ref }}
