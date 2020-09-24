@@ -27,7 +27,7 @@ import (
 )
 
 func init() {
-	mysql.RegisterDial("cloudsql", proxy.Dial)
+	mysql.RegisterDialContext("cloudsql", proxy.DialContext)
 }
 
 // Dial logs into the specified Cloud SQL Instance using the given user and no

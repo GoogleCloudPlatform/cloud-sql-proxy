@@ -15,6 +15,7 @@
 package proxy
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -68,9 +69,11 @@ type Client struct {
 	// Optionally tracks connections through this client. If nil, connections
 	// are not tracked and will not be closed before method Run exits.
 	Conns *ConnSet
-	// Dialer should return a new connection to the provided address. It is
-	// called on each new connection to an instance. net.Dial will be used if
-	// left nil.
+	// ContextDialer should return a new connection to the provided address.
+	// It is called on each new connection to an instance.
+	// If left nil, Dialer will be tried first, and if that one is nil too then net.Dial will be used.
+	ContextDialer func(ctx context.Context, net, addr string) (net.Conn, error)
+	// Dialer should return a new connection to the provided address. It will be used only if ContextDialer is nil.
 	Dialer func(net, addr string) (net.Conn, error)
 
 	// RefreshCfgThrottle is the amount of time to wait between configuration
@@ -278,12 +281,12 @@ func (c *Client) cachedCfg(instance string) (string, *tls.Config, string) {
 	return ret.addr, ret.cfg, ret.version
 }
 
-// Dial uses the configuration stored in the client to connect to an instance.
+// DialContext uses the configuration stored in the client to connect to an instance.
 // If this func returns a nil error the connection is correctly authenticated
 // to connect to the instance.
-func (c *Client) Dial(instance string) (net.Conn, error) {
+func (c *Client) DialContext(ctx context.Context, instance string) (net.Conn, error) {
 	if addr, cfg, _ := c.cachedCfg(instance); cfg != nil {
-		ret, err := c.tryConnect(addr, cfg)
+		ret, err := c.tryConnect(ctx, addr, cfg)
 		if err == nil {
 			return ret, err
 		}
@@ -293,15 +296,36 @@ func (c *Client) Dial(instance string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.tryConnect(addr, cfg)
+	return c.tryConnect(ctx, addr, cfg)
 }
 
-func (c *Client) tryConnect(addr string, cfg *tls.Config) (net.Conn, error) {
-	d := c.Dialer
-	if d == nil {
-		d = proxy.FromEnvironment().Dial
+// Dial does the same as DialContext but using context.Background() as the context.
+func (c *Client) Dial(instance string) (net.Conn, error) {
+	return c.DialContext(context.Background(), instance)
+}
+
+func (c *Client) tryConnect(ctx context.Context, addr string, cfg *tls.Config) (net.Conn, error) {
+	var dial func(ctx context.Context, net, addr string) (net.Conn, error)
+	if c.ContextDialer != nil {
+		dial = c.ContextDialer
+	} else if c.Dialer != nil {
+		dial = func(_ context.Context, net, addr string) (net.Conn, error) {
+			return c.Dialer(net, addr)
+		}
+	} else {
+		dialer := proxy.FromEnvironment()
+		if ctxDialer, ok := dialer.(proxy.ContextDialer); ok {
+			// although proxy.FromEnvironment() returns a Dialer interface which only has a Dial method,
+			// it happens in fact that method often returns ContextDialers.
+			dial = ctxDialer.DialContext
+		} else {
+			dial = func(_ context.Context, net, addr string) (net.Conn, error) {
+				return dialer.Dial(net, addr)
+			}
+		}
 	}
-	conn, err := d("tcp", addr)
+
+	conn, err := dial(ctx, "tcp", addr)
 	if err != nil {
 		return nil, err
 	}
