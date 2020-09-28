@@ -15,13 +15,13 @@ jobs:
         with: 
           ref: ${{ github.head_ref }}
 
-      - if: github.actor == "release-please[bot]"
+      - if: github.actor == 'github-actions[bot]'
         name: find-and-replace-version
         run: |
           VERSION=$(cat version.txt)
           sed -i -r 's/(var versionString = ")[0-9]+.[0-9]+.[0-9]+(-dev)?/\1'"$VERSION"'/' cmd/cloud_sql_proxy/cloud_sql_proxy.go
-          git config user.name "release-please[bot]"
-          git config user.email "55107282+release-please[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add cmd/cloud_sql_proxy/cloud_sql_proxy.go
           git commit -m "Update version"
           git push origin ${{ github.head_ref }}
