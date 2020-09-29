@@ -305,26 +305,7 @@ func (c *Client) Dial(instance string) (net.Conn, error) {
 }
 
 func (c *Client) tryConnect(ctx context.Context, addr string, cfg *tls.Config) (net.Conn, error) {
-	var dial func(ctx context.Context, net, addr string) (net.Conn, error)
-	if c.ContextDialer != nil {
-		dial = c.ContextDialer
-	} else if c.Dialer != nil {
-		dial = func(_ context.Context, net, addr string) (net.Conn, error) {
-			return c.Dialer(net, addr)
-		}
-	} else {
-		dialer := proxy.FromEnvironment()
-		if ctxDialer, ok := dialer.(proxy.ContextDialer); ok {
-			// although proxy.FromEnvironment() returns a Dialer interface which only has a Dial method,
-			// it happens in fact that method often returns ContextDialers.
-			dial = ctxDialer.DialContext
-		} else {
-			dial = func(_ context.Context, net, addr string) (net.Conn, error) {
-				return dialer.Dial(net, addr)
-			}
-		}
-	}
-
+	dial := c.selectDialer()
 	conn, err := dial(ctx, "tcp", addr)
 	if err != nil {
 		return nil, err
@@ -350,6 +331,29 @@ func (c *Client) tryConnect(ctx context.Context, addr string, cfg *tls.Config) (
 		return nil, err
 	}
 	return ret, nil
+}
+
+func (c *Client) selectDialer() func(context.Context, string, string) (net.Conn, error) {
+	if c.ContextDialer != nil {
+		return c.ContextDialer
+	}
+
+	if c.Dialer != nil {
+		return func(_ context.Context, net, addr string) (net.Conn, error) {
+			return c.Dialer(net, addr)
+		}
+	}
+
+	dialer := proxy.FromEnvironment()
+	if ctxDialer, ok := dialer.(proxy.ContextDialer); ok {
+		// although proxy.FromEnvironment() returns a Dialer interface which only has a Dial method,
+		// it happens in fact that method often returns ContextDialers.
+		return ctxDialer.DialContext
+	}
+
+	return func(_ context.Context, net, addr string) (net.Conn, error) {
+		return dialer.Dial(net, addr)
+	}
 }
 
 // NewConnSrc returns a chan which can be used to receive connections
