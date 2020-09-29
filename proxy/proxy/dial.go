@@ -65,9 +65,6 @@ func Dial(instance string) (net.Conn, error) {
 	return DialContext(context.Background(), instance)
 }
 
-// ContextDialer is a convenience type to model the net.Dialer.DialContext() function
-type ContextDialer func(ctx context.Context, net, addr string) (net.Conn, error)
-
 // Dialer is a convenience type to model the standard 'Dial' function.
 type Dialer func(net, addr string) (net.Conn, error)
 
