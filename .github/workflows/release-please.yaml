@@ -18,7 +18,7 @@ on:
     branches:
       - master
 jobs:
-  release-please-release:
+  release-please:
     runs-on: ubuntu-latest
     steps:
       - uses: GoogleCloudPlatform/release-please-action@v2.4.0
