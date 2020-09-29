@@ -42,12 +42,12 @@ var dialClient struct {
 // This is a network-level function; consider looking in the dialers
 // subdirectory for more convenience functions related to actually logging into
 // your database.
-func Dial(instance string) (net.Conn, error) {
+func DialContext(ctx context.Context, instance string) (net.Conn, error) {
 	dialClient.Lock()
 	c := dialClient.c
 	dialClient.Unlock()
 	if c == nil {
-		if err := InitDefault(context.Background()); err != nil {
+		if err := InitDefault(ctx); err != nil {
 			return nil, fmt.Errorf("default proxy initialization failed; consider calling proxy.Init explicitly: %v", err)
 		}
 		// InitDefault initialized the client.
@@ -56,7 +56,13 @@ func Dial(instance string) (net.Conn, error) {
 		dialClient.Unlock()
 	}
 
-	return c.Dial(instance)
+	return c.DialContext(ctx, instance)
+
+}
+
+// Dial does the same as DialContext but using context.Background() as the context.
+func Dial(instance string) (net.Conn, error) {
+	return DialContext(context.Background(), instance)
 }
 
 // Dialer is a convenience type to model the standard 'Dial' function.
@@ -68,6 +74,7 @@ type Dialer func(net, addr string) (net.Conn, error)
 // The http.Client is used to authenticate API requests.
 // The connset parameter is optional.
 // If the dialer is nil, net.Conn is used.
+// Use InitWithClient to with a filled client if you want to provide a Context-Aware dialer
 func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 	dialClient.Lock()
 	dialClient.c = &Client{
