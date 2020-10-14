@@ -40,6 +40,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/limits"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"cloud.google.com/go/compute/metadata"
 	"golang.org/x/net/context"
@@ -92,6 +93,8 @@ You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same
 
 	// Setting to choose what API to connect to
 	host = flag.String("host", "", "When set, the proxy uses this host as the base API path. Example: https://sqladmin.googleapis.com")
+
+	metricsListenAddr = flag.String("metrics_listen_address", ":9757", "Address to serve metric on.")
 )
 
 const (
@@ -536,6 +539,9 @@ func main() {
 		}
 		connSrc = c
 	}
+
+	http.Handle("/metrics", promhttp.Handler())
+	go log.Fatal(http.ListenAndServe(*metricsListenAddr, nil))
 
 	logging.Infof("Ready for new connections")
 

@@ -26,6 +26,8 @@ import (
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/net/proxy"
 )
 
@@ -40,6 +42,25 @@ var (
 	// user.
 	errNotCached      = errors.New("instance was not found in cache")
 	refreshCertBuffer = 30 * time.Second
+)
+
+var (
+	activeConnections = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "cloudsql_proxy_active_connections",
+		Help: "Number of active connections",
+	})
+	maxConnections = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "cloudsql_proxy_max_connections",
+		Help: "Maxiumum number of active connections",
+	})
+	connectionTotal = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "cloudsql_proxy_connections_total",
+		Help: "Total number of connections handled.",
+	})
+	connectionErrorsTotal = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "cloudsql_proxy_connections_errors_total",
+		Help: "Total number of connection errors.",
+	})
 )
 
 // Conn represents a connection from a client to a specific instance.
@@ -112,6 +133,8 @@ type cacheEntry struct {
 // Run causes the client to start waiting for new connections to connSrc and
 // proxy them to the destination instance. It blocks until connSrc is closed.
 func (c *Client) Run(connSrc <-chan Conn) {
+	maxConnections.Set(float64(c.MaxConnections))
+
 	for conn := range connSrc {
 		go c.handleConn(conn)
 	}
@@ -123,9 +146,14 @@ func (c *Client) Run(connSrc <-chan Conn) {
 
 func (c *Client) handleConn(conn Conn) {
 	active := atomic.AddUint64(&c.ConnectionsCounter, 1)
+	activeConnections.Inc()
+	connectionTotal.Inc()
 
 	// Deferred decrement of ConnectionsCounter upon connection closing
-	defer atomic.AddUint64(&c.ConnectionsCounter, ^uint64(0))
+	defer func() {
+		atomic.AddUint64(&c.ConnectionsCounter, ^uint64(0))
+		activeConnections.Dec()
+	}()
 
 	if c.MaxConnections > 0 && active > c.MaxConnections {
 		logging.Errorf("too many open connections (max %d)", c.MaxConnections)
