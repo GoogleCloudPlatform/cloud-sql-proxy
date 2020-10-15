@@ -169,8 +169,8 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 		return ret, err
 	}
 
-	p, region, n := util.SplitName(instance)
-	regionName := fmt.Sprintf("%s~%s", region, n)
+	p, r, n := util.SplitName(instance)
+	regionName := fmt.Sprintf("%s~%s", r, n)
 	req := s.serv.SslCerts.CreateEphemeral(p, regionName,
 		&sqladmin.SslCertsCreateEphemeralRequest{
 			PublicKey: string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"})),
