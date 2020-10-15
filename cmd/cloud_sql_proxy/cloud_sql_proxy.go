@@ -94,7 +94,7 @@ You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same
 	// Setting to choose what API to connect to
 	host = flag.String("host", "", "When set, the proxy uses this host as the base API path. Example: https://sqladmin.googleapis.com")
 
-	metricsListenAddr = flag.String("metrics_listen_address", ":9757", "Address to serve metric on.")
+	metricsListenAddr = flag.String("metrics_listen_address", ":9757", "Address to serve metric on [EXPERIMENTAL].")
 )
 
 const (
