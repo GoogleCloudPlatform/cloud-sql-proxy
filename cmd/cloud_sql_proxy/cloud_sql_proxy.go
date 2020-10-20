@@ -541,7 +541,9 @@ func main() {
 	}
 
 	http.Handle("/metrics", promhttp.Handler())
-	go log.Fatal(http.ListenAndServe(*metricsListenAddr, nil))
+	go func() {
+		log.Fatal(http.ListenAndServe(*metricsListenAddr, nil))
+	}()
 
 	logging.Infof("Ready for new connections")
 
