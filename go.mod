@@ -8,7 +8,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.0.0-20200910202707-1e08a3fab204
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/lib/pq v1.8.0
-	golang.org/x/net v0.0.0-20201022231255-08b38378de70
+	golang.org/x/net v0.0.0-20201026091529-146b70c837a4
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 	google.golang.org/api v0.34.0
 )
