@@ -32,7 +32,7 @@ import (
 const (
 	DefaultRefreshCfgThrottle = time.Minute
 	keepAlivePeriod           = time.Minute
-	defaultRefreshCertBuffer  = 30 * time.Second
+	defaultRefreshCertBuffer  = 2 * time.Minute
 )
 
 var (
