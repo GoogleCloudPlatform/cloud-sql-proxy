@@ -246,12 +246,6 @@ func TestShutdownTerminatesEarly(t *testing.T) {
 }
 
 func TestRefreshTimer(t *testing.T) {
-	oldRefreshCertBuffer := refreshCertBuffer
-	defer func() {
-		refreshCertBuffer = oldRefreshCertBuffer
-	}()
-	refreshCertBuffer = time.Second
-
 	timeToExpire := 5 * time.Second
 	b := &fakeCerts{}
 	certCreated := time.Now()
@@ -266,6 +260,7 @@ func TestRefreshTimer(t *testing.T) {
 			return nil, errFakeDial
 		},
 		RefreshCfgThrottle: 20 * time.Millisecond,
+		RefreshCertBuffer:  time.Second,
 	}
 	// Call Dial to cache the cert.
 	if _, err := c.Dial(instance); err != errFakeDial {
