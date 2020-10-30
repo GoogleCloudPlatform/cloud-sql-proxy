@@ -32,14 +32,14 @@ import (
 const (
 	DefaultRefreshCfgThrottle = time.Minute
 	keepAlivePeriod           = time.Minute
+	defaultRefreshCertBuffer  = 30 * time.Second
 )
 
 var (
 	// errNotCached is returned when the instance was not found in the Client's
 	// cache. It is an internal detail and is not actually ever returned to the
 	// user.
-	errNotCached      = errors.New("instance was not found in cache")
-	refreshCertBuffer = 30 * time.Second
+	errNotCached = errors.New("instance was not found in cache")
 )
 
 // Conn represents a connection from a client to a specific instance.
@@ -82,6 +82,10 @@ type Client struct {
 	// This is to prevent quota exhaustion in the case of client-side
 	// malfunction.
 	RefreshCfgThrottle time.Duration
+
+	// RefreshCertBuffer is the amount of time before configuration expires to
+	// attempt to refresh it. If not set, it defaults to 30 seconds.
+	RefreshCertBuffer time.Duration
 
 	// The cfgCache holds the most recent connection configuration keyed by
 	// instance. Relevant functions are refreshCfg and cachedCfg. It is
@@ -164,6 +168,11 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	throttle := c.RefreshCfgThrottle
 	if throttle == 0 {
 		throttle = DefaultRefreshCfgThrottle
+	}
+
+	refreshCertBuffer := c.RefreshCertBuffer
+	if refreshCertBuffer == 0 {
+		refreshCertBuffer = defaultRefreshCertBuffer
 	}
 
 	c.cacheL.Lock()
