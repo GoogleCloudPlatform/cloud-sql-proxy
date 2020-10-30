@@ -83,8 +83,8 @@ type Client struct {
 	// malfunction.
 	RefreshCfgThrottle time.Duration
 
-	// RefreshCertBuffer is the amount of time before configuration expires to
-	// attempt to refresh it. If not set, it defaults to 30 seconds.
+	// RefreshCertBuffer is the amount of time before the configuration expires to
+	// attempt to refresh it. If not set, it defaults to 2 minutes.
 	RefreshCertBuffer time.Duration
 
 	// The cfgCache holds the most recent connection configuration keyed by
