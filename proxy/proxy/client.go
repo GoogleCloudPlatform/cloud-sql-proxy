@@ -189,6 +189,12 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 
 	defer func() {
 		c.cacheL.Lock()
+
+		// if we failed to refresh cfg do not throw out valid one
+		if err != nil && !isExpired(old.cfg) {
+			addr, cfg, version, err = old.addr, old.cfg, old.version, old.err
+		}
+
 		c.cfgCache[instance] = cacheEntry{
 			lastRefreshed: time.Now(),
 			err:           err,
@@ -275,6 +281,9 @@ func genVerifyPeerCertificateFunc(instanceName string, pool *x509.CertPool) func
 }
 
 func isExpired(cfg *tls.Config) bool {
+	if cfg == nil {
+		return true
+	}
 	return time.Now().After(cfg.Certificates[0].Leaf.NotAfter)
 }
 
