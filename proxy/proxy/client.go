@@ -32,7 +32,7 @@ import (
 const (
 	DefaultRefreshCfgThrottle = time.Minute
 	keepAlivePeriod           = time.Minute
-	defaultRefreshCertBuffer  = 2 * time.Minute
+	defaultRefreshCertBuffer  = 5 * time.Minute
 )
 
 var (
@@ -84,7 +84,7 @@ type Client struct {
 	RefreshCfgThrottle time.Duration
 
 	// RefreshCertBuffer is the amount of time before the configuration expires to
-	// attempt to refresh it. If not set, it defaults to 2 minutes.
+	// attempt to refresh it. If not set, it defaults to 5 minutes.
 	RefreshCertBuffer time.Duration
 
 	// The cfgCache holds the most recent connection configuration keyed by
@@ -188,13 +188,13 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	}
 
 	defer func() {
-		c.cacheL.Lock()
-
 		// if we failed to refresh cfg do not throw out valid one
 		if err != nil && !isExpired(old.cfg) {
+			logging.Errorf("failed to refresh the ephemeral certificate for %s, returning valid cert instead: %v", instance, err)
 			addr, cfg, version, err = old.addr, old.cfg, old.version, old.err
 		}
 
+		c.cacheL.Lock()
 		c.cfgCache[instance] = cacheEntry{
 			lastRefreshed: time.Now(),
 			err:           err,
