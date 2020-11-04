@@ -32,7 +32,7 @@ import (
 const (
 	DefaultRefreshCfgThrottle = time.Minute
 	keepAlivePeriod           = time.Minute
-	defaultRefreshCertBuffer  = 5 * time.Minute
+	defaultRefreshCfgBuffer   = 5 * time.Minute
 )
 
 var (
@@ -76,6 +76,15 @@ type Client struct {
 	// Dialer should return a new connection to the provided address. It will be used only if ContextDialer is nil.
 	Dialer func(net, addr string) (net.Conn, error)
 
+	// The cfgCache holds the most recent connection configuration keyed by
+	// instance. Relevant functions are refreshCfg and cachedCfg. It is
+	// protected by cacheL.
+	cfgCache map[string]cacheEntry
+	cacheL   sync.RWMutex
+
+	// refreshCfgL prevents multiple goroutines from contacting the Cloud SQL API at once.
+	refreshCfgL sync.Mutex
+
 	// RefreshCfgThrottle is the amount of time to wait between configuration
 	// refreshes. If not set, it defaults to 1 minute.
 	//
@@ -85,16 +94,7 @@ type Client struct {
 
 	// RefreshCertBuffer is the amount of time before the configuration expires to
 	// attempt to refresh it. If not set, it defaults to 5 minutes.
-	RefreshCertBuffer time.Duration
-
-	// The cfgCache holds the most recent connection configuration keyed by
-	// instance. Relevant functions are refreshCfg and cachedCfg. It is
-	// protected by cacheL.
-	cfgCache map[string]cacheEntry
-	cacheL   sync.RWMutex
-
-	// refreshCfgL prevents multiple goroutines from contacting the Cloud SQL API at once.
-	refreshCfgL sync.Mutex
+	RefreshCfgBuffer time.Duration
 
 	// MaxConnections is the maximum number of connections to establish
 	// before refusing new connections. 0 means no limit.
@@ -170,9 +170,9 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 		throttle = DefaultRefreshCfgThrottle
 	}
 
-	refreshCertBuffer := c.RefreshCertBuffer
-	if refreshCertBuffer == 0 {
-		refreshCertBuffer = defaultRefreshCertBuffer
+	refreshCfgBuffer := c.RefreshCfgBuffer
+	if refreshCfgBuffer == 0 {
+		refreshCfgBuffer = defaultRefreshCfgBuffer
 	}
 
 	c.cacheL.Lock()
@@ -234,7 +234,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 
 	expire := mycert.Leaf.NotAfter
 	now := time.Now()
-	timeToRefresh := expire.Sub(now) - refreshCertBuffer
+	timeToRefresh := expire.Sub(now) - refreshCfgBuffer
 	if timeToRefresh <= 0 {
 		err = fmt.Errorf("new ephemeral certificate expires too soon: current time: %v, certificate expires: %v", expire, now)
 		logging.Errorf("ephemeral certificate (%+v) error: %v", mycert, err)

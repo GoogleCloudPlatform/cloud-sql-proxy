@@ -260,7 +260,7 @@ func TestRefreshTimer(t *testing.T) {
 			return nil, errFakeDial
 		},
 		RefreshCfgThrottle: 20 * time.Millisecond,
-		RefreshCertBuffer:  time.Second,
+		RefreshCfgBuffer:   time.Second,
 	}
 	// Call Dial to cache the cert.
 	if _, err := c.Dial(instance); err != errFakeDial {
