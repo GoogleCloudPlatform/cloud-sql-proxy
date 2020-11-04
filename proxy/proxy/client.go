@@ -188,9 +188,9 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	}
 
 	defer func() {
-		// if we failed to refresh cfg do not throw out valid one
+		// if we failed to refresh cfg do not throw out potentially valid one
 		if err != nil && !isExpired(old.cfg) {
-			logging.Errorf("failed to refresh the ephemeral certificate for %s, returning valid cert instead: %v", instance, err)
+			logging.Errorf("failed to refresh the ephemeral certificate for %s, returning previous cert instead: %v", instance, err)
 			addr, cfg, version, err = old.addr, old.cfg, old.version, old.err
 		}
 
