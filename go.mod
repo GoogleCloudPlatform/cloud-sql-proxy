@@ -5,7 +5,7 @@ go 1.13
 require (
 	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
 	cloud.google.com/go v0.71.0
-	github.com/denisenkom/go-mssqldb v0.0.0-20201105052611-0f236ab67f08
+	github.com/denisenkom/go-mssqldb v0.0.0-20201105234430-3df9532b717d
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/lib/pq v1.8.0
 	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
