@@ -21,7 +21,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2.5.7
+      - uses: GoogleCloudPlatform/release-please-action@v2.6.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: simple
