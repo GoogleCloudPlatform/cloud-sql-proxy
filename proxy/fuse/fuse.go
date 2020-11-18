@@ -70,13 +70,17 @@ func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.Co
 		return nil, nil, err
 	}
 
-	if err := fuse.Unmount(mountdir); err != nil {
-		// The error is too verbose to be useful to print out
-	}
 	logging.Verbosef("Mounting %v...", mountdir)
 	c, err := fuse.Mount(mountdir, fuse.AllowOther())
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot mount %q: %v", mountdir, err)
+		// a common cause of failed mounts is that a previous instance did not shutdown cleanly, leaving an abandoned mount
+		logging.Errorf("WARNING: Mount failed - attempting to unmount dir to resolve...", mountdir)
+		if err = fuse.Unmount(mountdir); err != nil {
+			logging.Errorf("Unmount failed: %v", err)
+		}
+		if c, err = fuse.Mount(mountdir, fuse.AllowOther()); err != nil {
+			return nil, nil, fmt.Errorf("cannot mount %q: %v", mountdir, err)
+		}
 	}
 	logging.Infof("Mounted %v", mountdir)
 
