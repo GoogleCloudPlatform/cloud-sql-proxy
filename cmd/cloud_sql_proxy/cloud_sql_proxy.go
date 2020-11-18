@@ -345,7 +345,7 @@ func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]s
 				for _, in := range r.Items {
 					// The Proxy is only support on Second Gen
 					if in.BackendType == "SECOND_GEN" {
-						ch <- fmt.Sprintf("%s:%s:%s", in.Project, in.Region, in.Name)
+						ch <- in.ConnectionName
 					}
 				}
 				return nil

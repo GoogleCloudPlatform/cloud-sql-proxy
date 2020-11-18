@@ -169,8 +169,9 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 		return ret, err
 	}
 
-	p, _, n := util.SplitName(instance)
-	req := s.serv.SslCerts.CreateEphemeral(p, n,
+	p, r, n := util.SplitName(instance)
+	regionName := fmt.Sprintf("%s~%s", r, n)
+	req := s.serv.SslCerts.CreateEphemeral(p, regionName,
 		&sqladmin.SslCertsCreateEphemeralRequest{
 			PublicKey: string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"})),
 		},
@@ -228,7 +229,8 @@ func (s *RemoteCertSource) findIPAddr(data *sqladmin.DatabaseInstance, instance 
 // Remote returns the specified instance's CA certificate, address, and name.
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
 	p, region, n := util.SplitName(instance)
-	req := s.serv.Instances.Get(p, n)
+	regionName := fmt.Sprintf("%s~%s", region, n)
+	req := s.serv.Instances.Get(p, regionName)
 
 	var data *sqladmin.DatabaseInstance
 	err = backoffAPIRetry("get instance", instance, func() error {

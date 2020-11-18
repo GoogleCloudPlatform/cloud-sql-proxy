@@ -231,8 +231,9 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	}
 	// Parse the instance connection name - everything before the "=".
 	ret.Instance = args[0]
-	proj, _, name := util.SplitName(ret.Instance)
-	if proj == "" || name == "" {
+	proj, region, name := util.SplitName(ret.Instance)
+	regionName := fmt.Sprintf("%s~%s", region, name)
+	if proj == "" || region == "" || name == "" {
 		return instanceConfig{}, fmt.Errorf("invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was %q", args[0])
 	}
 	if len(args) == 1 {
@@ -269,7 +270,7 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 	if *host != "" {
 		sql.BasePath = *host
 	}
-	inst, err := sql.Instances.Get(proj, name).Do()
+	inst, err := sql.Instances.Get(proj, regionName).Do()
 	if err != nil {
 		return instanceConfig{}, err
 	}
