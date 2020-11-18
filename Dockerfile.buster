@@ -23,12 +23,12 @@ RUN go build -ldflags "-X main.metadataString=container.buster" -o cloud_sql_pro
 
 # Final stage
 FROM debian:buster
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    fuse
+RUN apt-get update && apt-get install -y ca-certificates
+# Install fuse and allow enable non-root users to mount
+RUN apt-get update && apt-get install -y fuse && sed -i 's/^#user_allow_other$/user_allow_other/g' /etc/fuse.conf
 # Add a non-root user matching the nonroot user from the main container
 RUN groupadd -g 65532 -r nonroot && useradd -u 65532 -g 65532 -r nonroot
-# set the uid as an integer for compatibility with runAsNonRoot in Kubernetes
+# Set the uid as an integer for compatibility with runAsNonRoot in Kubernetes
 USER 65532
 
 COPY --from=build --chown=nonroot /go/src/cloudsql-proxy/cloud_sql_proxy /cloud_sql_proxy
