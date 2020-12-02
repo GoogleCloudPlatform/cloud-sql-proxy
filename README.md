@@ -121,7 +121,7 @@ rollbacks to revert potential failures.
 ## To use from Kubernetes:
 
 ### Deploying Cloud SQL Proxy as a sidecar container
-Follow this [page](https://github.com/GoogleCloudPlatform/kubernetes-engine-samples/tree/master/cloudsql). See also
+Follow this [page](https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/examples/kubernetes#run-the-cloud-sql-proxy-as-a-sidecar). See also
 [Connecting from Google Kubernetes Engine](https://cloud.google.com/sql/docs/mysql/connect-kubernetes-engine).
 
 
