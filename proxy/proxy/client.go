@@ -60,6 +60,13 @@ type CertSource interface {
 // Client is a type to handle connecting to a Server. All fields are required
 // unless otherwise specified.
 type Client struct {
+	// ConnectionsCounter is used to enforce the optional maxConnections limit
+	ConnectionsCounter uint64
+
+	// MaxConnections is the maximum number of connections to establish
+	// before refusing new connections. 0 means no limit.
+	MaxConnections uint64
+
 	// Port designates which remote port should be used when connecting to
 	// instances. This value is defined by the server-side code, but for now it
 	// should always be 3307.
@@ -95,13 +102,6 @@ type Client struct {
 	// RefreshCertBuffer is the amount of time before the configuration expires to
 	// attempt to refresh it. If not set, it defaults to 5 minutes.
 	RefreshCfgBuffer time.Duration
-
-	// MaxConnections is the maximum number of connections to establish
-	// before refusing new connections. 0 means no limit.
-	MaxConnections uint64
-
-	// ConnectionsCounter is used to enforce the optional maxConnections limit
-	ConnectionsCounter uint64
 }
 
 type cacheEntry struct {
