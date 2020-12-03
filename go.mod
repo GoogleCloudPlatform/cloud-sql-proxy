@@ -10,7 +10,7 @@ require (
 	github.com/lib/pq v1.9.0
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/oauth2 v0.0.0-20201203001011-0b49973bad19
-	google.golang.org/api v0.35.0
+	google.golang.org/api v0.36.0
 )
 
 replace bazil.org/fuse => bazil.org/fuse v0.0.0-20180421153158-65cc252bf669 // pin to latest version that supports macOS. see https://github.com/bazil/fuse/issues/224
