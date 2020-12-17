@@ -163,8 +163,10 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 			switch clientConn := c.(type) {
 			case *net.TCPConn:
 				clientConn.SetKeepAlive(true)
-				clientConn.SetKeepAlivePeriod(1 * time.Minute)
-
+				clientConn.SetKeepAlivePeriod(30 * time.Second)
+				if err = proxy.SetTCPUserTimeout(clientConn, 120 * time.Second); err != nil {
+					logging.Errorf("clientConn: failed to set TCP_USER_TIMEOUT: %v", err)
+				}
 			}
 			dst <- proxy.Conn{cfg.Instance, c}
 		}

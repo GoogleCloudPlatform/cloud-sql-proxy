@@ -31,7 +31,7 @@ import (
 
 const (
 	DefaultRefreshCfgThrottle = time.Minute
-	keepAlivePeriod           = time.Minute
+	keepAlivePeriod           = 30 * time.Second
 	defaultRefreshCfgBuffer   = 5 * time.Minute
 )
 
@@ -338,6 +338,9 @@ func (c *Client) tryConnect(ctx context.Context, addr string, cfg *tls.Config) (
 			logging.Verbosef("Couldn't set KeepAlive to true: %v", err)
 		} else if err := s.SetKeepAlivePeriod(keepAlivePeriod); err != nil {
 			logging.Verbosef("Couldn't set KeepAlivePeriod to %v", keepAlivePeriod)
+		}
+		if err = SetTCPUserTimeout(conn, 120 * time.Second); err != nil {
+			logging.Errorf("tryConnect: failed to set TCP_USER_TIMEOUT: %v", err)
 		}
 	} else {
 		logging.Verbosef("KeepAlive not supported: long-running tcp connections may be killed by the OS.")

@@ -22,8 +22,11 @@ import (
 	"io"
 	"net"
 	"sync"
+	"syscall"
+	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
+	"golang.org/x/sys/unix"
 )
 
 // SQLScope is the Google Cloud Platform scope required for executing API
@@ -244,4 +247,25 @@ func (c *ConnSet) Close() error {
 	}
 
 	return errors.New(errs.String())
+}
+
+// SetTCPUserTimeout sets the TCP user timeout on a connection's socket
+func SetTCPUserTimeout(conn net.Conn, timeout time.Duration) error {
+	tcpconn, ok := conn.(*net.TCPConn)
+	if !ok {
+		// not a TCP connection. exit early
+		return nil
+	}
+	rawConn, err := tcpconn.SyscallConn()
+	if err != nil {
+		return fmt.Errorf("error getting raw connection: %v", err)
+	}
+	err = rawConn.Control(func(fd uintptr) {
+		err = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_TCP, unix.TCP_USER_TIMEOUT, int(timeout/time.Millisecond))
+	})
+	if err != nil {
+		return fmt.Errorf("error setting option on socket: %v", err)
+	}
+
+	return nil
 }
