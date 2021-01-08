@@ -31,6 +31,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
@@ -68,6 +69,12 @@ type RemoteOpts struct {
 
 	// IP address type options
 	IPAddrTypeOpts []string
+
+	// Enable IAM proxy db authentication
+	EnableIAMLogin bool
+
+	// Token source for token information used in cert creation
+	TokenSource oauth2.TokenSource
 }
 
 // NewCertSourceOpts returns a CertSource configured with the provided Opts.
@@ -105,7 +112,7 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 		}
 	}
 
-	return &RemoteCertSource{pkey, serv, !opts.IgnoreRegion, opts.IPAddrTypeOpts}
+	return &RemoteCertSource{pkey, serv, !opts.IgnoreRegion, opts.IPAddrTypeOpts, opts.EnableIAMLogin, opts.TokenSource}
 }
 
 // RemoteCertSource implements a CertSource, using Cloud SQL APIs to
@@ -123,6 +130,10 @@ type RemoteCertSource struct {
 	checkRegion bool
 	// a list of ip address types that users select
 	IPAddrTypes []string
+	// flag to enable IAM proxy db authentication
+	EnableIAMLogin bool
+	// token source for the token information used in cert creation
+	TokenSource oauth2.TokenSource
 }
 
 // Constants for backoffAPIRetry. These cause the retry logic to scale the
@@ -171,11 +182,21 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 
 	p, r, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", r, n)
-	req := s.serv.SslCerts.CreateEphemeral(p, regionName,
-		&sqladmin.SslCertsCreateEphemeralRequest{
-			PublicKey: string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"})),
-		},
-	)
+	pubKey := string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"}))
+	createEphemeralRequest := sqladmin.SslCertsCreateEphemeralRequest{
+		PublicKey: pubKey,
+	}
+	if s.EnableIAMLogin {
+		tok, e := s.TokenSource.Token()
+		if e != nil {
+			return ret, e
+		}
+		createEphemeralRequest = sqladmin.SslCertsCreateEphemeralRequest{
+			PublicKey:   pubKey,
+			AccessToken: tok.AccessToken,
+		}
+	}
+	req := s.serv.SslCerts.CreateEphemeral(p, regionName, &createEphemeralRequest)
 
 	var data *sqladmin.SslCert
 	err = backoffAPIRetry("createEphemeral for", instance, func() error {
@@ -276,4 +297,13 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	c, err := parseCert(data.ServerCaCert.Cert)
 
 	return c, ipAddrInUse, p + ":" + n, data.DatabaseVersion, err
+}
+
+// TokenExpiration returns the expiration time for token source associated with remote cert source.
+func (s *RemoteCertSource) TokenExpiration() (ret time.Time, err error) {
+	tok, err := s.TokenSource.Token()
+	if err != nil {
+		return ret, err
+	}
+	return tok.Expiry, nil
 }

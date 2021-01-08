@@ -55,6 +55,8 @@ type CertSource interface {
 	Local(instance string) (tls.Certificate, error)
 	// Remote returns the instance's CA certificate, address, and name.
 	Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error)
+	// TokenExpiration returns expiration time of the token information.
+	TokenExpiration() (time.Time, error)
 }
 
 // Client is a type to handle connecting to a Server. All fields are required
@@ -232,11 +234,18 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 		VerifyPeerCertificate: genVerifyPeerCertificateFunc(name, certs),
 	}
 
+	tokenExpiry, err := c.Certs.TokenExpiration()
+	if err != nil {
+		return "", nil, "", err
+	}
 	expire := mycert.Leaf.NotAfter
+	if expire.After(tokenExpiry) {
+		expire = tokenExpiry
+	}
 	now := time.Now()
 	timeToRefresh := expire.Sub(now) - refreshCfgBuffer
 	if timeToRefresh <= 0 {
-		err = fmt.Errorf("new ephemeral certificate expires too soon: current time: %v, certificate expires: %v", expire, now)
+		err = fmt.Errorf("new ephemeral certificate expires too soon: current time: %v, certificate expires: %v", now, expire)
 		logging.Errorf("ephemeral certificate (%+v) error: %v", mycert, err)
 		return "", nil, "", err
 	}
