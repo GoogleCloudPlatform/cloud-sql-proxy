@@ -45,7 +45,7 @@ var (
 // Conn represents a connection from a client to a specific instance.
 type Conn struct {
 	Instance string
-	Conn     net.Conn
+	Conn     IdleTrackingConn
 }
 
 // CertSource is how a Client obtains various certificates required for operation.
@@ -397,7 +397,7 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 				close(ch)
 				return
 			}
-			ch <- Conn{instance, c}
+			ch <- Conn{instance, &TrackedConn{Conn: c}}
 		}
 	}()
 	return ch
@@ -418,12 +418,18 @@ func (c *Client) InstanceVersion(instance string) (string, error) {
 // Shutdown waits up to a given amount of time for all active connections to
 // close. Returns an error if there are still active connections after waiting
 // for the whole length of the timeout.
-func (c *Client) Shutdown(termTimeout time.Duration) error {
+func (c *Client) Shutdown(termTimeout time.Duration, closeIdle bool, closeIdleTimeout time.Duration) error {
 	term, ticker := time.After(termTimeout), time.NewTicker(100*time.Millisecond)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
+			if closeIdle {
+				if err := c.Conns.CloseIdle(closeIdleTimeout); err != nil {
+					return err
+				}
+			}
+
 			if atomic.LoadUint64(&c.ConnectionsCounter) > 0 {
 				continue
 			}

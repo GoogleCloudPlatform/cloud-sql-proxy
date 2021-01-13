@@ -16,10 +16,16 @@ package proxy
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"errors"
 	"fmt"
+	"io"
+	"math/big"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -43,6 +49,7 @@ type fakeCerts struct {
 type blockingCertSource struct {
 	values     map[string]*fakeCerts
 	validUntil time.Time
+	server     *tls.Certificate
 }
 
 func (cs *blockingCertSource) Local(instance string) (tls.Certificate, error) {
@@ -63,7 +70,60 @@ func (cs *blockingCertSource) Local(instance string) (tls.Certificate, error) {
 }
 
 func (cs *blockingCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
-	return &x509.Certificate{}, "fake address", "fake name", "fake version", nil
+	// Refresh the server certificate if necessary.
+	server, err := cs.ServerCertificate()
+	if err != nil {
+		return nil, "", "", "", err
+	}
+
+	scert, err := x509.ParseCertificate(server.Certificate[0])
+	if err != nil {
+		return nil, "", "", "", fmt.Errorf("unable to parse certifcate data: %v", err)
+	}
+
+	return scert, "fake address", "fake name", "fake version", nil
+}
+
+func (cs *blockingCertSource) ServerCertificate() (*tls.Certificate, error) {
+	// Generate a new self signed server certificate.
+	if cs.server == nil {
+		var err error
+		cs.server, err = cs.selfSigned()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return cs.server, nil
+}
+
+func (cs *blockingCertSource) selfSigned() (*tls.Certificate, error) {
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			CommonName:   "fake name",
+			Organization: []string{"fake company"},
+		},
+		NotAfter:              cs.validUntil,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate private key: %v", err)
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, priv.Public(), priv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create server certificate: %v", err)
+	}
+
+	return &tls.Certificate{
+		Certificate: [][]byte{derBytes},
+		PrivateKey:  priv,
+	}, nil
 }
 
 func TestContextDialer(t *testing.T) {
@@ -74,6 +134,7 @@ func TestContextDialer(t *testing.T) {
 				instance: b,
 			},
 			forever,
+			nil,
 		},
 		ContextDialer: func(context.Context, string, string) (net.Conn, error) {
 			return nil, errFakeDial
@@ -96,6 +157,7 @@ func TestClientCache(t *testing.T) {
 				instance: b,
 			},
 			forever,
+			nil,
 		},
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, errFakeDial
@@ -123,6 +185,7 @@ func TestConcurrentRefresh(t *testing.T) {
 				instance: b,
 			},
 			forever,
+			nil,
 		},
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, errFakeDial
@@ -164,6 +227,7 @@ func TestMaximumConnectionsCount(t *testing.T) {
 	certSource := blockingCertSource{
 		map[string]*fakeCerts{},
 		forever,
+		nil,
 	}
 	firstDialExited := make(chan struct{})
 	c := &Client{
@@ -197,7 +261,7 @@ func TestMaximumConnectionsCount(t *testing.T) {
 
 			conn := Conn{
 				Instance: instanceName,
-				Conn:     &dummyConn{},
+				Conn:     newDummyConn(nil, nil, nil),
 			}
 			c.handleConn(conn)
 
@@ -225,6 +289,7 @@ func TestShutdownTerminatesEarly(t *testing.T) {
 				instance: b,
 			},
 			forever,
+			nil,
 		},
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, nil
@@ -232,7 +297,7 @@ func TestShutdownTerminatesEarly(t *testing.T) {
 	}
 	shutdown := make(chan bool, 1)
 	go func() {
-		c.Shutdown(1)
+		c.Shutdown(1, false, 0)
 		shutdown <- true
 	}()
 	shutdownFinished := false
@@ -241,6 +306,82 @@ func TestShutdownTerminatesEarly(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 	case shutdownFinished = <-shutdown:
 	}
+	if !shutdownFinished {
+		t.Errorf("shutdown should have completed quickly because there are no active connections")
+	}
+}
+
+func TestShutdownDrainsIdleConnections(t *testing.T) {
+	b := &fakeCerts{}
+	cs := &blockingCertSource{
+		map[string]*fakeCerts{
+			instance: b,
+		},
+		forever,
+		nil,
+	}
+	c := &Client{
+		Certs: cs,
+		Conns: NewConnSet(),
+	}
+
+	cert, err := cs.ServerCertificate()
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	cfg := &tls.Config{
+		Certificates:       []tls.Certificate{*cert},
+		InsecureSkipVerify: true,
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c.Dialer = func(string, string) (net.Conn, error) {
+		localReader, localWriter := io.Pipe()
+		remoteReader, remoteWriter := io.Pipe()
+
+		conn := tls.Server(newDummyConn(ctx, remoteReader, localWriter), cfg)
+		go func() {
+			defer conn.Close()
+
+			buf := make([]byte, 4096)
+			for {
+				if _, err := conn.Read(buf); err != nil {
+					if err == io.EOF {
+						break
+					}
+
+					t.Errorf("unexpected error: %v", err)
+				}
+			}
+		}()
+
+		return newDummyConn(ctx, localReader, remoteWriter), nil
+	}
+
+	for i := 0; i < 10; i++ {
+		go c.handleConn(Conn{
+			Instance: instance,
+			Conn:     newDummyConn(nil, nil, nil),
+		})
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	shutdown := make(chan bool, 1)
+	go func() {
+		c.Shutdown(time.Second, true, 50*time.Millisecond)
+		shutdown <- true
+	}()
+	shutdownFinished := false
+
+	select {
+	case <-time.After(200 * time.Millisecond):
+	case shutdownFinished = <-shutdown:
+	}
+
 	if !shutdownFinished {
 		t.Errorf("shutdown should have completed quickly because there are no active connections")
 	}
@@ -256,6 +397,7 @@ func TestRefreshTimer(t *testing.T) {
 				instance: b,
 			},
 			certCreated.Add(timeToExpire),
+			nil,
 		},
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, errFakeDial

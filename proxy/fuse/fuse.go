@@ -174,7 +174,7 @@ func (r *fsRoot) newConn(instance string, c net.Conn) {
 	r.RLock()
 	// dst will be nil if Close has been called already.
 	if ch := r.dst; ch != nil {
-		ch <- proxy.Conn{instance, c}
+		ch <- proxy.Conn{instance, &proxy.TrackedConn{Conn: c}}
 	} else {
 		logging.Errorf("Ignored new conn request to %q: system has been closed", instance)
 	}

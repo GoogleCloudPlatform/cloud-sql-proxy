@@ -20,8 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"sync"
+	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 )
@@ -29,28 +29,6 @@ import (
 // SQLScope is the Google Cloud Platform scope required for executing API
 // calls to Cloud SQL.
 const SQLScope = "https://www.googleapis.com/auth/sqlservice.admin"
-
-type dbgConn struct {
-	net.Conn
-}
-
-func (d dbgConn) Write(b []byte) (int, error) {
-	x, y := d.Conn.Write(b)
-	logging.Verbosef("write(%q) => (%v, %v)", b, x, y)
-	return x, y
-}
-
-func (d dbgConn) Read(b []byte) (int, error) {
-	x, y := d.Conn.Read(b)
-	logging.Verbosef("read: (%v, %v) => %q", x, y, b[:x])
-	return x, y
-}
-
-func (d dbgConn) Close() error {
-	err := d.Conn.Close()
-	logging.Verbosef("close: %v", err)
-	return err
-}
 
 // myCopy is similar to io.Copy, but reports whether the returned error was due
 // to a bad read or write. The returned error will never be nil
@@ -119,14 +97,14 @@ func copyThenClose(remote, local io.ReadWriteCloser, remoteDesc, localDesc strin
 
 // NewConnSet initializes a new ConnSet and returns it.
 func NewConnSet() *ConnSet {
-	return &ConnSet{m: make(map[string][]net.Conn)}
+	return &ConnSet{m: make(map[string][]IdleTrackingConn)}
 }
 
-// A ConnSet tracks net.Conns associated with a provided ID.
+// A ConnSet tracks connections associated with a provided ID.
 // A nil ConnSet will be a no-op for all methods called on it.
 type ConnSet struct {
 	sync.RWMutex
-	m map[string][]net.Conn
+	m map[string][]IdleTrackingConn
 }
 
 // String returns a debug string for the ConnSet.
@@ -150,7 +128,7 @@ func (c *ConnSet) String() string {
 
 // Add saves the provided conn and associates it with the given string
 // identifier.
-func (c *ConnSet) Add(id string, conn net.Conn) {
+func (c *ConnSet) Add(id string, conn IdleTrackingConn) {
 	if c == nil {
 		return
 	}
@@ -176,11 +154,11 @@ func (c *ConnSet) IDs() []string {
 }
 
 // Conns returns all active connections associated with the provided ids.
-func (c *ConnSet) Conns(ids ...string) []net.Conn {
+func (c *ConnSet) Conns(ids ...string) []IdleTrackingConn {
 	if c == nil {
 		return nil
 	}
-	var ret []net.Conn
+	var ret []IdleTrackingConn
 
 	c.RLock()
 	for _, id := range ids {
@@ -193,7 +171,7 @@ func (c *ConnSet) Conns(ids ...string) []net.Conn {
 
 // Remove undoes an Add operation to have the set forget about a conn. Do not
 // Remove an id/conn pair more than it has been Added.
-func (c *ConnSet) Remove(id string, conn net.Conn) error {
+func (c *ConnSet) Remove(id string, conn IdleTrackingConn) error {
 	if c == nil {
 		return nil
 	}
@@ -222,7 +200,7 @@ func (c *ConnSet) Remove(id string, conn net.Conn) error {
 	return nil
 }
 
-// Close closes every net.Conn contained in the set.
+// Close closes every connection contained in the set.
 func (c *ConnSet) Close() error {
 	if c == nil {
 		return nil
@@ -234,6 +212,33 @@ func (c *ConnSet) Close() error {
 		for _, c := range conns {
 			if err := c.Close(); err != nil {
 				fmt.Fprintf(&errs, "%s close error: %v\n", id, err)
+			}
+		}
+	}
+	c.Unlock()
+
+	if errs.Len() == 0 {
+		return nil
+	}
+
+	return errors.New(errs.String())
+}
+
+// CloseIdle closes connections whose idle duration exceeds the idle connection timeout.
+// This is used to drain connections during the shutdown period.
+func (c *ConnSet) CloseIdle(idleTimeout time.Duration) error {
+	if c == nil {
+		return nil
+	}
+	var errs bytes.Buffer
+
+	c.Lock()
+	for id, conns := range c.m {
+		for _, c := range conns {
+			if c.idleDuration() > idleTimeout {
+				if err := c.Close(); err != nil {
+					fmt.Fprintf(&errs, "%s close error: %v\n", id, err)
+				}
 			}
 		}
 	}

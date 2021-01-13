@@ -166,7 +166,7 @@ func listenInstance(dst chan<- proxy.Conn, cfg instanceConfig) (net.Listener, er
 				clientConn.SetKeepAlivePeriod(1 * time.Minute)
 
 			}
-			dst <- proxy.Conn{cfg.Instance, c}
+			dst <- proxy.Conn{cfg.Instance, &proxy.TrackedConn{Conn: c}}
 		}
 	}()
 
