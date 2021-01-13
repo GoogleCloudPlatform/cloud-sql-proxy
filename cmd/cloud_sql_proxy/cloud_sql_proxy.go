@@ -87,7 +87,7 @@ can be removed automatically by this program.`)
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
 	// Settings for IAM db proxy authentication
-	enableIAMLogin = flag.Bool("enable_iam_login", false, "Enables IAM DB proxy authentication")
+	enableIAMLogin = flag.Bool("enable_iam_login", false, "Enables user authentication using Cloud SQL's IAM DB Authentication.")
 
 	skipInvalidInstanceConfigs = flag.Bool("skip_failed_instance_config", false, `Setting this flag will allow you to prevent the proxy from terminating when
 	some instance configurations could not be parsed and/or are unavailable.`)
@@ -297,15 +297,13 @@ func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, o
 }
 
 func authenticatedClient(ctx context.Context) (*http.Client, oauth2.TokenSource, error) {
-	if !*enableIAMLogin {
-		if *tokenFile != "" {
-			return authenticatedClientFromPath(ctx, *tokenFile)
-		} else if tok := *token; tok != "" {
-			src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
-			return oauth2.NewClient(ctx, src), src, nil
-		} else if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
-			return authenticatedClientFromPath(ctx, f)
-		}
+	if *tokenFile != "" {
+		return authenticatedClientFromPath(ctx, *tokenFile)
+	} else if tok := *token; tok != "" {
+		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
+		return oauth2.NewClient(ctx, src), src, nil
+	} else if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
+		return authenticatedClientFromPath(ctx, f)
 	}
 
 	// If flags or env don't specify an auth source, try either gcloud or application default

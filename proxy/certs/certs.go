@@ -191,10 +191,7 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 		if e != nil {
 			return ret, e
 		}
-		createEphemeralRequest = sqladmin.SslCertsCreateEphemeralRequest{
-			PublicKey:   pubKey,
-			AccessToken: tok.AccessToken,
-		}
+		createEphemeralRequest.AccessToken = tok.AccessToken
 	}
 	req := s.serv.SslCerts.CreateEphemeral(p, regionName, &createEphemeralRequest)
 
