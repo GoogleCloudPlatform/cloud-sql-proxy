@@ -126,8 +126,8 @@ Authorization:
     if they exist.
 
   * To configure the proxy using IAM authentication, pass the -enable_iam_login
-	  flag. This will consolidate gcloud credential into ephemeral cert that will
-		be checked on server side.
+	  flag. This will cause the proxy to use IAM account credentials for 
+	  database user authentication. 
 
 General:
   -quiet
