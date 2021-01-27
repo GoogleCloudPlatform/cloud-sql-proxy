@@ -87,7 +87,7 @@ can be removed automatically by this program.`)
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
 	// Settings for IAM db proxy authentication
-	enableIAMLogin = flag.Bool("enable_iam_login", false, "Enables user authentication using Cloud SQL's IAM DB Authentication.")
+	enableIAMLogin = flag.Bool("enable_iam_login", false, "Enables database user authentication using Cloud SQL's IAM DB Authentication.")
 
 	skipInvalidInstanceConfigs = flag.Bool("skip_failed_instance_config", false, `Setting this flag will allow you to prevent the proxy from terminating when
 	some instance configurations could not be parsed and/or are unavailable.`)
