@@ -66,16 +66,23 @@ func SetupFDLimits(wantFDs uint64) error {
 		rlim2.Max = wantFDs
 		rlim2.Cur = wantFDs
 		if err := syscallSetrlimit(syscall.RLIMIT_NOFILE, rlim2); err == nil {
-			logging.Verbosef("Rlimits for file descriptors set to {%v}", rlim2)
+			logging.Verbosef("Rlimits for file descriptors set to {Current = %v, Max = %v}", rlim2.Cur, rlim2.Max)
 			return nil
 		}
 	}
 
 	rlim.Cur = wantFDs
 	if err := syscallSetrlimit(syscall.RLIMIT_NOFILE, rlim); err != nil {
-		return fmt.Errorf("failed to set rlimit {%v} for max file descriptors: %v", rlim, err)
+		return fmt.Errorf(
+			`failed to set rlimit {Current = %v, Max = %v} for max file
+descriptors. The hard limit on file descriptors (4096) is lower than the
+requested rlimit. The proxy will only be able to handle ~2048
+connections. To hide this message, please request a limit within the available range.`,
+			rlim.Cur,
+			rlim.Max,
+		)
 	}
 
-	logging.Verbosef("Rlimits for file descriptors set to {%v}", rlim)
+	logging.Verbosef("Rlimits for file descriptors set to {Current = %v, Max = %v}", rlim.Cur, rlim.Max)
 	return nil
 }
