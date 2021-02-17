@@ -11,7 +11,7 @@ avoiding the need to start the Proxy as a companion process.
 
 ### MySQL
 If you're using the the MySQL [go-sql-driver](https://github.com/go-sql-driver/mysql)
-you can use helper functions found in the [`proxy/dialers/mysql` package](https://godoc.org/github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql). See [example usage](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/tests/dialers_test.go).
+you can use helper functions found in the [`proxy/dialers/mysql` package](https://godoc.org/github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql). See [example usage](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/main/tests/dialers_test.go).
 
 ### Postgres
-If you're using the the Postgres [lib/pq](https://github.com/lib/pq), you can use the `cloudsqlpostgres` driver from [here](https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/proxy/dialers/postgres). See [example usage](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/master/proxy/dialers/postgres/hook_test.go).
+If you're using the the Postgres [lib/pq](https://github.com/lib/pq), you can use the `cloudsqlpostgres` driver from [here](https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/proxy/dialers/postgres). See [example usage](https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/main/proxy/dialers/postgres/hook_test.go).
