@@ -9,7 +9,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/lib/pq v1.9.0
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
-	golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd
+	golang.org/x/oauth2 v0.0.0-20210216194517-16ff1888fd2e
 	google.golang.org/api v0.40.0
 )
 
