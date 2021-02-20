@@ -1,5 +1,13 @@
 # Changelog
 
+### [1.19.3](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.19.2...v1.19.3) (2021-02-20)
+
+
+### Bug Fixes
+
+* **deps:** update golang.org/x/net commit hash to 5f55cee ([#624](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/624)) ([a363ba0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/a363ba032f7e3147e569debf29a37b0a6f0bed8b))
+* **deps:** update golang.org/x/oauth2 commit hash to ba52d33 ([#622](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/622)) ([c57185c](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/c57185caf44a6bbd73fc90b1a06f46eeef91aec2))
+
 ### [1.19.2](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.19.1...v1.19.2) (2021-02-16)
 
 
