@@ -37,6 +37,7 @@ cloud_sql_proxy takes a few arguments to configure what instances to connect to 
 * `-skip_failed_instance_config`: Setting this flag will allow you to prevent the proxy from terminating when
 	some instance configurations could not be parsed and/or are unavailable.
 * `-log_debug_stdout=true`: This is to log non-error output to stdOut instead of stdErr. For example, if you don't want connection related messages to log as errors, set this flag to true. Defaults to false.
+* `-enable_iam_login`: This enables the proxy to use Cloud SQL IAM database authentication. This will cause the proxy to use IAM account credentials for database user authentication. 
 
 Note: `-instances` and `-instances_metadata` may be used at the same time but
 are not compatible with the `-fuse` flag.

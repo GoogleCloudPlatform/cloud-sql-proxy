@@ -86,6 +86,8 @@ can be removed automatically by this program.`)
 	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
 You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
 	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
+	// Settings for IAM db proxy authentication
+	enableIAMLogin = flag.Bool("enable_iam_login", false, "Enables database user authentication using Cloud SQL's IAM DB Authentication.")
 
 	skipInvalidInstanceConfigs = flag.Bool("skip_failed_instance_config", false, `Setting this flag will allow you to prevent the proxy from terminating when
 	some instance configurations could not be parsed and/or are unavailable.`)
@@ -122,6 +124,10 @@ Authorization:
     parameter or set the GOOGLE_APPLICATION_CREDENTIALS environment variable.
     This will override gcloud or GCE (Google Compute Engine) credentials,
     if they exist.
+
+  * To configure the proxy using IAM authentication, pass the -enable_iam_login
+	  flag. This will cause the proxy to use IAM account credentials for 
+	  database user authentication. 
 
 General:
   -quiet
@@ -271,31 +277,31 @@ func checkFlags(onGCE bool) error {
 	return nil
 }
 
-func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, error) {
+func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, oauth2.TokenSource, error) {
 	all, err := ioutil.ReadFile(f)
 	if err != nil {
-		return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+		return nil, nil, fmt.Errorf("invalid json file %q: %v", f, err)
 	}
 	// First try and load this as a service account config, which allows us to see the service account email:
 	if cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope); err == nil {
 		logging.Infof("using credential file for authentication; email=%s", cfg.Email)
-		return cfg.Client(ctx), nil
+		return cfg.Client(ctx), cfg.TokenSource(ctx), nil
 	}
 
 	cred, err := goauth.CredentialsFromJSON(ctx, all, proxy.SQLScope)
 	if err != nil {
-		return nil, fmt.Errorf("invalid json file %q: %v", f, err)
+		return nil, nil, fmt.Errorf("invalid json file %q: %v", f, err)
 	}
 	logging.Infof("using credential file for authentication; path=%q", f)
-	return oauth2.NewClient(ctx, cred.TokenSource), nil
+	return oauth2.NewClient(ctx, cred.TokenSource), cred.TokenSource, nil
 }
 
-func authenticatedClient(ctx context.Context) (*http.Client, error) {
+func authenticatedClient(ctx context.Context) (*http.Client, oauth2.TokenSource, error) {
 	if *tokenFile != "" {
 		return authenticatedClientFromPath(ctx, *tokenFile)
 	} else if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
-		return oauth2.NewClient(ctx, src), nil
+		return oauth2.NewClient(ctx, src), src, nil
 	} else if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
 		return authenticatedClientFromPath(ctx, f)
 	}
@@ -307,10 +313,10 @@ func authenticatedClient(ctx context.Context) (*http.Client, error) {
 		src, err = goauth.DefaultTokenSource(ctx, proxy.SQLScope)
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return oauth2.NewClient(ctx, src), nil
+	return oauth2.NewClient(ctx, src), src, nil
 }
 
 func stringList(s string) []string {
@@ -462,7 +468,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	client, err := authenticatedClient(ctx)
+	client, tokSrc, err := authenticatedClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -497,6 +503,8 @@ func main() {
 			IgnoreRegion:   !*checkRegion,
 			UserAgent:      userAgentFromVersionString(),
 			IPAddrTypeOpts: ipAddrTypeOptsInput,
+			EnableIAMLogin: *enableIAMLogin,
+			TokenSource:    tokSrc,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,

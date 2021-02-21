@@ -18,6 +18,8 @@
 package tests
 
 import (
+	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -34,6 +36,8 @@ var (
 	postgresUser     = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
 	postgresPass     = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
 	postgresDb       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
+
+	postgresIAMUser = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
 
 	postgresPort = 5432
 )
@@ -75,4 +79,34 @@ func TestPostgresConnLimit(t *testing.T) {
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
 	proxyConnLimitTest(t, *postgresConnName, "postgres", dsn, postgresPort)
+}
+
+func TestPostgresIAMDBAuthn(t *testing.T) {
+	requirePostgresVars(t)
+
+	ctx := context.Background()
+
+	// Start the proxy
+	p, err := StartProxy(ctx, fmt.Sprintf("-instances=%s=tcp:%d", *postgresConnName, 5432), "-enable_iam_login")
+	if err != nil {
+		t.Fatalf("unable to start proxy: %v", err)
+	}
+	defer p.Close()
+	output, err := p.WaitForServe(ctx)
+	if err != nil {
+		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
+	}
+
+	dsn := fmt.Sprintf("user=%s database=%s sslmode=disable", *postgresIAMUser, *postgresDb)
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatalf("unable to connect to db: %s", err)
+	}
+	defer db.Close()
+	_, err = db.Exec("SELECT 1;")
+	if err != nil {
+
+		t.Fatalf("unable to exec on db: %s", err)
+	}
+
 }
