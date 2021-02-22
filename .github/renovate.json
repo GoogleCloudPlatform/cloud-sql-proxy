@@ -1,6 +1,7 @@
 {
   "extends": [
-    "config:base"
+    "config:base",
+    ":semanticCommitTypeAll(chore)"
   ],
   "prConcurrentLimit": 0,
   "rebaseStalePrs": true,
