@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script distributes the artifacts for the Cloud SQL proxy to their different channels. 
+# This script distributes the artifacts for the Cloud SQL proxy to their different channels.
 
 set -e # exit immediatly if any step fails
 
@@ -29,7 +29,7 @@ fi
 
 
 read -p "This will release new Cloud SQL proxy artifacts for \"$VERSION\", even if they already exist. Are you sure (y/Y)? " -n 1 -r
-echo 
+echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
     exit 1
@@ -51,6 +51,6 @@ echo "| filename | sha256 hash |"
 echo "|----------|-------------|"
 for f in $(gsutil ls "gs://cloudsql-proxy/v$VERSION/cloud_sql_proxy*"); do
     file=$(basename $f)
-    sha=$(gsutil cat $f | sha256sum --binary)
+    sha=$(gsutil cat $f | sha256sum --binary | head -c 64)
     echo "| [$file](https://storage.googleapis.com/cloudsql-proxy/v$VERSION/$file) | $sha |"
 done
