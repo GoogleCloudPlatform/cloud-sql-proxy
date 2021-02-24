@@ -126,8 +126,8 @@ Authorization:
     if they exist.
 
   * To configure the proxy using IAM authentication, pass the -enable_iam_login
-	  flag. This will cause the proxy to use IAM account credentials for 
-	  database user authentication. 
+	  flag. This will cause the proxy to use IAM account credentials for
+	  database user authentication.
 
 General:
   -quiet
@@ -217,7 +217,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
-var versionString = "1.19.3-dev"
+var versionString = "1.20.0-dev"
 
 // metadataString indiciates additional build or distribution metadata.
 var metadataString = ""
