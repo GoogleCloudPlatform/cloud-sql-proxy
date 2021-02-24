@@ -3,9 +3,10 @@
     "config:base",
     ":semanticCommitTypeAll(chore)"
   ],
+  "ignorePresets": [":semanticPrefixFixDepsChoreOthers"],
   "prConcurrentLimit": 0,
   "rebaseStalePrs": true,
-  "masterIssue": true,
+  "dependencyDashboard": true,
   "semanticCommits": true,
   "postUpdateOptions": [
     "gomodTidy"
