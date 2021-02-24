@@ -36,6 +36,24 @@ steps:
     args:
       - "-c"
       - 'go build -ldflags "-X main.versionString=${_VERSION} -X main.metadataString=$$GOOS.$$GOARCH" -o cloud_sql_proxy.$$GOOS.$$GOARCH ./cmd/cloud_sql_proxy'
+  - id: linux.arm64
+    name: "golang:1.16"
+    env:
+      - "GOOS=linux"
+      - "GOARCH=arm64"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - 'go build -ldflags "-X main.versionString=${_VERSION} -X main.metadataString=$$GOOS.$$GOARCH" -o cloud_sql_proxy.$$GOOS.$$GOARCH ./cmd/cloud_sql_proxy'
+  - id: linux.arm
+    name: "golang:1.16"
+    env:
+      - "GOOS=linux"
+      - "GOARCH=arm"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - 'go build -ldflags "-X main.versionString=${_VERSION} -X main.metadataString=$$GOOS.$$GOARCH" -o cloud_sql_proxy.$$GOOS.$$GOARCH ./cmd/cloud_sql_proxy'
   - id: darwin.amd64
     name: "golang:1.14"
     env:
@@ -54,6 +72,15 @@ steps:
     args:
       - "-c"
       - 'go build -ldflags "-X main.versionString=${_VERSION}  -X main.metadataString=$$GOOS.$$GOARCH" -o cloud_sql_proxy.$$GOOS.$$GOARCH ./cmd/cloud_sql_proxy'
+  - id: darwin.arm
+    name: "golang:1.16"
+    env:
+      - "GOOS=linux"
+      - "GOARCH=arm"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - 'go build -ldflags "-X main.versionString=${_VERSION} -X main.metadataString=$$GOOS.$$GOARCH" -o cloud_sql_proxy.$$GOOS.$$GOARCH ./cmd/cloud_sql_proxy'
   - id: windows.amd64
     name: "golang:1.14"
     env:
