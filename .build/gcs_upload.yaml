@@ -13,7 +13,7 @@
 # limitations under the License.
 
 options:
-  env: 
+  env:
     - "GOPATH=/workspace/GOPATH"
     - "CGO_ENABLED=0"
 
@@ -72,11 +72,11 @@ steps:
     args:
       - "-c"
       - 'go build -ldflags "-X main.versionString=${_VERSION}  -X main.metadataString=$$GOOS.$$GOARCH" -o cloud_sql_proxy.$$GOOS.$$GOARCH ./cmd/cloud_sql_proxy'
-  - id: darwin.arm
+  - id: darwin.arm64
     name: "golang:1.16"
     env:
-      - "GOOS=linux"
-      - "GOARCH=arm"
+      - "GOOS=darwin"
+      - "GOARCH=arm64"
     entrypoint: "bash"
     args:
       - "-c"
