@@ -239,7 +239,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 		return "", nil, "", err
 	}
 	expire := mycert.Leaf.NotAfter
-	if expire.After(tokenExpiry) {
+	if !tokenExpiry.IsZero() && expire.After(tokenExpiry) {
 		expire = tokenExpiry
 	}
 	now := time.Now()

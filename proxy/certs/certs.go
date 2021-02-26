@@ -297,10 +297,14 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 }
 
 // TokenExpiration returns the expiration time for token source associated with remote cert source.
-func (s *RemoteCertSource) TokenExpiration() (ret time.Time, err error) {
+func (s *RemoteCertSource) TokenExpiration() (time.Time, error) {
+	// if no token is being used, return zero for expiration
+	if s.TokenSource == nil {
+		return time.Time{}, nil
+	}
 	tok, err := s.TokenSource.Token()
 	if err != nil {
-		return ret, err
+		return time.Time{}, err
 	}
 	return tok.Expiry, nil
 }
