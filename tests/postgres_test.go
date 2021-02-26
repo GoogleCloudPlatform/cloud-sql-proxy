@@ -27,7 +27,9 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
+	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
 )
 
@@ -108,5 +110,21 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 
 		t.Fatalf("unable to exec on db: %s", err)
 	}
+}
 
+func TestPostgresHook(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Minute)
+	defer cancel()
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", *postgresConnName, *postgresUser, *postgresPass, *postgresDb)
+	db, err := sql.Open("cloudsqlpostgres", dsn)
+	if err != nil {
+		t.Fatalf("connect failed: %s", err)
+	}
+	defer db.Close()
+	var now time.Time
+	err = db.QueryRowContext(ctx, "SELECT NOW()").Scan(&now)
+	if err != nil {
+		t.Fatalf("query failed: %s", err)
+	}
 }
