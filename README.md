@@ -101,7 +101,8 @@ cloud_sql_proxy -dir=/cloudsql -instances=<INSTANCE_CONNECTION_NAME>
 cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5432 -ip_address_types=PRIVATE
 ```
 
-For more details, see [Private IP Requirements][private-ip].
+In order to connect using Private IP, you must have access through your
+project's VPC. For more details, see [Private IP Requirements][private-ip].
 
 ## Credentials
 
