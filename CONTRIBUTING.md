@@ -7,6 +7,7 @@
 
 ## Table of contents
 * [Opening an issue](#opening-an-issue)
+* [How to run tests](#how-to-run-tests)
 * [Contributor License Agreements](#contributor-license-agreements)
 * [Contributor Code of Conduct](#contributor-code-of-conduct)
 
@@ -71,6 +72,50 @@ expect to be impacted, as well as its severity. As a rule of thumb:
 <td>Critical</td>
   </tr>
 </table>
+
+## How to run tests
+
+The test suite includes both unit and integration tests. For macOS and Linux,
+there is a depenency on [FUSE][] that must be present on the system.
+
+### Test Dependencies
+
+When running tests on macOS and Linux, users will need to first install
+[FUSE][]. Windows users may skip this step.
+
+On Debian, use:
+
+```
+sudo apt-get install fuse
+```
+
+On macOS, use:
+
+```
+brew install --cask osxfuse
+```
+
+### How to run just unit tests
+
+```
+go test -tags=skip_sqlserver,skip_mysql,skip_postgres ./...
+```
+
+### How to run all tests
+
+To run all integration tests, users will need a Google Cloud project with a
+MySQL, PostgreSQL, and SQL Server database. Note: Pull Requests will run these
+tests and as a result may be skipped locally if necessary.
+
+A sample `.envrc.example` file is included in the root directory which documents
+which environment variables must be set to run the integration tests. Copy this
+example file to `.envrc` at the root of the project, supply all the correct
+values for each variable, source the file (`source .envrc`, or consider using
+[direnv][]), and then run:
+
+```
+go test ./...
+```
 
 ## Contributor License Agreements
 
@@ -142,3 +187,6 @@ maintainers.
 This Code of Conduct is adapted from the [Contributor
 Covenant](http://contributor-covenant.org), version 1.2.0, available at
 [http://contributor-covenant.org/version/1/2/0/](http://contributor-covenant.org/version/1/2/0/)
+
+[FUSE]: https://www.kernel.org/doc/html/latest/filesystems/fuse.html
+[direnv]: https://direnv.net/

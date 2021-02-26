@@ -49,24 +49,37 @@ import (
 )
 
 var (
-	version        = flag.Bool("version", false, "Print the version of the proxy and exit")
-	verbose        = flag.Bool("verbose", true, "If false, verbose output such as information about when connections are created/closed without error are suppressed")
+	version = flag.Bool("version", false, "Print the version of the proxy and exit")
+	verbose = flag.Bool("verbose", true,
+		`If false, verbose output such as information about when connections are
+created/closed without error are suppressed`,
+	)
 	quiet          = flag.Bool("quiet", false, "Disable log messages")
 	logDebugStdout = flag.Bool("log_debug_stdout", false, "If true, log messages that are not errors will output to stdout instead of stderr")
 
-	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle, "If set, this flag specifies the amount of forced sleep between successive API calls in order to protect client API quota. Minimum allowed value is "+minimumRefreshCfgThrottle.String())
-	checkRegion        = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
+	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle,
+		`If set, this flag specifies the amount of forced sleep between successive
+API calls in order to protect client API quota. Minimum allowed value is
+	`+minimumRefreshCfgThrottle.String(),
+	)
+	checkRegion = flag.Bool("check_region", false, `If specified, the 'region' portion of the connection string is required for
 Unix socket-based connections.`)
 
 	// Settings for how to choose which instance to connect to.
 	dir      = flag.String("dir", "", "Directory to use for placing Unix sockets representing database instances")
-	projects = flag.String("projects", "", `Open sockets for each Cloud SQL Instance in the projects specified
-(comma-separated list)`)
-	instances = flag.String("instances", "", `Comma-separated list of fully qualified instances (project:region:name)
+	projects = flag.String("projects", "",
+		`Open sockets for each Cloud SQL Instance in the projects specified
+(comma-separated list)`,
+	)
+	instances = flag.String("instances", "",
+		`Comma-separated list of fully qualified instances (project:region:name)
 to connect to. If the name has the suffix '=tcp:port', a TCP server is opened
-on the specified port to proxy to that instance. Otherwise, one socket file per
-instance is opened in 'dir'. You may use INSTANCES environment variable
-for the same effect. Using both will use value from flag, Not compatible with -fuse`)
+on the specified port on localhost to proxy to that instance. It is also possible
+to listen on a custom address by providing a host, e.g., '=tcp:0.0.0.0:port'. If
+no value is provided for 'tcp', one socket file per instance is opened in 'dir'.
+You may use INSTANCES environment variable for the same effect. Using both will
+use value from flag, Not compatible with -fuse.`,
+	)
 	instanceSrc = flag.String("instances_metadata", "", `If provided, it is treated as a path to a metadata value which
 is polled for a comma-separated list of instances to connect to. For example,
 to use the instance metadata value named 'cloud-sql-instances' you would
@@ -77,23 +90,46 @@ directory at 'dir' must be empty before this program is started.`)
 can be removed automatically by this program.`)
 
 	// Settings for limits
-	maxConnections = flag.Uint64("max_connections", 0, `If provided, the maximum number of connections to establish before refusing new connections. Defaults to 0 (no limit)`)
-	fdRlimit       = flag.Uint64("fd_rlimit", limits.ExpectedFDs, `Sets the rlimit on the number of open file descriptors for the proxy to the provided value. If set to zero, disables attempts to set the rlimit. Defaults to a value which can support 4K connections to one instance`)
-	termTimeout    = flag.Duration("term_timeout", 0, "When set, the proxy will wait for existing connections to close before terminating. Any connections that haven't closed after the timeout will be dropped")
+	maxConnections = flag.Uint64("max_connections", 0,
+		`If provided, the maximum number of connections to establish before refusing
+new connections. Defaults to 0 (no limit)`,
+	)
+	fdRlimit = flag.Uint64("fd_rlimit", limits.ExpectedFDs,
+		`Sets the rlimit on the number of open file descriptors for the proxy to
+the provided value. If set to zero, disables attempts to set the rlimit.
+Defaults to a value which can support 4K connections to one instance`,
+	)
+	termTimeout = flag.Duration("term_timeout", 0,
+		`When set, the proxy will wait for existing connections to close before
+terminating. Any connections that haven't closed after the timeout will be
+dropped`,
+	)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
-	tokenFile = flag.String("credential_file", "", `If provided, this json file will be used to retrieve Service Account credentials.
-You may set the GOOGLE_APPLICATION_CREDENTIALS environment variable for the same effect.`)
-	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE", "Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by ',', e.g. 'PUBLIC,PRIVATE' ")
+	tokenFile = flag.String("credential_file", "",
+		`If provided, this json file will be used to retrieve Service Account
+credentials.  You may set the GOOGLE_APPLICATION_CREDENTIALS environment
+variable for the same effect.`,
+	)
+	ipAddressTypes = flag.String("ip_address_types", "PUBLIC,PRIVATE",
+		`Default to be 'PUBLIC,PRIVATE'. Options: a list of strings separated by
+',', e.g. 'PUBLIC,PRIVATE' `,
+	)
 	// Settings for IAM db proxy authentication
 	enableIAMLogin = flag.Bool("enable_iam_login", false, "Enables database user authentication using Cloud SQL's IAM DB Authentication.")
 
-	skipInvalidInstanceConfigs = flag.Bool("skip_failed_instance_config", false, `Setting this flag will allow you to prevent the proxy from terminating when
-	some instance configurations could not be parsed and/or are unavailable.`)
+	skipInvalidInstanceConfigs = flag.Bool("skip_failed_instance_config", false,
+		`Setting this flag will allow you to prevent the proxy from terminating
+when some instance configurations could not be parsed and/or are
+unavailable.`,
+	)
 
 	// Setting to choose what API to connect to
-	host = flag.String("host", "", "When set, the proxy uses this host as the base API path. Example: https://sqladmin.googleapis.com")
+	host = flag.String("host", "",
+		`When set, the proxy uses this host as the base API path. Example:
+	https://sqladmin.googleapis.com`,
+	)
 )
 
 const (
@@ -126,8 +162,8 @@ Authorization:
     if they exist.
 
   * To configure the proxy using IAM authentication, pass the -enable_iam_login
-	  flag. This will cause the proxy to use IAM account credentials for
-	  database user authentication.
+    flag. This will cause the proxy to use IAM account credentials for
+    database user authentication.
 
 General:
   -quiet
@@ -135,9 +171,11 @@ General:
     WARNING: this option disables ALL logging output (including connection
     errors), which will likely make debugging difficult. The -quiet flag takes
     precedence over the -verbose flag.
+
   -log_debug_stdout
     When explicitly set to true, verbose and info log messages will be directed
-	to stdout as opposed to the default stderr.
+    to stdout as opposed to the default stderr.
+
   -verbose
     When explicitly set to false, disable log messages that are not errors nor
     first-time startup messages (e.g. when new connections are established).
@@ -147,28 +185,32 @@ Connection:
     To connect to a specific list of instances, set the instances parameter
     to a comma-separated list of instance connection strings. For example:
 
-           -instances=my-project:my-region:my-instance
+        -instances=my-project:my-region:my-instance
 
     For connectivity over TCP, you must specify a tcp port as part of the
     instance string. For example, the following example opens a loopback TCP
     socket on port 3306, which will be proxied to connect to the instance
-    'my-instance' in project 'my-project':
+    'my-instance' in project 'my-project'. To listen on other interfaces than
+    localhost, a custom bind address (e.g., 0.0.0.0) may be provided. For
+    example:
 
-            -instances=my-project:my-region:my-instance=tcp:3306
+        -instances=my-project:my-region:my-instance=tcp:3306
+    or
+        -instances=my-project:my-region:my-instance=tcp:0.0.0.0:3306
 
-     When connecting over TCP, the -instances parameter is required.
+    When connecting over TCP, the -instances parameter is required.
 
     To set a custom socket name, you can specify it as part of the instance
-	string.  The following example opens a unix socket in the directory
-	specified by -dir, which will be proxied to connect to the instance
+    string.  The following example opens a unix socket in the directory
+    specified by -dir, which will be proxied to connect to the instance
     'my-instance' in project 'my-project':
 
-            -instances=my-project:my-region:my-instance=unix:custom-socket-name
+        -instances=my-project:my-region:my-instance=unix:custom-socket-name
 
-	To override the -dir parameter, specify an absolute path as shown in the
-	following example:
+    To override the -dir parameter, specify an absolute path as shown in the
+    following example:
 
-            -instances=my-project:my-region:my-instance=unix:/my/custom/sql-socket
+        -instances=my-project:my-region:my-instance=unix:/my/custom/sql-socket
 
      Supplying INSTANCES environment variable achieves the same effect.  One can
      use that to keep k8s manifest files constant across multiple environments
@@ -185,7 +227,7 @@ Connection:
     To direct the proxy to allow connections to all instances in specific
     projects, set the projects parameter:
 
-       -projects=my-project
+        -projects=my-project
 
   -fuse
     If your local environment has FUSE installed, you can specify the -fuse
