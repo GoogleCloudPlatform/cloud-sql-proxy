@@ -113,7 +113,7 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 }
 
 func TestPostgresHook(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", *postgresConnName, *postgresUser, *postgresPass, *postgresDb)
