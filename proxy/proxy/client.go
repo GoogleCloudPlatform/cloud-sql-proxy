@@ -162,8 +162,9 @@ func (c *Client) handleConn(conn Conn) {
 
 // refreshCfg uses the CertSource inside the Client to find the instance's
 // address as well as construct a new tls.Config to connect to the instance. It
-// caches the result.
-func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, version string, err error) {
+// caches the result and starts a goroutine to refresh the config before it
+// expires.
+func (c *Client) refreshCfg(ctx context.Context, instance string) (addr string, cfg *tls.Config, version string, err error) {
 	c.refreshCfgL.Lock()
 	defer c.refreshCfgL.Unlock()
 
@@ -249,17 +250,22 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 		logging.Errorf("ephemeral certificate (%+v) error: %v", mycert, err)
 		return "", nil, "", err
 	}
-	go c.refreshCertAfter(instance, timeToRefresh)
+	go c.refreshCertAfter(ctx, instance, timeToRefresh)
 
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, version, nil
 }
 
 // refreshCertAfter refreshes the epehemeral certificate of the instance after timeToRefresh.
-func (c *Client) refreshCertAfter(instance string, timeToRefresh time.Duration) {
-	<-time.After(timeToRefresh)
-	logging.Verbosef("ephemeral certificate for instance %s will expire soon, refreshing now.", instance)
-	if _, _, _, err := c.refreshCfg(instance); err != nil {
-		logging.Errorf("failed to refresh the ephemeral certificate for %s before expiring: %v", instance, err)
+func (c *Client) refreshCertAfter(ctx context.Context, instance string, timeToRefresh time.Duration) {
+	select {
+	case <-ctx.Done():
+		// Context has been cancelled. Stop trying to refresh configuration.
+		return
+	case <-time.After(timeToRefresh):
+		logging.Verbosef("ephemeral certificate for instance %s will expire soon, refreshing now.", instance)
+		if _, _, _, err := c.refreshCfg(ctx, instance); err != nil {
+			logging.Errorf("failed to refresh the ephemeral certificate for %s before expiring: %v", instance, err)
+		}
 	}
 }
 
@@ -312,18 +318,27 @@ func (c *Client) cachedCfg(instance string) (string, *tls.Config, string) {
 // If this func returns a nil error the connection is correctly authenticated
 // to connect to the instance.
 func (c *Client) DialContext(ctx context.Context, instance string) (net.Conn, error) {
+	childCtx, cancel := context.WithCancel(ctx)
 	if addr, cfg, _ := c.cachedCfg(instance); cfg != nil {
-		ret, err := c.tryConnect(ctx, addr, cfg)
+		ret, err := c.tryConnect(childCtx, addr, cfg)
+		// if err is nil, there is a valid cached config. Return it.
+		// Otherwise, continue below and try to refresh the config.
 		if err == nil {
-			return ret, err
+			return ret, nil
 		}
 	}
 
-	addr, cfg, _, err := c.refreshCfg(instance)
+	addr, cfg, _, err := c.refreshCfg(childCtx, instance)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
-	return c.tryConnect(ctx, addr, cfg)
+	conn, err := c.tryConnect(childCtx, addr, cfg)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	return conn, nil
 }
 
 // Dial does the same as DialContext but using context.Background() as the context.
@@ -417,7 +432,12 @@ func (c *Client) InstanceVersion(instance string) (string, error) {
 	if _, cfg, version := c.cachedCfg(instance); cfg != nil {
 		return version, nil
 	}
-	_, _, version, err := c.refreshCfg(instance)
+	cancelledCtx, cancel := context.WithCancel(context.Background())
+	// Here, only the version information is relevant and there is no need
+	// to start a goroutine to refresh configuration in the background (what
+	// (*client).refreshCfg does), so cancel the context immediately.
+	cancel()
+	_, _, version, err := c.refreshCfg(cancelledCtx, instance)
 	if err != nil {
 		return "", err
 	}

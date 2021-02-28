@@ -92,6 +92,9 @@ func TestContextDialer(t *testing.T) {
 	if _, err := c.DialContext(context.Background(), instance); err != errFakeDial {
 		t.Errorf("unexpected error: %v", err)
 	}
+
+	// leakcheck.RegisterIgnoreGoroutine("go.opencensus.io@v0.22.5/stats/view/worker.go")
+	// leakcheck.Check(t)
 }
 
 func TestClientCache(t *testing.T) {
