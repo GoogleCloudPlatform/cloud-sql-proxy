@@ -332,7 +332,6 @@ func TestRefreshTimerTokenExpires(t *testing.T) {
 	}
 
 	time.Sleep(timeToExpire - time.Since(certCreated))
-	time.Sleep(5 * time.Second)
 	// Check if cert was refreshed in the background, without calling Dial again.
 	c.cacheL.Lock()
 	newCfg, ok := c.cfgCache[instance]
