@@ -71,6 +71,10 @@ func (cs *blockingCertSource) TokenExpiration() (ret time.Time, err error) {
 	return cs.tokenExpire, nil
 }
 
+func (cs *blockingCertSource) IAMLoginEnabled() bool {
+	return true
+}
+
 func TestContextDialer(t *testing.T) {
 	b := &fakeCerts{}
 	c := &Client{
@@ -328,6 +332,7 @@ func TestRefreshTimerTokenExpires(t *testing.T) {
 	}
 
 	time.Sleep(timeToExpire - time.Since(certCreated))
+	time.Sleep(5 * time.Second)
 	// Check if cert was refreshed in the background, without calling Dial again.
 	c.cacheL.Lock()
 	newCfg, ok := c.cfgCache[instance]
