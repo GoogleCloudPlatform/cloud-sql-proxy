@@ -184,7 +184,7 @@ func refreshToken(ts oauth2.TokenSource, tok1 *oauth2.Token) (*oauth2.Token, err
 
 // Local returns a certificate that may be used to establish a TLS
 // connection to the specified instance.
-func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err error) {
+func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	pkix, err := x509.MarshalPKIXPublicKey(&s.key.PublicKey)
 	if err != nil {
 		return tls.Certificate{}, err
@@ -204,12 +204,10 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 		if err != nil {
 			return tls.Certificate{}, err
 		}
-		logging.Infof("Existing token expiration: %v", tok.Expiry)
 		tok, err = refreshToken(s.TokenSource, tok)
 		if err != nil {
 			return tls.Certificate{}, err
 		}
-		logging.Infof("New token expiration: %s", tok.Expiry)
 		createEphemeralRequest.AccessToken = tok.AccessToken
 	}
 	req := s.serv.SslCerts.CreateEphemeral(p, regionName, &createEphemeralRequest)

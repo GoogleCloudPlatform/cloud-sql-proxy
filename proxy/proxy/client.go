@@ -222,21 +222,17 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	certs.AddCert(scert)
 
 	certExpiration := mycert.Leaf.NotAfter
-	logging.Infof("certExpiration = %v", certExpiration)
 	if c.Certs.IAMLoginEnabled() {
 		tokenExpiration, tokErr := c.Certs.TokenExpiration()
 		if tokErr != nil {
 			return "", nil, "", tokErr
 		}
-		logging.Infof("tokenExpiraton = %v", tokenExpiration)
 		if certExpiration.After(tokenExpiration) {
-			logging.Infof("cert expiration comes after token expiration; using token expiration")
 			certExpiration = tokenExpiration
 		}
 	}
 	now := time.Now()
 	timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
-	logging.Infof("timeToRefresh = %v", timeToRefresh)
 	if timeToRefresh <= 0 {
 		err = fmt.Errorf("new ephemeral certificate expires too soon: current time: %v, certificate expires: %v", now, certExpiration)
 		logging.Errorf("ephemeral certificate (%+v) error: %v", mycert, err)
