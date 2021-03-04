@@ -75,7 +75,7 @@ type Client struct {
 	// instances. This value is defined by the server-side code, but for now it
 	// should always be 3307.
 	Port int
-	// Certs specifies how certificates are obtained.
+	// Required; specifies how certificates are obtained.
 	Certs CertSource
 	// Optionally tracks connections through this client. If nil, connections
 	// are not tracked and will not be closed before method Run exits.
@@ -221,6 +221,21 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	certs := x509.NewCertPool()
 	certs.AddCert(scert)
 
+	cfg = &tls.Config{
+		ServerName:   name,
+		Certificates: []tls.Certificate{mycert},
+		RootCAs:      certs,
+		// We need to set InsecureSkipVerify to true due to
+		// https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/194
+		// https://tip.golang.org/doc/go1.11#crypto/x509
+		//
+		// Since we have a secure channel to the Cloud SQL API which we use to retrieve the
+		// certificates, we instead need to implement our own VerifyPeerCertificate function
+		// that will verify that the certificate is OK.
+		InsecureSkipVerify:    true,
+		VerifyPeerCertificate: genVerifyPeerCertificateFunc(name, certs),
+	}
+
 	certExpiration := mycert.Leaf.NotAfter
 	if c.Certs.IAMLoginEnabled() {
 		tokenExpiration, tokErr := c.Certs.TokenExpiration()
@@ -240,20 +255,6 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	}
 	go c.refreshCertAfter(instance, timeToRefresh)
 
-	cfg = &tls.Config{
-		ServerName:   name,
-		Certificates: []tls.Certificate{mycert},
-		RootCAs:      certs,
-		// We need to set InsecureSkipVerify to true due to
-		// https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/194
-		// https://tip.golang.org/doc/go1.11#crypto/x509
-		//
-		// Since we have a secure channel to the Cloud SQL API which we use to retrieve the
-		// certificates, we instead need to implement our own VerifyPeerCertificate function
-		// that will verify that the certificate is OK.
-		InsecureSkipVerify:    true,
-		VerifyPeerCertificate: genVerifyPeerCertificateFunc(name, certs),
-	}
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, version, nil
 }
 

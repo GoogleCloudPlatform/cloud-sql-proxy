@@ -172,11 +172,11 @@ func backoffAPIRetry(desc, instance string, do func() error) error {
 	return err
 }
 
-func refreshToken(ts oauth2.TokenSource, tok1 *oauth2.Token) (*oauth2.Token, error) {
+func refreshToken(ts oauth2.TokenSource, tok *oauth2.Token) (*oauth2.Token, error) {
 	expiredToken := &oauth2.Token{
-		AccessToken:  tok1.AccessToken,
-		TokenType:    tok1.TokenType,
-		RefreshToken: tok1.RefreshToken,
+		AccessToken:  tok.AccessToken,
+		TokenType:    tok.TokenType,
+		RefreshToken: tok.RefreshToken,
 		Expiry:       time.Time{}.Add(1), // Expired
 	}
 	return oauth2.ReuseTokenSource(expiredToken, ts).Token()
@@ -197,13 +197,14 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		PublicKey: pubKey,
 	}
 	// If IAM login is enabled, add the OAuth2 token into the ephemeral
-	// certificate request, always refreshing the token to ensure its expiration
-	// is far enough in the future.
+	// certificate request.
 	if s.EnableIAMLogin {
 		tok, err := s.TokenSource.Token()
 		if err != nil {
 			return tls.Certificate{}, err
 		}
+		// Always refresh the token to ensure its expiration is far enough in
+		// the future.
 		tok, err = refreshToken(s.TokenSource, tok)
 		if err != nil {
 			return tls.Certificate{}, err
