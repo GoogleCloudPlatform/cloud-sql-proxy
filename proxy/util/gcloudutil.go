@@ -19,12 +19,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"runtime"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"golang.org/x/oauth2"
+	exec "golang.org/x/sys/execabs"
 )
 
 // GcloudConfigData represents the data returned by `gcloud config config-helper`.
