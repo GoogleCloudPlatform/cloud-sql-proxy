@@ -56,6 +56,7 @@ func requirePostgresVars(t *testing.T) {
 		t.Fatal("'postgres_db' not set")
 	}
 }
+
 func TestPostgresTcp(t *testing.T) {
 	requirePostgresVars(t)
 
@@ -85,6 +86,9 @@ func TestPostgresConnLimit(t *testing.T) {
 
 func TestPostgresIAMDBAuthn(t *testing.T) {
 	requirePostgresVars(t)
+	if *postgresIAMUser == "" {
+		t.Fatal("'postgres_user_iam' not set")
+	}
 
 	ctx := context.Background()
 

@@ -9,6 +9,7 @@ export POSTGRES_CONNECTION_NAME="project:region:instance"
 export POSTGRES_USER="postgres-user"
 export POSTGRES_PASS="postgres-password"
 export POSTGRES_DB="postgres-db-name"
+export POSTGRES_USER_IAM="some-user-with-db-access@example.com"
 
 export SQLSERVER_CONNECTION_NAME="project:region:instance"
 export SQLSERVER_USER="sqlserver-user"
