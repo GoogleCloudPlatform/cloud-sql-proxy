@@ -172,12 +172,22 @@ func backoffAPIRetry(desc, instance string, do func() error) error {
 	return err
 }
 
+func refreshToken(ts oauth2.TokenSource, tok *oauth2.Token) (*oauth2.Token, error) {
+	expiredToken := &oauth2.Token{
+		AccessToken:  tok.AccessToken,
+		TokenType:    tok.TokenType,
+		RefreshToken: tok.RefreshToken,
+		Expiry:       time.Time{}.Add(1), // Expired
+	}
+	return oauth2.ReuseTokenSource(expiredToken, ts).Token()
+}
+
 // Local returns a certificate that may be used to establish a TLS
 // connection to the specified instance.
-func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err error) {
+func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	pkix, err := x509.MarshalPKIXPublicKey(&s.key.PublicKey)
 	if err != nil {
-		return ret, err
+		return tls.Certificate{}, err
 	}
 
 	p, r, n := util.SplitName(instance)
@@ -186,10 +196,18 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 	createEphemeralRequest := sqladmin.SslCertsCreateEphemeralRequest{
 		PublicKey: pubKey,
 	}
+	// If IAM login is enabled, add the OAuth2 token into the ephemeral
+	// certificate request.
 	if s.EnableIAMLogin {
-		tok, e := s.TokenSource.Token()
-		if e != nil {
-			return ret, e
+		tok, err := s.TokenSource.Token()
+		if err != nil {
+			return tls.Certificate{}, err
+		}
+		// Always refresh the token to ensure its expiration is far enough in
+		// the future.
+		tok, err = refreshToken(s.TokenSource, tok)
+		if err != nil {
+			return tls.Certificate{}, err
 		}
 		createEphemeralRequest.AccessToken = tok.AccessToken
 	}
@@ -201,18 +219,23 @@ func (s *RemoteCertSource) Local(instance string) (ret tls.Certificate, err erro
 		return err
 	})
 	if err != nil {
-		return ret, err
+		return tls.Certificate{}, err
 	}
 
 	c, err := parseCert(data.Cert)
 	if err != nil {
-		return ret, fmt.Errorf("couldn't parse ephemeral certificate for instance %q: %v", instance, err)
+		return tls.Certificate{}, fmt.Errorf("couldn't parse ephemeral certificate for instance %q: %v", instance, err)
 	}
 	return tls.Certificate{
 		Certificate: [][]byte{c.Raw},
 		PrivateKey:  s.key,
 		Leaf:        c,
 	}, nil
+}
+
+// IAMLoginEnabled reports whether IAM login has been enabled.
+func (s *RemoteCertSource) IAMLoginEnabled() bool {
+	return s.EnableIAMLogin
 }
 
 func parseCert(pemCert string) (*x509.Certificate, error) {

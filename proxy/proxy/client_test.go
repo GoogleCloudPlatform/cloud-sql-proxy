@@ -71,6 +71,10 @@ func (cs *blockingCertSource) TokenExpiration() (ret time.Time, err error) {
 	return cs.tokenExpire, nil
 }
 
+func (cs *blockingCertSource) IAMLoginEnabled() bool {
+	return true
+}
+
 func TestContextDialer(t *testing.T) {
 	b := &fakeCerts{}
 	c := &Client{
