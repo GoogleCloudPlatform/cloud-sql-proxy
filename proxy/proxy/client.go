@@ -50,15 +50,11 @@ type Conn struct {
 
 // CertSource is how a Client obtains various certificates required for operation.
 type CertSource interface {
-	// IAMLoginEnabled reports whether IAM Login has been enabled.
-	IAMLoginEnabled() bool
 	// Local returns a certificate that can be used to authenticate with the
 	// provided instance.
 	Local(instance string) (tls.Certificate, error)
 	// Remote returns the instance's CA certificate, address, and name.
 	Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error)
-	// TokenExpiration returns expiration time of the token information.
-	TokenExpiration() (time.Time, error)
 }
 
 // Client is a type to handle connecting to a Server. All fields are required
@@ -237,15 +233,6 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	}
 
 	certExpiration := mycert.Leaf.NotAfter
-	if c.Certs.IAMLoginEnabled() {
-		tokenExpiration, tokErr := c.Certs.TokenExpiration()
-		if tokErr != nil {
-			return "", nil, "", tokErr
-		}
-		if certExpiration.After(tokenExpiration) {
-			certExpiration = tokenExpiration
-		}
-	}
 	now := time.Now()
 	timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
 	if timeToRefresh <= 0 {

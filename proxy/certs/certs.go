@@ -196,18 +196,20 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	createEphemeralRequest := sqladmin.SslCertsCreateEphemeralRequest{
 		PublicKey: pubKey,
 	}
+	var tok *oauth2.Token
 	// If IAM login is enabled, add the OAuth2 token into the ephemeral
 	// certificate request.
 	if s.EnableIAMLogin {
-		tok, err := s.TokenSource.Token()
+		var tokErr error
+		tok, tokErr = s.TokenSource.Token()
 		if err != nil {
-			return tls.Certificate{}, err
+			return tls.Certificate{}, tokErr
 		}
 		// Always refresh the token to ensure its expiration is far enough in
 		// the future.
-		tok, err = refreshToken(s.TokenSource, tok)
-		if err != nil {
-			return tls.Certificate{}, err
+		tok, tokErr = refreshToken(s.TokenSource, tok)
+		if tokErr != nil {
+			return tls.Certificate{}, tokErr
 		}
 		createEphemeralRequest.AccessToken = tok.AccessToken
 	}
@@ -226,16 +228,17 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("couldn't parse ephemeral certificate for instance %q: %v", instance, err)
 	}
+	if s.EnableIAMLogin {
+		// Adjust the certificate's expiration to be the earlier of tok.Expiry or c.NotAfter
+		if tok.Expiry.Before(c.NotAfter) {
+			c.NotAfter = tok.Expiry
+		}
+	}
 	return tls.Certificate{
 		Certificate: [][]byte{c.Raw},
 		PrivateKey:  s.key,
 		Leaf:        c,
 	}, nil
-}
-
-// IAMLoginEnabled reports whether IAM login has been enabled.
-func (s *RemoteCertSource) IAMLoginEnabled() bool {
-	return s.EnableIAMLogin
 }
 
 func parseCert(pemCert string) (*x509.Certificate, error) {
@@ -317,17 +320,4 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	c, err := parseCert(data.ServerCaCert.Cert)
 
 	return c, ipAddrInUse, p + ":" + n, data.DatabaseVersion, err
-}
-
-// TokenExpiration returns the expiration time for token source associated with remote cert source.
-func (s *RemoteCertSource) TokenExpiration() (time.Time, error) {
-	// if no token is being used, return zero for expiration
-	if s.TokenSource == nil {
-		return time.Time{}, nil
-	}
-	tok, err := s.TokenSource.Token()
-	if err != nil {
-		return time.Time{}, err
-	}
-	return tok.Expiry, nil
 }
