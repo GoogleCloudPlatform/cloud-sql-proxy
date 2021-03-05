@@ -259,7 +259,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
-var versionString = "1.20.2-dev"
+var versionString = "1.20.2"
 
 // metadataString indiciates additional build or distribution metadata.
 var metadataString = ""
