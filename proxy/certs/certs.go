@@ -196,13 +196,11 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	createEphemeralRequest := sqladmin.SslCertsCreateEphemeralRequest{
 		PublicKey: pubKey,
 	}
-	var (
-		tok    *oauth2.Token
-		tokErr error
-	)
+	var tok *oauth2.Token
 	// If IAM login is enabled, add the OAuth2 token into the ephemeral
 	// certificate request.
 	if s.EnableIAMLogin {
+		var tokErr error
 		tok, tokErr = s.TokenSource.Token()
 		if err != nil {
 			return tls.Certificate{}, tokErr
@@ -231,9 +229,8 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		return tls.Certificate{}, fmt.Errorf("couldn't parse ephemeral certificate for instance %q: %v", instance, err)
 	}
 	if s.EnableIAMLogin {
-		// Adjust the certificate's expiration to be the earlier of c.NotAfter
-		// or tok.Expiry.
-		if c.NotAfter.After(tok.Expiry) {
+		// Adjust the certificate's expiration to be the earlier of tok.Expiry or c.NotAfter
+		if tok.Expiry.Before(c.NotAfter) {
 			c.NotAfter = tok.Expiry
 		}
 	}
