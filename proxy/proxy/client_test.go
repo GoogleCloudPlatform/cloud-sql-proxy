@@ -270,48 +270,6 @@ func TestRefreshTimer(t *testing.T) {
 				instance: b,
 			},
 			certCreated.Add(timeToExpire),
-			forever,
-		},
-		Dialer: func(string, string) (net.Conn, error) {
-			return nil, errFakeDial
-		},
-		RefreshCfgThrottle: 20 * time.Millisecond,
-		RefreshCfgBuffer:   time.Second,
-	}
-	// Call Dial to cache the cert.
-	if _, err := c.Dial(instance); err != errFakeDial {
-		t.Fatalf("Dial(%s) failed: %v", instance, err)
-	}
-	c.cacheL.Lock()
-	cfg, ok := c.cfgCache[instance]
-	c.cacheL.Unlock()
-	if !ok {
-		t.Fatalf("expected instance to be cached")
-	}
-
-	time.Sleep(timeToExpire - time.Since(certCreated))
-	// Check if cert was refreshed in the background, without calling Dial again.
-	c.cacheL.Lock()
-	newCfg, ok := c.cfgCache[instance]
-	c.cacheL.Unlock()
-	if !ok {
-		t.Fatalf("expected instance to be cached")
-	}
-	if !newCfg.lastRefreshed.After(cfg.lastRefreshed) {
-		t.Error("expected cert to be refreshed.")
-	}
-}
-
-func TestRefreshTimerTokenExpires(t *testing.T) {
-	timeToExpire := 5 * time.Second
-	b := &fakeCerts{}
-	certCreated := time.Now()
-	c := &Client{
-		Certs: &blockingCertSource{
-			map[string]*fakeCerts{
-				instance: b,
-			},
-			forever,
 			certCreated.Add(timeToExpire),
 		},
 		Dialer: func(string, string) (net.Conn, error) {

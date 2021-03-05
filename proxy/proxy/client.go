@@ -237,15 +237,6 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	}
 
 	certExpiration := mycert.Leaf.NotAfter
-	if c.Certs.IAMLoginEnabled() {
-		tokenExpiration, tokErr := c.Certs.TokenExpiration()
-		if tokErr != nil {
-			return "", nil, "", tokErr
-		}
-		if certExpiration.After(tokenExpiration) {
-			certExpiration = tokenExpiration
-		}
-	}
 	now := time.Now()
 	timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
 	if timeToRefresh <= 0 {
