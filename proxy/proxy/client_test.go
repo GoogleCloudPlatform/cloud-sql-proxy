@@ -41,9 +41,8 @@ type fakeCerts struct {
 }
 
 type blockingCertSource struct {
-	values      map[string]*fakeCerts
-	validUntil  time.Time
-	tokenExpire time.Time
+	values     map[string]*fakeCerts
+	validUntil time.Time
 }
 
 func (cs *blockingCertSource) Local(instance string) (tls.Certificate, error) {
@@ -67,14 +66,6 @@ func (cs *blockingCertSource) Remote(instance string) (cert *x509.Certificate, a
 	return &x509.Certificate{}, "fake address", "fake name", "fake version", nil
 }
 
-func (cs *blockingCertSource) TokenExpiration() (ret time.Time, err error) {
-	return cs.tokenExpire, nil
-}
-
-func (cs *blockingCertSource) IAMLoginEnabled() bool {
-	return true
-}
-
 func TestContextDialer(t *testing.T) {
 	b := &fakeCerts{}
 	c := &Client{
@@ -82,7 +73,6 @@ func TestContextDialer(t *testing.T) {
 			map[string]*fakeCerts{
 				instance: b,
 			},
-			forever,
 			forever,
 		},
 		ContextDialer: func(context.Context, string, string) (net.Conn, error) {
@@ -105,7 +95,6 @@ func TestClientCache(t *testing.T) {
 			map[string]*fakeCerts{
 				instance: b,
 			},
-			forever,
 			forever,
 		},
 		Dialer: func(string, string) (net.Conn, error) {
@@ -133,7 +122,6 @@ func TestConcurrentRefresh(t *testing.T) {
 			map[string]*fakeCerts{
 				instance: b,
 			},
-			forever,
 			forever,
 		},
 		Dialer: func(string, string) (net.Conn, error) {
@@ -175,7 +163,6 @@ func TestMaximumConnectionsCount(t *testing.T) {
 	b := &fakeCerts{}
 	certSource := blockingCertSource{
 		map[string]*fakeCerts{},
-		forever,
 		forever,
 	}
 	firstDialExited := make(chan struct{})
@@ -238,7 +225,6 @@ func TestShutdownTerminatesEarly(t *testing.T) {
 				instance: b,
 			},
 			forever,
-			forever,
 		},
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, nil
@@ -269,7 +255,6 @@ func TestRefreshTimer(t *testing.T) {
 			map[string]*fakeCerts{
 				instance: b,
 			},
-			certCreated.Add(timeToExpire),
 			certCreated.Add(timeToExpire),
 		},
 		Dialer: func(string, string) (net.Conn, error) {

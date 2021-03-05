@@ -241,11 +241,6 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	}, nil
 }
 
-// IAMLoginEnabled reports whether IAM login has been enabled.
-func (s *RemoteCertSource) IAMLoginEnabled() bool {
-	return s.EnableIAMLogin
-}
-
 func parseCert(pemCert string) (*x509.Certificate, error) {
 	bl, _ := pem.Decode([]byte(pemCert))
 	if bl == nil {
@@ -325,17 +320,4 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	c, err := parseCert(data.ServerCaCert.Cert)
 
 	return c, ipAddrInUse, p + ":" + n, data.DatabaseVersion, err
-}
-
-// TokenExpiration returns the expiration time for token source associated with remote cert source.
-func (s *RemoteCertSource) TokenExpiration() (time.Time, error) {
-	// if no token is being used, return zero for expiration
-	if s.TokenSource == nil {
-		return time.Time{}, nil
-	}
-	tok, err := s.TokenSource.Token()
-	if err != nil {
-		return time.Time{}, err
-	}
-	return tok.Expiry, nil
 }
