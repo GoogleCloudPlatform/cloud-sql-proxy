@@ -114,5 +114,10 @@ func (src *gcloudTokenSource) Token() (*oauth2.Token, error) {
 }
 
 func GcloudTokenSource(ctx context.Context) (oauth2.TokenSource, error) {
-	return &gcloudTokenSource{}, nil
+	src := &gcloudTokenSource{}
+	tok, err := src.Token()
+	if err != nil {
+		return nil, err
+	}
+	return oauth2.ReuseTokenSource(tok, src), nil
 }
