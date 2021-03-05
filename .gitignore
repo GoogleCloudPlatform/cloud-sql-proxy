@@ -6,5 +6,5 @@
 .vscode/
 
 # Compiled binary
-cmd/cloud_sql_proxy/cloud_sql_proxy
-cloud_sql_proxy
+/cmd/cloud_sql_proxy/cloud_sql_proxy
+/cloud_sql_proxy
