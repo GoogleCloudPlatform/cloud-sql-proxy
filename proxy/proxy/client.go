@@ -236,9 +236,11 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	now := time.Now()
 	timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
 	if timeToRefresh <= 0 {
-		err = fmt.Errorf("new ephemeral certificate expires too soon: current time: %v, certificate expires: %v", now, certExpiration)
-		logging.Errorf("ephemeral certificate (%+v) error: %v", mycert, err)
-		return "", nil, "", err
+		// If a new certificate expires before our buffer has expired, 
+		// we should wait a bit and schedule a new refresh to much closer to the expiration's date
+		// TODO: This situation probably only occurs for Issue #622 - when the oauth2 token isn't refreshed before the cert is
+		timeToRefresh = certExpiration.Sub(now) - (5 * time.Second)
+		logging.Errorf("new ephemeral certificate expires soon (adjusting refresh time to compensate): current time: %v, certificate expires: %v", now, certExpiration)
 	}
 	go c.refreshCertAfter(instance, timeToRefresh)
 
