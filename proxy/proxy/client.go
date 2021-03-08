@@ -180,12 +180,17 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 		c.cfgCache = make(map[string]cacheEntry)
 	}
 	old, oldok := c.cfgCache[instance]
-	c.cacheL.Unlock()
 	if oldok && time.Since(old.lastRefreshed) < throttle {
+		c.cacheL.Unlock()
 		logging.Errorf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
 		// Refresh was called too recently, just reuse the result.
 		return old.addr, old.cfg, old.version, old.err
 	}
+	// Continuing past this point means a new refresh will be attempted,
+	// so lets mark the cache updated to prevent multiple routines from calling it at once
+	old.lastRefreshed = time.Now()
+	c.cfgCache[instance] = old
+	c.cacheL.Unlock()
 
 	defer func() {
 		// if we failed to refresh cfg do not throw out potentially valid one
