@@ -236,7 +236,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	now := time.Now()
 	timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
 	if timeToRefresh <= 0 {
-		// If a new certificate expires before our buffer has expired, 
+		// If a new certificate expires before our buffer has expired,
 		// we should wait a bit and schedule a new refresh to much closer to the expiration's date
 		// TODO: This situation probably only occurs for Issue #622 - when the oauth2 token isn't refreshed before the cert is
 		timeToRefresh = certExpiration.Sub(now) - (5 * time.Second)
