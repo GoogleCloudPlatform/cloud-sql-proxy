@@ -188,7 +188,8 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 	}
 	// Continuing past this point means a new refresh will be attempted,
 	// so lets mark the cache updated to prevent multiple routines from calling it at once
-	c.cfgCache[instance].lastRefreshed = time.Now()
+	old.lastRefreshed = time.Now()
+	c.cfgCache[instance] = old
 	c.cacheL.Unlock()
 
 	defer func() {
