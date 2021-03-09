@@ -62,4 +62,4 @@ spec:
       - name: <YOUR-SA-SECRET-VOLUME>
         secret:
           secretName: <YOUR-SA-SECRET>
-      # [START cloud_sql_proxy_k8s_volume_secret]
+      # [END cloud_sql_proxy_k8s_volume_secret]
