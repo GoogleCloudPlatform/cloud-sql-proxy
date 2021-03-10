@@ -79,7 +79,7 @@ func TestContextDialer(t *testing.T) {
 			return nil, errFakeDial
 		},
 		Dialer: func(string, string) (net.Conn, error) {
-			return nil, fmt.Errorf("this dialer should't be used when ContextDialer is set")
+			return nil, fmt.Errorf("this dialer should not be used when ContextDialer is set")
 		},
 	}
 
