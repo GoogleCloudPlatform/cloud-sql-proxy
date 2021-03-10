@@ -80,6 +80,7 @@ bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account
 (GSA). The GSA will then be accessible to applications using the matching KSA.
 
 1. [Enable Workload Identity for your cluster][enable-wi]
+1. [Enable Workload Identity for your node pool][enable-wi-node-pool]
 1. Create a KSA for your application `kubectl apply -f service-account.yaml`: 
     
     > [service-account.yaml](service-account.yaml#L2-L5)
@@ -125,7 +126,7 @@ bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account
 [workload-id]: https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
 [ksa]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
 [enable-wi]: https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#enable_on_existing_cluster
-
+[enable-wi-node-pool]: https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#option_2_node_pool_modification
 
 ### Service account key file
 
