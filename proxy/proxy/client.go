@@ -30,13 +30,18 @@ import (
 )
 
 const (
+	// DefaultRefreshCfgThrottle is the time a refresh attempt must wait since
+	// the last attempt.
 	DefaultRefreshCfgThrottle = time.Minute
-	keepAlivePeriod           = time.Minute
+	// IAMLoginRefreshThrottle is the time a refresh attempt must wait since the
+	// last attempt when using IAM login.
+	IAMLoginRefreshThrottle = 30 * time.Second
+	keepAlivePeriod         = time.Minute
 	// DefaultRefreshCfgBuffer is the minimum amount of time for which a
 	// certificate must be valid to ensure the next refresh attempt has adequate
 	// time to complete.
 	DefaultRefreshCfgBuffer = 5 * time.Minute
-	// IAMLoginRefreshCfgBuffer is the minimum amount of a time for which a
+	// IAMLoginRefreshCfgBuffer is the minimum amount of time for which a
 	// certificate holding an Access Token must be valid. Because some token
 	// sources (e.g., ouath2.ComputeTokenSource) are refreshed with only ~60
 	// seconds before expiration, this value must be smaller than the

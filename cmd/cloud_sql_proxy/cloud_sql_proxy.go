@@ -556,6 +556,7 @@ func main() {
 	}
 	refreshCfgBuffer := proxy.DefaultRefreshCfgBuffer
 	if *enableIAMLogin {
+		refreshCfgThrottle = proxy.IAMLoginRefreshThrottle
 		refreshCfgBuffer = proxy.IAMLoginRefreshCfgBuffer
 	}
 	proxyClient := &proxy.Client{
