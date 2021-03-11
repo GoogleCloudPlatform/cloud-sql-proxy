@@ -32,7 +32,16 @@ import (
 const (
 	DefaultRefreshCfgThrottle = time.Minute
 	keepAlivePeriod           = time.Minute
-	defaultRefreshCfgBuffer   = 5 * time.Minute
+	// DefaultRefreshCfgBuffer is the minimum amount of time for which a
+	// certificate must be valid to ensure the next refresh attempt has adequate
+	// time to complete.
+	DefaultRefreshCfgBuffer = 5 * time.Minute
+	// IAMLoginRefreshCfgBuffer is the minimum amount of a time for which a
+	// certificate holding an Access Token must be valid. Because some token
+	// sources (e.g., ouath2.ComputeTokenSource) are refreshed with only ~60
+	// seconds before expiration, this value must be smaller than the
+	// DefaultRefreshCfgBuffer.
+	IAMLoginRefreshCfgBuffer = 55 * time.Second
 )
 
 var (
@@ -99,8 +108,9 @@ type Client struct {
 	// malfunction.
 	RefreshCfgThrottle time.Duration
 
-	// RefreshCertBuffer is the amount of time before the configuration expires to
-	// attempt to refresh it. If not set, it defaults to 5 minutes.
+	// RefreshCertBuffer is the amount of time before the configuration expires
+	// to attempt to refresh it. If not set, it defaults to 5 minutes. When IAM
+	// Login is enabled, this value should be set to IAMLoginRefreshCfgBuffer.
 	RefreshCfgBuffer time.Duration
 }
 
@@ -172,7 +182,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 
 	refreshCfgBuffer := c.RefreshCfgBuffer
 	if refreshCfgBuffer == 0 {
-		refreshCfgBuffer = defaultRefreshCfgBuffer
+		refreshCfgBuffer = DefaultRefreshCfgBuffer
 	}
 
 	c.cacheL.Lock()
