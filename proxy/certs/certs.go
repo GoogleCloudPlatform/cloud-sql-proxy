@@ -202,7 +202,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	if s.EnableIAMLogin {
 		var tokErr error
 		tok, tokErr = s.TokenSource.Token()
-		if err != nil {
+		if tokErr != nil {
 			return tls.Certificate{}, tokErr
 		}
 		// Always refresh the token to ensure its expiration is far enough in
