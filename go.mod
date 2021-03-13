@@ -10,7 +10,7 @@ require (
 	github.com/lib/pq v1.10.0
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/oauth2 v0.0.0-20210311163135-5366d9dc1934
-	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2
+	golang.org/x/sys v0.0.0-20210313202042-bd2e13477e9c
 	google.golang.org/api v0.41.0
 )
 
