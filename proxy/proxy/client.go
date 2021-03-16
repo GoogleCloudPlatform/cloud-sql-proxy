@@ -126,8 +126,9 @@ type cacheEntry struct {
 	addr    string
 	version string
 	cfg     *tls.Config
-	// done is a channel that will be closed once any pending refresh for the instance is complete.
-	done chan bool
+	// done represents the status of any pending refresh operation related to this instance.
+	// If unset the op hasn't started, if open the op is still pending, and if closed the op has finished.
+	done chan struct{}
 }
 
 // Run causes the client to start waiting for new connections to connSrc and
@@ -258,8 +259,8 @@ func isExpired(cfg *tls.Config) bool {
 // startRefresh kicks off a refreshCfg asynchronously, returning a channel that is closed
 // when it's complete and updates the cacheEntry when complete. This function should only
 // be called from the scope of "cachedCfg", which controls the logic around throttling refreshes.
-func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) chan bool {
-	done := make(chan bool)
+func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) chan struct{} {
+	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		addr, cfg, ver, err := c.refreshCfg(instance)
@@ -299,14 +300,15 @@ func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) c
 
 // isValid returns true if the cacheEntry is still useable
 func isValid(c cacheEntry) bool {
-	// if the cfg is unset or if there was an error returned during the last attempt
-	return !(c.cfg == nil || c.err != nil)
+	// the entry is only valid there wasn't an error retrieving it and it has a cfg
+	return c.err == nil && c.cfg != nil
 }
 
 func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 	if e.done == nil { // no refresh started
 		return true
-	} else if !isValid(e) || time.Since(e.lastRefreshed) >= refreshCfgBuffer {
+	}
+	if !isValid(e) || time.Since(e.lastRefreshed) >= refreshCfgBuffer {
 		// if the entry is invalid or close enough to expiring check
 		// use the entry's done channel to determine if a refresh has started yet
 		select {
