@@ -24,7 +24,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -56,6 +55,7 @@ created/closed without error are suppressed`,
 	)
 	quiet          = flag.Bool("quiet", false, "Disable log messages")
 	logDebugStdout = flag.Bool("log_debug_stdout", false, "If true, log messages that are not errors will output to stdout instead of stderr")
+	structuredLogs = flag.Bool("structured_logs", false, "Configures all log messages to be emitted as JSON.")
 
 	refreshCfgThrottle = flag.Duration("refresh_config_throttle", proxy.DefaultRefreshCfgThrottle,
 		`If set, this flag specifies the amount of forced sleep between successive
@@ -179,6 +179,9 @@ General:
   -verbose
     When explicitly set to false, disable log messages that are not errors nor
     first-time startup messages (e.g. when new connections are established).
+
+  -structured_logs
+    When set to true, all log messages are written out as JSON.
 
 Connection:
   -instances
@@ -458,14 +461,22 @@ func main() {
 		logging.LogDebugToStdout()
 	}
 
+	if *structuredLogs {
+		cleanup, err := logging.EnableStructuredLogs()
+		if err != nil {
+			logging.Errorf("failed to enable structured logs: %v", err)
+			os.Exit(1)
+		}
+		defer cleanup()
+	}
+
 	if !*verbose {
 		logging.LogVerboseToNowhere()
 	}
 
 	if *quiet {
-		log.Println("Cloud SQL Proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
-		log.SetFlags(0)
-		log.SetOutput(ioutil.Discard)
+		logging.Infof("Cloud SQL Proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
+		logging.DisableLogging()
 	}
 
 	// Split the input ipAddressTypes to the slice of string
@@ -498,31 +509,37 @@ func main() {
 		if err == nil {
 			logging.Infof("Using gcloud's active project: %v", projList)
 		} else if gErr, ok := err.(*util.GcloudError); ok && gErr.Status == util.GcloudNotFound {
-			log.Fatalf("gcloud is not in the path and -instances and -projects are empty")
+			logging.Errorf("gcloud is not in the path and -instances and -projects are empty")
+			os.Exit(1)
 		} else {
-			log.Fatalf("unable to retrieve the active gcloud project and -instances and -projects are empty: %v", err)
+			logging.Errorf("unable to retrieve the active gcloud project and -instances and -projects are empty: %v", err)
+			os.Exit(1)
 		}
 	}
 
 	onGCE := metadata.OnGCE()
 	if err := checkFlags(onGCE); err != nil {
-		log.Fatal(err)
+		logging.Errorf(err.Error())
+		os.Exit(1)
 	}
 
 	ctx := context.Background()
 	client, tokSrc, err := authenticatedClient(ctx)
 	if err != nil {
-		log.Fatal(err)
+		logging.Errorf(err.Error())
+		os.Exit(1)
 	}
 
 	ins, err := listInstances(ctx, client, projList)
 	if err != nil {
-		log.Fatal(err)
+		logging.Errorf(err.Error())
+		os.Exit(1)
 	}
 	instList = append(instList, ins...)
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client, *skipInvalidInstanceConfigs)
 	if err != nil {
-		log.Fatal(err)
+		logging.Errorf(err.Error())
+		os.Exit(1)
 	}
 
 	// We only need to store connections in a ConnSet if FUSE is used; otherwise
@@ -557,7 +574,8 @@ func main() {
 	if *useFuse {
 		c, fuse, err := fuse.NewConnSrc(*dir, *fuseTmp, proxyClient, connset)
 		if err != nil {
-			log.Fatalf("Could not start fuse directory at %q: %v", *dir, err)
+			logging.Errorf("Could not start fuse directory at %q: %v", *dir, err)
+			os.Exit(1)
 		}
 		connSrc = c
 		defer fuse.Close()
@@ -582,7 +600,8 @@ func main() {
 
 		c, err := WatchInstances(*dir, cfgs, updates, client)
 		if err != nil {
-			log.Fatal(err)
+			logging.Errorf(err.Error())
+			os.Exit(1)
 		}
 		connSrc = c
 	}

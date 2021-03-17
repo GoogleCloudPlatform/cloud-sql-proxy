@@ -20,6 +20,8 @@ package logging
 import (
 	"log"
 	"os"
+
+	"go.uber.org/zap"
 )
 
 // Verbosef is called to write verbose logs, such as when a new connection is
@@ -39,7 +41,32 @@ func LogDebugToStdout() {
 	Infof = logger.Printf
 }
 
+func noop(string, ...interface{}) {}
+
 // LogVerboseToNowhere updates Verbosef so verbose log messages are discarded
 func LogVerboseToNowhere() {
-	Verbosef = func(string, ...interface{}) {}
+	Verbosef = noop
+}
+
+// DisableLogging sets all logging levels to no-op's.
+func DisableLogging() {
+	Verbosef = noop
+	Infof = noop
+	Errorf = noop
+}
+
+// EnableStructuredLogs replaces all logging functions with structured logging
+// variants.
+func EnableStructuredLogs() (func(), error) {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return func() {}, err
+	}
+	sugar := logger.Sugar()
+	Verbosef = sugar.Debugf
+	Infof = sugar.Infof
+	Errorf = sugar.Errorf
+	return func() {
+		logger.Sync()
+	}, nil
 }
