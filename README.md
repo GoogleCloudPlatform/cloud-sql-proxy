@@ -270,6 +270,17 @@ This is to log non-error output to standard out instead of standard error. For
 example, if you don't want connection related messages to log as errors, set
 this flag to true.  Defaults to false.
 
+#### `-structured_logs`
+
+Writes all logging output as JSON with the following keys: level, ts, caller,
+msg. For example, the startup message looks like:
+
+```
+{"level":"info","ts":1616014011.8132386,"caller":"cloud_sql_proxy/cloud_sql_proxy.go:510","msg":"Using
+gcloud's active project: [my-project-id]"}
+
+```
+
 ## Running as a Kubernetes Sidecar
 
 See the [example here][sidecar-example] as well as [Connecting from Google
