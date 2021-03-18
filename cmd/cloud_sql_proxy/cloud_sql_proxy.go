@@ -554,6 +554,11 @@ func main() {
 	if refreshCfgThrottle < minimumRefreshCfgThrottle {
 		refreshCfgThrottle = minimumRefreshCfgThrottle
 	}
+	refreshCfgBuffer := proxy.DefaultRefreshCfgBuffer
+	if *enableIAMLogin {
+		refreshCfgThrottle = proxy.IAMLoginRefreshThrottle
+		refreshCfgBuffer = proxy.IAMLoginRefreshCfgBuffer
+	}
 	proxyClient := &proxy.Client{
 		Port:           port,
 		MaxConnections: *maxConnections,
@@ -567,6 +572,7 @@ func main() {
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
+		RefreshCfgBuffer:   refreshCfgBuffer,
 	}
 
 	// Initialize a source of new connections to Cloud SQL instances.
