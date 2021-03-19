@@ -286,9 +286,8 @@ func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) c
 		now := time.Now()
 		timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
 		if timeToRefresh <= 0 {
-			// If a new certificate expires before our buffer has expired,
-			// we should wait a bit and schedule a new refresh to much closer to the expiration's date
-			// TODO: This situation probably only occurs for Issue #622 - when the oauth2 token isn't refreshed before the cert is
+			// If a new certificate expires before our buffer has expired, we should wait a bit and schedule a new refresh to much closer to the expiration's date
+			// This situation probably only occurs when the oauth2 token isn't refreshed before the cert is, so by scheduling closer to the expriation we can hope the ouath2 token is newer.
 			timeToRefresh = certExpiration.Sub(now) - (5 * time.Second)
 			logging.Errorf("new ephemeral certificate expires sooner than expected (adjusting refresh time to compensate): current time: %v, certificate expires: %v", now, certExpiration)
 		}
@@ -350,7 +349,7 @@ func (c *Client) cachedCfg(instance string) (string, *tls.Config, string, error)
 				e.lastRefreshed = time.Now()
 				c.cfgCache[instance] = e
 			} else {
-				// TODO: Should this be a returned error?
+				// TODO: Investigate returning this as an error instead of just logging
 				logging.Errorf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(e.lastRefreshed))
 			}
 		}
