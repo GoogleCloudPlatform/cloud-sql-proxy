@@ -18,14 +18,14 @@ Alternatively, there are Cloud SQL Connectors for [Java][] and [Python][].
 If you're using the MySQL [go-sql-driver][go-mysql] you can use helper
 functions found in the [`proxy/dialers/mysql`][mysql-godoc]
 
-See [example usage](tests/dialers_test.go).
+See [example usage](dialers/mysql/hook_test.go).
 
 ### Postgres
 
 If you're using the Postgres [lib/pq](https://github.com/lib/pq), you can
 use the `cloudsqlpostgres` driver from [here](proxy/dialers/postgres).
 
-See [example usage](proxy/dialers/postgres/hook_test.go).
+See [example usage](dialers/postgres/hook_test.go).
 
 [Java]: https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory
 [Python]: https://github.com/GoogleCloudPlatform/cloud-sql-python-connector
