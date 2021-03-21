@@ -256,9 +256,8 @@ func isExpired(cfg *tls.Config) bool {
 	return time.Now().After(cfg.Certificates[0].Leaf.NotAfter)
 }
 
-// startRefresh kicks off a refreshCfg asynchronously, returning a channel that is closed
-// when it's complete and updates the cacheEntry when complete. This function should only
-// be called from the scope of "cachedCfg", which controls the logic around throttling refreshes.
+// startRefresh kicks off a refreshCfg asynchronously, that updates the cacheEntry and closes the returned channel once the refresh is completed. This function
+// should only be called from the scope of "cachedCfg", which controls the logic around throttling refreshes.
 func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) chan struct{} {
 	done := make(chan struct{})
 	go func() {
