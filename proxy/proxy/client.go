@@ -218,7 +218,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 func (c *Client) refreshCertAfter(instance string, timeToRefresh time.Duration) {
 	<-time.After(timeToRefresh)
 	logging.Verbosef("ephemeral certificate for instance %s will expire soon, refreshing now.", instance)
-	if _, _, _, err := c.cachedCfg(instance); err != nil {
+	if _, _, _, err := c.cachedCfg(context.Background(), instance); err != nil {
 		logging.Errorf("failed to refresh the ephemeral certificate for %s before expiring: %v", instance, err)
 	}
 }
@@ -320,7 +320,7 @@ func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 	return false
 }
 
-func (c *Client) cachedCfg(instance string) (string, *tls.Config, string, error) {
+func (c *Client) cachedCfg(ctx context.Context, instance string) (string, *tls.Config, string, error) {
 	c.cacheL.RLock()
 
 	throttle := c.RefreshCfgThrottle
@@ -358,8 +358,12 @@ func (c *Client) cachedCfg(instance string) (string, *tls.Config, string, error)
 
 	if !isValid(e) {
 		// if the previous result was invalid, wait for the next result to complete
-		// TODO: Ask for context?
-		<-e.done
+		select {
+		case <-ctx.Done():
+			return "", nil, "", ctx.Err()
+		case <-e.done:
+		}
+
 		c.cacheL.RLock()
 		// the state may have changed between critical sections, so double check
 		e = c.cfgCache[instance]
@@ -372,7 +376,7 @@ func (c *Client) cachedCfg(instance string) (string, *tls.Config, string, error)
 // If this func returns a nil error the connection is correctly authenticated
 // to connect to the instance.
 func (c *Client) DialContext(ctx context.Context, instance string) (net.Conn, error) {
-	addr, cfg, _, err := c.cachedCfg(instance)
+	addr, cfg, _, err := c.cachedCfg(ctx, instance)
 	if err != nil {
 		return nil, err
 	}
@@ -467,9 +471,16 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 	return ch
 }
 
-// InstanceVersion uses client cache to return instance version string.
+// InstanceVersionContext uses client cache to return instance version string.
+//
+// Deprecated: Use Client.InstanceVersionContext instead.
 func (c *Client) InstanceVersion(instance string) (string, error) {
-	_, _, version, err := c.cachedCfg(instance)
+	return c.InstanceVersionContext(context.Background(), instance)
+}
+
+// InstanceVersionContext uses client cache to return instance version string.
+func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (string, error) {
+	_, _, version, err := c.cachedCfg(ctx, instance)
 	if err != nil {
 		return "", nil
 	}

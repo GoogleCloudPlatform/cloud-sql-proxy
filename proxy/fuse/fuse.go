@@ -239,7 +239,7 @@ func (r *fsRoot) Attr(ctx context.Context, a *fuse.Attr) error {
 // the README, it returns a node which is a symbolic link to a socket which
 // provides connectivity to a remote instance.  The instance which is connected
 // to is determined by req.Name.
-func (r *fsRoot) Lookup(_ context.Context, req *fuse.LookupRequest, resp *fuse.LookupResponse) (fs.Node, error) {
+func (r *fsRoot) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse.LookupResponse) (fs.Node, error) {
 	if req.Name == "README" {
 		return readme{}, nil
 	}
@@ -260,7 +260,7 @@ func (r *fsRoot) Lookup(_ context.Context, req *fuse.LookupRequest, resp *fuse.L
 	// Look up instance database version to determine the correct socket path.
 	// Client is nil in unit tests.
 	if r.client != nil {
-		version, err := r.client.InstanceVersion(instance)
+		version, err := r.client.InstanceVersionContext(ctx, instance)
 		if err != nil {
 			return nil, fuse.ENOENT
 		}
