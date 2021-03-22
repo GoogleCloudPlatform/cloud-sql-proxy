@@ -183,6 +183,7 @@ func (c *Client) handleConn(conn Conn) {
 func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, version string, err error) {
 	c.refreshCfgL.Lock()
 	defer c.refreshCfgL.Unlock()
+	logging.Verbosef("refreshing ephemeral certificate for instance %s", instance)
 
 	mycert, err := c.Certs.Local(instance)
 	if err != nil {
@@ -286,7 +287,7 @@ func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) c
 		timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
 		if timeToRefresh <= 0 {
 			// If a new certificate expires before our buffer has expired, we should wait a bit and schedule a new refresh to much closer to the expiration's date
-			// This situation probably only occurs when the oauth2 token isn't refreshed before the cert is, so by scheduling closer to the expriation we can hope the ouath2 token is newer.
+			// This situation probably only occurs when the oauth2 token isn't refreshed before the cert is, so by scheduling closer to the expiration we can hope the oauth2 token is newer.
 			timeToRefresh = certExpiration.Sub(now) - (5 * time.Second)
 			logging.Errorf("new ephemeral certificate expires sooner than expected (adjusting refresh time to compensate): current time: %v, certificate expires: %v", now, certExpiration)
 		}
@@ -306,7 +307,7 @@ func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 	if e.done == nil { // no refresh started
 		return true
 	}
-	if !isValid(e) || time.Since(e.lastRefreshed) >= refreshCfgBuffer {
+	if !isValid(e) || e.cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now()) <= refreshCfgBuffer {
 		// if the entry is invalid or close enough to expiring check
 		// use the entry's done channel to determine if a refresh has started yet
 		select {
