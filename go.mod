@@ -11,7 +11,7 @@ require (
 	go.uber.org/zap v1.16.0
 	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84
-	golang.org/x/sys v0.0.0-20210319071255-635bc2c9138d
+	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4
 	google.golang.org/api v0.42.0
 )
 
