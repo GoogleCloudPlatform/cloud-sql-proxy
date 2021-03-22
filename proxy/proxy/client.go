@@ -126,6 +126,9 @@ type cacheEntry struct {
 	addr    string
 	version string
 	cfg     *tls.Config
+	// done represents the status of any pending refresh operation related to this instance.
+	// If unset the op hasn't started, if open the op is still pending, and if closed the op has finished.
+	done chan struct{}
 }
 
 // Run causes the client to start waiting for new connections to connSrc and
@@ -174,56 +177,13 @@ func (c *Client) handleConn(conn Conn) {
 }
 
 // refreshCfg uses the CertSource inside the Client to find the instance's
-// address as well as construct a new tls.Config to connect to the instance. It
-// caches the result.
+// address as well as construct a new tls.Config to connect to the instance.
+// This function should only be called from the scope of "cachedCfg", which
+// controls the logic around throttling.
 func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, version string, err error) {
 	c.refreshCfgL.Lock()
 	defer c.refreshCfgL.Unlock()
-
-	throttle := c.RefreshCfgThrottle
-	if throttle == 0 {
-		throttle = DefaultRefreshCfgThrottle
-	}
-
-	refreshCfgBuffer := c.RefreshCfgBuffer
-	if refreshCfgBuffer == 0 {
-		refreshCfgBuffer = DefaultRefreshCfgBuffer
-	}
-
-	c.cacheL.Lock()
-	if c.cfgCache == nil {
-		c.cfgCache = make(map[string]cacheEntry)
-	}
-	old, oldok := c.cfgCache[instance]
-	if oldok && time.Since(old.lastRefreshed) < throttle {
-		c.cacheL.Unlock()
-		logging.Errorf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(old.lastRefreshed))
-		// Refresh was called too recently, just reuse the result.
-		return old.addr, old.cfg, old.version, old.err
-	}
-	// Continuing past this point means a new refresh will be attempted,
-	// so lets mark the cache updated to prevent multiple routines from calling it at once
-	old.lastRefreshed = time.Now()
-	c.cfgCache[instance] = old
-	c.cacheL.Unlock()
-
-	defer func() {
-		// if we failed to refresh cfg do not throw out potentially valid one
-		if err != nil && !isExpired(old.cfg) {
-			logging.Errorf("failed to refresh the ephemeral certificate for %s, returning previous cert instead: %v", instance, err)
-			addr, cfg, version, err = old.addr, old.cfg, old.version, old.err
-		}
-
-		c.cacheL.Lock()
-		c.cfgCache[instance] = cacheEntry{
-			lastRefreshed: time.Now(),
-			err:           err,
-			addr:          addr,
-			version:       version,
-			cfg:           cfg,
-		}
-		c.cacheL.Unlock()
-	}()
+	logging.Verbosef("refreshing ephemeral certificate for instance %s", instance)
 
 	mycert, err := c.Certs.Local(instance)
 	if err != nil {
@@ -252,16 +212,6 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 		VerifyPeerCertificate: genVerifyPeerCertificateFunc(name, certs),
 	}
 
-	certExpiration := mycert.Leaf.NotAfter
-	now := time.Now()
-	timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
-	if timeToRefresh <= 0 {
-		err = fmt.Errorf("new ephemeral certificate expires too soon: current time: %v, certificate expires: %v", now, certExpiration)
-		logging.Errorf("ephemeral certificate (%+v) error: %v", mycert, err)
-		return "", nil, "", err
-	}
-	go c.refreshCertAfter(instance, timeToRefresh)
-
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, version, nil
 }
 
@@ -269,7 +219,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 func (c *Client) refreshCertAfter(instance string, timeToRefresh time.Duration) {
 	<-time.After(timeToRefresh)
 	logging.Verbosef("ephemeral certificate for instance %s will expire soon, refreshing now.", instance)
-	if _, _, _, err := c.refreshCfg(instance); err != nil {
+	if _, _, _, err := c.cachedCfg(context.Background(), instance); err != nil {
 		logging.Errorf("failed to refresh the ephemeral certificate for %s before expiring: %v", instance, err)
 	}
 }
@@ -307,33 +257,131 @@ func isExpired(cfg *tls.Config) bool {
 	return time.Now().After(cfg.Certificates[0].Leaf.NotAfter)
 }
 
-func (c *Client) cachedCfg(instance string) (string, *tls.Config, string) {
-	c.cacheL.RLock()
-	ret, ok := c.cfgCache[instance]
-	c.cacheL.RUnlock()
+// startRefresh kicks off a refreshCfg asynchronously, that updates the cacheEntry and closes the returned channel once the refresh is completed. This function
+// should only be called from the scope of "cachedCfg", which controls the logic around throttling refreshes.
+func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) chan struct{} {
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		addr, cfg, ver, err := c.refreshCfg(instance)
 
-	// Don't waste time returning an expired/invalid cert.
-	if !ok || ret.err != nil || isExpired(ret.cfg) {
-		return "", nil, ""
+		c.cacheL.Lock()
+		old := c.cfgCache[instance]
+		// if we failed to refresh cfg do not throw out potentially valid one
+		if err != nil && !isExpired(old.cfg) {
+			logging.Errorf("failed to refresh the ephemeral certificate for %s, returning previous cert instead: %v", instance, err)
+			addr, cfg, ver, err = old.addr, old.cfg, old.version, old.err
+		}
+		c.cfgCache[instance] = cacheEntry{
+			lastRefreshed: time.Now(),
+			err:           err,
+			addr:          addr,
+			version:       ver,
+			cfg:           cfg,
+			done:          done,
+		}
+		c.cacheL.Unlock()
+
+		certExpiration := cfg.Certificates[0].Leaf.NotAfter
+		now := time.Now()
+		timeToRefresh := certExpiration.Sub(now) - refreshCfgBuffer
+		if timeToRefresh <= 0 {
+			// If a new certificate expires before our buffer has expired, we should wait a bit and schedule a new refresh to much closer to the expiration's date
+			// This situation probably only occurs when the oauth2 token isn't refreshed before the cert is, so by scheduling closer to the expiration we can hope the oauth2 token is newer.
+			timeToRefresh = certExpiration.Sub(now) - (5 * time.Second)
+			logging.Errorf("new ephemeral certificate expires sooner than expected (adjusting refresh time to compensate): current time: %v, certificate expires: %v", now, certExpiration)
+		}
+		logging.Infof("Scheduling refresh of ephemeral certifcate in %s", timeToRefresh)
+		go c.refreshCertAfter(instance, timeToRefresh)
+	}()
+	return done
+}
+
+// isValid returns true if the cacheEntry is still useable
+func isValid(c cacheEntry) bool {
+	// the entry is only valid there wasn't an error retrieving it and it has a cfg
+	return c.err == nil && c.cfg != nil
+}
+
+func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
+	if e.done == nil { // no refresh started
+		return true
 	}
-	return ret.addr, ret.cfg, ret.version
+	if !isValid(e) || e.cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now()) <= refreshCfgBuffer {
+		// if the entry is invalid or close enough to expiring check
+		// use the entry's done channel to determine if a refresh has started yet
+		select {
+		case <-e.done: // last refresh completed, so it's time for a new one
+			return true
+		default: // new refresh already started, so we can wait on that
+			return false
+		}
+	}
+	return false
+}
+
+func (c *Client) cachedCfg(ctx context.Context, instance string) (string, *tls.Config, string, error) {
+	c.cacheL.RLock()
+
+	throttle := c.RefreshCfgThrottle
+	if throttle == 0 {
+		throttle = DefaultRefreshCfgThrottle
+	}
+	refreshCfgBuffer := c.RefreshCfgBuffer
+	if refreshCfgBuffer == 0 {
+		refreshCfgBuffer = DefaultRefreshCfgBuffer
+	}
+
+	e := c.cfgCache[instance]
+	c.cacheL.RUnlock()
+	if needsRefresh(e, refreshCfgBuffer) {
+		// Reenter the critical section with intent to make changes
+		c.cacheL.Lock()
+		if c.cfgCache == nil {
+			c.cfgCache = make(map[string]cacheEntry)
+		}
+		// the state may have changed between critical sections, so double check
+		e = c.cfgCache[instance]
+		if needsRefresh(e, refreshCfgBuffer) {
+			if time.Since(e.lastRefreshed) >= throttle {
+				// start a new refresh and update the cachedEntry to reflect that
+				e.done = c.startRefresh(instance, refreshCfgBuffer)
+				e.lastRefreshed = time.Now()
+				c.cfgCache[instance] = e
+			} else {
+				// TODO: Investigate returning this as an error instead of just logging
+				logging.Errorf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(e.lastRefreshed))
+			}
+		}
+		c.cacheL.Unlock()
+	}
+
+	if !isValid(e) {
+		// if the previous result was invalid, wait for the next result to complete
+		select {
+		case <-ctx.Done():
+			return "", nil, "", ctx.Err()
+		case <-e.done:
+		}
+
+		c.cacheL.RLock()
+		// the state may have changed between critical sections, so double check
+		e = c.cfgCache[instance]
+		c.cacheL.RUnlock()
+	}
+	return e.addr, e.cfg, e.version, e.err
 }
 
 // DialContext uses the configuration stored in the client to connect to an instance.
 // If this func returns a nil error the connection is correctly authenticated
 // to connect to the instance.
 func (c *Client) DialContext(ctx context.Context, instance string) (net.Conn, error) {
-	if addr, cfg, _ := c.cachedCfg(instance); cfg != nil {
-		ret, err := c.tryConnect(ctx, addr, cfg)
-		if err == nil {
-			return ret, err
-		}
-	}
-
-	addr, cfg, _, err := c.refreshCfg(instance)
+	addr, cfg, _, err := c.cachedCfg(ctx, instance)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: attempt an early refresh if an connect fails?
 	return c.tryConnect(ctx, addr, cfg)
 }
 
@@ -423,14 +471,18 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 	return ch
 }
 
-// InstanceVersion uses client cache to return instance version string.
+// InstanceVersionContext uses client cache to return instance version string.
+//
+// Deprecated: Use Client.InstanceVersionContext instead.
 func (c *Client) InstanceVersion(instance string) (string, error) {
-	if _, cfg, version := c.cachedCfg(instance); cfg != nil {
-		return version, nil
-	}
-	_, _, version, err := c.refreshCfg(instance)
+	return c.InstanceVersionContext(context.Background(), instance)
+}
+
+// InstanceVersionContext uses client cache to return instance version string.
+func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (string, error) {
+	_, _, version, err := c.cachedCfg(ctx, instance)
 	if err != nil {
-		return "", err
+		return "", nil
 	}
 	return version, nil
 }
