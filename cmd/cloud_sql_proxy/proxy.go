@@ -14,7 +14,7 @@
 
 package main
 
-// This file contains code for supporting local sockets for the Cloud SQL Proxy.
+// This file contains code for supporting local sockets for the Cloud SQL Auth proxy.
 
 import (
 	"bytes"

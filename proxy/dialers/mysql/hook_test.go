@@ -21,7 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql"
 )
 
-// ExampleCfg shows how to use Cloud SQL Proxy dialer if you must update some
+// ExampleCfg shows how to use Cloud SQL Auth proxy dialer if you must update some
 // settings normally passed in the DSN such as the DBName or timeouts.
 func ExampleCfg() {
 	cfg := mysql.Cfg("project:region:instance-name", "user", "")

@@ -141,7 +141,7 @@ const (
 func init() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `
-The Cloud SQL Proxy allows simple, secure connectivity to Google Cloud SQL. It
+The Cloud SQL Auth proxy allows simple, secure connectivity to Google Cloud SQL. It
 is a long-running process that opens local sockets (either TCP or Unix sockets)
 according to the parameters passed to it. A local application connects to a
 Cloud SQL instance by using the corresponding socket.
@@ -453,7 +453,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("Cloud SQL Proxy:", semanticVersion())
+		fmt.Println("Cloud SQL Auth proxy:", semanticVersion())
 		return
 	}
 
@@ -475,7 +475,7 @@ func main() {
 	}
 
 	if *quiet {
-		logging.Infof("Cloud SQL Proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
+		logging.Infof("Cloud SQL Auth proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
 		logging.DisableLogging()
 	}
 

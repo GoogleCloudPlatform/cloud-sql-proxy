@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tests contains end to end tests meant to verify the Cloud SQL Proxy
+// Package tests contains end to end tests meant to verify the Cloud SQL Auth proxy
 // works as expected when executed as a binary.
 //
 // Required flags:
