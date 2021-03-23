@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package logging contains helpers to support log messages. If you are using
-// the Cloud SQL Proxy as a Go library, you can override these variables to
+// the Cloud SQL Auth proxy as a Go library, you can override these variables to
 // control where log messages end up.
 package logging
 

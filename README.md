@@ -1,9 +1,9 @@
-# Cloud SQL Proxy
+# Cloud SQL Auth proxy
 
 ![CI][ci-badge]
 [![Go Reference][pkg-badge]][pkg-docs]
 
-The [Cloud SQL Proxy][proxy-page] is a binary that provides IAM-based
+The [Cloud SQL Auth proxy][proxy-page] is a binary that provides IAM-based
 authorization and encryption when connecting to a Cloud SQL instance.
 
 See the [Connecting Overview][connection-overview] page for more information on
@@ -140,7 +140,7 @@ at least writer or editor privileges to any projects of target SQL instances.
 
 ## CLI Flags
 
-The Cloud SQL Proxy takes a few arguments to configure what instances to connect
+The Cloud SQL Auth proxy takes a few arguments to configure what instances to connect
 to and connection behavior. For a full list of flags supported by the proxy,
 use `cloud_sql_proxy -help`.
 
@@ -289,10 +289,10 @@ Kubernetes Engine][connect-to-k8s].
 ## Reference Documentation
 
 - [Cloud SQL][cloud-sql]
-- [Cloud SQL Proxy Documentation][proxy-page]
-- [Cloud SQL Proxy Quickstarts][quickstarts]
+- [Cloud SQL Auth proxy Documentation][proxy-page]
+- [Cloud SQL Auth proxy Quickstarts][quickstarts]
 - [Cloud SQL Code Samples][code-samples]
-- [Cloud SQL Proxy Package Documentation][pkg-docs]
+- [Cloud SQL Auth proxy Package Documentation][pkg-docs]
 
 ## Contributing
 
@@ -309,7 +309,7 @@ __WARNING__: _These distributions are not officially supported by Google._
 
 ### Homebrew
 
-There is Homebrew formula for Cloud SQL Proxy [here](https://github.com/tclass/homebrew-cloud_sql_proxy).
+There is Homebrew formula for Cloud SQL Auth proxy [here](https://github.com/tclass/homebrew-cloud_sql_proxy).
 
 ### Kubernetes Cluster Service using Helm
 
