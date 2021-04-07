@@ -19,7 +19,8 @@ already have access to it).
 For 64-bit Linux, run:
 
 ```
-wget https://storage.googleapis.com/cloudsql-proxy/v1.19.2/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
+VERSION=v1.21.0 # see Release for other versions
+wget https://storage.googleapis.com/cloudsql-proxy/v1.21.0/cloud_sql_proxy.linux.amd64 -O cloud_sql_proxy
 chmod +x cloud_sql_proxy
 ```
 
