@@ -60,7 +60,7 @@ func requirePostgresVars(t *testing.T) {
 func TestPostgresTcp(t *testing.T) {
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
+	dsn := fmt.Sprintf("user=%s password=%s database=%s", *postgresUser, *postgresPass, *postgresDb)
 	proxyConnTest(t, *postgresConnName, "postgres", dsn, postgresPort, "")
 }
 
@@ -80,7 +80,7 @@ func TestPostgresSocket(t *testing.T) {
 func TestPostgresConnLimit(t *testing.T) {
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
+	dsn := fmt.Sprintf("user=%s password=%s database=%s", *postgresUser, *postgresPass, *postgresDb)
 	proxyConnLimitTest(t, *postgresConnName, "postgres", dsn, postgresPort)
 }
 
@@ -120,7 +120,7 @@ func TestPostgresHook(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", *postgresConnName, *postgresUser, *postgresPass, *postgresDb)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s", *postgresConnName, *postgresUser, *postgresPass, *postgresDb)
 	db, err := sql.Open("cloudsqlpostgres", dsn)
 	if err != nil {
 		t.Fatalf("connect failed: %s", err)
