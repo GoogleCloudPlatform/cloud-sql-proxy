@@ -57,8 +57,12 @@ func DisableLogging() {
 
 // EnableStructuredLogs replaces all logging functions with structured logging
 // variants.
-func EnableStructuredLogs() (func(), error) {
-	logger, err := zap.NewProduction()
+func EnableStructuredLogs(logDebugStdout bool) (func(), error) {
+	config := zap.NewProductionConfig()
+	if logDebugStdout {
+		config.OutputPaths = []string{"stdout"}
+	}
+	logger, err := config.Build()
 	if err != nil {
 		return func() {}, err
 	}
