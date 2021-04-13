@@ -462,7 +462,7 @@ func main() {
 	}
 
 	if *structuredLogs {
-		cleanup, err := logging.EnableStructuredLogs(*logDebugStdout)
+		cleanup, err := logging.EnableStructuredLogs()
 		if err != nil {
 			logging.Errorf("failed to enable structured logs: %v", err)
 			os.Exit(1)
