@@ -58,7 +58,7 @@ func DisableLogging() {
 
 // EnableStructuredLogs replaces all logging functions with structured logging
 // variants.
-func EnableStructuredLogs() (func(), error) {
+func EnableStructuredLogs(logDebugStdout bool) (func(), error) {
 	// Define level-handling logic.
 	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl >= zapcore.ErrorLevel
@@ -67,9 +67,15 @@ func EnableStructuredLogs() (func(), error) {
 		return lvl < zapcore.ErrorLevel
 	})
 
-	// Lock console
-	consoleDebugging := zapcore.Lock(os.Stdout)
+	// Lock consoles
 	consoleErrors := zapcore.Lock(os.Stderr)
+
+	var consoleDebugging zapcore.WriteSyncer
+	if logDebugStdout {
+		consoleDebugging = zapcore.Lock(os.Stdout)
+	} else {
+		consoleDebugging = consoleErrors
+	}
 
 	// Create JSON encoder using opinionated production preset
 	consoleEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
