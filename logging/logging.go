@@ -59,7 +59,7 @@ func DisableLogging() {
 // EnableStructuredLogs replaces all logging functions with structured logging
 // variants.
 func EnableStructuredLogs(logDebugStdout bool) (func(), error) {
-	// Configuration of zap is based on its Adavnced Configuration example,
+	// Configuration of zap is based on its Advanced Configuration example.
 	// See: https://pkg.go.dev/go.uber.org/zap#example-package-AdvancedConfiguration
 
 	// Define level-handling logic.
@@ -71,7 +71,7 @@ func EnableStructuredLogs(logDebugStdout bool) (func(), error) {
 	})
 
 	// Lock wraps a WriteSyncer in a mutex to make it safe for concurrent use. In
-	// particular, *os.Files must be locked before use.
+	// particular, *os.File types must be locked before use.
 	consoleErrors := zapcore.Lock(os.Stderr)
 	consoleDebugging := consoleErrors
 	if logDebugStdout {
@@ -84,7 +84,7 @@ func EnableStructuredLogs(logDebugStdout bool) (func(), error) {
 		zapcore.NewCore(consoleEncoder, consoleDebugging, lowPriority),
 	)
 
-	// By deafult, caller and stacktrace are not included, so add them here
+	// By default, caller and stacktrace are not included, so add them here
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
 	sugar := logger.Sugar()
