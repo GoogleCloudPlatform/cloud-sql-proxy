@@ -263,7 +263,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
-var versionString = "1.20.3-dev"
+var versionString = "1.21.1-dev"
 
 // metadataString indiciates additional build or distribution metadata.
 var metadataString = ""
@@ -463,7 +463,7 @@ func main() {
 	}
 
 	if *structuredLogs {
-		cleanup, err := logging.EnableStructuredLogs()
+		cleanup, err := logging.EnableStructuredLogs(*logDebugStdout)
 		if err != nil {
 			logging.Errorf("failed to enable structured logs: %v", err)
 			os.Exit(1)

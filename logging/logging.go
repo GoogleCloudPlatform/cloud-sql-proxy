@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Verbosef is called to write verbose logs, such as when a new connection is
@@ -57,15 +58,40 @@ func DisableLogging() {
 
 // EnableStructuredLogs replaces all logging functions with structured logging
 // variants.
-func EnableStructuredLogs() (func(), error) {
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return func() {}, err
+func EnableStructuredLogs(logDebugStdout bool) (func(), error) {
+	// Configuration of zap is based on its Advanced Configuration example.
+	// See: https://pkg.go.dev/go.uber.org/zap#example-package-AdvancedConfiguration
+
+	// Define level-handling logic.
+	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.ErrorLevel
+	})
+	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl < zapcore.ErrorLevel
+	})
+
+	// Lock wraps a WriteSyncer in a mutex to make it safe for concurrent use. In
+	// particular, *os.File types must be locked before use.
+	consoleErrors := zapcore.Lock(os.Stderr)
+	consoleDebugging := consoleErrors
+	if logDebugStdout {
+		consoleDebugging = zapcore.Lock(os.Stdout)
 	}
+
+	consoleEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+	core := zapcore.NewTee(
+		zapcore.NewCore(consoleEncoder, consoleErrors, highPriority),
+		zapcore.NewCore(consoleEncoder, consoleDebugging, lowPriority),
+	)
+
+	// By default, caller and stacktrace are not included, so add them here
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+
 	sugar := logger.Sugar()
 	Verbosef = sugar.Debugf
 	Infof = sugar.Infof
 	Errorf = sugar.Errorf
+
 	return func() {
 		logger.Sync()
 	}, nil
