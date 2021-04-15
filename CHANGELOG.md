@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.21.1](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.21.0...v1.21.1) (2021-04-15)
+
+
+### Bug Fixes
+
+* Allow combined use of structured logs and -log_debug_stdout ([#726](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/726)) ([45bda77](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/45bda776fc964a3464a1703035b4f2a719779bc6))
+
 ## [1.21.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.20.2...v1.21.0) (2021-04-05)
 
 
