@@ -41,6 +41,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 
 	"cloud.google.com/go/compute/metadata"
+	"github.com/coreos/go-systemd/v22/daemon"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	goauth "golang.org/x/oauth2/google"
@@ -620,6 +621,11 @@ func main() {
 	go func() {
 		<-signals
 		logging.Infof("Received TERM signal. Waiting up to %s before terminating.", *termTimeout)
+		go func() {
+			if _, err := daemon.SdNotify(false, daemon.SdNotifyStopping); err != nil {
+				logging.Errorf("Failed to notify systemd of termination: %v", err)
+			}
+		}()
 
 		err := proxyClient.Shutdown(*termTimeout)
 		if err == nil {
@@ -629,5 +635,13 @@ func main() {
 		os.Exit(2)
 	}()
 
+	// If running under systemd with Type=notify, we'll send a message to the
+	// service manager that we are ready to handle connections now, and any other
+	// units that are waiting for us can start.
+	go func() {
+		if _, err := daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
+			logging.Errorf("Failed to notify systemd of readiness: %v", err)
+		}
+	}()
 	proxyClient.Run(connSrc)
 }
