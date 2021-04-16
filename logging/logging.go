@@ -58,7 +58,7 @@ func DisableLogging() {
 
 // EnableStructuredLogs replaces all logging functions with structured logging
 // variants.
-func EnableStructuredLogs(logDebugStdout bool) (func(), error) {
+func EnableStructuredLogs(logDebugStdout, verbose bool) (func(), error) {
 	// Configuration of zap is based on its Advanced Configuration example.
 	// See: https://pkg.go.dev/go.uber.org/zap#example-package-AdvancedConfiguration
 
@@ -88,7 +88,10 @@ func EnableStructuredLogs(logDebugStdout bool) (func(), error) {
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
 	sugar := logger.Sugar()
-	Verbosef = sugar.Debugf
+	Verbosef = sugar.Infof
+	if !verbose {
+		Verbosef = noop
+	}
 	Infof = sugar.Infof
 	Errorf = sugar.Errorf
 
