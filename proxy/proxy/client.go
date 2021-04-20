@@ -272,7 +272,7 @@ func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) c
 			logging.Errorf("failed to refresh the ephemeral certificate for %s, returning previous cert instead: %v", instance, err)
 			addr, cfg, ver, err = old.addr, old.cfg, old.version, old.err
 		}
-		c.cfgCache[instance] = cacheEntry{
+		e := cacheEntry{
 			lastRefreshed: time.Now(),
 			err:           err,
 			addr:          addr,
@@ -280,7 +280,15 @@ func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) c
 			cfg:           cfg,
 			done:          done,
 		}
+		c.cfgCache[instance] = e
 		c.cacheL.Unlock()
+
+		if !isValid(e) {
+			// Note: Future refreshes will not be scheduled unless another
+			// connection attempt is made.
+			logging.Errorf("failed to refresh the ephemeral certificate for %v: %v", instance, err)
+			return
+		}
 
 		certExpiration := cfg.Certificates[0].Leaf.NotAfter
 		now := time.Now()

@@ -31,8 +31,8 @@ import (
 const instance = "instance-name"
 
 var (
-	errFakeDial = errors.New("this error is returned by the dialer")
-	forever     = time.Date(9999, 0, 0, 0, 0, 0, 0, time.UTC)
+	sentinelError = errors.New("sentinel error")
+	forever       = time.Date(9999, 0, 0, 0, 0, 0, 0, time.UTC)
 )
 
 type fakeCerts struct {
@@ -66,44 +66,46 @@ func (cs *blockingCertSource) Remote(instance string) (cert *x509.Certificate, a
 	return &x509.Certificate{}, "fake address", "fake name", "fake version", nil
 }
 
-func TestContextDialer(t *testing.T) {
-	b := &fakeCerts{}
-	c := &Client{
-		Certs: &blockingCertSource{
-			map[string]*fakeCerts{
-				instance: b,
-			},
-			forever,
+func newCertSource(certs *fakeCerts, expiration time.Time) CertSource {
+	return &blockingCertSource{
+		values: map[string]*fakeCerts{
+			instance: certs,
 		},
-		ContextDialer: func(context.Context, string, string) (net.Conn, error) {
-			return nil, errFakeDial
-		},
+		validUntil: expiration,
+	}
+}
+
+func newClient(cs CertSource) *Client {
+	return &Client{
+		Certs: cs,
 		Dialer: func(string, string) (net.Conn, error) {
-			return nil, fmt.Errorf("this dialer should not be used when ContextDialer is set")
+			return nil, sentinelError
 		},
 	}
+}
 
-	if _, err := c.DialContext(context.Background(), instance); err != errFakeDial {
+func TestContextDialer(t *testing.T) {
+	cs := newCertSource(&fakeCerts{}, forever)
+	c := newClient(cs)
+
+	c.ContextDialer = func(context.Context, string, string) (net.Conn, error) {
+		return nil, sentinelError
+	}
+	c.Dialer = func(string, string) (net.Conn, error) {
+		return nil, fmt.Errorf("this dialer should not be used when ContextDialer is set")
+	}
+
+	if _, err := c.DialContext(context.Background(), instance); err != sentinelError {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
 
 func TestClientCache(t *testing.T) {
 	b := &fakeCerts{}
-	c := &Client{
-		Certs: &blockingCertSource{
-			map[string]*fakeCerts{
-				instance: b,
-			},
-			forever,
-		},
-		Dialer: func(string, string) (net.Conn, error) {
-			return nil, errFakeDial
-		},
-	}
+	c := newClient(newCertSource(b, forever))
 
 	for i := 0; i < 5; i++ {
-		if _, err := c.Dial(instance); err != errFakeDial {
+		if _, err := c.Dial(instance); err != sentinelError {
 			t.Errorf("unexpected error: %v", err)
 		}
 	}
@@ -117,17 +119,7 @@ func TestClientCache(t *testing.T) {
 
 func TestConcurrentRefresh(t *testing.T) {
 	b := &fakeCerts{}
-	c := &Client{
-		Certs: &blockingCertSource{
-			map[string]*fakeCerts{
-				instance: b,
-			},
-			forever,
-		},
-		Dialer: func(string, string) (net.Conn, error) {
-			return nil, errFakeDial
-		},
-	}
+	c := newClient(newCertSource(b, forever))
 
 	ch := make(chan error)
 	b.Lock()
@@ -144,7 +136,7 @@ func TestConcurrentRefresh(t *testing.T) {
 	b.Unlock()
 
 	for i := 0; i < numDials; i++ {
-		if err := <-ch; err != errFakeDial {
+		if err := <-ch; err != sentinelError {
 			t.Errorf("unexpected error: %v", err)
 		}
 	}
@@ -156,35 +148,31 @@ func TestConcurrentRefresh(t *testing.T) {
 }
 
 func TestMaximumConnectionsCount(t *testing.T) {
-	const maxConnections = 10
-	const numConnections = maxConnections + 1
-	var dials uint64 = 0
-
-	b := &fakeCerts{}
-	certSource := blockingCertSource{
-		map[string]*fakeCerts{},
-		forever,
+	certSource := &blockingCertSource{
+		values:     map[string]*fakeCerts{},
+		validUntil: forever,
 	}
+	c := newClient(certSource)
+
+	const maxConnections = 10
+	c.MaxConnections = maxConnections
+	var dials uint64
 	firstDialExited := make(chan struct{})
-	c := &Client{
-		Certs: &certSource,
-		Dialer: func(string, string) (net.Conn, error) {
-			atomic.AddUint64(&dials, 1)
-
-			// Wait until the first dial fails to ensure the max connections count is reached by a concurrent dialer
-			<-firstDialExited
-
-			return nil, errFakeDial
-		},
-		MaxConnections: maxConnections,
+	c.Dialer = func(string, string) (net.Conn, error) {
+		atomic.AddUint64(&dials, 1)
+		// Wait until the first dial fails to ensure the max connections count
+		// is reached by a concurrent dialer
+		<-firstDialExited
+		return nil, sentinelError
 	}
 
 	// Build certSource.values before creating goroutines to avoid concurrent map read and map write
+	const numConnections = maxConnections + 1
 	instanceNames := make([]string, numConnections)
 	for i := 0; i < numConnections; i++ {
 		// Vary instance name to bypass config cache and avoid second call to Client.tryConnect() in Client.Dial()
 		instanceName := fmt.Sprintf("%s-%d", instance, i)
-		certSource.values[instanceName] = b
+		certSource.values[instanceName] = &fakeCerts{}
 		instanceNames[i] = instanceName
 	}
 
@@ -218,18 +206,13 @@ func TestMaximumConnectionsCount(t *testing.T) {
 }
 
 func TestShutdownTerminatesEarly(t *testing.T) {
-	b := &fakeCerts{}
-	c := &Client{
-		Certs: &blockingCertSource{
-			map[string]*fakeCerts{
-				instance: b,
-			},
-			forever,
-		},
-		Dialer: func(string, string) (net.Conn, error) {
-			return nil, nil
-		},
+	cs := newCertSource(&fakeCerts{}, forever)
+	c := newClient(cs)
+	// Ensure the dialer returns no error.
+	c.Dialer = func(string, string) (net.Conn, error) {
+		return nil, nil
 	}
+
 	shutdown := make(chan bool, 1)
 	go func() {
 		c.Shutdown(1)
@@ -247,24 +230,16 @@ func TestShutdownTerminatesEarly(t *testing.T) {
 }
 
 func TestRefreshTimer(t *testing.T) {
-	timeToExpire := 5 * time.Second
-	b := &fakeCerts{}
+	timeToExpire := 2 * time.Second
 	certCreated := time.Now()
-	c := &Client{
-		Certs: &blockingCertSource{
-			map[string]*fakeCerts{
-				instance: b,
-			},
-			certCreated.Add(timeToExpire),
-		},
-		Dialer: func(string, string) (net.Conn, error) {
-			return nil, errFakeDial
-		},
-		RefreshCfgThrottle: 20 * time.Millisecond,
-		RefreshCfgBuffer:   time.Second,
-	}
+	cs := newCertSource(&fakeCerts{}, certCreated.Add(timeToExpire))
+	c := newClient(cs)
+
+	c.RefreshCfgThrottle = 20 * time.Millisecond
+	c.RefreshCfgBuffer = time.Second
+
 	// Call Dial to cache the cert.
-	if _, err := c.Dial(instance); err != errFakeDial {
+	if _, err := c.Dial(instance); err != sentinelError {
 		t.Fatalf("Dial(%s) failed: %v", instance, err)
 	}
 	c.cacheL.Lock()
@@ -288,9 +263,30 @@ func TestRefreshTimer(t *testing.T) {
 }
 
 func TestSyncAtomicAlignment(t *testing.T) {
-	// The sync/atomic pkg has a bug that requires the developer to guarantee 64-bit alignment when using 64-bit functions on 32-bit systems.
+	// The sync/atomic pkg has a bug that requires the developer to guarantee
+	// 64-bit alignment when using 64-bit functions on 32-bit systems.
 	c := &Client{}
 	if a := unsafe.Offsetof(c.ConnectionsCounter); a%64 != 0 {
 		t.Errorf("Client.ConnectionsCounter is not aligned: want %v, got %v", 0, a)
 	}
+}
+
+type invalidRemoteCertSource struct{}
+
+func (cs *invalidRemoteCertSource) Local(instance string) (tls.Certificate, error) {
+	return tls.Certificate{}, nil
+}
+
+func (cs *invalidRemoteCertSource) Remote(instance string) (*x509.Certificate, string, string, string, error) {
+	return nil, "", "", "", sentinelError
+}
+
+func TestRemoteCertError(t *testing.T) {
+	c := newClient(&invalidRemoteCertSource{})
+
+	_, err := c.DialContext(context.Background(), instance)
+	if err != sentinelError {
+		t.Errorf("expected sentinel error, got %v", err)
+	}
+
 }
