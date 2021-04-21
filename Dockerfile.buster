@@ -19,7 +19,9 @@ WORKDIR /go/src/cloudsql-proxy
 COPY . .
 
 RUN go get ./...
-RUN go build -ldflags "-X main.metadataString=container.buster" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+RUN go build -ldflags \
+    "-X main.metadataString=container.buster -X main.versionString=$(cat version.txt)" \
+    -o cloud_sql_proxy ./cmd/cloud_sql_proxy
 
 # Final stage
 FROM debian:buster
