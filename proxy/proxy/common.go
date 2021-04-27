@@ -30,28 +30,6 @@ import (
 // calls to Cloud SQL.
 const SQLScope = "https://www.googleapis.com/auth/sqlservice.admin"
 
-type dbgConn struct {
-	net.Conn
-}
-
-func (d dbgConn) Write(b []byte) (int, error) {
-	x, y := d.Conn.Write(b)
-	logging.Verbosef("write(%q) => (%v, %v)", b, x, y)
-	return x, y
-}
-
-func (d dbgConn) Read(b []byte) (int, error) {
-	x, y := d.Conn.Read(b)
-	logging.Verbosef("read: (%v, %v) => %q", x, y, b[:x])
-	return x, y
-}
-
-func (d dbgConn) Close() error {
-	err := d.Conn.Close()
-	logging.Verbosef("close: %v", err)
-	return err
-}
-
 // myCopy is similar to io.Copy, but reports whether the returned error was due
 // to a bad read or write. The returned error will never be nil
 func myCopy(dst io.Writer, src io.Reader) (readErr bool, err error) {
