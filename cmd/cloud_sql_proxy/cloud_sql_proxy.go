@@ -212,8 +212,8 @@ Connection:
         -instances=my-project:my-region:my-instance=unix:custom-socket-name
 
     Note: The directory specified by -dir must exist and the socket file path
-    (i.e., dir plus INSTANCE_CONNECTION_NAME) must be under 108 characters on
-    Linux (or sometimes even less depending on the platform).
+    (i.e., dir plus INSTANCE_CONNECTION_NAME) must be under your platform's
+    limit (typically 108 characters on many Unix systems, but varies by platform).
 
     To override the -dir parameter, specify an absolute path as shown in the
     following example:
