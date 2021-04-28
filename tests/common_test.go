@@ -69,7 +69,13 @@ func compileProxy() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp dir: %s", err)
 	}
+
 	b := path.Join(tmp, "cloud_sql_proxy")
+
+	if runtime.GOOS == "windows" {
+		b += ".exe"
+	}
+
 	cmd := exec.Command("go", "build", "-o", b, pkgPath)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
