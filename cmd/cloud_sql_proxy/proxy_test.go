@@ -21,6 +21,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 	"testing"
 )
 
@@ -98,6 +99,12 @@ func TestCreateInstanceConfigs(t *testing.T) {
 			continue
 		}
 		if err != nil {
+			if runtime.GOOS == "windows" {
+				if err.Error() == "unsupported network: unix" || err.Error() == "FUSE not supported on this system" {
+					t.Logf("CreateInstanceConfigs got error when %s on Windows: %v", v.desc, err)
+					return // these errors are expected on Windows
+				}
+			}
 			t.Errorf("CreateInstanceConfigs gave error when %s: %v", v.desc, err)
 		}
 	}
@@ -164,6 +171,10 @@ func TestParseInstanceConfig(t *testing.T) {
 					if !validNets[tc.wantCfg.Network] {
 						t.Skipf("%q net not supported, skipping", tc.wantCfg.Network)
 					}
+				}
+				// Skip unix sockets on Windows
+				if runtime.GOOS == "windows" && tc.wantCfg.Network == "unix" {
+					t.Skipf("%q net not supported on Windows, skipping", tc.wantCfg.Network)
 				}
 			}
 
