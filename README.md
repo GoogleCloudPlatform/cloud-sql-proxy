@@ -92,7 +92,9 @@ cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:0.0.0.0:5432
 
 ``` bash
 # The proxy will mount a Unix domain socket at /cloudsql/<INSTANCE_CONNECTION_NAME>
-# Note: The directory specified by `-dir` must exist.
+# Note: The directory specified by `-dir` must exist and the socket file path
+# (i.e., dir plus INSTANCE_CONNECTION_NAME) must be under 108 characters on
+# Linux (or sometimes even less depending on the platform).
 cloud_sql_proxy -dir=/cloudsql -instances=<INSTANCE_CONNECTION_NAME>
 ```
 
