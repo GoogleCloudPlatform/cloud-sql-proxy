@@ -100,11 +100,7 @@ func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.Co
 	}
 
 	server := fs.New(c, &fs.Config{
-		Debug: func(msg interface{}) {
-			if false {
-				logging.Verbosef("%s", msg)
-			}
-		},
+		Debug: func(msg interface{}) {},
 	})
 
 	go func() {

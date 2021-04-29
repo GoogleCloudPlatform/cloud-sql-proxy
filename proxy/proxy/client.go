@@ -162,12 +162,6 @@ func (c *Client) handleConn(conn Conn) {
 		return
 	}
 
-	if false {
-		// Log the connection's traffic via the debug connection if we're in a
-		// verbose mode. Note that this is the unencrypted traffic stream.
-		conn.Conn = dbgConn{conn.Conn}
-	}
-
 	c.Conns.Add(conn.Instance, conn.Conn)
 	copyThenClose(server, conn.Conn, conn.Instance, "local connection on "+conn.Conn.LocalAddr().String())
 
