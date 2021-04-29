@@ -21,6 +21,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 	"testing"
 )
 
@@ -47,49 +48,54 @@ func TestCreateInstanceConfigs(t *testing.T) {
 		wantErr bool
 
 		skipFailedInstanceConfig bool
+
+		supportedOnWindows bool
 	}{
 		{
 			"setting -fuse and -dir",
-			"dir", true, nil, "", false, false,
+			"dir", true, nil, "", false, false, false,
 		}, {
 			"setting -fuse",
-			"", true, nil, "", true, false,
+			"", true, nil, "", true, false, false,
 		}, {
 			"setting -fuse, -dir, and -instances",
-			"dir", true, []string{"proj:reg:x"}, "", true, false,
+			"dir", true, []string{"proj:reg:x"}, "", true, false, false,
 		}, {
 			"setting -fuse, -dir, and -instances_metadata",
-			"dir", true, nil, "md", true, false,
+			"dir", true, nil, "md", true, false, false,
 		}, {
 			"setting -dir and -instances (unix socket)",
-			"dir", false, []string{"proj:reg:x"}, "", false, false,
+			"dir", false, []string{"proj:reg:x"}, "", false, false, false,
 		}, {
 			// tests for the case where invalid configs can still exist, when skipped
 			"setting -dir and -instances (unix socket) w/ something invalid",
-			"dir", false, []string{"proj:reg:x", "INVALID_PROJECT_STRING"}, "", false, true,
+			"dir", false, []string{"proj:reg:x", "INVALID_PROJECT_STRING"}, "", false, true, false,
 		}, {
 			"Seting -instance (unix socket)",
-			"", false, []string{"proj:reg:x"}, "", true, false,
+			"", false, []string{"proj:reg:x"}, "", true, false, false,
 		}, {
 			"setting -instance (tcp socket)",
-			"", false, []string{"proj:reg:x=tcp:1234"}, "", false, false,
+			"", false, []string{"proj:reg:x=tcp:1234"}, "", false, false, true,
 		}, {
 			"setting -instance (tcp socket) and -instances_metadata",
-			"", false, []string{"proj:reg:x=tcp:1234"}, "md", true, false,
+			"", false, []string{"proj:reg:x=tcp:1234"}, "md", true, false, true,
 		}, {
 			"setting -dir, -instance (tcp socket), and -instances_metadata",
-			"dir", false, []string{"proj:reg:x=tcp:1234"}, "md", false, false,
+			"dir", false, []string{"proj:reg:x=tcp:1234"}, "md", false, false, true,
 		}, {
 			"setting -dir, -instance (unix socket), and -instances_metadata",
-			"dir", false, []string{"proj:reg:x"}, "md", false, false,
+			"dir", false, []string{"proj:reg:x"}, "md", false, false, false,
 		}, {
 			"setting -dir and -instances_metadata",
-			"dir", false, nil, "md", false, false,
+			"dir", false, nil, "md", false, false, false,
 		}, {
 			"setting -instances_metadata",
-			"", false, nil, "md", true, false,
+			"", false, nil, "md", true, false, true,
 		},
 	} {
+		if runtime.GOOS == "windows" && !v.supportedOnWindows {
+			continue
+		}
 		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient, v.skipFailedInstanceConfig)
 		if v.wantErr {
 			if err == nil {
@@ -164,6 +170,10 @@ func TestParseInstanceConfig(t *testing.T) {
 					if !validNets[tc.wantCfg.Network] {
 						t.Skipf("%q net not supported, skipping", tc.wantCfg.Network)
 					}
+				}
+				// Skip unix sockets on Windows
+				if runtime.GOOS == "windows" && tc.wantCfg.Network == "unix" {
+					t.Skipf("%q net not supported on Windows, skipping", tc.wantCfg.Network)
 				}
 			}
 
