@@ -94,7 +94,6 @@ func TestCreateInstanceConfigs(t *testing.T) {
 		},
 	} {
 		if runtime.GOOS == "windows" && !v.supportedOnWindows {
-			t.Skip("skipping test for Unix sockets or FUSE")
 			continue
 		}
 		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient, v.skipFailedInstanceConfig)
