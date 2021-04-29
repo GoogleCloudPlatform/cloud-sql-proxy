@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime"
 	"testing"
 
 	mysql "github.com/go-sql-driver/mysql"
@@ -62,6 +63,9 @@ func TestMysqlTcp(t *testing.T) {
 }
 
 func TestMysqlSocket(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipped Unix socket test on Windows")
+	}
 	requireMysqlVars(t)
 
 	dir, err := ioutil.TempDir("", "csql-proxy-tests")

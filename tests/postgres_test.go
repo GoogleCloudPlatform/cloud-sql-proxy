@@ -26,6 +26,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime"
 	"testing"
 	"time"
 
@@ -65,6 +66,9 @@ func TestPostgresTcp(t *testing.T) {
 }
 
 func TestPostgresSocket(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipped Unix socket test on Windows")
+	}
 	requirePostgresVars(t)
 
 	dir, err := ioutil.TempDir("", "csql-proxy")
