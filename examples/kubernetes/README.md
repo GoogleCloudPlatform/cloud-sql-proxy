@@ -38,7 +38,7 @@ user, and password which can be injected into your application as env vars.
           valueFrom:
             secretKeyRef:
               name: <YOUR-DB-SECRET>
-              key: database
+              key database
     ```
 3. Finally, configure your application to use these values. In the example
 above, the values will be in the env vars `DB_USER`, `DB_PASS`, and `DB_NAME`.
@@ -197,11 +197,6 @@ as a separate service for several reasons:
         # The default Cloud SQL proxy image runs as the
         # "nonroot" user and group (uid: 65532) by default.
         runAsNonRoot: true
-      # Resource configuration depends on an application's requirements. The
-      # number of connections is correlated to memory use. The amount of IO
-      # across each connection is correlated to CPU use. Users should adjust
-      # the following values based on what their application needs.
-      # For details, see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       resources:
         requests:
           # More connections require more memory. Fewer connections require
