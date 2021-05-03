@@ -176,7 +176,7 @@ as a separate service for several reasons:
   accurately scope and request resources to match your applications as it
   scales
 
-1. Add the Cloud SQL proxy to the pod configuration under `containers:` :
+1. Add the Cloud SQL proxy to the pod configuration under `containers`:
     > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L33-L549)
     ```yaml
     - name: cloud-sql-proxy
