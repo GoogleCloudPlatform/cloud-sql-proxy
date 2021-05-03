@@ -38,7 +38,7 @@ user, and password which can be injected into your application as env vars.
           valueFrom:
             secretKeyRef:
               name: <YOUR-DB-SECRET>
-              key database
+              key: database
     ```
 3. Finally, configure your application to use these values. In the example
 above, the values will be in the env vars `DB_USER`, `DB_PASS`, and `DB_NAME`.
@@ -207,7 +207,7 @@ as a separate service for several reasons:
           # this value based on your application's requirements.
           memory: "2Gi"
           # The proxy's CPU use scales linearly with the amount of IO between
-          # the database and the application. Adjust this value values on your
+          # the database and the application. Adjust this value based on your
           # application's requirements.
           cpu:    "1"
     ```

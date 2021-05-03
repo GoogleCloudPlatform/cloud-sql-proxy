@@ -64,7 +64,7 @@ spec:
             # this value based on your application's requirements.
             memory: "2Gi"
             # The proxy's CPU use scales linearly with the amount of IO between
-            # the database and the application. Adjust this value values on your
+            # the database and the application. Adjust this value based on your
             # application's requirements.
             cpu:    "1"
       # [END cloud_sql_proxy_k8s_container]
