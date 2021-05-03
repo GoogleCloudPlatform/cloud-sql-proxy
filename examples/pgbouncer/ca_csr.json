@@ -1,0 +1,16 @@
+{
+    "hosts": [],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C":  "US",
+            "L":  "Boulder",
+            "O":  "My Cool Self-Signing Certificate Authority",
+            "OU": "WWW",
+            "ST": "Colorado"
+        }
+    ]
+}

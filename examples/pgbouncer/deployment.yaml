@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <YOUR-DEPLOYMENT-NAME>
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: <YOUR-APPLICATION-NAME>
+  template:
+    metadata:
+      labels:
+        app: <YOUR-APPLICATION-NAME>
+    spec:
+      serviceAccountName: <YOUR-KSA-NAME>
+      volumes:
+      - name: cacert
+        secret:
+          secretName: <YOUR-CA-SECRET>
+          items:
+          - key: tls.crt
+            path: cert.pem
+      containers:
+      - name: <YOUR-APPLICATION-NAME>
+        image: <YOUR-APPLICATION-CONTAINER>
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: cacert
+          mountPath: "/etc/ca"
+          readOnly: true
+        env:
+        - name: DB_HOST
+          value: "<YOUR-SERVICE-NAME>.default.svc.cluster.local"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: username
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: password
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: <YOUR-DB-SECRET>
+              key: database
+        - name: DB_PORT
+          value: "5432"
+        - name: CA_CERT
+          value: "/etc/ca/cert.pem"
