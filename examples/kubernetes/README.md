@@ -177,7 +177,7 @@ as a separate service for several reasons:
   scales
 
 1. Add the Cloud SQL proxy to the pod configuration under `containers`:
-    > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L39-L70)
+    > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L39-L69)
     ```yaml
     - name: cloud-sql-proxy
       # It is recommended to use the latest version of the Cloud SQL proxy
@@ -197,14 +197,18 @@ as a separate service for several reasons:
         # The default Cloud SQL proxy image runs as the
         # "nonroot" user and group (uid: 65532) by default.
         runAsNonRoot: true
+      # Resource configuration depends on an application's requirements. You
+      # should adjust the following values based on what your application
+      # needs. For details, see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       resources:
         requests:
-          # More connections require more memory. Fewer connections require
-          # less memory. Adjust this value based on your application's
-          # requirements.
+          # The proxy's memory use scales linearly with the number of active
+          # connections. Fewer open connections will use less memory. Adjust
+          # this value based on your application's requirements.
           memory: "2Gi"
-          # More database IO require more CPUs. Less database IO require less
-          # CPU. Adjust this value based on your application's requirements.
+          # The proxy's CPU use scales linearly with the amount of IO between
+          # the database and the application. Adjust this value values on your
+          # application's requirements.
           cpu:    "1"
     ```
    If you are using a service account key, specify your secret volume and add
