@@ -21,7 +21,7 @@ user, and password which can be injected into your application as env vars.
     ```
 2. Next, configure your application's container to mount the secrets as env
    vars:
-    > [proxy_with_workload_identity.yaml](proxy_with_workload_identity.yaml#L12-L30)
+    > [proxy_with_workload_identity.yaml](proxy_with_workload_identity.yaml#L21-L36)
     ```yaml
        env:
         - name: DB_USER
@@ -83,7 +83,7 @@ bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account
 1. [Enable Workload Identity for your node pool][enable-wi-node-pool]
 1. Create a KSA for your application `kubectl apply -f service-account.yaml`:
 
-    > [service-account.yaml](service-account.yaml#L2-L5)
+    > [service-account.yaml](service_account.yaml#L2-L5)
     ```yaml
     apiVersion: v1
     kind: ServiceAccount
@@ -145,12 +145,12 @@ to mount a service account key file into the Cloud SQL proxy pod and use the
     --from-file=service_account.json=~/key.json
     ```
 3. Mount the secret as a volume under the`spec:` for your k8s object:
-    > [proxy_with_sa_key.yaml](proxy_with_sa_key.yaml#L55-L58)
+    > [proxy_with_sa_key.yaml](proxy_with_sa_key.yaml#L74-L77)
     ```yaml
     volumes:
     - name: <YOUR-SA-SECRET-VOLUME>
-    secret:
-      secretName: <YOUR-SA-SECRET>
+      secret:
+        secretName: <YOUR-SA-SECRET>
     ```
 
 4. Follow the instructions in the next section to access the volume from the
@@ -176,32 +176,45 @@ as a separate service for several reasons:
   accurately scope and request resources to match your applications as it
   scales
 
-1. Add the Cloud SQL proxy to the pod configuration under `containers:` :
-    > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L33-L549)
+1. Add the Cloud SQL proxy to the pod configuration under `containers`:
+    > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L39-L69)
     ```yaml
     - name: cloud-sql-proxy
-    # It is recommended to use the latest version of the Cloud SQL proxy
-    # Make sure to update on a regular schedule!
-    image: gcr.io/cloudsql-docker/gce-proxy:1.17
-    command:
-      - "/cloud_sql_proxy"
+      # It is recommended to use the latest version of the Cloud SQL proxy
+      # Make sure to update on a regular schedule!
+      image: gcr.io/cloudsql-docker/gce-proxy:1.17
+      command:
+        - "/cloud_sql_proxy"
 
-      # If connecting from a VPC-native GKE cluster, you can use the
-      # following flag to have the proxy connect over private IP
-      # - "-ip_address_types=PRIVATE"
+        # If connecting from a VPC-native GKE cluster, you can use the
+        # following flag to have the proxy connect over private IP
+        # - "-ip_address_types=PRIVATE"
 
-      # Replace DB_PORT with the port the proxy should listen on
-      # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
-      - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:<DB_PORT>"
-    securityContext:
-      # The default Cloud SQL proxy image runs as the
-      # "nonroot" user and group (uid: 65532) by default.
-      runAsNonRoot: true
+        # Replace DB_PORT with the port the proxy should listen on
+        # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
+        - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:<DB_PORT>"
+      securityContext:
+        # The default Cloud SQL proxy image runs as the
+        # "nonroot" user and group (uid: 65532) by default.
+        runAsNonRoot: true
+      # Resource configuration depends on an application's requirements. You
+      # should adjust the following values based on what your application
+      # needs. For details, see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      resources:
+        requests:
+          # The proxy's memory use scales linearly with the number of active
+          # connections. Fewer open connections will use less memory. Adjust
+          # this value based on your application's requirements.
+          memory: "2Gi"
+          # The proxy's CPU use scales linearly with the amount of IO between
+          # the database and the application. Adjust this value based on your
+          # application's requirements.
+          cpu:    "1"
     ```
    If you are using a service account key, specify your secret volume and add
    the `-credential_file` flag to the command:
 
-   > [proxy_with_sa_key.yaml](proxy_with_sa_key.yaml#L43-L52)
+   > [proxy_with_sa_key.yaml](proxy_with_sa_key.yaml#L49-L58)
     ```yaml
       # This flag specifies where the service account key can be found
       - "-credential_file=/secrets/service_account.json"
@@ -231,7 +244,7 @@ a Cloud SQL instance on the same VPC using private IP without the proxy.
     ```
 
 2. Next make sure you add the secret to your application's container:
-   > [no_proxy_private_ip.yaml](no_proxy_private_ip.yaml#L28-L32)
+   > [no_proxy_private_ip.yaml](no_proxy_private_ip.yaml#L34-L38)
    ```yaml
    - name: DB_HOST
      valueFrom:
