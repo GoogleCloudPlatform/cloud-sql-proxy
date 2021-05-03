@@ -58,7 +58,7 @@ spec:
         # number of connections is correlated to memory use. The amount of IO
         # across each connection is correlated to CPU use. Users should adjust
         # the following values based on what their application needs.
-        # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        # For details, see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         resources:
           requests:
             # More connections require more memory. Fewer connections require
