@@ -145,7 +145,7 @@ to mount a service account key file into the Cloud SQL proxy pod and use the
     --from-file=service_account.json=~/key.json
     ```
 3. Mount the secret as a volume under the`spec:` for your k8s object:
-    > [proxy_with_sa_key.yaml](proxy_with_sa_key.yaml#L75-L78)
+    > [proxy_with_sa_key.yaml](proxy_with_sa_key.yaml#L74-L77)
     ```yaml
     volumes:
     - name: <YOUR-SA-SECRET-VOLUME>
