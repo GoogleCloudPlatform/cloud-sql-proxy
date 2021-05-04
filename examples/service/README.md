@@ -2,7 +2,7 @@
 
 This example demonstrates how to run the Cloud SQL Auth Proxy with PgBouncer on
 Kubernetes. It assumes you have already successfully completed all the steps in
-[Using the Cloud SQL Auth Proxy on Kubernetes][k8s-example].
+[Using the Cloud SQL Auth Proxy on Kubernetes][sidecar].
 
 In this example, you will deploy [PgBouncer][] with the proxy as a sidecar, in
 addition to configuring encryption between the application and PgBouncer.
@@ -252,9 +252,9 @@ provide the additional properties:
 1. `sslrootcert` must set to the environment variable `CA_CERT`
 
 
-[CFSSL]:       https://github.com/cloudflare/cfssl
-[edoburu]:     https://hub.docker.com/r/edoburu/pgbouncer
-[k8s-example]: ../kubernetes/README.md
-[k8s-tlks]:    https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
-[PgBouncer]:   https://www.pgbouncer.org
+[CFSSL]:     https://github.com/cloudflare/cfssl
+[edoburu]:   https://hub.docker.com/r/edoburu/pgbouncer
+[sidecar]:   ../sidecar/README.md
+[k8s-tlks]:  https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
+[PgBouncer]: https://www.pgbouncer.org
 
