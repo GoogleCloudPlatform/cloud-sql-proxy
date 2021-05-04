@@ -117,7 +117,7 @@ be stored:
 - name: pgbouncer
   image: <PG-BOUNCER-CONTAINER>
   ports:
-  - containerPort: 8080
+  - containerPort: 5432
   volumeMounts:
   - name: cacert
     mountPath: "/etc/ca"
