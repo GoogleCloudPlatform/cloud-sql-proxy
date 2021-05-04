@@ -9,6 +9,12 @@ addition to configuring encryption between the application and PgBouncer.
 
 ## Warning
 
+The sidecar is the recommended choice for most users because ... (simpler, less
+overhead, more secure, lower latency)
+
+The service pattern is useful when you are (at very large scale, need a
+middleware connection pooler, run into SQL Admin API quota problems).
+
 This is an advanced example. Running PgBouncer may be a significant operational
 burden. Nonetheless, running the proxy with PgBouncer may be an appropriate
 choice when running the proxy as a sidecar no longer works effectively at your
@@ -254,7 +260,7 @@ provide the additional properties:
 
 [CFSSL]:     https://github.com/cloudflare/cfssl
 [edoburu]:   https://hub.docker.com/r/edoburu/pgbouncer
-[sidecar]:   ../sidecar/README.md
+[sidecar]:   ../k8s-sidecar/README.md
 [k8s-tlks]:  https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
 [PgBouncer]: https://www.pgbouncer.org
 
