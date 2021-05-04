@@ -1,26 +1,33 @@
-# Using the Cloud SQL Auth Proxy with PgBouncer
+# Running the Cloud SQL Proxy as a Service
 
 This example demonstrates how to run the Cloud SQL Auth Proxy with PgBouncer on
-Kubernetes. It assumes you have already successfully completed all the steps in
-[Using the Cloud SQL Auth Proxy on Kubernetes][sidecar].
+Kubernetes as a service. It assumes you have already successfully completed all
+the steps in [Using the Cloud SQL Auth Proxy on Kubernetes][sidecar].
 
-In this example, you will deploy [PgBouncer][] with the proxy as a sidecar, in
-addition to configuring encryption between the application and PgBouncer.
+In this example, you will deploy [PgBouncer][] with the Cloud SQL Auth Proxy as
+a sidecar, in addition to configuring encryption between the application and
+PgBouncer.
 
-## Warning
+## A Word of Warning
 
-The sidecar is the recommended choice for most users because ... (simpler, less
-overhead, more secure, lower latency)
+Running PgBouncer with the Cloud SQL Auth Proxy may pose a significant
+operational burden and should be undertaken with caution given the attendant
+complexity.
 
-The service pattern is useful when you are (at very large scale, need a
-middleware connection pooler, run into SQL Admin API quota problems).
+In general, we recommend [running the proxy as a sidecar][sidecar] to your
+application because it is simple, there is less overhead, it is secure out of
+the box, and there is less latency involved.
 
-This is an advanced example. Running PgBouncer may be a significant operational
-burden. Nonetheless, running the proxy with PgBouncer may be an appropriate
-choice when running the proxy as a sidecar no longer works effectively at your
-scale.
+However, the service pattern is useful when you are at very large scale, when
+you clearly need a database connection pooler, and when you are running into SQL
+Admin API quota problems.
 
-## Generate Certificates for PgBouncer
+## Initial Setup
+
+Before we deploy PgBouncer with the Cloud SQL Auth Proxy, there are three
+initial steps to take.
+
+### Generate Certificates for PgBouncer
 
 First, you will need to generate certificates to encrypt the connection between
 the application and PgBouncer. We recommend using [CFSSL][] to handle
@@ -50,9 +57,10 @@ we will use to encrypt traffic from the application to PgBouncer.
 cfssl gencert -ca cert -ca-key key server_csr.json | cfssljson -bare server
 ```
 
-## Save the certificates as secrets
+### Save the certificates as secrets
 
-With all the necessary certificates generated, we will save them as secrets:
+Second, with all the necessary certificates generated, we will save them as
+secrets:
 
 ``` shell
 # First the CA cert
@@ -63,14 +71,15 @@ kubectl create secret tls <YOUR-SERVER-CERT-SECRET> --key="server-key.pem" \
   --cert="server.pem"
 ```
 
-## Containerize PgBouncer
+### Containerize PgBouncer
 
-Some users may prefer to containerize PgBouncer themselves. For this example,
-we will make use of an open source container, [edoburu/pgbouncer][edoburu]. One
-nice benefit of `edoburu/pgbouncer` is that it will generate all the PgBouncer
-configuration based on environment variables passed to the container.
+Third, we will containerize PgBouncer. Some users may prefer to containerize
+PgBouncer themselves. For this example, we will make use of an open source
+container, [edoburu/pgbouncer][edoburu]. One nice benefit of `edoburu/pgbouncer`
+is that it will generate all the PgBouncer configuration based on environment
+variables passed to the container.
 
-## Deploy a PgBouncer Deployment and Service
+## Deploy PgBouncer as a Service
 
 With PgBouncer containerized, we will now create a deployment with PgBouncer and
 the proxy as a sidecar.
@@ -161,7 +170,7 @@ For the PgBouncer deployment, we add the proxy as a sidecar, starting it on port
 
 ``` yaml
 - name: cloud-sql-proxy
-  image: gcr.io/cloudsql-docker/gce-proxy:1.22.0
+  image: gcr.io/cloudsql-docker/gce-proxy:1.22.0 # make sure the use the latest version
   command:
     - "/cloud_sql_proxy"
     - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:5431"
@@ -190,7 +199,7 @@ spec:
 With the PgBouncer service and deployment done, we are ready to point our
 application at it.
 
-## Point your application at the service
+## Configure your application
 
 First, we configure a volume for the CA certificate, mapping the file name to
 `cert.pem`.
@@ -226,7 +235,7 @@ time including a `CA_CERT`:
 ``` yaml
 env:
 - name: DB_HOST
-  value: "<YOUR-SERVICE-NAME>.default.svc.cluster.local"
+  value: "<YOUR-SERVICE-NAME>.default.svc.cluster.local" # using the "default" namespace
 - name: DB_USER
   valueFrom:
     secretKeyRef:

@@ -24,14 +24,14 @@ spec:
       - name: <YOUR-APPLICATION-NAME>
         image: <YOUR-APPLICATION-CONTAINER>
         ports:
-        - containerPort: 8080
+        - containerPort: 5432
         volumeMounts:
         - name: cacert
           mountPath: "/etc/ca"
           readOnly: true
         env:
         - name: DB_HOST
-          value: "<YOUR-SERVICE-NAME>.default.svc.cluster.local"
+          value: "<YOUR-SERVICE-NAME>.default.svc.cluster.local" # using the "default" namespace
         - name: DB_USER
           valueFrom:
             secretKeyRef:
