@@ -89,7 +89,7 @@ First, we mount our CA certificate and server certificate and private key,
 renaming the certificate secrets to `cert.pem` and server private key to
 `key.pem`:
 
-> [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L15-L29))
+> [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L15-L29)
 
 ``` yaml
 volumes:
@@ -112,7 +112,7 @@ volumes:
 Next, we specify volume mounts in our PgBouncer container where the secrets will
 be stored:
 
-> [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L31-L41))
+> [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L31-L41)
 
 ``` yaml
 - name: pgbouncer
@@ -131,7 +131,7 @@ be stored:
 Then we configure PgBouncer through environment variables. Note: we use 5431 for
 `DB_PORT` to leave 5432 available.
 
-> [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L31-L41))
+> [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L42-L69)
 
 ``` yaml
 env:
@@ -167,7 +167,7 @@ env:
 For the PgBouncer deployment, we add the proxy as a sidecar, starting it on port
 5431:
 
-> [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L70-L76))
+> [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L70-L76)
 
 ``` yaml
 - name: cloud-sql-proxy
@@ -181,7 +181,7 @@ For the PgBouncer deployment, we add the proxy as a sidecar, starting it on port
 
 Next, we create a PgBouncer service, listening on port 5342:
 
-> [`pgbouncer_service.yaml`](pgbouncer_service.yaml#L1-L11))
+> [`pgbouncer_service.yaml`](pgbouncer_service.yaml#L1-L11)
 
 ``` yaml
 apiVersion: v1
@@ -205,7 +205,7 @@ application at it.
 First, we configure a volume for the CA certificate, mapping the file name to
 `cert.pem`.
 
-> [`deployment.yaml`](deplyment.yaml#L1-L11))
+> [`deployment.yaml`](deployment.yaml#L1-L11)
 
 ``` yaml
 volumes:
@@ -219,7 +219,7 @@ volumes:
 
 Next, we mount the volume within the application container:
 
-> [`deployment.yaml`](deplyment.yaml#L28-L31))
+> [`deployment.yaml`](deployment.yaml#L28-L31)
 
 ``` yaml
 volumeMounts:
@@ -231,7 +231,7 @@ volumeMounts:
 Then, we configure environment variables for connecting to the database, this
 time including a `CA_CERT`:
 
-> [`deployment.yaml`](deplyment.yaml#L32-L53))
+> [`deployment.yaml`](deployment.yaml#L32-L53)
 
 ``` yaml
 env:
