@@ -344,5 +344,5 @@ Install via Nuget, follow these
 [releases]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/releases
 [roles-and-permissions]: https://cloud.google.com/sql/docs/mysql/roles-and-permissions
 [service-account]: https://cloud.google.com/iam/docs/service-accounts
-[sidecar-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/examples/kubernetes#run-the-cloud-sql-proxy-as-a-sidecar
+[sidecar-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/examples/k8s-sidecar#run-the-cloud-sql-proxy-as-a-sidecar
 [source-install]: docs/install-from-source.md

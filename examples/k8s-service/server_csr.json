@@ -1,0 +1,19 @@
+{
+    "hosts": [
+        "pgbouncersvc.default.svc.cluster.local",
+        "localhost"
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C":  "US",
+            "L":  "Boulder",
+            "O":  "My Cool Kubernetes Cluster",
+            "OU": "WWW",
+            "ST": "Colorado"
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: <YOUR-SERVICE-NAME>
+spec:
+  selector:
+    app: <YOUR-PGBOUNCER-NAME>
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
