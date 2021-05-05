@@ -24,7 +24,7 @@ spec:
       - name: <YOUR-APPLICATION-NAME>
         image: <YOUR-APPLICATION-CONTAINER>
         ports:
-        - containerPort: 5432
+        - containerPort: 8080
         volumeMounts:
         - name: cacert
           mountPath: "/etc/ca"

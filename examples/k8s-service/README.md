@@ -272,6 +272,6 @@ provide the additional properties:
 [CFSSL]:            https://github.com/cloudflare/cfssl
 [edoburu]:          https://hub.docker.com/r/edoburu/pgbouncer
 [sidecar]:          ../k8s-sidecar/README.md
-[k8s-tlks]:         https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
+[k8s-tls]:          https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
 [PgBouncer]:        https://www.pgbouncer.org
 
