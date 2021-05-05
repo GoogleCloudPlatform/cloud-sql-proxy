@@ -34,7 +34,8 @@ the application and PgBouncer. We recommend using [CFSSL][] to handle
 certificate generation. Note: this example uses self-signed certificates. In
 some cases, using a certificate signed by a public certificate authority may be
 preferred.  Alternatively, Kubernetes includes [an API for issuing
-certificates][k8s-tls].
+certificates][k8s-tls]. See the documentation on
+[certificates][certificate-docs] for more details.
 
 The certificate signing request is encoded as JSON in
 [`ca_csr.json`](ca_csr.json) for the certificate authority and in
@@ -267,9 +268,10 @@ provide the additional properties:
 1. `sslrootcert` must set to the environment variable `CA_CERT`
 
 
-[CFSSL]:     https://github.com/cloudflare/cfssl
-[edoburu]:   https://hub.docker.com/r/edoburu/pgbouncer
-[sidecar]:   ../k8s-sidecar/README.md
-[k8s-tlks]:  https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
-[PgBouncer]: https://www.pgbouncer.org
+[certificate-docs]: https://kubernetes.io/docs/tasks/administer-cluster/certificates/
+[CFSSL]:            https://github.com/cloudflare/cfssl
+[edoburu]:          https://hub.docker.com/r/edoburu/pgbouncer
+[sidecar]:          ../k8s-sidecar/README.md
+[k8s-tlks]:         https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
+[PgBouncer]:        https://www.pgbouncer.org
 
