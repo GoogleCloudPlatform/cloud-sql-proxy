@@ -466,7 +466,7 @@ func main() {
 	// Deprecation warning for darwin 386
 	// TODO(enocom): remove this warning with v1.25.0
 	if runtime.GOOS == "darwin" && runtime.GOARCH == "386" {
-		logging.Infof("WARNING: You are running a Darwin 386 build that is deprecated. The Cloud SQL Auth Proxy will stop providing builds for Darwin 386 as of v1.25.0 (expected August 2021). See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/780 for details.")
+		logging.Infof("WARNING: You are running a Darwin 386 build that is deprecated. The Cloud SQL Auth Proxy will stop distributions for 32-bit macOS as of v1.25.0 (expected August 2021). See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/780 for details.")
 	}
 
 	if *logDebugStdout {
