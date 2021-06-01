@@ -100,7 +100,7 @@ func proxyConnLimitTest(t *testing.T, connName, driver, dsn string, port int) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, err = db.ExecContext(ctx, stmt)
+			_, err := db.ExecContext(ctx, stmt)
 			if err != nil {
 				c <- err
 			}

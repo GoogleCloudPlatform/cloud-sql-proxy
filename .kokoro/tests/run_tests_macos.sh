@@ -33,5 +33,5 @@ fi
 # On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
 export TMPDIR="/tmp"
 echo -e "******************** Running tests... ********************\n"
-go test -v ./...
+go test -race -v ./...
 echo -e "******************** Tests complete.  ********************\n"

@@ -18,7 +18,7 @@ set -e
 
 export GO111MODULE=on
 export PATH=/c/Go/bin:$PATH
-export GOPATH=/c/Go 
+export GOPATH=/c/Go
 
 # Kokoro setup
 if [ -n "$KOKORO_GFILE_DIR" ]; then

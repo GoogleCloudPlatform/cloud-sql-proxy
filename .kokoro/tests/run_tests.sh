@@ -30,5 +30,5 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
 fi
 
 echo -e "******************** Running tests... ********************\n"
-go test -v ./...
+go test -race -v ./...
 echo -e "******************** Tests complete.  ********************\n"
