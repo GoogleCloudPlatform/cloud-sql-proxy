@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.22.1](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.22.0...v1.22.1) (2021-06-01)
+
+
+### Bug Fixes
+
+* change to static base container ([#791](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/791)) ([d66233e](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/d66233e2a0aecb6e80a4f802b0dc6a5cd2fa9041))
+
 ## [1.22.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.21.0...v1.22.0) (2021-04-21)
 
 
