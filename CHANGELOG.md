@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.23.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.22.0...v1.23.0) (2021-06-01)
+
+
+### Features
+
+* add deprecation warning for Darwin 386 ([#781](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/781)) ([cdc552b](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/cdc552b8da7abb3378d43c060acb019de7e12fcc))
+
+
+### Bug Fixes
+
+* change to static base container ([#791](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/791)) ([d66233e](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/d66233e2a0aecb6e80a4f802b0dc6a5cd2fa9041))
+
 ## [1.22.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.21.0...v1.22.0) (2021-04-21)
 
 
