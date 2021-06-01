@@ -12,7 +12,7 @@ require (
 	go.uber.org/zap v1.16.0
 	golang.org/x/net v0.0.0-20210521195947-fe42d452be8f
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
-	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea
+	golang.org/x/sys v0.0.0-20210601080250-7ecdf8ef093b
 	google.golang.org/api v0.47.0
 )
 
