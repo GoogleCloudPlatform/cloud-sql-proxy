@@ -10,5 +10,10 @@
   "semanticCommits": true,
   "postUpdateOptions": [
     "gomodTidy"
-  ]
+  ],
+  "force": {
+    "constraints": {
+      "go": "1.16"
+    }
+  }
 }

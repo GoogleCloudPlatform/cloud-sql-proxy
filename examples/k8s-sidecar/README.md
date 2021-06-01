@@ -136,8 +136,8 @@ to mount a service account key file into the Cloud SQL proxy pod and use the
 
 1. Create a credential file for your service account key:
     ```sh
-    gcloud iam service-accounts keys create ~key.json \
-      --iam-account <YOUR-SA-NAME>>@project-id.iam.gserviceaccount.com
+    gcloud iam service-accounts keys create ~/key.json \
+      --iam-account <YOUR-SA-NAME>@project-id.iam.gserviceaccount.com
     ```
 1. Turn your service account key into a k8s [Secret][k8s-secret]:
     ```shell
