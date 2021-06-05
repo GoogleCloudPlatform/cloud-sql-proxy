@@ -84,7 +84,7 @@ cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5432
 ```
 
 ``` bash
-# Starts the proxy listening on on port 5432 on *all* interfaces
+# Starts the proxy listening on port 5432 on *all* interfaces
 cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:0.0.0.0:5432
 ```
 
