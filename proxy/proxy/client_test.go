@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http/httptest"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -115,6 +116,32 @@ func TestClientCache(t *testing.T) {
 		t.Errorf("called %d times, want called 1 time", b.called)
 	}
 	b.Unlock()
+}
+
+func TestInvalidateConfigCache(t *testing.T) {
+	srv := httptest.NewTLSServer(nil)
+	defer srv.Close()
+	b := &fakeCerts{}
+	c := &Client{
+		Certs: newCertSource(b, forever),
+		Dialer: func(string, string) (net.Conn, error) {
+			return net.Dial(
+				srv.Listener.Addr().Network(),
+				srv.Listener.Addr().String(),
+			)
+		},
+	}
+	c.cachedCfg(context.Background(), instance)
+	if needsRefresh(c.cfgCache[instance], DefaultRefreshCfgBuffer) {
+		t.Error("cached config expected to be valid")
+	}
+	_, err := c.Dial(instance)
+	if err == nil {
+		t.Errorf("c.Dial(%q) expected to fail with handshake error", instance)
+	}
+	if !needsRefresh(c.cfgCache[instance], DefaultRefreshCfgBuffer) {
+		t.Error("cached config expected to be invalidated after handshake error")
+	}
 }
 
 func TestConcurrentRefresh(t *testing.T) {
