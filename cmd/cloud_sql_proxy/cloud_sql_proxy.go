@@ -119,7 +119,7 @@ variable for the same effect.`,
 ',', e.g. 'PUBLIC,PRIVATE' `,
 	)
 	// Settings for IAM db proxy authentication
-	enableIAMLogin = flag.Bool("enable_iam_login", false, "Enables database user authentication using Cloud SQL's IAM DB Authentication.")
+	enableIAMLogin = flag.Bool("enable_iam_login", false, "Enables database user authentication using Cloud SQL's IAM DB Authentication (Postgres only).")
 
 	skipInvalidInstanceConfigs = flag.Bool("skip_failed_instance_config", false,
 		`Setting this flag will allow you to prevent the proxy from terminating
