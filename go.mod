@@ -11,7 +11,7 @@ require (
 	github.com/lib/pq v1.10.2
 	go.uber.org/zap v1.17.0
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	golang.org/x/oauth2 v0.0.0-20210615190721-d04028783cf1
+	golang.org/x/oauth2 v0.0.0-20210622190553-bce0382f6c22
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
 	google.golang.org/api v0.48.0
 )
