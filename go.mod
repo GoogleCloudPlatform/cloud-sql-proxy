@@ -13,7 +13,7 @@ require (
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/oauth2 v0.0.0-20210622190553-bce0382f6c22
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
-	google.golang.org/api v0.48.0
+	google.golang.org/api v0.49.0
 )
 
 replace bazil.org/fuse => bazil.org/fuse v0.0.0-20180421153158-65cc252bf669 // pin to latest version that supports macOS. see https://github.com/bazil/fuse/issues/224
