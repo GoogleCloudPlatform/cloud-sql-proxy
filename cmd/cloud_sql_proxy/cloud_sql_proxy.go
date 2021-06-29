@@ -132,6 +132,9 @@ unavailable.`,
 		`When set, the proxy uses this host as the base API path. Example:
 	https://sqladmin.googleapis.com`,
 	)
+
+	// Settings for healthcheck
+	useHealthCheck = flag.Bool("use_health_check", false, "When set, periodically checks and communicates the health of the proxy client.")
 )
 
 const (
