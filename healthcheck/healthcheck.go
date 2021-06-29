@@ -48,6 +48,10 @@ func InitHealthCheck() {
 	go http.ListenAndServe(":8080", nil)
 }
 
+func Ready() {
+	ready = true
+}
+
 // livenessTest returns true as long as the proxy is running
 func livenessTest() bool {
 	return true
