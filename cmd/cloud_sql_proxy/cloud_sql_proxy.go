@@ -460,7 +460,6 @@ func Main(timeout time.Duration) {
 }
 
 func main() {
-
 	flag.Parse()
 
 	if *version {
@@ -639,7 +638,6 @@ func main() {
 
 	if *useHealthCheck {
 		healthcheck.NotifyReady(hc)
-		logging.Infof("Ready notification sent")
 	}
 
 	signals := make(chan os.Signal, 1)

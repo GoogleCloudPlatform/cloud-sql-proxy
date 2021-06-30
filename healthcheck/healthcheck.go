@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"sync/atomic"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
@@ -58,7 +59,12 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 		}
 	})
 
-	go http.ListenAndServe(":8080", nil)
+	go func() {
+		err := http.ListenAndServe(":8080", nil)
+		if err != nil {
+			logging.Errorf("Failed to start endpoint(s).")
+		}
+	}()
 
 	return hc
 }
