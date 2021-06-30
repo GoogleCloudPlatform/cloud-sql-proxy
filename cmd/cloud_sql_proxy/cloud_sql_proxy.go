@@ -460,6 +460,7 @@ func Main(timeout time.Duration) {
 }
 
 func main() {
+
 	flag.Parse()
 
 	if *version {
@@ -591,6 +592,12 @@ func main() {
 		RefreshCfgBuffer:   refreshCfgBuffer,
 	}
 
+	var hc *healthcheck.HealthCheck
+
+	if *useHealthCheck {
+		hc = healthcheck.InitHealthCheck(proxyClient)
+	}
+
 	// Initialize a source of new connections to Cloud SQL instances.
 	var connSrc <-chan proxy.Conn
 	if *useFuse {
@@ -629,9 +636,10 @@ func main() {
 	}
 
 	logging.Infof("Ready for new connections")
-	
+
 	if *useHealthCheck {
-		healthcheck.NotifyReady()
+		healthcheck.NotifyReady(hc)
+		logging.Infof("Ready notification sent")
 	}
 
 	signals := make(chan os.Signal, 1)
