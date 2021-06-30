@@ -26,8 +26,7 @@ var (
 
 func InitHealthCheck() {
 	http.HandleFunc("/readiness", func(w http.ResponseWriter, r *http.Request) {
-		ready = readinessTest()
-		if ready {
+		if readinessTest() {
 			w.WriteHeader(200)
 			w.Write([]byte("ok\n"))
 		} else {
@@ -48,7 +47,7 @@ func InitHealthCheck() {
 	go http.ListenAndServe(":8080", nil)
 }
 
-func Ready() {
+func NotifyReady() {
 	ready = true
 }
 
@@ -59,5 +58,5 @@ func livenessTest() bool {
 
 // TODO(monazhn): Proxy is not ready when MaxConnections has been reached
 func readinessTest() bool {
-	return true
+	return ready
 }

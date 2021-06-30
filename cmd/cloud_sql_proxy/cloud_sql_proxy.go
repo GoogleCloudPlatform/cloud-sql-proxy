@@ -34,6 +34,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/healthcheck"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
@@ -628,6 +629,10 @@ func main() {
 	}
 
 	logging.Infof("Ready for new connections")
+	
+	if *useHealthCheck {
+		healthcheck.NotifyReady()
+	}
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
