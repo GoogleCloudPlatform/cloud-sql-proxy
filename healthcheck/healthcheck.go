@@ -23,10 +23,15 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
+// HealthCheck is a type used to implement health checks for the proxy.
 type HealthCheck struct {
-	live    bool
-	ready   bool
-	startup bool
+	// live and ready correspond to liveness and readiness probing in Kubernetes
+	// health checks
+	live  bool
+	ready bool
+	// started is used to support readiness probing and should not be confused
+	// for relating to startup probing.
+	started bool
 }
 
 func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
@@ -34,9 +39,10 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 	hc := &HealthCheck{
 		live:    true,
 		ready:   false,
-		startup: false,
+		started: false,
 	}
 
+	// Handlers used to set up HTTP endpoint for communicating proxy health.
 	http.HandleFunc("/readiness", func(w http.ResponseWriter, _ *http.Request) {
 		hc.ready = readinessTest(proxyClient, hc)
 		if hc.ready {
@@ -70,25 +76,27 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 }
 
 func NotifyReady(hc *HealthCheck) {
-	hc.startup = true
+	hc.started = true
 }
 
-// livenessTest returns true as long as the proxy is running
+// livenessTest returns true as long as the proxy is running.
 func livenessTest() bool {
 	return true
 }
 
-// readinessTest checks for the proxy having started up, but not having reached MaxConnections
+// readinessTest checks several criteria before determining the proxy is ready.
 func readinessTest(proxyClient *proxy.Client, hc *HealthCheck) bool {
 
-	if !hc.startup {
+	// Wait until the 'Ready For Connections' log to mark the proxy client as ready.
+	if !hc.started {
 		return false
 	}
 
-	// Parts of this code is taken from client.go
+	// Mark not ready if the proxy client is at MaxConnections
+	// (Parts of this code are taken from client.go)
 	active := atomic.AddUint64(&proxyClient.ConnectionsCounter, 1)
 
-	// Defer decrementing ConnectionsCounter upon connections closing
+	// Defer decrementing ConnectionsCounter upon connections closing.
 	defer atomic.AddUint64(&proxyClient.ConnectionsCounter, ^uint64(0))
 
 	if proxyClient.MaxConnections > 0 && active > proxyClient.MaxConnections {
