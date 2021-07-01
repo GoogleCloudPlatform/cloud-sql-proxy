@@ -26,10 +26,6 @@ func TestLiveness(t *testing.T) {
 	}
 }
 
-func TestUnexpectedTermination(t *testing.T) {
-
-}
-
 func TestBadStartup(t *testing.T) {
 	proxyClient := newClient(0)
 	InitHealthCheck(proxyClient)

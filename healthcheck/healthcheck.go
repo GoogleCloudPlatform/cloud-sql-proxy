@@ -34,7 +34,6 @@ type HealthCheck struct {
 }
 
 func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
-
 	hc := &HealthCheck{
 		live:    true,
 		ready:   false,
@@ -85,7 +84,6 @@ func livenessTest() bool {
 
 // readinessTest checks several criteria before determining the proxy is ready.
 func readinessTest(proxyClient *proxy.Client, hc *HealthCheck) bool {
-
 	// Wait until the 'Ready For Connections' log to mark the proxy client as ready.
 	if !hc.started {
 		return false
