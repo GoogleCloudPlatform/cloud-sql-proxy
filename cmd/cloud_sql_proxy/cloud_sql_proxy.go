@@ -637,7 +637,7 @@ func main() {
 	logging.Infof("Ready for new connections")
 
 	if *useHealthCheck {
-		healthcheck.NotifyReady(hc)
+		healthcheck.NotifyReadyForConnections(hc)
 	}
 
 	signals := make(chan os.Signal, 1)

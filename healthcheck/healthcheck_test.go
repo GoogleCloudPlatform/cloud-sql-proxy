@@ -2,7 +2,6 @@ package healthcheck
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
@@ -11,14 +10,6 @@ import (
 func newClient(mc uint64) *proxy.Client {
 	return &proxy.Client{
 		MaxConnections: mc,
-	}
-}
-
-func newHealthCheck(l bool, r bool, s bool) *HealthCheck {
-	return &HealthCheck{
-		live: l,
-		ready: r,
-		started: s,
 	}
 }
 
@@ -53,15 +44,15 @@ func TestBadStartup(t *testing.T) {
 	if resp.StatusCode != 500 {
 		t.Errorf("got status code %v instead of 500", resp.StatusCode)
 	}
-	if resp.Status != "error\n" {
-		t.Errorf("got status %v instead of \"error\\n\"", resp.Status)
+	if resp.Status != "ok\n" {
+		t.Errorf("got status %v instead of \"ok\\n\"", resp.Status)
 	}
 }
 
 func TestSuccessfulStartup(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := InitHealthCheck(proxyClient)
-	NotifyReady(hc)
+	NotifyReadyForConnections(hc)
 
 	resp, err := http.Get("/readiness")
 	if err != nil {
@@ -76,9 +67,32 @@ func TestSuccessfulStartup(t *testing.T) {
 }
 
 func TestReadiness(t *testing.T) {
+	proxyClient := newClient(0) // No specified limit for MaxConnections (MaxConnections check always passes)
+	hc := InitHealthCheck(proxyClient)
+	NotifyReadyForConnections(hc) // Set hc.started = true
 
+	resp, err := http.Get("http://localhost:8080/readiness")
+	if err != nil {
+		t.Errorf("failed to GET from /readiness")
+	}
+	if resp.StatusCode != 200 {
+		t.Errorf("got status code %v instead of 200", resp.StatusCode)
+	}
 }
 
 func TestMaxConnections(t *testing.T) {
+	proxyClient := newClient(10) // MaxConnections == 10
+	hc := InitHealthCheck(proxyClient)
+	NotifyReadyForConnections(hc)
 
+	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
+
+	resp, err := http.Get("http://localhost:8080/readiness")
+	if err != nil {
+		t.Errorf("failed to GET from /readiness")
+	}
+
+	if resp.StatusCode != 500 {
+		t.Errorf("got status code %v instead of 500", resp.StatusCode)
+	}
 }
