@@ -16,9 +16,7 @@
 package healthcheck
 
 import (
-	"fmt"
 	"net/http"
-	"sync/atomic"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
@@ -36,7 +34,7 @@ type HealthCheck struct {
 }
 
 func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
-	fmt.Printf("initializing healthcheck\n")
+
 	hc := &HealthCheck{
 		live:    true,
 		ready:   false,
@@ -45,7 +43,6 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 
 	// Handlers used to set up HTTP endpoint for communicating proxy health.
 	http.HandleFunc("/readiness", func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Printf("hit readiness endpoint\n")
 		hc.ready = readinessTest(proxyClient, hc)
 		if hc.ready {
 			w.WriteHeader(200)
@@ -57,7 +54,6 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 	})
 
 	http.HandleFunc("/liveness", func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Printf("hit liveness endpoint\n")
 		hc.live = livenessTest()
 		if hc.live {
 			w.WriteHeader(200)
@@ -68,49 +64,75 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 		}
 	})
 
-	fmt.Printf("endpoints created\n")
-
 	go func() {
 		err := http.ListenAndServe(":8080", nil)
 		if err != nil {
-			logging.Errorf("Failed to start endpoint(s).")
+			logging.Errorf("Failed to start endpoint(s): %v", err)
 		}
 	}()
 
 	return hc
 }
 
-func NotifyReady(hc *HealthCheck) {
-	fmt.Printf("ready notification received\n")
+func NotifyReadyForConnections(hc *HealthCheck) {
 	hc.started = true
 }
 
 // livenessTest returns true as long as the proxy is running.
 func livenessTest() bool {
-	fmt.Printf("running liveness test\n")
 	return true
 }
 
 // readinessTest checks several criteria before determining the proxy is ready.
 func readinessTest(proxyClient *proxy.Client, hc *HealthCheck) bool {
-	fmt.Printf("running readiness test\n")
 
 	// Wait until the 'Ready For Connections' log to mark the proxy client as ready.
 	if !hc.started {
-		fmt.Printf("readiness test failed because startup was not completed\n")
 		return false
 	}
 
 	// Mark not ready if the proxy client is at MaxConnections
-	// (Parts of this code are taken from client.go)
-	active := atomic.AddUint64(&proxyClient.ConnectionsCounter, 1)
-
-	// Defer decrementing ConnectionsCounter upon connections closing.
-	defer atomic.AddUint64(&proxyClient.ConnectionsCounter, ^uint64(0))
-
-	if proxyClient.MaxConnections > 0 && active > proxyClient.MaxConnections {
+	if proxyClient.MaxConnections > 0 && proxyClient.ConnectionsCounter >= proxyClient.MaxConnections {
 		return false
 	}
 
 	return true
 }
+
+// Broken/Unfinished/Unused Test for Unexpected Termination
+/*func TestUnexpectedTermination(t *testing.T) {
+	proxyClient := newClient(0)
+	InitHealthCheck(proxyClient)
+
+	resp, err := http.Get("http://localhost:8080/liveness")
+	if err != nil {
+		t.Errorf("failed to GET from /liveness: %v", err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("got status code %v instead of 200", resp.StatusCode)
+	}
+
+	shutdown := make(chan bool, 1)
+	go func() {
+		proxyClient.Shutdown(0)
+		shutdown <- true
+	}()
+	finishedShutdown := false
+	select {
+		case <-time.After(100 * time.Millisecond):
+		case finishedShutdown = <-shutdown:
+	}
+	if !finishedShutdown {
+		t.Errorf("Shutdown should have been quick because no connections needed to be closed.")
+	}
+
+	//TODO(monazhn): close health check endpoints
+
+	resp, err = http.Get("http://localhost:8080/liveness")
+	if err == nil {
+		t.Log(resp.StatusCode) // TEST IS FAILING... need a CloseHealthCheck function + close them in cloud_sql_proxy.go
+		t.Errorf("GET /liveness is expected to, but does not return an error after Shutdown is complete.")
+	}
+
+}*/

@@ -1,17 +1,11 @@
 package healthcheck
 
 import (
-	"log"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
-
-var handler = func(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "something failed", http.StatusInternalServerError)
-}
 
 func newClient(mc uint64) *proxy.Client {
 	return &proxy.Client{
@@ -19,27 +13,19 @@ func newClient(mc uint64) *proxy.Client {
 	}
 }
 
-func newHealthCheck(l bool, r bool, s bool) *HealthCheck {
-	return &HealthCheck{
-		live: l,
-		ready: r,
-		started: s,
-	}
-}
-
 func TestLiveness(t *testing.T) {
-	InitHealthCheck(newClient(0))
+	proxyClient := newClient(0)
+	InitHealthCheck(proxyClient)
 
-	req, err := http.NewRequest("GET", "127.0.0.1:8080/liveness", nil)
+	resp, err := http.Get("http://localhost:8080/liveness")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
-
-	resp := httptest.NewRecorder()
-	handler(resp, req)
-
-	if resp.Code != 200 {
-		t.Errorf("got status code %v instead of 200", resp.Code)
+	if resp.StatusCode != 200 {
+		t.Errorf("got status code %v instead of 200", resp.StatusCode)
+	}
+	if resp.Status != "200 OK" {
+		t.Errorf("got status \"%v\" instead of \"200 OK\"", resp.Status)
 	}
 }
 
@@ -48,42 +34,51 @@ func TestUnexpectedTermination(t *testing.T) {
 }
 
 func TestBadStartup(t *testing.T) {
-	InitHealthCheck(newClient(0))
+	proxyClient := newClient(0)
+	InitHealthCheck(proxyClient)
 
-	req, err := http.NewRequest("GET", "/readiness", nil)
+	resp, err := http.Get("http://localhost:8080/readiness")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
-
-	resp := httptest.NewRecorder()
-	handler(resp, req)
-
-	if resp.Code != 500 {
-		t.Errorf("got status code %v instead of 500", resp.Code)
+	if resp.StatusCode != 500 {
+		t.Errorf("got status code %v instead of 500", resp.StatusCode)
+	}
+	if resp.Status != "500 Internal Server Error" {
+		t.Errorf("got status \"%v\" instead of \"500 Internal Server Error\"", resp.Status)
 	}
 }
 
 func TestSuccessfulStartup(t *testing.T) {
-	hc := InitHealthCheck(newClient(0))
-	NotifyReady(hc)
+	proxyClient := newClient(0)
+	hc := InitHealthCheck(proxyClient)
+	NotifyReadyForConnections(hc)
 
-	req, err := http.NewRequest("GET", "/readiness", nil)
+	resp, err := http.Get("http://localhost:8080/readiness")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
-
-	resp := httptest.NewRecorder()
-	handler(resp, req)
-
-	if resp.Code != 200 {
-		t.Errorf("got status code %v instead of 200", resp.Code)
+	if resp.StatusCode != 200 {
+		t.Errorf("got status code %v instead of 200", resp.StatusCode)
 	}
-}
-
-func TestReadiness(t *testing.T) {
-
+	if resp.Status != "200 OK" {
+		t.Errorf("got status \"%v\" instead of \"200 OK\"", resp.Status)
+	}
 }
 
 func TestMaxConnections(t *testing.T) {
+	proxyClient := newClient(10) // MaxConnections == 10
+	hc := InitHealthCheck(proxyClient)
+	NotifyReadyForConnections(hc)
 
+	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
+
+	resp, err := http.Get("http://localhost:8080/readiness")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != 500 {
+		t.Errorf("got status code %v instead of 500", resp.StatusCode)
+	}
 }
