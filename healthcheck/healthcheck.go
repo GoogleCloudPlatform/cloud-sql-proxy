@@ -31,7 +31,7 @@ var (
 )
 
 // HealthCheck is a type used to implement health checks for the proxy.
-type HealthCheck struct {
+type HC struct {
 	// live and ready correspond to liveness and readiness probing in Kubernetes
 	// health checks
 	live  bool
@@ -41,8 +41,8 @@ type HealthCheck struct {
 	started bool
 }
 
-func NewHealthCheck(proxyClient *proxy.Client) *HealthCheck {
-	hc := &HealthCheck{
+func NewHealthCheck(proxyClient *proxy.Client) *HC {
+	hc := &HC{
 		live: true,
 	}
 
@@ -87,10 +87,12 @@ func NewHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 	return hc
 }
 
-func NotifyReadyForConnections(hc *HealthCheck) {
-	startupMutex.Lock()
-	hc.started = true
-	startupMutex.Unlock()
+func (hc *HC) NotifyReadyForConnections() {
+	if hc != nil {
+		startupMutex.Lock()
+		hc.started = true
+		startupMutex.Unlock()
+	}
 }
 
 // livenessTest returns true as long as the proxy is running.
@@ -99,7 +101,7 @@ func livenessTest() bool {
 }
 
 // readinessTest checks several criteria before determining the proxy is ready.
-func readinessTest(proxyClient *proxy.Client, hc *HealthCheck) bool {
+func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
 	// Wait until the 'Ready For Connections' log to mark the proxy client as ready.
 	startupMutex.Lock()
 	if !hc.started {

@@ -591,7 +591,7 @@ func main() {
 		RefreshCfgBuffer:   refreshCfgBuffer,
 	}
 
-	var hc *healthcheck.HealthCheck
+	var hc *healthcheck.HC
 
 	if *useHealthCheck {
 		hc = healthcheck.NewHealthCheck(proxyClient)
@@ -636,9 +636,7 @@ func main() {
 
 	logging.Infof("Ready for new connections")
 
-	if *useHealthCheck {
-		healthcheck.NotifyReadyForConnections(hc)
-	}
+	hc.NotifyReadyForConnections()
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
