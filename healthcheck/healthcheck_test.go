@@ -24,9 +24,6 @@ func TestLiveness(t *testing.T) {
 	if resp.StatusCode != 200 {
 		t.Errorf("got status code %v instead of 200", resp.StatusCode)
 	}
-	if resp.Status != "200 OK" {
-		t.Errorf("got status \"%v\" instead of \"200 OK\"", resp.Status)
-	}
 }
 
 func TestUnexpectedTermination(t *testing.T) {
@@ -44,9 +41,6 @@ func TestBadStartup(t *testing.T) {
 	if resp.StatusCode != 500 {
 		t.Errorf("got status code %v instead of 500", resp.StatusCode)
 	}
-	if resp.Status != "500 Internal Server Error" {
-		t.Errorf("got status \"%v\" instead of \"500 Internal Server Error\"", resp.Status)
-	}
 }
 
 func TestSuccessfulStartup(t *testing.T) {
@@ -61,9 +55,6 @@ func TestSuccessfulStartup(t *testing.T) {
 	if resp.StatusCode != 200 {
 		t.Errorf("got status code %v instead of 200", resp.StatusCode)
 	}
-	if resp.Status != "200 OK" {
-		t.Errorf("got status \"%v\" instead of \"200 OK\"", resp.Status)
-	}
 }
 
 func TestMaxConnections(t *testing.T) {
@@ -71,9 +62,18 @@ func TestMaxConnections(t *testing.T) {
 	hc := InitHealthCheck(proxyClient)
 	NotifyReadyForConnections(hc)
 
+	resp, err := http.Get("http://localhost:8080/readiness")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("got status code %v instead of 200", resp.StatusCode)
+	}
+
 	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
 
-	resp, err := http.Get("http://localhost:8080/readiness")
+	resp, err = http.Get("http://localhost:8080/readiness")
 	if err != nil {
 		t.Fatal(err)
 	}
