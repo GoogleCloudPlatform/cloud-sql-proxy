@@ -16,6 +16,7 @@
 package healthcheck
 
 import (
+	"fmt"
 	"net/http"
 	"sync/atomic"
 
@@ -35,7 +36,7 @@ type HealthCheck struct {
 }
 
 func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
-
+	fmt.Printf("initializing healthcheck\n")
 	hc := &HealthCheck{
 		live:    true,
 		ready:   false,
@@ -44,6 +45,7 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 
 	// Handlers used to set up HTTP endpoint for communicating proxy health.
 	http.HandleFunc("/readiness", func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Printf("hit readiness endpoint\n")
 		hc.ready = readinessTest(proxyClient, hc)
 		if hc.ready {
 			w.WriteHeader(200)
@@ -55,6 +57,7 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 	})
 
 	http.HandleFunc("/liveness", func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Printf("hit liveness endpoint\n")
 		hc.live = livenessTest()
 		if hc.live {
 			w.WriteHeader(200)
@@ -64,6 +67,8 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 			w.Write([]byte("error\n"))
 		}
 	})
+
+	fmt.Printf("endpoints created\n")
 
 	go func() {
 		err := http.ListenAndServe(":8080", nil)
@@ -76,19 +81,23 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 }
 
 func NotifyReady(hc *HealthCheck) {
+	fmt.Printf("ready notification received\n")
 	hc.started = true
 }
 
 // livenessTest returns true as long as the proxy is running.
 func livenessTest() bool {
+	fmt.Printf("running liveness test\n")
 	return true
 }
 
 // readinessTest checks several criteria before determining the proxy is ready.
 func readinessTest(proxyClient *proxy.Client, hc *HealthCheck) bool {
+	fmt.Printf("running readiness test\n")
 
 	// Wait until the 'Ready For Connections' log to mark the proxy client as ready.
 	if !hc.started {
+		fmt.Printf("readiness test failed because startup was not completed\n")
 		return false
 	}
 

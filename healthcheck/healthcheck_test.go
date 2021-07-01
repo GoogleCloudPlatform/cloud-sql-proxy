@@ -1,12 +1,17 @@
 package healthcheck
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
+
+var handler = func(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "something failed", http.StatusInternalServerError)
+}
 
 func newClient(mc uint64) *proxy.Client {
 	return &proxy.Client{
@@ -23,18 +28,18 @@ func newHealthCheck(l bool, r bool, s bool) *HealthCheck {
 }
 
 func TestLiveness(t *testing.T) {
-	proxyClient := newClient(0)
-	InitHealthCheck(proxyClient)
+	InitHealthCheck(newClient(0))
 
-	resp, err := http.Get("/liveness")
+	req, err := http.NewRequest("GET", "127.0.0.1:8080/liveness", nil)
 	if err != nil {
-		t.Errorf("failed to GET from /liveness")
+		log.Fatal(err)
 	}
-	if resp.StatusCode != 200 {
-		t.Errorf("got status code %v instead of 200", resp.StatusCode)
-	}
-	if resp.Status != "ok\n" {
-		t.Errorf("got status %v instead of \"ok\\n\"", resp.Status)
+
+	resp := httptest.NewRecorder()
+	handler(resp, req)
+
+	if resp.Code != 200 {
+		t.Errorf("got status code %v instead of 200", resp.Code)
 	}
 }
 
@@ -43,35 +48,35 @@ func TestUnexpectedTermination(t *testing.T) {
 }
 
 func TestBadStartup(t *testing.T) {
-	proxyClient := newClient(0)
-	InitHealthCheck(proxyClient)
+	InitHealthCheck(newClient(0))
 
-	resp, err := http.Get("/readiness")
+	req, err := http.NewRequest("GET", "/readiness", nil)
 	if err != nil {
-		t.Errorf("failed to GET from /readiness")
+		log.Fatal(err)
 	}
-	if resp.StatusCode != 500 {
-		t.Errorf("got status code %v instead of 500", resp.StatusCode)
-	}
-	if resp.Status != "error\n" {
-		t.Errorf("got status %v instead of \"error\\n\"", resp.Status)
+
+	resp := httptest.NewRecorder()
+	handler(resp, req)
+
+	if resp.Code != 500 {
+		t.Errorf("got status code %v instead of 500", resp.Code)
 	}
 }
 
 func TestSuccessfulStartup(t *testing.T) {
-	proxyClient := newClient(0)
-	hc := InitHealthCheck(proxyClient)
+	hc := InitHealthCheck(newClient(0))
 	NotifyReady(hc)
 
-	resp, err := http.Get("/readiness")
+	req, err := http.NewRequest("GET", "/readiness", nil)
 	if err != nil {
-		t.Errorf("failed to GET from /readiness")
+		log.Fatal(err)
 	}
-	if resp.StatusCode != 200 {
-		t.Errorf("got status code %v instead of 200", resp.StatusCode)
-	}
-	if resp.Status != "ok\n" {
-		t.Errorf("got status %v instead of \"ok\\n\"", resp.Status)
+
+	resp := httptest.NewRecorder()
+	handler(resp, req)
+
+	if resp.Code != 200 {
+		t.Errorf("got status code %v instead of 200", resp.Code)
 	}
 }
 
