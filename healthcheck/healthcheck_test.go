@@ -29,7 +29,7 @@ func newClient(mc uint64) *proxy.Client {
 
 func TestLiveness(t *testing.T) {
 	proxyClient := newClient(0)
-	InitHealthCheck(proxyClient)
+	NewHealthCheck(proxyClient)
 
 	resp, err := http.Get("http://localhost:8080/liveness")
 	if err != nil {
@@ -42,7 +42,7 @@ func TestLiveness(t *testing.T) {
 
 func TestBadStartup(t *testing.T) {
 	proxyClient := newClient(0)
-	InitHealthCheck(proxyClient)
+	NewHealthCheck(proxyClient)
 
 	resp, err := http.Get("http://localhost:8080/readiness")
 	if err != nil {
@@ -55,7 +55,7 @@ func TestBadStartup(t *testing.T) {
 
 func TestSuccessfulStartup(t *testing.T) {
 	proxyClient := newClient(0)
-	hc := InitHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient)
 	NotifyReadyForConnections(hc)
 
 	resp, err := http.Get("http://localhost:8080/readiness")
@@ -69,7 +69,7 @@ func TestSuccessfulStartup(t *testing.T) {
 
 func TestMaxConnections(t *testing.T) {
 	proxyClient := newClient(10) // MaxConnections == 10
-	hc := InitHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient)
 	NotifyReadyForConnections(hc)
 
 	resp, err := http.Get("http://localhost:8080/readiness")

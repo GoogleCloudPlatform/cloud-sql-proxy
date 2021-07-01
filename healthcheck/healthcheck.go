@@ -41,7 +41,7 @@ type HealthCheck struct {
 	started bool
 }
 
-func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
+func NewHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 	hc := &HealthCheck{
 		live: true,
 	}

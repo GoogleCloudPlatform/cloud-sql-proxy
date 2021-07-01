@@ -594,7 +594,7 @@ func main() {
 	var hc *healthcheck.HealthCheck
 
 	if *useHealthCheck {
-		hc = healthcheck.InitHealthCheck(proxyClient)
+		hc = healthcheck.NewHealthCheck(proxyClient)
 	}
 
 	// Initialize a source of new connections to Cloud SQL instances.
