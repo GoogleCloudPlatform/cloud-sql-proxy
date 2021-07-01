@@ -17,6 +17,7 @@ package healthcheck
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
@@ -36,8 +37,6 @@ type HealthCheck struct {
 func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 	hc := &HealthCheck{
 		live:    true,
-		ready:   false,
-		started: false,
 	}
 
 	// Handlers used to set up HTTP endpoint for communicating proxy health.
@@ -46,10 +45,10 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 		if hc.ready {
 			w.WriteHeader(200)
 			w.Write([]byte("ok\n"))
-		} else {
-			w.WriteHeader(500)
-			w.Write([]byte("error\n"))
+			return
 		}
+		w.WriteHeader(500)
+		w.Write([]byte("error\n"))
 	})
 
 	http.HandleFunc("/liveness", func(w http.ResponseWriter, _ *http.Request) {
@@ -57,10 +56,10 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 		if hc.live {
 			w.WriteHeader(200)
 			w.Write([]byte("ok\n"))
-		} else {
-			w.WriteHeader(500)
-			w.Write([]byte("error\n"))
+			return
 		}
+		w.WriteHeader(500)
+		w.Write([]byte("error\n"))
 	})
 
 	go func() {
