@@ -44,8 +44,8 @@ func TestBadStartup(t *testing.T) {
 	if resp.StatusCode != 500 {
 		t.Errorf("got status code %v instead of 500", resp.StatusCode)
 	}
-	if resp.Status != "ok\n" {
-		t.Errorf("got status %v instead of \"ok\\n\"", resp.Status)
+	if resp.Status != "error\n" {
+		t.Errorf("got status %v instead of \"error\\n\"", resp.Status)
 	}
 }
 
