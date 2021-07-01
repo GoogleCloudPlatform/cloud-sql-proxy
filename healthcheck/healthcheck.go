@@ -42,24 +42,24 @@ func InitHealthCheck(proxyClient *proxy.Client) *HealthCheck {
 	// Handlers used to set up HTTP endpoint for communicating proxy health.
 	http.HandleFunc("/readiness", func(w http.ResponseWriter, _ *http.Request) {
 		hc.ready = readinessTest(proxyClient, hc)
-		if hc.ready {
-			w.WriteHeader(200)
-			w.Write([]byte("ok\n"))
+		if !hc.ready {
+			w.WriteHeader(500)
+			w.Write([]byte("error\n"))
 			return
 		}
-		w.WriteHeader(500)
-		w.Write([]byte("error\n"))
+		w.WriteHeader(200)
+		w.Write([]byte("ok\n"))
 	})
 
 	http.HandleFunc("/liveness", func(w http.ResponseWriter, _ *http.Request) {
 		hc.live = livenessTest()
-		if hc.live {
-			w.WriteHeader(200)
-			w.Write([]byte("ok\n"))
+		if !hc.live {
+			w.WriteHeader(500)
+			w.Write([]byte("error\n"))
 			return
 		}
-		w.WriteHeader(500)
-		w.Write([]byte("error\n"))
+		w.WriteHeader(200)
+		w.Write([]byte("ok\n"))
 	})
 
 	go func() {
