@@ -106,6 +106,7 @@ func readinessTest(proxyClient *proxy.Client, hc *HealthCheck) bool {
 		startupMutex.Unlock()
 		return false
 	}
+	startupMutex.Unlock()
 
 	// Mark not ready if the proxy client is at MaxConnections
 	if proxyClient.MaxConnections > 0 && atomic.LoadUint64(&proxyClient.ConnectionsCounter) >= proxyClient.MaxConnections {
