@@ -32,7 +32,8 @@ func newClient(mc uint64) *proxy.Client {
 
 func TestLiveness(t *testing.T) {
 	proxyClient := newClient(0)
-	NewHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient)
+	defer hc.CloseHealthCheck()
 
 	resp, err := http.Get(livenessURL)
 	if err != nil {
@@ -45,7 +46,8 @@ func TestLiveness(t *testing.T) {
 
 func TestBadStartup(t *testing.T) {
 	proxyClient := newClient(0)
-	NewHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient)
+	defer hc.CloseHealthCheck()
 
 	resp, err := http.Get(readinessURL)
 	if err != nil {
@@ -59,6 +61,8 @@ func TestBadStartup(t *testing.T) {
 func TestSuccessfulStartup(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := NewHealthCheck(proxyClient)
+	defer hc.CloseHealthCheck()
+
 	hc.NotifyReadyForConnections()
 
 	resp, err := http.Get(readinessURL)
@@ -73,6 +77,8 @@ func TestSuccessfulStartup(t *testing.T) {
 func TestMaxConnections(t *testing.T) {
 	proxyClient := newClient(10) // MaxConnections == 10
 	hc := NewHealthCheck(proxyClient)
+	defer hc.CloseHealthCheck()
+
 	hc.NotifyReadyForConnections()
 
 	resp, err := http.Get(readinessURL)
@@ -93,5 +99,27 @@ func TestMaxConnections(t *testing.T) {
 
 	if resp.StatusCode != 500 {
 		t.Errorf("got status code %v instead of 500", resp.StatusCode)
+	}
+}
+
+func TestCloseHealthCheck(t *testing.T) {
+	proxyClient := newClient(0)
+	hc := NewHealthCheck(proxyClient)
+	defer hc.CloseHealthCheck()
+
+	resp, err := http.Get(livenessURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("got status code %v instead of 200", resp.StatusCode)
+	}
+
+	hc.CloseHealthCheck()
+
+	_, err = http.Get(livenessURL)
+	if err == nil { // If NO error
+		t.Fatal(err)
 	}
 }

@@ -16,6 +16,7 @@
 package healthcheck
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -97,6 +98,15 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	}()
 
 	return hc
+}
+
+// CloseHealthCheck gracefully shuts down the HTTP server belonging to the HC object.
+func (hc *HC) CloseHealthCheck() {
+	if hc != nil {
+		if err := hc.srv.Shutdown(context.Background()); err != nil {
+			logging.Errorf("Failed to shut down health check: ", err)
+		}
+	}
 }
 
 // NotifyReadyForConnections changes the value of 'started' in a health
