@@ -17,6 +17,7 @@ package healthcheck
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
@@ -33,7 +34,9 @@ func newClient(mc uint64) *proxy.Client {
 func TestLiveness(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := NewHealthCheck(proxyClient)
-	defer hc.CloseHealthCheck()
+	defer hc.CloseHealthCheck() // Close health check upon exiting the test.
+
+	time.Sleep(100 * time.Millisecond) // Wait for ListenAndServe to begin to avoid flaky tests.
 
 	resp, err := http.Get(livenessURL)
 	if err != nil {
@@ -49,6 +52,8 @@ func TestBadStartup(t *testing.T) {
 	hc := NewHealthCheck(proxyClient)
 	defer hc.CloseHealthCheck()
 
+	time.Sleep(100 * time.Millisecond)
+
 	resp, err := http.Get(readinessURL)
 	if err != nil {
 		t.Fatal(err)
@@ -62,6 +67,8 @@ func TestSuccessfulStartup(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := NewHealthCheck(proxyClient)
 	defer hc.CloseHealthCheck()
+
+	time.Sleep(100 * time.Millisecond)
 
 	hc.NotifyReadyForConnections()
 
@@ -78,6 +85,8 @@ func TestMaxConnections(t *testing.T) {
 	proxyClient := newClient(10) // MaxConnections == 10
 	hc := NewHealthCheck(proxyClient)
 	defer hc.CloseHealthCheck()
+
+	time.Sleep(100 * time.Millisecond)
 
 	hc.NotifyReadyForConnections()
 
@@ -106,6 +115,8 @@ func TestCloseHealthCheck(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := NewHealthCheck(proxyClient)
 	defer hc.CloseHealthCheck()
+
+	time.Sleep(100 * time.Millisecond)
 
 	resp, err := http.Get(livenessURL)
 	if err != nil {

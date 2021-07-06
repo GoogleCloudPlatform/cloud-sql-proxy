@@ -31,11 +31,11 @@ const portNum = ":8080" // TODO(monazhn): Think about a good port number.
 
 var (
 	readinessMutex = &sync.Mutex{}
-	livenessMutex = &sync.Mutex{}
-	startupMutex = &sync.Mutex{}
+	livenessMutex  = &sync.Mutex{}
+	startupMutex   = &sync.Mutex{}
 )
 
-// HealthCheck is a type used to implement health checks for the proxy.
+// HC is a type used to implement health checks for the proxy.
 type HC struct {
 	// live and ready correspond to liveness and readiness probing in Kubernetes
 	// health checks
@@ -86,7 +86,7 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 			return
 		}
 		livenessMutex.Unlock()
-		
+
 		w.WriteHeader(200)
 		w.Write([]byte("ok\n"))
 	})
@@ -126,7 +126,7 @@ func livenessTest() bool {
 
 // readinessTest checks several criteria before determining the proxy is ready.
 func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
-	// Wait until the 'Ready For Connections' log to mark the proxy client as ready.
+	// Wait until the 'Ready For Connections' log to mark the proxy as ready.
 	startupMutex.Lock()
 	if !hc.started {
 		startupMutex.Unlock()
@@ -134,7 +134,7 @@ func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
 	}
 	startupMutex.Unlock()
 
-	// Mark not ready if the proxy client is at MaxConnections.
+	// Mark not ready if the proxy is at MaxConnections.
 	if proxyClient.MaxConnections > 0 && atomic.LoadUint64(&proxyClient.ConnectionsCounter) >= proxyClient.MaxConnections {
 		return false
 	}
