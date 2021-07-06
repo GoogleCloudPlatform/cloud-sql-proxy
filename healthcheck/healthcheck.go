@@ -24,6 +24,10 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
+const livenessPath = "/liveness"
+const readinessPath = "/readiness"
+const portNum = ":8080" // TODO(monazhn): Think about a good port number.
+
 var (
 	readinessMutex = &sync.Mutex{}
 	livenessMutex = &sync.Mutex{}
@@ -47,7 +51,7 @@ type HC struct {
 // for communicating proxy health.
 func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	srv := &http.Server{
-		Addr: ":8080", // TODO: Pick a good port.
+		Addr: portNum, // TODO: Pick a good port.
 	}
 
 	hc := &HC{
@@ -56,7 +60,7 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	}
 
 	// Handlers used to set up HTTP endpoint for communicating proxy health.
-	http.HandleFunc("/readiness", func(w http.ResponseWriter, _ *http.Request) {
+	http.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
 		readinessMutex.Lock()
 		hc.ready = readinessTest(proxyClient, hc)
 		if !hc.ready {
@@ -71,7 +75,7 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 		w.Write([]byte("ok\n"))
 	})
 
-	http.HandleFunc("/liveness", func(w http.ResponseWriter, _ *http.Request) {
+	http.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
 		livenessMutex.Lock()
 		hc.live = livenessTest()
 		if !hc.live {

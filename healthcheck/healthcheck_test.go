@@ -21,6 +21,9 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
+const livenessURL = "http://localhost:8080/liveness"
+const readinessURL = "http://localhost:8080/readiness"
+
 func newClient(mc uint64) *proxy.Client {
 	return &proxy.Client{
 		MaxConnections: mc,
@@ -31,7 +34,7 @@ func TestLiveness(t *testing.T) {
 	proxyClient := newClient(0)
 	NewHealthCheck(proxyClient)
 
-	resp, err := http.Get("http://localhost:8080/liveness")
+	resp, err := http.Get(livenessURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +47,7 @@ func TestBadStartup(t *testing.T) {
 	proxyClient := newClient(0)
 	NewHealthCheck(proxyClient)
 
-	resp, err := http.Get("http://localhost:8080/readiness")
+	resp, err := http.Get(readinessURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +61,7 @@ func TestSuccessfulStartup(t *testing.T) {
 	hc := NewHealthCheck(proxyClient)
 	hc.NotifyReadyForConnections()
 
-	resp, err := http.Get("http://localhost:8080/readiness")
+	resp, err := http.Get(readinessURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +75,7 @@ func TestMaxConnections(t *testing.T) {
 	hc := NewHealthCheck(proxyClient)
 	hc.NotifyReadyForConnections()
 
-	resp, err := http.Get("http://localhost:8080/readiness")
+	resp, err := http.Get(readinessURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +86,7 @@ func TestMaxConnections(t *testing.T) {
 
 	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
 
-	resp, err = http.Get("http://localhost:8080/readiness")
+	resp, err = http.Get(readinessURL)
 	if err != nil {
 		t.Fatal(err)
 	}
