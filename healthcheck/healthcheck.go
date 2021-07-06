@@ -41,6 +41,8 @@ type HC struct {
 	started bool
 }
 
+// NewHealthCheck initializes a HC object and exposes the appropriate HTTP endpoints
+// for communicating proxy health.
 func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	hc := &HC{
 		live: true,
@@ -87,6 +89,8 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	return hc
 }
 
+// NotifyReadyForConnections changes the value of 'started' in a health
+// check object to true, marking the proxy as done starting up.
 func (hc *HC) NotifyReadyForConnections() {
 	if hc != nil {
 		startupMutex.Lock()
@@ -110,7 +114,7 @@ func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
 	}
 	startupMutex.Unlock()
 
-	// Mark not ready if the proxy client is at MaxConnections
+	// Mark not ready if the proxy client is at MaxConnections.
 	if proxyClient.MaxConnections > 0 && atomic.LoadUint64(&proxyClient.ConnectionsCounter) >= proxyClient.MaxConnections {
 		return false
 	}
