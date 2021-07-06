@@ -39,13 +39,20 @@ type HC struct {
 	// started is used to support readiness probing and should not be confused
 	// for relating to startup probing.
 	started bool
+	// srv is a pointer to the HTTP server
+	srv *http.Server
 }
 
 // NewHealthCheck initializes a HC object and exposes the appropriate HTTP endpoints
 // for communicating proxy health.
 func NewHealthCheck(proxyClient *proxy.Client) *HC {
+	srv := &http.Server{
+		Addr: ":8080", // TODO: Pick a good port.
+	}
+
 	hc := &HC{
 		live: true,
+		srv:  srv,
 	}
 
 	// Handlers used to set up HTTP endpoint for communicating proxy health.
@@ -80,8 +87,7 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	})
 
 	go func() {
-		err := http.ListenAndServe(":8080", nil)
-		if err != nil {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logging.Errorf("Failed to start endpoint(s): %v", err)
 		}
 	}()
