@@ -132,12 +132,14 @@ func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
 	startupMutex.Lock()
 	if !hc.started {
 		startupMutex.Unlock()
+		logging.Errorf("Readiness failed because proxy has not finished starting up.")
 		return false
 	}
 	startupMutex.Unlock()
 
-	// Mark not ready if the proxy is at MaxConnections.
+	// Mark as not ready if the proxy is at the optional MaxConnections limit.
 	if proxyClient.MaxConnections > 0 && atomic.LoadUint64(&proxyClient.ConnectionsCounter) >= proxyClient.MaxConnections {
+		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", proxyClient.MaxConnections)
 		return false
 	}
 
