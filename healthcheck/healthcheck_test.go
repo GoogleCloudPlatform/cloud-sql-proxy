@@ -21,9 +21,11 @@ import (
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
-
-const livenessURL = "http://localhost:8080/liveness"
-const readinessURL = "http://localhost:8080/readiness"
+ 
+const (
+	livenessURL = "http://localhost:8080/liveness"
+	readinessURL = "http://localhost:8080/readiness"
+)
 
 func newClient(mc uint64) *proxy.Client {
 	return &proxy.Client{
@@ -94,7 +96,6 @@ func TestMaxConnections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if resp.StatusCode != 200 {
 		t.Errorf("got status code %v instead of 200", resp.StatusCode)
 	}
@@ -105,7 +106,6 @@ func TestMaxConnections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if resp.StatusCode != 500 {
 		t.Errorf("got status code %v instead of 500", resp.StatusCode)
 	}
@@ -122,7 +122,6 @@ func TestCloseHealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if resp.StatusCode != 200 {
 		t.Errorf("got status code %v instead of 200", resp.StatusCode)
 	}
