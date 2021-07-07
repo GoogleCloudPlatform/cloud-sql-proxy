@@ -25,9 +25,11 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
-const livenessPath = "/liveness"
-const readinessPath = "/readiness"
-const portNum = ":8080" // TODO(monazhn): Think about a good port number.
+const (
+	livenessPath = "/liveness"
+	readinessPath = "/readiness"
+	portNum = ":8080" // TODO(monazhn): Think about a good port number.
+)
 
 var (
 	readinessMutex = &sync.Mutex{}
@@ -52,7 +54,7 @@ type HC struct {
 // for communicating proxy health.
 func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	srv := &http.Server{
-		Addr: portNum, // TODO: Pick a good port.
+		Addr: portNum,
 	}
 
 	hc := &HC{
