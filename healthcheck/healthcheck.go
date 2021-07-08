@@ -39,19 +39,25 @@ var (
 
 // HC is a type used to implement health checks for the proxy.
 type HC struct {
-	// live and ready correspond to liveness and readiness probing in Kubernetes
-	// health checks
+	// live being true means the proxy is running; in the case of the proxy
+	// being unexpectedly terminated, we should (re)start the proxy.
+	// live is related to Kubernetes liveness probing.
 	live  bool
+	// ready being true means the proxy is ready to serve new traffic; in the 
+	// case that ready is false, we should wait to send new traffic to the
+	// proxy. The value of ready determines the success or failure of 
+	// Kubernetes readiness probing.
 	ready bool
-	// started is used to support readiness probing and should not be confused
-	// for relating to startup probing.
+	// started is a flag used to support readiness probing and should not be
+	// confused for affecting startup probing. When started becomes true, the
+	// proxy is done starting up.
 	started bool
-	// srv is a pointer to the HTTP server
+	// srv is a pointer to the HTTP server used to communicated proxy health.
 	srv *http.Server
 }
 
-// NewHealthCheck initializes a HC object and exposes the appropriate HTTP endpoints
-// for communicating proxy health.
+// NewHealthCheck initializes a HC object and exposes HTTP endpoints used to
+// communicate proxy health.
 func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	srv := &http.Server{
 		Addr: portNum,
@@ -62,7 +68,7 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 		srv:  srv,
 	}
 
-	// Handlers used to set up HTTP endpoint for communicating proxy health.
+	// Handlers used to set up HTTP endpoints.
 	http.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
 		readinessMutex.Lock()
 		hc.ready = readinessTest(proxyClient, hc)
@@ -102,7 +108,8 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	return hc
 }
 
-// CloseHealthCheck gracefully shuts down the HTTP server belonging to the HC object.
+// CloseHealthCheck gracefully shuts down the HTTP server belonging to the HC
+// object.
 func (hc *HC) CloseHealthCheck() {
 	if hc != nil {
 		if err := hc.srv.Shutdown(context.Background()); err != nil {
@@ -111,8 +118,8 @@ func (hc *HC) CloseHealthCheck() {
 	}
 }
 
-// NotifyReadyForConnections changes the value of 'started' in a health
-// check object to true, marking the proxy as done starting up.
+// NotifyReadyForConnections changes the value of 'started' in the HC
+// object to true, marking the proxy as done starting up.
 func (hc *HC) NotifyReadyForConnections() {
 	if hc != nil {
 		startupMutex.Lock()
@@ -126,9 +133,10 @@ func livenessTest() bool {
 	return true
 }
 
-// readinessTest checks several criteria before determining the proxy is ready.
+// readinessTest will check several criteria before determining the proxy is
+// ready for new connections.
 func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
-	// Wait until the 'Ready For Connections' log to mark the proxy as ready.
+	// Mark as not ready until we reach the 'Ready for Connections' log.
 	startupMutex.Lock()
 	if !hc.started {
 		startupMutex.Unlock()
