@@ -47,8 +47,11 @@ type HC struct {
 // NewHealthCheck initializes a HC object and exposes HTTP endpoints used to
 // communicate proxy health.
 func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
+	mux := http.NewServeMux()
+
 	srv := &http.Server{
 		Addr: ":" + port,
+		Handler: mux,
 	}
 
 	hc := &HC{
@@ -56,7 +59,7 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 		srv:  srv,
 	}
 
-	http.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
 		if !readinessTest(proxyClient, hc) {
 			w.WriteHeader(500)
 			w.Write([]byte("error\n"))
@@ -66,7 +69,7 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 		w.Write([]byte("ok\n"))
 	})
 
-	http.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
 		if !livenessTest() {
 			w.WriteHeader(500)
 			w.Write([]byte("error\n"))
