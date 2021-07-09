@@ -93,7 +93,7 @@ func (hc *HC) Close() {
 	}
 }
 
-// NotifyReadyForConnections indicates to the proxy's HC that has finished startup.
+// NotifyReadyForConnections indicates that the proxy has finished startup.
 func (hc *HC) NotifyReadyForConnections() {
 	if hc != nil {
 		hc.startedL.Lock()
