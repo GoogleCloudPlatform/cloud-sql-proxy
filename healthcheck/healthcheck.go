@@ -17,6 +17,7 @@ package healthcheck
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -73,9 +74,14 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 		w.Write([]byte("ok\n"))
 	})
 
+	ln, err := net.Listen("tcp", portNum)
+	if err != nil {
+		logging.Errorf("Failed to listen: %v", err)
+	}
+
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logging.Errorf("Failed to start endpoint(s): %v", err)
+		if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+			logging.Errorf("Failed to serve: %v", err)
 		}
 	}()
 

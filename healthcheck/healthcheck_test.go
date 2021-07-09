@@ -17,7 +17,6 @@ package healthcheck
 import (
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
@@ -29,12 +28,9 @@ const (
 
 // Test to verify that when the proxy client is up, the liveness endpoint writes 200.
 func TestLiveness(t *testing.T) {
-	//http.DefaultServeMux = new(http.ServeMux)
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close() // Close health check upon exiting the test.
-
-	time.Sleep(100 * time.Millisecond) // Wait for ListenAndServe to begin to avoid flaky tests.
 
 	resp, err := http.Get(livenessURL)
 	if err != nil {
@@ -47,12 +43,9 @@ func TestLiveness(t *testing.T) {
 
 // Test to verify that when startup has not finished, the readiness endpoint writes 500.
 func TestStartupFail(t *testing.T) {
-	//http.DefaultServeMux = new(http.ServeMux)
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
-
-	time.Sleep(100 * time.Millisecond)
 
 	resp, err := http.Get(readinessURL)
 	if err != nil {
@@ -66,12 +59,9 @@ func TestStartupFail(t *testing.T) {
 // Test to verify that when startup has finished, and MaxConnections has not been reached,
 // the readiness endpoint writes 200.
 func TestStartupPass(t *testing.T) {
-	//http.DefaultServeMux = new(http.ServeMux)
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
-
-	time.Sleep(100 * time.Millisecond)
 
 	// Simulate the proxy client completing startup.
 	hc.NotifyReadyForConnections()
@@ -88,14 +78,11 @@ func TestStartupPass(t *testing.T) {
 // Test to verify that when startup has finished, but MaxConnections has been reached,
 // the readiness endpoint writes 500.
 func TestMaxConnectionsReached(t *testing.T) {
-	//http.DefaultServeMux = new(http.ServeMux)
 	proxyClient := &proxy.Client{
 		MaxConnections: 10,
 	}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
-
-	time.Sleep(100 * time.Millisecond)
 
 	hc.NotifyReadyForConnections()
 	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
@@ -116,8 +103,6 @@ func TestCloseHealthCheck(t *testing.T) {
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
 
-	time.Sleep(100 * time.Millisecond)
-
 	resp, err := http.Get(livenessURL)
 	if err != nil {
 		t.Fatal(err)
@@ -133,11 +118,3 @@ func TestCloseHealthCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-
-/*func TestMain(m *testing.M) {
-	proxyClient := newClient(0)
-	hc := NewHealthCheck(proxyClient)
-	code := m.Run()
-	hc.Close()
-	os.Exit(code)
-}*/
