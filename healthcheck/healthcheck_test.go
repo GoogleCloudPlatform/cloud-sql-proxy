@@ -27,14 +27,8 @@ const (
 	readinessURL = "http://localhost:8080/readiness"
 )
 
-func newClient(mc uint64) *proxy.Client {
-	return &proxy.Client{
-		MaxConnections: mc,
-	}
-}
-
 func TestLiveness(t *testing.T) {
-	proxyClient := newClient(0)
+	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close() // Close health check upon exiting the test.
 
@@ -50,7 +44,7 @@ func TestLiveness(t *testing.T) {
 }
 
 func TestBadStartup(t *testing.T) {
-	proxyClient := newClient(0)
+	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
 
@@ -66,7 +60,7 @@ func TestBadStartup(t *testing.T) {
 }
 
 func TestSuccessfulStartup(t *testing.T) {
-	proxyClient := newClient(0)
+	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
 
@@ -84,7 +78,9 @@ func TestSuccessfulStartup(t *testing.T) {
 }
 
 func TestMaxConnections(t *testing.T) {
-	proxyClient := newClient(10) // MaxConnections == 10
+	proxyClient := &proxy.Client{
+		MaxConnections: 10,
+	}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
 
@@ -112,7 +108,7 @@ func TestMaxConnections(t *testing.T) {
 }
 
 func TestCloseHealthCheck(t *testing.T) {
-	proxyClient := newClient(0)
+	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
 
