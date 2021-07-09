@@ -29,7 +29,6 @@ import (
 const (
 	livenessPath = "/liveness"
 	readinessPath = "/readiness"
-	portNum = ":8080"
 )
 
 // HC is a type used to implement health checks for the proxy.
@@ -39,18 +38,21 @@ type HC struct {
 	// proxy is done starting up. started is protected by startedL.
 	started bool
 	startedL sync.Mutex
+	// port designates which port HC listens and serves.
+	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
 	srv *http.Server
 }
 
 // NewHealthCheck initializes a HC object and exposes HTTP endpoints used to
 // communicate proxy health.
-func NewHealthCheck(proxyClient *proxy.Client) *HC {
+func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 	srv := &http.Server{
-		Addr: portNum,
+		Addr: ":" + port,
 	}
 
 	hc := &HC{
+		port: port,
 		srv:  srv,
 	}
 
@@ -74,7 +76,7 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 		w.Write([]byte("ok\n"))
 	})
 
-	ln, err := net.Listen("tcp", portNum)
+	ln, err := net.Listen("tcp", srv.Addr)
 	if err != nil {
 		logging.Errorf("Failed to listen: %v", err)
 	}

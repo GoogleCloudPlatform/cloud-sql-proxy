@@ -20,19 +20,14 @@ import (
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
- 
-const (
-	livenessURL = "http://localhost" + portNum + livenessPath
-	readinessURL = "http://localhost" + portNum + readinessPath
-)
 
 // Test to verify that when the proxy client is up, the liveness endpoint writes 200.
 func TestLiveness(t *testing.T) {
 	proxyClient := &proxy.Client{}
-	hc := NewHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient, "8080")
 	defer hc.Close() // Close health check upon exiting the test.
 
-	resp, err := http.Get(livenessURL)
+	resp, err := http.Get("http://localhost:" + hc.port + livenessPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,10 +39,10 @@ func TestLiveness(t *testing.T) {
 // Test to verify that when startup has not finished, the readiness endpoint writes 500.
 func TestStartupFail(t *testing.T) {
 	proxyClient := &proxy.Client{}
-	hc := NewHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient, "8080")
 	defer hc.Close()
 
-	resp, err := http.Get(readinessURL)
+	resp, err := http.Get("http://localhost:" + hc.port + readinessPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,13 +55,13 @@ func TestStartupFail(t *testing.T) {
 // the readiness endpoint writes 200.
 func TestStartupPass(t *testing.T) {
 	proxyClient := &proxy.Client{}
-	hc := NewHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient, "8080")
 	defer hc.Close()
 
 	// Simulate the proxy client completing startup.
 	hc.NotifyReadyForConnections()
 
-	resp, err := http.Get(readinessURL)
+	resp, err := http.Get("http://localhost:" + hc.port + readinessPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,13 +76,13 @@ func TestMaxConnectionsReached(t *testing.T) {
 	proxyClient := &proxy.Client{
 		MaxConnections: 10,
 	}
-	hc := NewHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient, "8080")
 	defer hc.Close()
 
 	hc.NotifyReadyForConnections()
 	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
 
-	resp, err := http.Get(readinessURL)
+	resp, err := http.Get("http://localhost:" + hc.port + readinessPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,10 +95,10 @@ func TestMaxConnectionsReached(t *testing.T) {
 // an error.
 func TestCloseHealthCheck(t *testing.T) {
 	proxyClient := &proxy.Client{}
-	hc := NewHealthCheck(proxyClient)
+	hc := NewHealthCheck(proxyClient, "8080")
 	defer hc.Close()
 
-	resp, err := http.Get(livenessURL)
+	resp, err := http.Get("http://localhost:" + hc.port + livenessPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +108,7 @@ func TestCloseHealthCheck(t *testing.T) {
 
 	hc.Close()
 
-	_, err = http.Get(livenessURL)
+	_, err = http.Get("http://localhost:" + hc.port + livenessPath)
 	if err == nil { // If NO error
 		t.Fatal(err)
 	}
