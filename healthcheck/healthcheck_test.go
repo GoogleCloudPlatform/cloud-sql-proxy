@@ -36,7 +36,7 @@ func newClient(mc uint64) *proxy.Client {
 func TestLiveness(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := NewHealthCheck(proxyClient)
-	defer hc.CloseHealthCheck() // Close health check upon exiting the test.
+	defer hc.Close() // Close health check upon exiting the test.
 
 	time.Sleep(100 * time.Millisecond) // Wait for ListenAndServe to begin to avoid flaky tests.
 
@@ -52,7 +52,7 @@ func TestLiveness(t *testing.T) {
 func TestBadStartup(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := NewHealthCheck(proxyClient)
-	defer hc.CloseHealthCheck()
+	defer hc.Close()
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -68,7 +68,7 @@ func TestBadStartup(t *testing.T) {
 func TestSuccessfulStartup(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := NewHealthCheck(proxyClient)
-	defer hc.CloseHealthCheck()
+	defer hc.Close()
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -86,7 +86,7 @@ func TestSuccessfulStartup(t *testing.T) {
 func TestMaxConnections(t *testing.T) {
 	proxyClient := newClient(10) // MaxConnections == 10
 	hc := NewHealthCheck(proxyClient)
-	defer hc.CloseHealthCheck()
+	defer hc.Close()
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -114,7 +114,7 @@ func TestMaxConnections(t *testing.T) {
 func TestCloseHealthCheck(t *testing.T) {
 	proxyClient := newClient(0)
 	hc := NewHealthCheck(proxyClient)
-	defer hc.CloseHealthCheck()
+	defer hc.Close()
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -126,7 +126,7 @@ func TestCloseHealthCheck(t *testing.T) {
 		t.Errorf("got status code %v instead of 200", resp.StatusCode)
 	}
 
-	hc.CloseHealthCheck()
+	hc.Close()
 
 	_, err = http.Get(livenessURL)
 	if err == nil { // If NO error
