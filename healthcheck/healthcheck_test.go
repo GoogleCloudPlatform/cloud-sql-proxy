@@ -27,6 +27,7 @@ const (
 	readinessURL = "http://localhost:8080/readiness"
 )
 
+// Test to verify that when the proxy client is up, the liveness endpoint writes 200.
 func TestLiveness(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
@@ -43,6 +44,7 @@ func TestLiveness(t *testing.T) {
 	}
 }
 
+// Test to verify that when startup has not finished, the readiness endpoint writes 500.
 func TestStartupFail(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
@@ -59,6 +61,8 @@ func TestStartupFail(t *testing.T) {
 	}
 }
 
+// Test to verify that when startup has finished, and MaxConnections has not been reached,
+// the readiness endpoint writes 200.
 func TestStartupPass(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
@@ -66,6 +70,7 @@ func TestStartupPass(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
+	// Simulate the proxy client completing startup.
 	hc.NotifyReadyForConnections()
 
 	resp, err := http.Get(readinessURL)
@@ -77,6 +82,8 @@ func TestStartupPass(t *testing.T) {
 	}
 }
 
+// Test to verify that when startup has finished, but MaxConnections has been reached,
+// the readiness endpoint writes 500.
 func TestMaxConnectionsReached(t *testing.T) {
 	proxyClient := &proxy.Client{
 		MaxConnections: 10,
@@ -87,18 +94,9 @@ func TestMaxConnectionsReached(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	hc.NotifyReadyForConnections()
-
-	resp, err := http.Get(readinessURL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if resp.StatusCode != 200 {
-		t.Errorf("got status code %v instead of 200", resp.StatusCode)
-	}
-
 	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
 
-	resp, err = http.Get(readinessURL)
+	resp, err := http.Get(readinessURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,6 +105,8 @@ func TestMaxConnectionsReached(t *testing.T) {
 	}
 }
 
+// Test to verify that after closing a healthcheck, its liveness endpoint serves
+// an error
 func TestCloseHealthCheck(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
