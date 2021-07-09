@@ -43,7 +43,7 @@ func TestLiveness(t *testing.T) {
 	}
 }
 
-func TestBadStartup(t *testing.T) {
+func TestStartupFail(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
@@ -59,7 +59,7 @@ func TestBadStartup(t *testing.T) {
 	}
 }
 
-func TestSuccessfulStartup(t *testing.T) {
+func TestStartupPass(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
@@ -77,7 +77,7 @@ func TestSuccessfulStartup(t *testing.T) {
 	}
 }
 
-func TestMaxConnections(t *testing.T) {
+func TestMaxConnectionsReached(t *testing.T) {
 	proxyClient := &proxy.Client{
 		MaxConnections: 10,
 	}
