@@ -106,7 +106,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 }
 
 // Test to verify that after closing a healthcheck, its liveness endpoint serves
-// an error
+// an error.
 func TestCloseHealthCheck(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
