@@ -33,22 +33,11 @@ const (
 
 // HC is a type used to implement health checks for the proxy.
 type HC struct {
-	// live being true means the proxy is running; in the case of the proxy
-	// being unexpectedly terminated, we should (re)start the proxy.
-	// live is related to Kubernetes liveness probing.
-	live  bool
-	// ready being true means the proxy is ready to serve new traffic; in the 
-	// case that ready is false, we should wait to send new traffic to the
-	// proxy. The value of ready determines the success or failure of 
-	// Kubernetes readiness probing.
-	ready bool
 	// started is a flag used to support readiness probing and should not be
 	// confused for affecting startup probing. When started becomes true, the
-	// proxy is done starting up.
+	// proxy is done starting up. started is protected by startedL.
 	started bool
-	// locks to protect HC booleans from concurrent HTTP GETs.
-	readinessL sync.Mutex
-	livenessL  sync.Mutex
+	startedL sync.Mutex
 	// srv is a pointer to the HTTP server used to communicated proxy health.
 	srv *http.Server
 }
@@ -61,37 +50,26 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	}
 
 	hc := &HC{
-		live: true,
 		srv:  srv,
 	}
 
 	// Handlers used to set up HTTP endpoints.
 	http.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
-		hc.readinessL.Lock()
-		hc.ready = readinessTest(proxyClient, hc)
-		if !hc.ready {
-			hc.readinessL.Unlock()
+		if !readinessTest(proxyClient, hc) {
 			w.WriteHeader(500)
 			w.Write([]byte("error\n"))
 			return
 		}
-		hc.readinessL.Unlock()
-
 		w.WriteHeader(200)
 		w.Write([]byte("ok\n"))
 	})
 
 	http.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
-		hc.livenessL.Lock()
-		hc.live = livenessTest()
-		if !hc.live {
-			hc.livenessL.Unlock()
+		if !livenessTest() {
 			w.WriteHeader(500)
 			w.Write([]byte("error\n"))
 			return
 		}
-		hc.livenessL.Unlock()
-
 		w.WriteHeader(200)
 		w.Write([]byte("ok\n"))
 	})
@@ -118,9 +96,9 @@ func (hc *HC) Close() {
 // NotifyReadyForConnections indicates to the proxy's HC that has finished startup.
 func (hc *HC) NotifyReadyForConnections() {
 	if hc != nil {
-		hc.readinessL.Lock()
+		hc.startedL.Lock()
 		hc.started = true
-		hc.readinessL.Unlock()
+		hc.startedL.Unlock()
 	}
 }
 
@@ -133,10 +111,13 @@ func livenessTest() bool {
 // ready for new connections.
 func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
 	// Mark as not ready until we reach the 'Ready for Connections' log.
+	hc.startedL.Lock()
 	if !hc.started {
+		hc.startedL.Unlock()
 		logging.Errorf("Readiness failed because proxy has not finished starting up.")
 		return false
 	}
+	hc.startedL.Unlock()
 
 	// Mark as not ready if the proxy is at the optional MaxConnections limit.
 	if proxyClient.MaxConnections > 0 && atomic.LoadUint64(&proxyClient.ConnectionsCounter) >= proxyClient.MaxConnections {
