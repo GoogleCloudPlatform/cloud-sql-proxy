@@ -23,12 +23,13 @@ import (
 )
  
 const (
-	livenessURL = "http://localhost:8080/liveness"
-	readinessURL = "http://localhost:8080/readiness"
+	livenessURL = "http://localhost" + portNum + livenessPath
+	readinessURL = "http://localhost" + portNum + readinessPath
 )
 
 // Test to verify that when the proxy client is up, the liveness endpoint writes 200.
 func TestLiveness(t *testing.T) {
+	//http.DefaultServeMux = new(http.ServeMux)
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close() // Close health check upon exiting the test.
@@ -46,6 +47,7 @@ func TestLiveness(t *testing.T) {
 
 // Test to verify that when startup has not finished, the readiness endpoint writes 500.
 func TestStartupFail(t *testing.T) {
+	//http.DefaultServeMux = new(http.ServeMux)
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
@@ -64,6 +66,7 @@ func TestStartupFail(t *testing.T) {
 // Test to verify that when startup has finished, and MaxConnections has not been reached,
 // the readiness endpoint writes 200.
 func TestStartupPass(t *testing.T) {
+	//http.DefaultServeMux = new(http.ServeMux)
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient)
 	defer hc.Close()
@@ -85,6 +88,7 @@ func TestStartupPass(t *testing.T) {
 // Test to verify that when startup has finished, but MaxConnections has been reached,
 // the readiness endpoint writes 500.
 func TestMaxConnectionsReached(t *testing.T) {
+	//http.DefaultServeMux = new(http.ServeMux)
 	proxyClient := &proxy.Client{
 		MaxConnections: 10,
 	}
@@ -129,3 +133,11 @@ func TestCloseHealthCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+/*func TestMain(m *testing.M) {
+	proxyClient := newClient(0)
+	hc := NewHealthCheck(proxyClient)
+	code := m.Run()
+	hc.Close()
+	os.Exit(code)
+}*/

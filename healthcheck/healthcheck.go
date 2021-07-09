@@ -28,7 +28,7 @@ import (
 const (
 	livenessPath = "/liveness"
 	readinessPath = "/readiness"
-	portNum = ":8080" // TODO(monazhn): Think about a good port number.
+	portNum = ":8080"
 )
 
 // HC is a type used to implement health checks for the proxy.
@@ -53,7 +53,6 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 		srv:  srv,
 	}
 
-	// Handlers used to set up HTTP endpoints.
 	http.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
 		if !readinessTest(proxyClient, hc) {
 			w.WriteHeader(500)
@@ -83,7 +82,7 @@ func NewHealthCheck(proxyClient *proxy.Client) *HC {
 	return hc
 }
 
-// CloseHealthCheck gracefully shuts down the HTTP server belonging to the HC
+// Close gracefully shuts down the HTTP server belonging to the HC
 // object.
 func (hc *HC) Close() {
 	if hc != nil {
