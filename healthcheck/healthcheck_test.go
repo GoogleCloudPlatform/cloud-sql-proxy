@@ -22,10 +22,12 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
+const testPort = "8080"
+
 // Test to verify that when the proxy client is up, the liveness endpoint writes 200.
 func TestLiveness(t *testing.T) {
 	proxyClient := &proxy.Client{}
-	hc := NewHealthCheck(proxyClient, "8080")
+	hc := NewHealthCheck(proxyClient, testPort)
 	defer hc.Close(context.Background()) // Close health check upon exiting the test.
 
 	resp, err := http.Get("http://localhost:" + hc.port + livenessPath)
@@ -40,7 +42,7 @@ func TestLiveness(t *testing.T) {
 // Test to verify that when startup has not finished, the readiness endpoint writes 500.
 func TestStartupFail(t *testing.T) {
 	proxyClient := &proxy.Client{}
-	hc := NewHealthCheck(proxyClient, "8080")
+	hc := NewHealthCheck(proxyClient, testPort)
 	defer hc.Close(context.Background())
 
 	resp, err := http.Get("http://localhost:" + hc.port + readinessPath)
@@ -56,7 +58,7 @@ func TestStartupFail(t *testing.T) {
 // the readiness endpoint writes 200.
 func TestStartupPass(t *testing.T) {
 	proxyClient := &proxy.Client{}
-	hc := NewHealthCheck(proxyClient, "8080")
+	hc := NewHealthCheck(proxyClient, testPort)
 	defer hc.Close(context.Background())
 
 	// Simulate the proxy client completing startup.
@@ -77,7 +79,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 	proxyClient := &proxy.Client{
 		MaxConnections: 10,
 	}
-	hc := NewHealthCheck(proxyClient, "8080")
+	hc := NewHealthCheck(proxyClient, testPort)
 	defer hc.Close(context.Background())
 
 	hc.NotifyReadyForConnections()
@@ -96,7 +98,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 // an error.
 func TestCloseHealthCheck(t *testing.T) {
 	proxyClient := &proxy.Client{}
-	hc := NewHealthCheck(proxyClient, "8080")
+	hc := NewHealthCheck(proxyClient, testPort)
 	defer hc.Close(context.Background()) // TODO (monazhn): remove this Close?
 
 	resp, err := http.Get("http://localhost:" + hc.port + livenessPath)
