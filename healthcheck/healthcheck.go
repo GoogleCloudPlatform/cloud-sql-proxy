@@ -117,8 +117,10 @@ func livenessTest() bool {
 	return true
 }
 
-// readinessTest will check several criteria before determining the proxy is
-// ready for new connections.
+// readinessTest will check the following criteria before determining whether the
+// proxy is ready for new connections.
+// 1. Finished starting up / sent the 'Ready for Connections' log.
+// 2. Not yet hit the MaxConnections limit, if applicable.
 func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
 	// Mark as not ready until we reach the 'Ready for Connections' log.
 	hc.startedL.Lock()
