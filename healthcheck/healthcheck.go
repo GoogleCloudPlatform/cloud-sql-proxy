@@ -93,11 +93,10 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 	return hc
 }
 
-// Close gracefully shuts down the HTTP server belonging to the HC
-// object.
-func (hc *HC) Close() {
+// Close gracefully shuts down the HTTP server belonging to the HC object.
+func (hc *HC) Close(ctx context.Context) {
 	if hc != nil {
-		if err := hc.srv.Shutdown(context.Background()); err != nil {
+		if err := hc.srv.Shutdown(ctx); err != nil {
 			logging.Errorf("Failed to shut down health check: ", err)
 		}
 	}

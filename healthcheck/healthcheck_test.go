@@ -15,6 +15,7 @@
 package healthcheck
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -25,7 +26,7 @@ import (
 func TestLiveness(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient, "8080")
-	defer hc.Close() // Close health check upon exiting the test.
+	defer hc.Close(context.Background()) // Close health check upon exiting the test.
 
 	resp, err := http.Get("http://localhost:" + hc.port + livenessPath)
 	if err != nil {
@@ -40,7 +41,7 @@ func TestLiveness(t *testing.T) {
 func TestStartupFail(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient, "8080")
-	defer hc.Close()
+	defer hc.Close(context.Background())
 
 	resp, err := http.Get("http://localhost:" + hc.port + readinessPath)
 	if err != nil {
@@ -56,7 +57,7 @@ func TestStartupFail(t *testing.T) {
 func TestStartupPass(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient, "8080")
-	defer hc.Close()
+	defer hc.Close(context.Background())
 
 	// Simulate the proxy client completing startup.
 	hc.NotifyReadyForConnections()
@@ -77,7 +78,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 		MaxConnections: 10,
 	}
 	hc := NewHealthCheck(proxyClient, "8080")
-	defer hc.Close()
+	defer hc.Close(context.Background())
 
 	hc.NotifyReadyForConnections()
 	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
@@ -96,7 +97,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 func TestCloseHealthCheck(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient, "8080")
-	defer hc.Close()
+	defer hc.Close(context.Background()) // TODO (monazhn): remove this Close?
 
 	resp, err := http.Get("http://localhost:" + hc.port + livenessPath)
 	if err != nil {
@@ -106,7 +107,7 @@ func TestCloseHealthCheck(t *testing.T) {
 		t.Errorf("got status code %v instead of 200", resp.StatusCode)
 	}
 
-	hc.Close()
+	hc.Close(context.Background())
 
 	_, err = http.Get("http://localhost:" + hc.port + livenessPath)
 	if err == nil { // If NO error
