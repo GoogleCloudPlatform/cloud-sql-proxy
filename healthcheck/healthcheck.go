@@ -70,7 +70,7 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 	})
 
 	mux.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !livenessTest() {
+		if !livenessTest() { // Because livenessTest() returns true, this case should not be reached.
 			w.WriteHeader(500)
 			w.Write([]byte("error\n"))
 			return

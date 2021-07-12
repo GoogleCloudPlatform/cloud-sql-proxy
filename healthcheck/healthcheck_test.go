@@ -99,7 +99,6 @@ func TestMaxConnectionsReached(t *testing.T) {
 func TestCloseHealthCheck(t *testing.T) {
 	proxyClient := &proxy.Client{}
 	hc := NewHealthCheck(proxyClient, testPort)
-	defer hc.Close(context.Background()) // TODO (monazhn): remove this Close?
 
 	resp, err := http.Get("http://localhost:" + hc.port + livenessPath)
 	if err != nil {
