@@ -352,7 +352,7 @@ func (c *Client) cachedCfg(ctx context.Context, instance string) (string, *tls.C
 				c.cfgCache[instance] = e
 			} else {
 				// TODO: Investigate returning this as an error instead of just logging
-				logging.Errorf("Throttling refreshCfg(%s): it was only called %v ago", instance, time.Since(e.lastRefreshed))
+				logging.Infof("refresh operation throttled for %s: reusing config from last refresh (%s ago)", instance, time.Since(e.lastRefreshed))
 			}
 		}
 		c.cacheL.Unlock()
