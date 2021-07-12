@@ -135,7 +135,7 @@ unavailable.`,
 	)
 
 	// Settings for healthcheck
-	useHealthCheck = flag.Bool("use_health_check", false, "When set, periodically checks and communicates the health of the proxy client.")
+	useHttpHealthCheck = flag.Bool("use_health_check", false, "When set, periodically checks and communicates the health of the proxy client.")
 	hcPort = flag.String("hc_port", "8080", "Health checks will listen and serve this port. Defaults to 8080.")
 )
 
@@ -593,7 +593,7 @@ func main() {
 	}
 
 	var hc *healthcheck.HC
-	if *useHealthCheck {
+	if *useHttpHealthCheck {
 		hc = healthcheck.NewHealthCheck(proxyClient, *hcPort)
 	}
 
