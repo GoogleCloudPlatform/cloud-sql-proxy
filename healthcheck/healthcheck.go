@@ -104,11 +104,9 @@ func (hc *HC) Close(ctx context.Context) {
 
 // NotifyReadyForConnections indicates that the proxy has finished startup.
 func (hc *HC) NotifyReadyForConnections() {
-	if hc != nil {
-		hc.startedL.Lock()
-		hc.started = true
-		hc.startedL.Unlock()
-	}
+	hc.startedL.Lock()
+	hc.started = true
+	hc.startedL.Unlock()
 }
 
 // livenessTest returns true as long as the proxy is running.
