@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.23.1](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.23.0...v1.23.1) (2021-07-12)
+
+
+### Bug Fixes
+
+* improve log message when refresh is throttled ([#830](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/830)) ([4ffee2a](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/4ffee2a1950fd6fb6703647d178a436b566b8a80))
+
 ## [1.23.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.22.0...v1.23.0) (2021-06-01)
 
 
