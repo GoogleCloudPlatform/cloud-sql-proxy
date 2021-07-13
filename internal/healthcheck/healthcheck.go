@@ -119,16 +119,17 @@ func isLive() bool {
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if applicable.
 func isReady(proxyClient *proxy.Client, hc *HC) bool {
-	// Mark as not ready until we reach the 'Ready for Connections' log.
+	// Not ready until we reach the 'Ready for Connections' log.
 	hc.startedL.Lock()
-	if !hc.started {
-		hc.startedL.Unlock()
+	started := hc.started
+	hc.startedL.Unlock()
+
+	if !started {
 		logging.Errorf("Readiness failed because proxy has not finished starting up.")
 		return false
 	}
-	hc.startedL.Unlock()
 
-	// Mark as not ready if the proxy is at the optional MaxConnections limit.
+	// Not ready if the proxy is at the optional MaxConnections limit.
 	if proxyClient.MaxConnections > 0 && atomic.LoadUint64(&proxyClient.ConnectionsCounter) >= proxyClient.MaxConnections {
 		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", proxyClient.MaxConnections)
 		return false
