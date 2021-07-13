@@ -46,7 +46,7 @@ type HC struct {
 
 // NewHealthCheck initializes a HC object and exposes HTTP endpoints used to
 // communicate proxy health.
-func NewHealthCheck(c *proxy.Client, port string) *HC {
+func NewHealthCheck(c *proxy.Client, port string) (*HC, error) {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
@@ -81,7 +81,7 @@ func NewHealthCheck(c *proxy.Client, port string) *HC {
 
 	ln, err := net.Listen("tcp", srv.Addr)
 	if err != nil {
-		logging.Errorf("Failed to listen: %v", err)
+		return nil, err
 	}
 
 	go func() {
@@ -90,16 +90,13 @@ func NewHealthCheck(c *proxy.Client, port string) *HC {
 		}
 	}()
 
-	return hc
+	return hc, nil
 }
 
 // Close gracefully shuts down the HTTP server belonging to the HC object.
-func (hc *HC) Close(ctx context.Context) {
-	if hc != nil {
-		if err := hc.srv.Shutdown(ctx); err != nil {
-			logging.Errorf("Failed to shut down health check: ", err)
-		}
-	}
+func (hc *HC) Close(ctx context.Context) error {
+	err := hc.srv.Shutdown(ctx)
+	return err
 }
 
 // NotifyStarted tells the HC that the proxy has finished startup.

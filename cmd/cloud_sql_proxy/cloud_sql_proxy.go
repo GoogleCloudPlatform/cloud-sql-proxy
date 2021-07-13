@@ -594,7 +594,10 @@ func main() {
 
 	var hc *healthcheck.HC
 	if *useHttpHealthCheck {
-		hc = healthcheck.NewHealthCheck(proxyClient, *hcPort)
+		hc, err = healthcheck.NewHealthCheck(proxyClient, *hcPort)
+		if err != nil {
+			logging.Errorf("Could not initialize health check: %v", err)
+		}
 	}
 
 	// Initialize a source of new connections to Cloud SQL instances.
