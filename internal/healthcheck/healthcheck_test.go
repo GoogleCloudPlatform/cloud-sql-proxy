@@ -26,7 +26,7 @@ import (
 const (
 	livenessPath = "/liveness"
 	readinessPath = "/readiness"
-	testPort = "9090"
+	testPort = "8090"
 )
 
 // Test to verify that when the proxy client is up, the liveness endpoint writes 200.
