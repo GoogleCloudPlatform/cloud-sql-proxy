@@ -16,8 +16,10 @@ package healthcheck_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
+	"syscall"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
@@ -131,7 +133,7 @@ func TestCloseHealthCheck(t *testing.T) {
 	}
 
 	_, err = http.Get("http://localhost:" + testPort + livenessPath)
-	if err == nil { // If NO error
-		t.Fatalf("HTTP GET did not fail after closing health check\n")
+	if !errors.Is(err, syscall.ECONNREFUSED) {
+		t.Fatalf("HTTP GET did not give a 'connection refused' error after closing health check\n")
 	}
 }
