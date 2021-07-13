@@ -46,7 +46,7 @@ type HC struct {
 
 // NewHealthCheck initializes a HC object and exposes HTTP endpoints used to
 // communicate proxy health.
-func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
+func NewHealthCheck(c *proxy.Client, port string) *HC {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
@@ -60,7 +60,7 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 	}
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !isReady(proxyClient, hc) {
+		if !isReady(c, hc) {
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
@@ -118,7 +118,7 @@ func isLive() bool {
 // proxy is ready for new connections.
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if applicable.
-func isReady(proxyClient *proxy.Client, hc *HC) bool {
+func isReady(c *proxy.Client, hc *HC) bool {
 	// Not ready until we reach the 'Ready for Connections' log.
 	hc.startedL.Lock()
 	started := hc.started
@@ -130,8 +130,8 @@ func isReady(proxyClient *proxy.Client, hc *HC) bool {
 	}
 
 	// Not ready if the proxy is at the optional MaxConnections limit.
-	if proxyClient.MaxConnections > 0 && atomic.LoadUint64(&proxyClient.ConnectionsCounter) >= proxyClient.MaxConnections {
-		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", proxyClient.MaxConnections)
+	if c.MaxConnections > 0 && atomic.LoadUint64(&c.ConnectionsCounter) >= c.MaxConnections {
+		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", c.MaxConnections)
 		return false
 	}
 
