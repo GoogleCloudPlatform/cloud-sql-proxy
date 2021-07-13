@@ -17,6 +17,7 @@ package healthcheck
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"sync"
@@ -83,9 +84,9 @@ func NewHealthCheck(c *proxy.Client, port string) (*HC, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	go func() {
-		if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logging.Errorf("Failed to serve: %v", err)
 		}
 	}()
