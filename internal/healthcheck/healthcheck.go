@@ -60,7 +60,7 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 	}
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !readinessTest(proxyClient, hc) {
+		if !isReady(proxyClient, hc) {
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
@@ -70,7 +70,7 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 	})
 
 	mux.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !livenessTest() { // Because livenessTest() returns true, this case should not be reached.
+		if !isLive() { // Because livenessTest() returns true, this case should not be reached.
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
@@ -110,7 +110,7 @@ func (hc *HC) NotifyReadyForConnections() {
 }
 
 // livenessTest returns true as long as the proxy is running.
-func livenessTest() bool {
+func isLive() bool {
 	return true
 }
 
@@ -118,7 +118,7 @@ func livenessTest() bool {
 // proxy is ready for new connections.
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if applicable.
-func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
+func isReady(proxyClient *proxy.Client, hc *HC) bool {
 	// Mark as not ready until we reach the 'Ready for Connections' log.
 	hc.startedL.Lock()
 	if !hc.started {
