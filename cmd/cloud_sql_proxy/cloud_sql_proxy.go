@@ -136,7 +136,7 @@ unavailable.`,
 
 	// Settings for healthcheck
 	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an http server that checks and communicates the health of the proxy client.")
-	hcPort = flag.String("hc_port", "9090", "Health checks will listen and serve this port. Defaults to 9090.")
+	healthCheckPort = flag.String("health_check_port", "8090", "Health checks will listen and serve this port. Defaults to 8090.")
 )
 
 const (
@@ -594,7 +594,7 @@ func main() {
 
 	var hc *healthcheck.HC
 	if *useHTTPHealthCheck {
-		hc, err = healthcheck.NewHealthCheck(proxyClient, *hcPort)
+		hc, err = healthcheck.NewHealthCheck(proxyClient, *healthCheckPort)
 		if err != nil {
 			logging.Errorf("Could not initialize health check: %v", err)
 		}
