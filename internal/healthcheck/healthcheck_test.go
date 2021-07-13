@@ -115,6 +115,7 @@ func TestCloseHealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v\n", err)
 	}
+	defer hc.Close(context.Background())
 
 	resp, err := http.Get("http://localhost:" + testPort + livenessPath)
 	if err != nil {
