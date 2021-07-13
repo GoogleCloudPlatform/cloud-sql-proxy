@@ -34,7 +34,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/healthcheck"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
