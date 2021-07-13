@@ -34,10 +34,11 @@ const (
 
 // HC is a type used to implement health checks for the proxy.
 type HC struct {
-	// startedL protects started, a flag that indicates whether the proxy is 
+	// startedL protects the started flag
+	startedL sync.Mutex
+	// started is a flag that indicates whether the proxy is 
 	// done starting up. started is used to support readiness probing and 
 	// should not be confused for affecting startup probing.
-	startedL sync.Mutex
 	started bool
 	// port designates the port number on which HC listens and serves.
 	port string
