@@ -88,7 +88,7 @@ func TestStartupPass(t *testing.T) {
 // the readiness endpoint writes 500.
 func TestMaxConnectionsReached(t *testing.T) {
 	proxyClient := &proxy.Client{
-		MaxConnections: 10,
+		MaxConnections: 1,
 	}
 	hc, err := healthcheck.NewHealthCheck(proxyClient, testPort)
 	if err != nil {
