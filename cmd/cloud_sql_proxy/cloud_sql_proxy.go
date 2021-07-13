@@ -637,7 +637,7 @@ func main() {
 	logging.Infof("Ready for new connections")
 
 	if hc != nil {
-		hc.NotifyReadyForConnections()
+		hc.NotifyStarted()
 	}
 
 	signals := make(chan os.Signal, 1)

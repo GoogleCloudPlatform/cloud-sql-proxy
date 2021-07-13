@@ -62,7 +62,7 @@ func TestStartupPass(t *testing.T) {
 	defer hc.Close(context.Background())
 
 	// Simulate the proxy client completing startup.
-	hc.NotifyReadyForConnections()
+	hc.NotifyStarted()
 
 	resp, err := http.Get("http://localhost:" + hc.port + readinessPath)
 	if err != nil {
@@ -82,7 +82,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 	hc := NewHealthCheck(proxyClient, testPort)
 	defer hc.Close(context.Background())
 
-	hc.NotifyReadyForConnections()
+	hc.NotifyStarted()
 	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
 
 	resp, err := http.Get("http://localhost:" + hc.port + readinessPath)

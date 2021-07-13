@@ -103,7 +103,7 @@ func (hc *HC) Close(ctx context.Context) {
 }
 
 // NotifyReadyForConnections indicates that the proxy has finished startup.
-func (hc *HC) NotifyReadyForConnections() {
+func (hc *HC) NotifyStarted() {
 	hc.startedL.Lock()
 	hc.started = true
 	hc.startedL.Unlock()
