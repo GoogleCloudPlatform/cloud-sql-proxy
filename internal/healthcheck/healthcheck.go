@@ -32,23 +32,23 @@ const (
 	readinessPath = "/readiness"
 )
 
-// HC is a type used to implement health checks for the proxy.
-type HC struct {
+// Server is a type used to implement health checks for the proxy.
+type Server struct {
 	// startedL protects the started flag
 	startedL sync.Mutex
 	// started is a flag that indicates whether the proxy is 
 	// done starting up. started is used to support readiness probing and 
 	// should not be confused for affecting startup probing.
 	started bool
-	// port designates the port number on which HC listens and serves.
+	// port designates the port number on which Server listens and serves.
 	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
 	srv *http.Server
 }
 
-// NewHealthCheck initializes a HC object and exposes HTTP endpoints used to
+// NewServer initializes a Server object and exposes HTTP endpoints used to
 // communicate proxy health.
-func NewHealthCheck(c *proxy.Client, port string) (*HC, error) {
+func NewServer(c *proxy.Client, port string) (*Server, error) {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
@@ -56,13 +56,13 @@ func NewHealthCheck(c *proxy.Client, port string) (*HC, error) {
 		Handler: mux,
 	}
 
-	hc := &HC{
+	s := &Server{
 		port: port,
 		srv:  srv,
 	}
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !isReady(c, hc) {
+		if !isReady(c, s) {
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
@@ -92,20 +92,20 @@ func NewHealthCheck(c *proxy.Client, port string) (*HC, error) {
 		}
 	}()
 
-	return hc, nil
+	return s, nil
 }
 
 // Close gracefully shuts down the HTTP server belonging to the HC object.
-func (hc *HC) Close(ctx context.Context) error {
-	err := hc.srv.Shutdown(ctx)
+func (s *Server) Close(ctx context.Context) error {
+	err := s.srv.Shutdown(ctx)
 	return err
 }
 
 // NotifyStarted tells the HC that the proxy has finished startup.
-func (hc *HC) NotifyStarted() {
-	hc.startedL.Lock()
-	hc.started = true
-	hc.startedL.Unlock()
+func (s *Server) NotifyStarted() {
+	s.startedL.Lock()
+	s.started = true
+	s.startedL.Unlock()
 }
 
 // isLive returns true as long as the proxy is running.
@@ -117,11 +117,11 @@ func isLive() bool {
 // proxy is ready for new connections.
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if applicable.
-func isReady(c *proxy.Client, hc *HC) bool {
+func isReady(c *proxy.Client, s *Server) bool {
 	// Not ready until we reach the 'Ready for Connections' log.
-	hc.startedL.Lock()
-	started := hc.started
-	hc.startedL.Unlock()
+	s.startedL.Lock()
+	started := s.started
+	s.startedL.Unlock()
 
 	if !started {
 		logging.Errorf("Readiness failed because proxy has not finished starting up.")
