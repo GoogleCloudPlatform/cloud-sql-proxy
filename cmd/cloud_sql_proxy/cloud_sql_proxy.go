@@ -34,7 +34,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/internal/healthcheck"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
@@ -592,11 +592,11 @@ func main() {
 		RefreshCfgBuffer:   refreshCfgBuffer,
 	}
 
-	var hc *healthcheck.HC
+	var hc *healthcheck.Server
 	if *useHTTPHealthCheck {
-		hc, err = healthcheck.NewHealthCheck(proxyClient, *healthCheckPort)
+		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort)
 		if err != nil {
-			logging.Errorf("Could not initialize health check: %v", err)
+			logging.Errorf("Could not initialize health check server: %v", err)
 		}
 	}
 

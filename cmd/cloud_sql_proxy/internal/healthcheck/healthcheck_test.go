@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/internal/healthcheck"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
