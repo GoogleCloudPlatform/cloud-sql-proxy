@@ -62,21 +62,21 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
 		if !readinessTest(proxyClient, hc) {
 			w.WriteHeader(500)
-			w.Write([]byte("error\n"))
+			w.Write([]byte("error"))
 			return
 		}
 		w.WriteHeader(200)
-		w.Write([]byte("ok\n"))
+		w.Write([]byte("ok"))
 	})
 
 	mux.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
 		if !livenessTest() { // Because livenessTest() returns true, this case should not be reached.
 			w.WriteHeader(500)
-			w.Write([]byte("error\n"))
+			w.Write([]byte("error"))
 			return
 		}
 		w.WriteHeader(200)
-		w.Write([]byte("ok\n"))
+		w.Write([]byte("ok"))
 	})
 
 	ln, err := net.Listen("tcp", srv.Addr)
