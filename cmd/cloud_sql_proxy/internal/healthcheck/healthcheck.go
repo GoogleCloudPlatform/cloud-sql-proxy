@@ -21,7 +21,6 @@ import (
 	"net"
 	"net/http"
 	"sync"
-	"sync/atomic"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
@@ -128,7 +127,7 @@ func isReady(c *proxy.Client, s *Server) bool {
 	}
 
 	// Not ready if the proxy is at the optional MaxConnections limit.
-	if c.MaxConnections > 0 && atomic.LoadUint64(&c.ConnectionsCounter) >= c.MaxConnections {
+	if !c.AvailableConn() {
 		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", c.MaxConnections)
 		return false
 	}

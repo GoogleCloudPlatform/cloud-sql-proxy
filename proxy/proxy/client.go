@@ -489,6 +489,11 @@ func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (s
 	return version, nil
 }
 
+// AvailableConn returns false if MaxConnections is set and has been reached, true otherwise.
+func (c *Client) AvailableConn() bool {
+	return c.MaxConnections == 0 || atomic.LoadUint64(&c.ConnectionsCounter) < c.MaxConnections
+}
+
 // Shutdown waits up to a given amount of time for all active connections to
 // close. Returns an error if there are still active connections after waiting
 // for the whole length of the timeout.
