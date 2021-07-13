@@ -136,7 +136,7 @@ unavailable.`,
 
 	// Settings for healthcheck
 	useHttpHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an http server that checks and communicates the health of the proxy client.")
-	hcPort = flag.String("hc_port", "8080", "Health checks will listen and serve this port. Defaults to 8080.")
+	hcPort = flag.String("hc_port", "9090", "Health checks will listen and serve this port. Defaults to 9090.")
 )
 
 const (

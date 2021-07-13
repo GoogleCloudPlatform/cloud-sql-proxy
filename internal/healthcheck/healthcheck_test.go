@@ -22,7 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
-const testPort = "8080"
+const testPort = "9090"
 
 // Test to verify that when the proxy client is up, the liveness endpoint writes 200.
 func TestLiveness(t *testing.T) {
