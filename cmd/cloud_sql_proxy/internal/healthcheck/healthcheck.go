@@ -55,13 +55,13 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 		Handler: mux,
 	}
 
-	s := &Server{
+	hcServer := &Server{
 		port: port,
 		srv:  srv,
 	}
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !isReady(c, s) {
+		if !isReady(c, hcServer) {
 			w.WriteHeader(500)
 			w.Write([]byte("error"))
 			return
@@ -91,16 +91,16 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 		}
 	}()
 
-	return s, nil
+	return hcServer, nil
 }
 
-// Close gracefully shuts down the HTTP server belonging to the HC object.
+// Close gracefully shuts down the HTTP server belonging to the Server object.
 func (s *Server) Close(ctx context.Context) error {
 	err := s.srv.Shutdown(ctx)
 	return err
 }
 
-// NotifyStarted tells the HC that the proxy has finished startup.
+// NotifyStarted tells the Server that the proxy has finished startup.
 func (s *Server) NotifyStarted() {
 	s.startedL.Lock()
 	s.started = true
