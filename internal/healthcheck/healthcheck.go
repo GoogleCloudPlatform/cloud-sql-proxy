@@ -38,7 +38,7 @@ type HC struct {
 	// proxy is done starting up. started is protected by startedL.
 	started bool
 	startedL sync.Mutex
-	// port designates which port HC listens and serves.
+	// port designates the port number on which HC listens and serves.
 	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
 	srv *http.Server
@@ -116,7 +116,7 @@ func livenessTest() bool {
 
 // readinessTest will check the following criteria before determining whether the
 // proxy is ready for new connections.
-// 1. Finished starting up / sent the 'Ready for Connections' log.
+// 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if applicable.
 func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
 	// Mark as not ready until we reach the 'Ready for Connections' log.
