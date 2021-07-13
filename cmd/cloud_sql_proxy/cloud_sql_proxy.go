@@ -34,7 +34,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/internal/healthcheck"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
@@ -135,8 +135,8 @@ unavailable.`,
 	)
 
 	// Settings for healthcheck
-	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an http server that checks and communicates the health of the proxy client.")
-	hcPort = flag.String("hc_port", "9090", "Health checks will listen and serve this port. Defaults to 9090.")
+	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an HTTP server that checks and communicates the health of the proxy client.")
+	healthCheckPort = flag.String("health_check_port", "8090", "When applicable, health checks take place on this port number. Defaults to 8090.")
 )
 
 const (
@@ -592,11 +592,11 @@ func main() {
 		RefreshCfgBuffer:   refreshCfgBuffer,
 	}
 
-	var hc *healthcheck.HC
+	var s *healthcheck.Server
 	if *useHTTPHealthCheck {
-		hc, err = healthcheck.NewHealthCheck(proxyClient, *hcPort)
+		s, err = healthcheck.NewServer(proxyClient, *healthCheckPort)
 		if err != nil {
-			logging.Errorf("Could not initialize health check: %v", err)
+			logging.Errorf("Could not initialize Server for health checks: %v", err)
 		}
 	}
 
@@ -639,8 +639,8 @@ func main() {
 
 	logging.Infof("Ready for new connections")
 
-	if hc != nil {
-		hc.NotifyStarted()
+	if s != nil {
+		s.NotifyStarted()
 	}
 
 	signals := make(chan os.Signal, 1)
