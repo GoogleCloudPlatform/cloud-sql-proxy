@@ -17,6 +17,7 @@ package healthcheck
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"sync"
@@ -33,11 +34,11 @@ const (
 
 // HC is a type used to implement health checks for the proxy.
 type HC struct {
-	// started is a flag used to support readiness probing and should not be
-	// confused for affecting startup probing. When started becomes true, the
-	// proxy is done starting up. started is protected by startedL.
-	started bool
+	// startedL protects started, a flag that indicates whether the proxy is 
+	// done starting up. started is used to support readiness probing and 
+	// should not be confused for affecting startup probing.
 	startedL sync.Mutex
+	started bool
 	// port designates the port number on which HC listens and serves.
 	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
@@ -46,7 +47,7 @@ type HC struct {
 
 // NewHealthCheck initializes a HC object and exposes HTTP endpoints used to
 // communicate proxy health.
-func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
+func NewHealthCheck(c *proxy.Client, port string) (*HC, error) {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
@@ -60,77 +61,75 @@ func NewHealthCheck(proxyClient *proxy.Client, port string) *HC {
 	}
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !readinessTest(proxyClient, hc) {
+		if !isReady(c, hc) {
 			w.WriteHeader(500)
-			w.Write([]byte("error\n"))
+			w.Write([]byte("error"))
 			return
 		}
 		w.WriteHeader(200)
-		w.Write([]byte("ok\n"))
+		w.Write([]byte("ok"))
 	})
 
 	mux.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !livenessTest() { // Because livenessTest() returns true, this case should not be reached.
+		if !isLive() { // Because isLive() returns true, this case should not be reached.
 			w.WriteHeader(500)
-			w.Write([]byte("error\n"))
+			w.Write([]byte("error"))
 			return
 		}
 		w.WriteHeader(200)
-		w.Write([]byte("ok\n"))
+		w.Write([]byte("ok"))
 	})
 
 	ln, err := net.Listen("tcp", srv.Addr)
 	if err != nil {
-		logging.Errorf("Failed to listen: %v", err)
+		return nil, err
 	}
-
+	
 	go func() {
-		if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logging.Errorf("Failed to serve: %v", err)
 		}
 	}()
 
-	return hc
+	return hc, nil
 }
 
 // Close gracefully shuts down the HTTP server belonging to the HC object.
-func (hc *HC) Close(ctx context.Context) {
-	if hc != nil {
-		if err := hc.srv.Shutdown(ctx); err != nil {
-			logging.Errorf("Failed to shut down health check: ", err)
-		}
-	}
+func (hc *HC) Close(ctx context.Context) error {
+	err := hc.srv.Shutdown(ctx)
+	return err
 }
 
-// NotifyReadyForConnections indicates that the proxy has finished startup.
-func (hc *HC) NotifyReadyForConnections() {
+// NotifyStarted tells the HC that the proxy has finished startup.
+func (hc *HC) NotifyStarted() {
 	hc.startedL.Lock()
 	hc.started = true
 	hc.startedL.Unlock()
 }
 
-// livenessTest returns true as long as the proxy is running.
-func livenessTest() bool {
+// isLive returns true as long as the proxy is running.
+func isLive() bool {
 	return true
 }
 
-// readinessTest will check the following criteria before determining whether the
+// isReady will check the following criteria before determining whether the
 // proxy is ready for new connections.
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if applicable.
-func readinessTest(proxyClient *proxy.Client, hc *HC) bool {
-	// Mark as not ready until we reach the 'Ready for Connections' log.
+func isReady(c *proxy.Client, hc *HC) bool {
+	// Not ready until we reach the 'Ready for Connections' log.
 	hc.startedL.Lock()
-	if !hc.started {
-		hc.startedL.Unlock()
+	started := hc.started
+	hc.startedL.Unlock()
+
+	if !started {
 		logging.Errorf("Readiness failed because proxy has not finished starting up.")
 		return false
 	}
-	hc.startedL.Unlock()
 
-	// Mark as not ready if the proxy is at the optional MaxConnections limit.
-	if proxyClient.MaxConnections > 0 && atomic.LoadUint64(&proxyClient.ConnectionsCounter) >= proxyClient.MaxConnections {
-		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", proxyClient.MaxConnections)
+	// Not ready if the proxy is at the optional MaxConnections limit.
+	if c.MaxConnections > 0 && atomic.LoadUint64(&c.ConnectionsCounter) >= c.MaxConnections {
+		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", c.MaxConnections)
 		return false
 	}
 

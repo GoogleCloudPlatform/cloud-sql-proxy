@@ -136,7 +136,7 @@ unavailable.`,
 
 	// Settings for healthcheck
 	useHttpHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an http server that checks and communicates the health of the proxy client.")
-	hcPort = flag.String("hc_port", "8080", "Health checks will listen and serve this port. Defaults to 8080.")
+	hcPort = flag.String("hc_port", "9090", "Health checks will listen and serve this port. Defaults to 9090.")
 )
 
 const (
@@ -594,7 +594,10 @@ func main() {
 
 	var hc *healthcheck.HC
 	if *useHttpHealthCheck {
-		hc = healthcheck.NewHealthCheck(proxyClient, *hcPort)
+		hc, err = healthcheck.NewHealthCheck(proxyClient, *hcPort)
+		if err != nil {
+			logging.Errorf("Could not initialize health check: %v", err)
+		}
 	}
 
 	// Initialize a source of new connections to Cloud SQL instances.
@@ -637,7 +640,7 @@ func main() {
 	logging.Infof("Ready for new connections")
 
 	if hc != nil {
-		hc.NotifyReadyForConnections()
+		hc.NotifyStarted()
 	}
 
 	signals := make(chan os.Signal, 1)
