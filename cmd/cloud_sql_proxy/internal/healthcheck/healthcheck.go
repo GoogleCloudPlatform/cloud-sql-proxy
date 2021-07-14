@@ -35,7 +35,7 @@ type Server struct {
 	// started is a channel used to indicate whether the proxy has finished 
 	// starting up. The channel is open when startup is in progress and
 	// closed when startup is complete.
-	started chan bool
+	started chan struct{}
 	// port designates the port number on which Server listens and serves.
 	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
@@ -53,7 +53,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	}
 
 	hcServer := &Server{
-		started: make(chan bool),
+		started: make(chan struct{}),
 		port: port,
 		srv:  srv,
 	}
