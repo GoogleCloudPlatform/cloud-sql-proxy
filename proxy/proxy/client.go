@@ -489,7 +489,8 @@ func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (s
 	return version, nil
 }
 
-// AvailableConn returns false if MaxConnections is set and has been reached, true otherwise.
+// AvailableConn returns false if MaxConnections has been reached, true otherwise.
+// When MaxConnections is 0, there is no limit.
 func (c *Client) AvailableConn() bool {
 	return c.MaxConnections == 0 || atomic.LoadUint64(&c.ConnectionsCounter) < c.MaxConnections
 }
