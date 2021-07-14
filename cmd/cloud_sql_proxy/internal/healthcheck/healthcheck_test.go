@@ -48,45 +48,42 @@ func TestLiveness(t *testing.T) {
 	}
 }
 
-// Test to verify that 
-// 1. when startup has NOT finished, the readiness endpoint writes http.StatusServiceUnavailable.
-// 2. when startup HAS finished (and MaxConnections limit not specified), the readiness
-// endpoint writes http.StatusOK.
-func TestStartup(t *testing.T) {
-	cases := []struct {
-		finishedStartup bool
-		statusCode int
-	}{
-		{
-			finishedStartup: false,
-			statusCode: http.StatusServiceUnavailable,
-		},
-		{
-			finishedStartup: true,
-			statusCode: http.StatusOK,
-		},
+// Test to verify that when startup has NOT finished, the readiness endpoint writes 
+// http.StatusServiceUnavailable.
+func TestStartupFail(t *testing.T) {
+	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
+	if err != nil {
+		t.Fatalf("Could not initialize health check: %v\n", err)
 	}
+	defer s.Close(context.Background())
 
-	for _, c := range cases {
-		func() {
-			s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
-			if err != nil {
-				t.Fatalf("Could not initialize health check: %v", err)
-			}
-			defer s.Close(context.Background())
-		
-			if c.finishedStartup == true {
-				s.NotifyStarted() // Simulate the proxy client completing startup.
-			}
-		
-			resp, err := http.Get("http://localhost:" + testPort + readinessPath)
-			if err != nil {
-				t.Fatalf("HTTP GET failed: %v", err)
-			}
-			if resp.StatusCode != c.statusCode {
-				t.Errorf("Got status code %v instead of %v", resp.StatusCode, c.statusCode)
-			}
-		}()
+	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+	if err != nil {
+		t.Fatalf("HTTP GET failed: %v\n", err)
+	}
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusServiceUnavailable)
+	}
+}
+
+// Test to verify that when startup HAS finished (and MaxConnections limit not specified), 
+// the readiness endpoint writes http.StatusOK.
+func TestStartupPass(t *testing.T) {
+	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
+	if err != nil {
+		t.Fatalf("Could not initialize health check: %v\n", err)
+	}
+	defer s.Close(context.Background())
+
+	// Simulate the proxy client completing startup.
+	s.NotifyStarted()
+
+	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+	if err != nil {
+		t.Fatalf("HTTP GET failed: %v\n", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusOK)
 	}
 }
 
