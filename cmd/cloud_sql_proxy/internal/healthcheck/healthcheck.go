@@ -33,10 +33,11 @@ const (
 
 // Server is a type used to implement health checks for the proxy.
 type Server struct {
+	// startedL protects started.
+	startedL sync.Mutex
 	// started is a flag that indicates whether the proxy is done starting up. 
 	// started is used to support readiness probing and should not be confused 
-	// for affecting startup probing. startedL protects started.
-	startedL sync.Mutex
+	// for affecting startup probing.
 	started bool
 	// port designates the port number on which Server listens and serves.
 	port string
