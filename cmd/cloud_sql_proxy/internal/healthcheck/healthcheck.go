@@ -96,8 +96,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 
 // Close gracefully shuts down the HTTP server belonging to the Server object.
 func (s *Server) Close(ctx context.Context) error {
-	err := s.srv.Shutdown(ctx)
-	return err
+	return s.srv.Shutdown(ctx)
 }
 
 // NotifyStarted tells the Server that the proxy has finished startup.
