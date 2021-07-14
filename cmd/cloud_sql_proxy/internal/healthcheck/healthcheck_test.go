@@ -35,16 +35,16 @@ const (
 func TestLiveness(t *testing.T) {
 	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
 	if err != nil {
-		t.Fatalf("Could not initialize health check: %v\n", err)
+		t.Fatalf("Could not initialize health check: %v", err)
 	}
 	defer s.Close(context.Background())
 
 	resp, err := http.Get("http://localhost:" + testPort + livenessPath)
 	if err != nil {
-		t.Fatalf("HTTP GET failed: %v\n", err)
+		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != 200 {
-		t.Errorf("Got status code %v instead of 200\n", resp.StatusCode)
+		t.Errorf("Got status code %v instead of 200", resp.StatusCode)
 	}
 }
 
@@ -70,7 +70,7 @@ func TestStartup(t *testing.T) {
 		func() {
 			s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
 			if err != nil {
-				t.Fatalf("Could not initialize health check: %v\n", err)
+				t.Fatalf("Could not initialize health check: %v", err)
 			}
 			defer s.Close(context.Background())
 		
@@ -80,10 +80,10 @@ func TestStartup(t *testing.T) {
 		
 			resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 			if err != nil {
-				t.Fatalf("HTTP GET failed: %v\n", err)
+				t.Fatalf("HTTP GET failed: %v", err)
 			}
 			if resp.StatusCode != c.statusCode {
-				t.Errorf("Got status code %v instead of %v\n", resp.StatusCode, c.statusCode)
+				t.Errorf("Got status code %v instead of %v", resp.StatusCode, c.statusCode)
 			}
 		}()
 	}
@@ -97,7 +97,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 	}
 	s, err := healthcheck.NewServer(proxyClient, testPort)
 	if err != nil {
-		t.Fatalf("Could not initialize health check: %v\n", err)
+		t.Fatalf("Could not initialize health check: %v", err)
 	}
 	defer s.Close(context.Background())
 
@@ -106,10 +106,10 @@ func TestMaxConnectionsReached(t *testing.T) {
 
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
-		t.Fatalf("HTTP GET failed: %v\n", err)
+		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != 500 {
-		t.Errorf("Got status code %v instead of 500\n", resp.StatusCode)
+		t.Errorf("Got status code %v instead of 500", resp.StatusCode)
 	}
 }
 
@@ -118,25 +118,25 @@ func TestMaxConnectionsReached(t *testing.T) {
 func TestCloseHealthCheck(t *testing.T) {
 	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
 	if err != nil {
-		t.Fatalf("Could not initialize health check: %v\n", err)
+		t.Fatalf("Could not initialize health check: %v", err)
 	}
 	defer s.Close(context.Background())
 
 	resp, err := http.Get("http://localhost:" + testPort + livenessPath)
 	if err != nil {
-		t.Fatalf("HTTP GET failed: %v\n", err)
+		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != 200 {
-		t.Errorf("Got status code %v instead of 200\n", resp.StatusCode)
+		t.Errorf("Got status code %v instead of 200", resp.StatusCode)
 	}
 
 	err = s.Close(context.Background())
 	if err != nil {
-		t.Fatalf("Failed to close health check: %v\n", err)
+		t.Fatalf("Failed to close health check: %v", err)
 	}
 
 	_, err = http.Get("http://localhost:" + testPort + livenessPath)
 	if !errors.Is(err, syscall.ECONNREFUSED) {
-		t.Fatalf("HTTP GET did not give a 'connection refused' error after closing health check\n")
+		t.Fatalf("HTTP GET did not give a 'connection refused' error after closing health check")
 	}
 }
