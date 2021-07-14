@@ -87,7 +87,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	
 	go func() {
 		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logging.Errorf("Failed to serve: %v", err)
+			logging.Errorf("Failed to started health check HTTP server: %v", err)
 		}
 	}()
 
