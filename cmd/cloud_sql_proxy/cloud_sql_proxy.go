@@ -597,7 +597,9 @@ func main() {
 		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort)
 		if err != nil {
 			logging.Errorf("Could not initialize health check server: %v", err)
+			os.Exit(1)
 		}
+		defer hc.Close(context.Background())
 	}
 
 	// Initialize a source of new connections to Cloud SQL instances.
