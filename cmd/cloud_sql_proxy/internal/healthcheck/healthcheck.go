@@ -20,7 +20,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"sync"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
@@ -33,12 +32,10 @@ const (
 
 // Server is a type used to implement health checks for the proxy.
 type Server struct {
-	// startedL protects started.
-	startedL sync.Mutex
-	// started is a flag that indicates whether the proxy is done starting up. 
-	// started is used to support readiness probing and should not be confused 
-	// for affecting startup probing.
-	started bool
+	// started is a channel used to indicate whether the proxy has finished 
+	// starting up. The channel is open when startup is in progress and
+	// closed when startup is complete.
+	started chan bool
 	// port designates the port number on which Server listens and serves.
 	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
@@ -56,6 +53,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	}
 
 	hcServer := &Server{
+		started: make(chan bool),
 		port: port,
 		srv:  srv,
 	}
@@ -101,9 +99,7 @@ func (s *Server) Close(ctx context.Context) error {
 
 // NotifyStarted tells the Server that the proxy has finished startup.
 func (s *Server) NotifyStarted() {
-	s.startedL.Lock()
-	s.started = true
-	s.startedL.Unlock()
+	close(s.started)
 }
 
 // isLive returns true as long as the proxy is running.
@@ -116,12 +112,10 @@ func isLive() bool {
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if applicable.
 func isReady(c *proxy.Client, s *Server) bool {
-	// Not ready until we reach the 'Ready for Connections' log.
-	s.startedL.Lock()
-	started := s.started
-	s.startedL.Unlock()
-
-	if !started {
+	// Not ready until we reach the 'Ready for Connections' log
+	select {
+	case <- s.started: // When the channel is closed, the proxy has finished starting up. Do nothing.
+	default:
 		logging.Errorf("Readiness failed because proxy has not finished starting up.")
 		return false
 	}
