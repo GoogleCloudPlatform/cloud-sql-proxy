@@ -599,7 +599,7 @@ func main() {
 			logging.Errorf("Could not initialize health check server: %v", err)
 			os.Exit(1)
 		}
-		defer hc.Close(context.Background())
+		defer hc.Close(ctx)
 	}
 
 	// Initialize a source of new connections to Cloud SQL instances.
