@@ -92,17 +92,17 @@ func TestStartup(t *testing.T) {
 // Test to verify that when startup has finished, but MaxConnections has been reached,
 // the readiness endpoint writes 500.
 func TestMaxConnectionsReached(t *testing.T) {
-	proxyClient := &proxy.Client{
+	c := &proxy.Client{
 		MaxConnections: 1,
 	}
-	s, err := healthcheck.NewServer(proxyClient, testPort)
+	s, err := healthcheck.NewServer(c, testPort)
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
 	defer s.Close(context.Background())
 
 	s.NotifyStarted()
-	proxyClient.ConnectionsCounter = proxyClient.MaxConnections // Simulate reaching the limit for maximum number of connections
+	c.ConnectionsCounter = c.MaxConnections // Simulate reaching the limit for maximum number of connections
 
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
