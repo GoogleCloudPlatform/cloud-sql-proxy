@@ -31,7 +31,7 @@ const (
 	testPort      = "8090"
 )
 
-// Test to verify that when the proxy client is up, the liveness endpoint writes 200.
+// Test to verify that when the proxy client is up, the liveness endpoint writes http.StatusOK.
 func TestLiveness(t *testing.T) {
 	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
 	if err != nil {
@@ -43,14 +43,15 @@ func TestLiveness(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
-	if resp.StatusCode != 200 {
-		t.Errorf("Got status code %v instead of 200", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusOK)
 	}
 }
 
-// Test to verify that 1. when startup has NOT finished, the readiness endpoint writes 500.
+// Test to verify that 
+// 1. when startup has NOT finished, the readiness endpoint writes http.StatusServiceUnavailable.
 // 2. when startup HAS finished (and MaxConnections limit not specified), the readiness
-// endpoint writes 200.
+// endpoint writes http.StatusOK.
 func TestStartup(t *testing.T) {
 	cases := []struct {
 		finishedStartup bool
@@ -58,11 +59,11 @@ func TestStartup(t *testing.T) {
 	}{
 		{
 			finishedStartup: false,
-			statusCode: 500,
+			statusCode: http.StatusServiceUnavailable,
 		},
 		{
 			finishedStartup: true,
-			statusCode: 200,
+			statusCode: http.StatusOK,
 		},
 	}
 
@@ -90,7 +91,7 @@ func TestStartup(t *testing.T) {
 }
 
 // Test to verify that when startup has finished, but MaxConnections has been reached,
-// the readiness endpoint writes 500.
+// the readiness endpoint writes http.StatusServiceUnavailable.
 func TestMaxConnectionsReached(t *testing.T) {
 	c := &proxy.Client{
 		MaxConnections: 1,
@@ -108,8 +109,8 @@ func TestMaxConnectionsReached(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
-	if resp.StatusCode != 500 {
-		t.Errorf("Got status code %v instead of 500", resp.StatusCode)
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusServiceUnavailable)
 	}
 }
 
@@ -126,8 +127,8 @@ func TestCloseHealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
-	if resp.StatusCode != 200 {
-		t.Errorf("Got status code %v instead of 200", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusOK)
 	}
 
 	err = s.Close(context.Background())
