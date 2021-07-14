@@ -48,41 +48,44 @@ func TestLiveness(t *testing.T) {
 	}
 }
 
-// Test to verify that when startup has not finished, the readiness endpoint writes 500.
-func TestStartupFail(t *testing.T) {
-	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
-	if err != nil {
-		t.Fatalf("Could not initialize health check: %v\n", err)
+// Test to verify that 1. when startup has NOT finished, the readiness endpoint writes 500.
+// 2. when startup HAS finished (and MaxConnections limit not specified), the readiness
+// endpoint writes 200.
+func TestStartup(t *testing.T) {
+	cases := []struct {
+		finishedStartup bool
+		statusCode int
+	}{
+		{
+			finishedStartup: false,
+			statusCode: 500,
+		},
+		{
+			finishedStartup: true,
+			statusCode: 200,
+		},
 	}
-	defer s.Close(context.Background())
 
-	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
-	if err != nil {
-		t.Fatalf("HTTP GET failed: %v\n", err)
-	}
-	if resp.StatusCode != 500 {
-		t.Errorf("Got status code %v instead of 500\n", resp.StatusCode)
-	}
-}
-
-// Test to verify that when startup has finished, and MaxConnections has not been reached,
-// the readiness endpoint writes 200.
-func TestStartupPass(t *testing.T) {
-	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
-	if err != nil {
-		t.Fatalf("Could not initialize health check: %v\n", err)
-	}
-	defer s.Close(context.Background())
-
-	// Simulate the proxy client completing startup.
-	s.NotifyStarted()
-
-	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
-	if err != nil {
-		t.Fatalf("HTTP GET failed: %v\n", err)
-	}
-	if resp.StatusCode != 200 {
-		t.Errorf("Got status code %v instead of 200\n", resp.StatusCode)
+	for _, c := range cases {
+		func() {
+			s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
+			if err != nil {
+				t.Fatalf("Could not initialize health check: %v\n", err)
+			}
+			defer s.Close(context.Background())
+		
+			if c.finishedStartup == true {
+				s.NotifyStarted() // Simulate the proxy client completing startup.
+			}
+		
+			resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+			if err != nil {
+				t.Fatalf("HTTP GET failed: %v\n", err)
+			}
+			if resp.StatusCode != c.statusCode {
+				t.Errorf("Got status code %v instead of %v\n", resp.StatusCode, c.statusCode)
+			}
+		}()
 	}
 }
 
