@@ -38,7 +38,7 @@ type Server struct {
 	// closed when startup is complete.
 	started chan struct{}
 	// once ensures that started can only closed once.
-	once sync.Once
+	once *sync.Once
 	// port designates the port number on which Server listens and serves.
 	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
@@ -57,6 +57,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 
 	hcServer := &Server{
 		started: make(chan struct{}),
+		once: &sync.Once{},
 		port: port,
 		srv:  srv,
 	}
