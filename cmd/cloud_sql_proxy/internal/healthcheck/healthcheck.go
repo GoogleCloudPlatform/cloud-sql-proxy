@@ -20,6 +20,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"sync"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
@@ -36,6 +37,8 @@ type Server struct {
 	// starting up. The channel is open when startup is in progress and
 	// closed when startup is complete.
 	started chan struct{}
+	// once ensures that started can only closed once.
+	once sync.Once
 	// port designates the port number on which Server listens and serves.
 	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
@@ -99,7 +102,7 @@ func (s *Server) Close(ctx context.Context) error {
 
 // NotifyStarted tells the Server that the proxy has finished startup.
 func (s *Server) NotifyStarted() {
-	close(s.started)
+	s.once.Do(func() { close(s.started) })
 }
 
 // isLive returns true as long as the proxy is running.
