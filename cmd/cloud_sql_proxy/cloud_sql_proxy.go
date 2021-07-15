@@ -34,6 +34,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/certs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
@@ -132,6 +133,10 @@ unavailable.`,
 		`When set, the proxy uses this host as the base API path. Example:
 	https://sqladmin.googleapis.com`,
 	)
+
+	// Settings for healthcheck
+	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an HTTP server that checks and communicates the health of the proxy client.")
+	healthCheckPort = flag.String("health_check_port", "8090", "When applicable, health checks take place on this port number. Defaults to 8090.")
 )
 
 const (
@@ -587,6 +592,16 @@ func main() {
 		RefreshCfgBuffer:   refreshCfgBuffer,
 	}
 
+	var hc *healthcheck.Server
+	if *useHTTPHealthCheck {
+		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort)
+		if err != nil {
+			logging.Errorf("Could not initialize health check server: %v", err)
+			os.Exit(1)
+		}
+		defer hc.Close(ctx)
+	}
+
 	// Initialize a source of new connections to Cloud SQL instances.
 	var connSrc <-chan proxy.Conn
 	if *useFuse {
@@ -625,6 +640,10 @@ func main() {
 	}
 
 	logging.Infof("Ready for new connections")
+
+	if hc != nil {
+		hc.NotifyStarted()
+	}
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
