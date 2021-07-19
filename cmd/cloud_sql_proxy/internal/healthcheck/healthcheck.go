@@ -27,6 +27,7 @@ import (
 )
 
 const (
+	startupPath = "/startup"
 	livenessPath = "/liveness"
 	readinessPath = "/readiness"
 )
@@ -61,6 +62,17 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 		port: port,
 		srv:  srv,
 	}
+
+	mux.HandleFunc(startupPath, func(w http.ResponseWriter, _ *http.Request) {
+		select {
+		case <- hcServer.started: // When the channel is closed, the proxy has finished starting up.
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("ok"))
+		default:
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("error"))
+		}
+	})
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
 		if !isReady(c, hcServer) {
