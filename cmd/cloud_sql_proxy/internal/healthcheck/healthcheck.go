@@ -85,7 +85,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	})
 
 	mux.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !isLive() { // Because isLive() returns true, this case should not be reached.
+		if !isLive() { // Because isLive() always returns true, this case should not be reached.
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("error"))
 			return

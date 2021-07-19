@@ -26,6 +26,7 @@ import (
 )
 
 const (
+	startupPath = "/startup"
 	livenessPath  = "/liveness"
 	readinessPath = "/readiness"
 	testPort      = "8090"
@@ -57,12 +58,20 @@ func TestStartupFail(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 
-	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+	resp, err := http.Get("http://localhost:" + testPort + startupPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v\n", err)
 	}
 	if resp.StatusCode != http.StatusServiceUnavailable {
-		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusServiceUnavailable)
+		t.Errorf("%v returned status code %v instead of %v", startupPath, resp.StatusCode, http.StatusServiceUnavailable)
+	}
+
+	resp, err = http.Get("http://localhost:" + testPort + readinessPath)
+	if err != nil {
+		t.Fatalf("HTTP GET failed: %v\n", err)
+	}
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("%v returned status code %v instead of %v", readinessPath, resp.StatusCode, http.StatusServiceUnavailable)
 	}
 }
 
@@ -78,12 +87,20 @@ func TestStartupPass(t *testing.T) {
 	// Simulate the proxy client completing startup.
 	s.NotifyStarted()
 
-	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+	resp, err := http.Get("http://localhost:" + testPort + startupPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v\n", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusOK)
+		t.Errorf("%v returned status code %v instead of %v", startupPath, resp.StatusCode, http.StatusOK)
+	}
+
+	resp, err = http.Get("http://localhost:" + testPort + readinessPath)
+	if err != nil {
+		t.Fatalf("HTTP GET failed: %v\n", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("%v returned status code %v instead of %v", readinessPath, resp.StatusCode, http.StatusOK)
 	}
 }
 
