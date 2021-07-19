@@ -49,7 +49,7 @@ func TestLiveness(t *testing.T) {
 	}
 }
 
-// Test to verify that when startup has NOT finished, the readiness endpoint writes 
+// Test to verify that when startup has NOT finished, the startup and readiness endpoints write
 // http.StatusServiceUnavailable.
 func TestStartupFail(t *testing.T) {
 	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
@@ -76,7 +76,7 @@ func TestStartupFail(t *testing.T) {
 }
 
 // Test to verify that when startup HAS finished (and MaxConnections limit not specified), 
-// the readiness endpoint writes http.StatusOK.
+// the startup and readiness endpoints write http.StatusOK.
 func TestStartupPass(t *testing.T) {
 	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
 	if err != nil {
