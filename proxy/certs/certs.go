@@ -27,6 +27,7 @@ import (
 	mrand "math/rand"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
@@ -75,6 +76,11 @@ type RemoteOpts struct {
 
 	// Token source for token information used in cert creation
 	TokenSource oauth2.TokenSource
+
+	// GenerateKeyOnConnect, if true, causes the RSA key to be generated lazily
+	// on the first connect to a database. The default behavior is to generate
+	// the key when the CertSource is created.
+	GenerateKeyOnConnect bool
 }
 
 // NewCertSourceOpts returns a CertSource configured with the provided Opts.
@@ -83,10 +89,6 @@ type RemoteOpts struct {
 // Use this function instead of NewCertSource; it has a more forward-compatible
 // signature.
 func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
-	pkey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err) // very unexpected.
-	}
 	serv, err := sqladmin.New(c)
 	if err != nil {
 		panic(err) // Only will happen if the provided client is nil.
@@ -112,7 +114,19 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 		}
 	}
 
-	return &RemoteCertSource{pkey, serv, !opts.IgnoreRegion, opts.IPAddrTypeOpts, opts.EnableIAMLogin, opts.TokenSource}
+	certSource := &RemoteCertSource{
+		serv:           serv,
+		checkRegion:    !opts.IgnoreRegion,
+		IPAddrTypes:    opts.IPAddrTypeOpts,
+		EnableIAMLogin: opts.EnableIAMLogin,
+		TokenSource:    opts.TokenSource,
+	}
+	if !opts.GenerateKeyOnConnect {
+		// Generate the RSA key now, but don't block on it.
+		go certSource.generateKey()
+	}
+
+	return certSource
 }
 
 // RemoteCertSource implements a CertSource, using Cloud SQL APIs to
@@ -120,6 +134,8 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 // to the remote instance and Remote certificates for confirming the
 // remote database's identity.
 type RemoteCertSource struct {
+	// mutex guards `key`, which is lazily created.
+	mutex sync.Mutex
 	// key is the private key used for certificates returned by Local.
 	key *rsa.PrivateKey
 	// serv is used to make authenticated API calls to Cloud SQL.
@@ -185,7 +201,7 @@ func refreshToken(ts oauth2.TokenSource, tok *oauth2.Token) (*oauth2.Token, erro
 // Local returns a certificate that may be used to establish a TLS
 // connection to the specified instance.
 func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
-	pkix, err := x509.MarshalPKIXPublicKey(&s.key.PublicKey)
+	pkix, err := x509.MarshalPKIXPublicKey(s.generateKey().Public())
 	if err != nil {
 		return tls.Certificate{}, err
 	}
@@ -236,7 +252,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	}
 	return tls.Certificate{
 		Certificate: [][]byte{c.Raw},
-		PrivateKey:  s.key,
+		PrivateKey:  s.generateKey(),
 		Leaf:        c,
 	}, nil
 }
@@ -247,6 +263,23 @@ func parseCert(pemCert string) (*x509.Certificate, error) {
 		return nil, errors.New("invalid PEM: " + pemCert)
 	}
 	return x509.ParseCertificate(bl.Bytes)
+}
+
+// Return the RSA private key, which is lazily initialized.
+func (s *RemoteCertSource) generateKey() *rsa.PrivateKey {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if s.key != nil {
+		return s.key
+	}
+	start := time.Now()
+	pkey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		panic(err) // very unexpected.
+	}
+	logging.Verbosef("Generated RSA key in %v", time.Since(start))
+	s.key = pkey
+	return s.key
 }
 
 // Find the first matching IP address by user input IP address types
