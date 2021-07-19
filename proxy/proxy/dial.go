@@ -64,7 +64,6 @@ func DialContext(ctx context.Context, instance string) (net.Conn, error) {
 	}
 
 	return c.DialContext(ctx, instance)
-
 }
 
 // Dial does the same as DialContext but using context.Background() as the context.
