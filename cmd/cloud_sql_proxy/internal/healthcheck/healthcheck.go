@@ -64,14 +64,12 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	}
 
 	mux.HandleFunc(startupPath, func(w http.ResponseWriter, _ *http.Request) {
-		select {
-		case <- hcServer.started: // When the channel is closed, the proxy has finished starting up.
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("ok"))
-		default:
+		if !hcServer.proxyStarted() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("error"))
 		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
 	})
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
@@ -118,6 +116,16 @@ func (s *Server) NotifyStarted() {
 	s.once.Do(func() { close(s.started) })
 }
 
+// proxyStarted returns true if started is closed, false otherwise
+func (s *Server) proxyStarted() bool {
+	select {
+	case <- s.started:
+		return true
+	default:
+		return false
+	}
+}
+
 // isLive returns true as long as the proxy is running.
 func isLive() bool {
 	return true
@@ -129,9 +137,7 @@ func isLive() bool {
 // 2. Not yet hit the MaxConnections limit, if applicable.
 func isReady(c *proxy.Client, s *Server) bool {
 	// Not ready until we reach the 'Ready for Connections' log
-	select {
-	case <- s.started: // When the channel is closed, the proxy has finished starting up. Do nothing.
-	default:
+	if !s.proxyStarted() {
 		logging.Errorf("Readiness failed because proxy has not finished starting up.")
 		return false
 	}
