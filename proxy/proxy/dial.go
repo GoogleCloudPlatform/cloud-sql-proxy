@@ -27,12 +27,12 @@ import (
 
 const port = 3307
 
-// GenerateKeyOnConnect (if true) defers the generation of the CertSource's RSA
+// DelayKeyGenerate (if true) defers the generation of the CertSource's RSA
 // key to the first connection attempt to a Cloud SQL database. This is useful
 // in scenarios when the proxy needs to be created no matter what (e.g. when
 // mounting the FUSE), but may never be used. If this behavior is desired, this
 // var should be set to true before calling proxy.Init.
-var GenerateKeyOnConnect bool
+var DelayKeyGenerate bool
 
 var dialClient struct {
 	// This client is initialized in Init/InitWithClient/InitDefault
@@ -86,7 +86,7 @@ func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 	dialClient.c = &Client{
 		Port: port,
 		Certs: certs.NewCertSourceOpts(auth, certs.RemoteOpts{
-			GenerateKeyOnConnect: GenerateKeyOnConnect,
+			DelayKeyGenerate: DelayKeyGenerate,
 		}),
 		Conns:  connset,
 		Dialer: dialer,

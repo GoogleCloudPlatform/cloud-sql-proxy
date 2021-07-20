@@ -77,10 +77,10 @@ type RemoteOpts struct {
 	// Token source for token information used in cert creation
 	TokenSource oauth2.TokenSource
 
-	// GenerateKeyOnConnect, if true, causes the RSA key to be generated lazily
+	// DelayKeyGenerate, if true, causes the RSA key to be generated lazily
 	// on the first connect to a database. The default behavior is to generate
 	// the key when the CertSource is created.
-	GenerateKeyOnConnect bool
+	DelayKeyGenerate bool
 }
 
 // NewCertSourceOpts returns a CertSource configured with the provided Opts.
@@ -121,7 +121,7 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 		EnableIAMLogin: opts.EnableIAMLogin,
 		TokenSource:    opts.TokenSource,
 	}
-	if !opts.GenerateKeyOnConnect {
+	if !opts.DelayKeyGenerate {
 		// Generate the RSA key now, but don't block on it.
 		go certSource.generateKey()
 	}
