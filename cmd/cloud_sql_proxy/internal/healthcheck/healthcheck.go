@@ -67,6 +67,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 		if !hcServer.proxyStarted() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("error"))
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
