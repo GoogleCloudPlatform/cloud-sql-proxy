@@ -134,8 +134,8 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 // to the remote instance and Remote certificates for confirming the
 // remote database's identity.
 type RemoteCertSource struct {
-	// mutex guards `key`, which is lazily created.
-	mutex sync.Mutex
+	// keyOnce is used to create `key` lazily.
+	keyOnce sync.Once
 	// key is the private key used for certificates returned by Local.
 	key *rsa.PrivateKey
 	// serv is used to make authenticated API calls to Cloud SQL.
@@ -267,18 +267,15 @@ func parseCert(pemCert string) (*x509.Certificate, error) {
 
 // Return the RSA private key, which is lazily initialized.
 func (s *RemoteCertSource) generateKey() *rsa.PrivateKey {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	if s.key != nil {
-		return s.key
-	}
-	start := time.Now()
-	pkey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err) // very unexpected.
-	}
-	logging.Verbosef("Generated RSA key in %v", time.Since(start))
-	s.key = pkey
+	s.keyOnce.Do(func() {
+		start := time.Now()
+		pkey, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			panic(err) // very unexpected.
+		}
+		logging.Verbosef("Generated RSA key in %v", time.Since(start))
+		s.key = pkey
+	})
 	return s.key
 }
 
