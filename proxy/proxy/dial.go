@@ -25,7 +25,8 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-const port = 3307
+// The port that CloudSQL expects the client to connect to.
+const Port = 3307
 
 // DelayKeyGenerate (if true) defers the generation of the CertSource's RSA
 // key to the first connection attempt to a Cloud SQL database. This is useful
@@ -84,10 +85,8 @@ type Dialer func(net, addr string) (net.Conn, error)
 func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 	dialClient.Lock()
 	dialClient.c = &Client{
-		Port: port,
-		Certs: certs.NewCertSourceOpts(auth, certs.RemoteOpts{
-			DelayKeyGenerate: DelayKeyGenerate,
-		}),
+		Port:   Port,
+		Certs:  certs.NewCertSource("", auth, true),
 		Conns:  connset,
 		Dialer: dialer,
 	}
