@@ -26,7 +26,7 @@ import (
 )
 
 // The port that CloudSQL expects the client to connect to.
-const Port = 3307
+const DefaultPort = 3307
 
 // DelayKeyGenerate (if true) defers the generation of the CertSource's RSA
 // key to the first connection attempt to a Cloud SQL database. This is useful
@@ -85,7 +85,7 @@ type Dialer func(net, addr string) (net.Conn, error)
 func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 	dialClient.Lock()
 	dialClient.c = &Client{
-		Port:   Port,
+		Port:   DefaultPort,
 		Certs:  certs.NewCertSource("", auth, true),
 		Conns:  connset,
 		Dialer: dialer,
