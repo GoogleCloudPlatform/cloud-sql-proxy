@@ -78,7 +78,7 @@ type RemoteOpts struct {
 	TokenSource oauth2.TokenSource
 
 	// DelayKeyGenerate, if true, causes the RSA key to be generated lazily
-	// on the first connect to a database. The default behavior is to generate
+	// on the first connection to a database. The default behavior is to generate
 	// the key when the CertSource is created.
 	DelayKeyGenerate bool
 }
