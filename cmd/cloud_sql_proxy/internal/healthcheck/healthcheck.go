@@ -34,11 +34,11 @@ const (
 
 // Server is a type used to implement health checks for the proxy.
 type Server struct {
-	// started is a channel used to indicate whether the proxy has finished 
-	// starting up. The channel is open when startup is in progress and
-	// closed when startup is complete.
+	// started is used to indicate whether the proxy has finished starting up. 
+	// If started is open, startup has not finished. If started is closed,
+	// startup is complete.
 	started chan struct{}
-	// once ensures that started can only closed once.
+	// once ensures that started can only be closed once.
 	once *sync.Once
 	// port designates the port number on which Server listens and serves.
 	port string
@@ -117,7 +117,7 @@ func (s *Server) NotifyStarted() {
 	s.once.Do(func() { close(s.started) })
 }
 
-// proxyStarted returns true if started is closed, false otherwise
+// proxyStarted returns true if started is closed, false otherwise.
 func (s *Server) proxyStarted() bool {
 	select {
 	case <- s.started:
