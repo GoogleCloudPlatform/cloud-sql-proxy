@@ -28,13 +28,6 @@ import (
 // The port that CloudSQL expects the client to connect to.
 const DefaultPort = 3307
 
-// DelayKeyGenerate (if true) defers the generation of the CertSource's RSA
-// key to the first connection attempt to a Cloud SQL database. This is useful
-// in scenarios when the proxy needs to be created no matter what (e.g. when
-// mounting the FUSE), but may never be used. If this behavior is desired, this
-// var should be set to true before calling proxy.Init.
-var DelayKeyGenerate bool
-
 var dialClient struct {
 	// This client is initialized in Init/InitWithClient/InitDefault
 	// and read in Dial.
