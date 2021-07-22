@@ -489,8 +489,7 @@ func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (s
 	return version, nil
 }
 
-// GetInstances iterates through client cache and extracts a list of all instances, which it
-// then returns.
+// GetInstances iterates through the client cache, returning a list of all instances.
 func (c *Client) GetInstances() []string {
 	var instList []string
 	c.cacheL.Lock()
