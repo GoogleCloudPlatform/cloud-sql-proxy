@@ -136,8 +136,9 @@ func isLive() bool {
 // proxy is ready for new connections.
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if applicable.
+// 3. Able to dial all instances without error.
 func isReady(c *proxy.Client, s *Server) bool {
-	// Not ready until we reach the 'Ready for Connections' log
+	// Not ready until we reach the 'Ready for Connections' log.
 	if !s.proxyStarted() {
 		logging.Errorf("Readiness failed because proxy has not finished starting up.")
 		return false
@@ -149,7 +150,7 @@ func isReady(c *proxy.Client, s *Server) bool {
 		return false
 	}
 
-	// Not ready if one or more instances cannot be dialed
+	// Not ready if one or more instances cannot be dialed.
 	for _, inst := range c.GetInstances() {
 		_, err := c.Dial(inst)
 		if err != nil {
