@@ -132,10 +132,9 @@ func isLive() bool {
 	return true
 }
 
-// isReady will check the following criteria before determining whether the
-// proxy is ready for new connections.
+// isReady will check the following criteria:
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
-// 2. Not yet hit the MaxConnections limit, if applicable.
+// 2. Not yet hit the MaxConnections limit, if set.
 // 3. Able to dial all instances without error.
 func isReady(c *proxy.Client, s *Server) bool {
 	// Not ready until we reach the 'Ready for Connections' log.
