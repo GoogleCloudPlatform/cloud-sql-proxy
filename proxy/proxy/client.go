@@ -489,6 +489,19 @@ func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (s
 	return version, nil
 }
 
+// GetInstances iterates through client cache and extracts a list of all instances, which it
+// then returns.
+func (c *Client) GetInstances() []string {
+	var instList []string
+	c.cacheL.Lock()
+	cfgCache := c.cfgCache
+	c.cacheL.Unlock()
+	for i := range cfgCache {
+		instList = append(instList, i)
+	}
+	return instList
+}
+
 // AvailableConn returns false if MaxConnections has been reached, true otherwise.
 // When MaxConnections is 0, there is no limit.
 func (c *Client) AvailableConn() bool {
