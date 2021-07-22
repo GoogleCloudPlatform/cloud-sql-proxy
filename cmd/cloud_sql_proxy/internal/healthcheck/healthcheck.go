@@ -27,17 +27,18 @@ import (
 )
 
 const (
+	startupPath = "/startup"
 	livenessPath = "/liveness"
 	readinessPath = "/readiness"
 )
 
 // Server is a type used to implement health checks for the proxy.
 type Server struct {
-	// started is a channel used to indicate whether the proxy has finished 
-	// starting up. The channel is open when startup is in progress and
-	// closed when startup is complete.
+	// started is used to indicate whether the proxy has finished starting up. 
+	// If started is open, startup has not finished. If started is closed,
+	// startup is complete.
 	started chan struct{}
-	// once ensures that started can only closed once.
+	// once ensures that started can only be closed once.
 	once *sync.Once
 	// port designates the port number on which Server listens and serves.
 	port string
@@ -62,6 +63,16 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 		srv:  srv,
 	}
 
+	mux.HandleFunc(startupPath, func(w http.ResponseWriter, _ *http.Request) {
+		if !hcServer.proxyStarted() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("error"))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
 		if !isReady(c, hcServer) {
 			w.WriteHeader(http.StatusServiceUnavailable)
@@ -73,7 +84,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	})
 
 	mux.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !isLive() { // Because isLive() returns true, this case should not be reached.
+		if !isLive() { // Because isLive() always returns true, this case should not be reached.
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("error"))
 			return
@@ -89,7 +100,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	
 	go func() {
 		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logging.Errorf("Failed to started health check HTTP server: %v", err)
+			logging.Errorf("Failed to start health check HTTP server: %v", err)
 		}
 	}()
 
@@ -106,6 +117,16 @@ func (s *Server) NotifyStarted() {
 	s.once.Do(func() { close(s.started) })
 }
 
+// proxyStarted returns true if started is closed, false otherwise.
+func (s *Server) proxyStarted() bool {
+	select {
+	case <- s.started:
+		return true
+	default:
+		return false
+	}
+}
+
 // isLive returns true as long as the proxy is running.
 func isLive() bool {
 	return true
@@ -117,9 +138,7 @@ func isLive() bool {
 // 2. Not yet hit the MaxConnections limit, if applicable.
 func isReady(c *proxy.Client, s *Server) bool {
 	// Not ready until we reach the 'Ready for Connections' log
-	select {
-	case <- s.started: // When the channel is closed, the proxy has finished starting up. Do nothing.
-	default:
+	if !s.proxyStarted() {
 		logging.Errorf("Readiness failed because proxy has not finished starting up.")
 		return false
 	}
