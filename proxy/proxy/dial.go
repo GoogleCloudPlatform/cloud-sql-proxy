@@ -25,7 +25,8 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-const port = 3307
+// The port that CloudSQL expects the client to connect to.
+const DefaultPort = 3307
 
 var dialClient struct {
 	// This client is initialized in Init/InitWithClient/InitDefault
@@ -57,7 +58,6 @@ func DialContext(ctx context.Context, instance string) (net.Conn, error) {
 	}
 
 	return c.DialContext(ctx, instance)
-
 }
 
 // Dial does the same as DialContext but using context.Background() as the context.
@@ -78,7 +78,7 @@ type Dialer func(net, addr string) (net.Conn, error)
 func Init(auth *http.Client, connset *ConnSet, dialer Dialer) {
 	dialClient.Lock()
 	dialClient.c = &Client{
-		Port:   port,
+		Port:   DefaultPort,
 		Certs:  certs.NewCertSource("", auth, true),
 		Conns:  connset,
 		Dialer: dialer,
