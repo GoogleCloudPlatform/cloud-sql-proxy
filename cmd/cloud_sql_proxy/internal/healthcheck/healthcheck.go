@@ -152,11 +152,12 @@ func isReady(c *proxy.Client, s *Server) bool {
 
 	// Not ready if one or more instances cannot be dialed.
 	for _, inst := range c.GetInstances() {
-		_, err := c.Dial(inst)
+		conn, err := c.Dial(inst)
 		if err != nil {
 			logging.Errorf("Readiness failed because proxy couldn't connect to %q: %v", inst, err)
 			return false
 		}
+		conn.Close()
 	}
 
 	return true
