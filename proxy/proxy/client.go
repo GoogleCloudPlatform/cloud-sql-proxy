@@ -117,6 +117,8 @@ type Client struct {
 	// to attempt to refresh it. If not set, it defaults to 5 minutes. When IAM
 	// Login is enabled, this value should be set to IAMLoginRefreshCfgBuffer.
 	RefreshCfgBuffer time.Duration
+
+	InstanceGetter func() ([]string)
 }
 
 type cacheEntry struct {
@@ -491,6 +493,10 @@ func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (s
 
 // GetInstances iterates through the client cache, returning a list of all instances.
 func (c *Client) GetInstances() []string {
+	if c.InstanceGetter != nil {
+		return c.InstanceGetter()
+	}
+	
 	var instList []string
 	c.cacheL.Lock()
 	cfgCache := c.cfgCache
