@@ -154,17 +154,13 @@ func TestMaxConnectionsReached(t *testing.T) {
 	}
 }
 
-func TestSingleInstancePass(t *testing.T) {
-	ln, err := net.Listen("tcp", ":8080")
-    if err != nil {
-        t.Fatalf("Could not initialize TCP server: %v", err)
-    }
-    defer ln.Close()
-
+// Test to verify that when a client has one instance and dialing it returns an error,
+// the readiness endpoint writes http.StatusServiceUnavailable.
+func TestSingleInstanceFail(t *testing.T) {
 	c := &proxy.Client{
 		Certs: &fakeCertSource{},
 		Dialer: func(string, string) (net.Conn, error) {
-			return net.Dial("tcp", ":8080")
+			return nil, errors.New("error")
 		},
 		InstanceGetter: func() []string {
 			return []string{"instance-name"}
@@ -176,13 +172,41 @@ func TestSingleInstancePass(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 	s.NotifyStarted()
-
+	
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusOK)
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusServiceUnavailable)
+	}
+}
+
+// Test to verify that when a client has multiple instances and dialing them returns an error,
+// the readiness endpoint writes http.StatusServiceUnavailable.
+func TestMultiInstanceFail(t *testing.T) {
+	c := &proxy.Client{
+		Certs: &fakeCertSource{},
+		Dialer: func(string, string) (net.Conn, error) {
+			return nil, errors.New("error")
+		},
+		InstanceGetter: func() []string {
+			return []string{"instance-1", "instance-2", "instance-3 "}
+		},
+	}
+	s, err := healthcheck.NewServer(c, testPort)
+	if err != nil {
+		t.Fatalf("Could not initialize health check: %v", err)
+	}
+	defer s.Close(context.Background())
+	s.NotifyStarted()
+	
+	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+	if err != nil {
+		t.Fatalf("HTTP GET failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusServiceUnavailable)
 	}
 }
 

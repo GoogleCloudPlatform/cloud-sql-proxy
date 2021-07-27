@@ -118,7 +118,8 @@ type Client struct {
 	// Login is enabled, this value should be set to IAMLoginRefreshCfgBuffer.
 	RefreshCfgBuffer time.Duration
 
-	InstanceGetter func() ([]string)
+	// InstanceGetter is a way to change the behavior of GetInstances.
+	InstanceGetter func() []string
 }
 
 type cacheEntry struct {
@@ -404,7 +405,7 @@ func (c *Client) tryConnect(ctx context.Context, addr string, cfg *tls.Config) (
 		SetKeepAlive(keepalive bool) error
 		SetKeepAlivePeriod(d time.Duration) error
 	}
-
+	
 	if s, ok := conn.(setKeepAliver); ok {
 		if err := s.SetKeepAlive(true); err != nil {
 			logging.Verbosef("Couldn't set KeepAlive to true: %v", err)
@@ -414,12 +415,13 @@ func (c *Client) tryConnect(ctx context.Context, addr string, cfg *tls.Config) (
 	} else {
 		logging.Verbosef("KeepAlive not supported: long-running tcp connections may be killed by the OS.")
 	}
-
+	
 	ret := tls.Client(conn, cfg)
 	if err := ret.Handshake(); err != nil {
 		ret.Close()
 		return nil, err
 	}
+	
 	return ret, nil
 }
 
