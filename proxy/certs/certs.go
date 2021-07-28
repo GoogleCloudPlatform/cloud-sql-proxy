@@ -227,7 +227,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		if tokErr != nil {
 			return tls.Certificate{}, tokErr
 		}
-
+		// TODO: remove this once issue with OAuth2 Tokens is resolved.
 		trimmedToken := strings.TrimRight(tok.AccessToken, ".")
 		createEphemeralRequest.AccessToken = trimmedToken
 	}
