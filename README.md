@@ -284,6 +284,15 @@ msg. For example, the startup message looks like:
 gcloud's active project: [my-project-id]"}
 
 ```
+#### `-use_http_health_check`
+
+Enables HTTP health checks on /startup, /liveness, and /readiness endpoints. If 
+deployed on Kubernetes, the configuration file should specify the probes in use.
+
+#### `-health_check_port=8090`
+
+Specifies the port that the health check server listens and serves on. Defaults to 8090.
+
 
 ## Running as a Kubernetes Sidecar
 
