@@ -209,7 +209,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	p, r, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", r, n)
 	pubKey := string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"}))
-	createEphemeralRequest := sqladmin.SslCertsCreateEphemeralRequest{
+	generateEphemeralCertRequest := sqladmin.GenerateEphemeralCertRequest{
 		PublicKey: pubKey,
 	}
 	var tok *oauth2.Token
@@ -227,11 +227,11 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		if tokErr != nil {
 			return tls.Certificate{}, tokErr
 		}
-		createEphemeralRequest.AccessToken = tok.AccessToken
+		generateEphemeralCertRequest.AccessToken = tok.AccessToken
 	}
-	req := s.serv.SslCerts.CreateEphemeral(p, regionName, &createEphemeralRequest)
+	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, &generateEphemeralCertRequest)
 
-	var data *sqladmin.SslCert
+	var data *sqladmin.GenerateEphemeralCertResponse 
 	err = backoffAPIRetry("createEphemeral for", instance, func() error {
 		data, err = req.Do()
 		return err
@@ -240,7 +240,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		return tls.Certificate{}, err
 	}
 
-	c, err := parseCert(data.Cert)
+	c, err := parseCert(data.EphemeralCert.Cert)
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("couldn't parse ephemeral certificate for instance %q: %v", instance, err)
 	}
