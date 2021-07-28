@@ -27,6 +27,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"golang.org/x/net/proxy"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -102,6 +103,9 @@ type Client struct {
 	// protected by cacheL.
 	cfgCache map[string]cacheEntry
 	cacheL   sync.RWMutex
+	// limiters holds a rate limiter keyed by instance. It is protected by
+	// cacheL.
+	limiters map[string]*rate.Limiter
 
 	// refreshCfgL prevents multiple goroutines from contacting the Cloud SQL API at once.
 	refreshCfgL sync.Mutex
@@ -345,10 +349,18 @@ func (c *Client) cachedCfg(ctx context.Context, instance string) (string, *tls.C
 		if c.cfgCache == nil {
 			c.cfgCache = make(map[string]cacheEntry)
 		}
+		if c.limiters == nil {
+			c.limiters = make(map[string]*rate.Limiter)
+		}
 		// the state may have changed between critical sections, so double check
 		e = c.cfgCache[instance]
+		limiter := c.limiters[instance]
+		if limiter == nil {
+			limiter = rate.NewLimiter(rate.Every(throttle), 1)
+			c.limiters[instance] = limiter
+		}
 		if needsRefresh(e, refreshCfgBuffer) {
-			if time.Since(e.lastRefreshed) >= throttle {
+			if limiter.Allow() {
 				// start a new refresh and update the cachedEntry to reflect that
 				e.done = c.startRefresh(instance, refreshCfgBuffer)
 				e.lastRefreshed = time.Now()
