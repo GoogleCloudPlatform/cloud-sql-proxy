@@ -286,8 +286,8 @@ gcloud's active project: [my-project-id]"}
 ```
 #### `-use_http_health_check`
 
-Enables HTTP health checks on /startup, /liveness, and /readiness endpoints. If 
-deployed on Kubernetes, the configuration file should specify the probes in use.
+Enables HTTP health checks for the proxy, including startup, liveness, and readiness probing.
+Requires that you configure the Kubernetes container with HTTP probes.
 
 #### `-health_check_port=8090`
 
