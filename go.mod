@@ -13,6 +13,7 @@ require (
 	golang.org/x/net v0.0.0-20210716203947-853a461950ff
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
+	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/api v0.51.0
 )
 
