@@ -228,8 +228,8 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 			return tls.Certificate{}, tokErr
 		}
 		// TODO: remove this once issue with OAuth2 Tokens is resolved.
-		trimmedToken := strings.TrimRight(tok.AccessToken, ".")
-		createEphemeralRequest.AccessToken = trimmedToken
+		// See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/852.
+		createEphemeralRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
 	}
 	req := s.serv.SslCerts.CreateEphemeral(p, regionName, &createEphemeralRequest)
 
