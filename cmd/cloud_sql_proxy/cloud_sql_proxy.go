@@ -28,7 +28,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -268,7 +267,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
-var versionString = "1.23.1-dev"
+var versionString = "1.23.2-dev"
 
 // metadataString indiciates additional build or distribution metadata.
 var metadataString = ""
@@ -461,12 +460,6 @@ func main() {
 	if *version {
 		fmt.Println("Cloud SQL Auth proxy:", semanticVersion())
 		return
-	}
-
-	// Deprecation warning for darwin 386
-	// TODO(enocom): remove this warning with v1.25.0
-	if runtime.GOOS == "darwin" && runtime.GOARCH == "386" {
-		logging.Infof("WARNING: You are running a Darwin 386 build that is deprecated. The Cloud SQL Auth Proxy will stop distributions for 32-bit macOS as of v1.25.0 (expected August 2021). See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/780 for details.")
 	}
 
 	if *logDebugStdout {
