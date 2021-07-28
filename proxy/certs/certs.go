@@ -227,7 +227,9 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		if tokErr != nil {
 			return tls.Certificate{}, tokErr
 		}
-		createEphemeralRequest.AccessToken = tok.AccessToken
+
+		trimmedToken := strings.TrimRight(tok.AccessToken, ".")
+		createEphemeralRequest.AccessToken = trimmedToken
 	}
 	req := s.serv.SslCerts.CreateEphemeral(p, regionName, &createEphemeralRequest)
 
