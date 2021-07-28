@@ -292,6 +292,10 @@ Requires that you configure the Kubernetes container with HTTP probes ([instruct
 
 Specifies the port that the health check server listens and serves on. Defaults to 8090.
 
+#### `-use_sslcerts_api`
+
+Uses ssl certs api instead of connect apis to generate/handle certificates
+
 ## Running as a Kubernetes Sidecar
 
 See the [example here][sidecar-example] as well as [Connecting from Google
