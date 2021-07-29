@@ -44,11 +44,13 @@ type Server struct {
 	port string
 	// srv is a pointer to the HTTP server used to communicated proxy health.
 	srv *http.Server
+	// staticInst is a list of all instances specified statically (e.g. as flags to the binary)
+	staticInst []string
 }
 
 // NewServer initializes a Server object and exposes HTTP endpoints used to
 // communicate proxy health.
-func NewServer(c *proxy.Client, port string) (*Server, error) {
+func NewServer(c *proxy.Client, port string, staticInst []string) (*Server, error) {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
@@ -57,10 +59,11 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	}
 
 	hcServer := &Server{
-		started: make(chan struct{}),
-		once:    &sync.Once{},
-		port:    port,
-		srv:     srv,
+		started:   make(chan struct{}),
+		once:      &sync.Once{},
+		port:      port,
+		srv:       srv,
+		staticInst: staticInst,
 	}
 
 	mux.HandleFunc(startupPath, func(w http.ResponseWriter, _ *http.Request) {
@@ -100,7 +103,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 
 	go func() {
 		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logging.Errorf("Failed to start health check HTTP server: %v", err)
+			logging.Errorf("[Health Check] Failed to serve: %v", err)
 		}
 	}()
 
@@ -135,27 +138,33 @@ func isLive() bool {
 // isReady will check the following criteria:
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if set.
-// 3. Able to dial all instances without error.
+// 3. Able to dial all specified instances without error.
 func isReady(c *proxy.Client, s *Server) bool {
 	// Not ready until we reach the 'Ready for Connections' log.
 	if !s.proxyStarted() {
-		logging.Errorf("Readiness failed because proxy has not finished starting up.")
+		logging.Errorf("[Health Check] Readiness failed because proxy has not finished starting up.")
 		return false
 	}
 
 	// Not ready if the proxy is at the optional MaxConnections limit.
 	if !c.AvailableConn() {
-		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", c.MaxConnections)
+		logging.Errorf("[Health Check] Readiness failed because proxy has reached the maximum connections limit (%d).", c.MaxConnections)
 		return false
 	}
 
 	// Not ready if one or more instances cannot be dialed.
-	for _, inst := range c.GetInstances() {
+	instances := s.staticInst
+	if s.staticInst == nil { // Proxy is in fuse mode.
+		instances = c.GetInstances()
+	}
+	for _, inst := range instances {
+		logging.Infof("[Health Check] Trying to connect to %q", inst)
 		conn, err := c.Dial(inst)
 		if err != nil {
-			logging.Errorf("Readiness failed because proxy couldn't connect to %q: %v", inst, err)
+			logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
 			return false
 		}
+		logging.Infof("[Health Check] Successful connection to %q", inst)
 		conn.Close()
 	}
 

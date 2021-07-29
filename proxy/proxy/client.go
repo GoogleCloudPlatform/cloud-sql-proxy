@@ -491,7 +491,8 @@ func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (s
 	return version, nil
 }
 
-// GetInstances iterates through the client cache, returning a list of all instances.
+// GetInstances iterates through the client cache, returning a list of previously dialed
+// instances.
 func (c *Client) GetInstances() []string {
 	if c.InstanceGetter != nil {
 		return c.InstanceGetter()
