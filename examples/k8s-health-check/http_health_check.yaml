@@ -71,20 +71,32 @@ spec:
             # the database and the application. Adjust this value based on your
             # application's requirements.
             cpu:    "1"
+        # These are our recommended configurations for each probe. All 
+        # configurable fields are shown.
         startupProbe:
-                httpGet:
-                        path: /startup
-                        port: 8090
-                periodSeconds: 1
-                failureThreshold: 20
+          httpGet:
+            path: /startup
+            port: 8090
+          periodSeconds: 1
+          timeoutSeconds: 5
+          failureThreshold: 20
         livenessProbe:
-                httpGet:
-                        path: /liveness
-                        port: 8090
+          httpGet:
+            path: /liveness
+            port: 8090
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 1
         readinessProbe:
-                httpGet:
-                        path: /liveness
-                        port: 8090
+          httpGet:
+            path: /readiness
+            port: 8090
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 1
       # [START cloud_sql_proxy_k8s_volume_secret]
       volumes:
       - name: <YOUR-SA-SECRET-VOLUME>
