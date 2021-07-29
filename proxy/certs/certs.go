@@ -280,7 +280,7 @@ func (s *RemoteCertSource) generateKey() *rsa.PrivateKey {
 }
 
 // Find the first matching IP address by user input IP address types
-func (s *RemoteCertSource) findIPAddr(data *sqladmin.DatabaseInstance, instance string) (ipAddrInUse string, err error) {
+func (s *RemoteCertSource) findIPAddr(data *sqladmin.ConnectSettings, instance string) (ipAddrInUse string, err error) {
 	for _, eachIPAddrTypeByUser := range s.IPAddrTypes {
 		for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
 			if strings.ToUpper(eachIPAddrTypeOfInstance.Type) == strings.ToUpper(eachIPAddrTypeByUser) {
@@ -304,32 +304,15 @@ func (s *RemoteCertSource) findIPAddr(data *sqladmin.DatabaseInstance, instance 
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
 	p, region, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", region, n)
-	req := s.serv.Instances.Get(p, regionName)
+	req := s.serv.Connect.Get(p, regionName)
 
-	var data *sqladmin.DatabaseInstance
+	var data *sqladmin.ConnectSettings
 	err = backoffAPIRetry("get instance", instance, func() error {
 		data, err = req.Do()
 		return err
 	})
 	if err != nil {
 		return nil, "", "", "", err
-	}
-
-	// TODO(chowski): remove this when us-central is removed.
-	if data.Region == "us-central" {
-		data.Region = "us-central1"
-	}
-	if data.Region != region {
-		if region == "" {
-			err = fmt.Errorf("instance %v doesn't provide region", instance)
-		} else {
-			err = fmt.Errorf(`for connection string "%s": got region %q, want %q`, instance, region, data.Region)
-		}
-		if s.checkRegion {
-			return nil, "", "", "", err
-		}
-		logging.Errorf("%v", err)
-		logging.Errorf("WARNING: specifying the correct region in an instance string will become required in a future version!")
 	}
 
 	if len(data.IpAddresses) == 0 {
