@@ -38,17 +38,11 @@ const (
 
 var forever = time.Date(9999, 0, 0, 0, 0, 0, 0, time.UTC)
 
-// type fakeCerts struct {
-// 	sync.Mutex
-// 	called int
-// }
-
 type fakeCertSource struct{}
 
 func (cs *fakeCertSource) Local(instance string) (tls.Certificate, error) {
 	return tls.Certificate{
 		Leaf: &x509.Certificate{
-			// NotAfter: time.Now().Add(5 * time.Second),
 			NotAfter: forever,
 		},
 	}, nil
@@ -60,7 +54,7 @@ func (cs *fakeCertSource) Remote(instance string) (cert *x509.Certificate, addr,
 
 // Test to verify that when the proxy client is up, the liveness endpoint writes http.StatusOK.
 func TestLiveness(t *testing.T) {
-	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
+	s, err := healthcheck.NewServer(&proxy.Client{}, testPort, nil)
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
@@ -78,7 +72,7 @@ func TestLiveness(t *testing.T) {
 // Test to verify that when startup HAS finished (and MaxConnections limit not specified),
 // the startup and readiness endpoints write http.StatusOK.
 func TestStartupPass(t *testing.T) {
-	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
+	s, err := healthcheck.NewServer(&proxy.Client{}, testPort, nil)
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
@@ -107,7 +101,7 @@ func TestStartupPass(t *testing.T) {
 // Test to verify that when startup has NOT finished, the startup and readiness endpoints write
 // http.StatusServiceUnavailable.
 func TestStartupFail(t *testing.T) {
-	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
+	s, err := healthcheck.NewServer(&proxy.Client{}, testPort, nil)
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
@@ -136,7 +130,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 	c := &proxy.Client{
 		MaxConnections: 1,
 	}
-	s, err := healthcheck.NewServer(c, testPort)
+	s, err := healthcheck.NewServer(c, testPort, nil)
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
@@ -162,11 +156,8 @@ func TestSingleInstanceFail(t *testing.T) {
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, errors.New("error")
 		},
-		InstanceGetter: func() []string {
-			return []string{"instance-name"}
-		},
 	}
-	s, err := healthcheck.NewServer(c, testPort)
+	s, err := healthcheck.NewServer(c, testPort, []string{"instance-name"})
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
@@ -190,11 +181,8 @@ func TestMultiInstanceFail(t *testing.T) {
 		Dialer: func(string, string) (net.Conn, error) {
 			return nil, errors.New("error")
 		},
-		InstanceGetter: func() []string {
-			return []string{"instance-1", "instance-2", "instance-3 "}
-		},
 	}
-	s, err := healthcheck.NewServer(c, testPort)
+	s, err := healthcheck.NewServer(c, testPort, []string{"instance-1", "instance-2", "instance-3"})
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
@@ -213,7 +201,7 @@ func TestMultiInstanceFail(t *testing.T) {
 // Test to verify that after closing a healthcheck, its liveness endpoint serves
 // an error.
 func TestCloseHealthCheck(t *testing.T) {
-	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
+	s, err := healthcheck.NewServer(&proxy.Client{}, testPort, nil)
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
