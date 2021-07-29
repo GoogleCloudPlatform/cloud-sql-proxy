@@ -284,14 +284,6 @@ msg. For example, the startup message looks like:
 gcloud's active project: [my-project-id]"}
 
 ```
-#### `-use_http_health_check`
-
-Enables HTTP health checks for the proxy, including startup, liveness, and readiness probing.
-Requires that you configure the Kubernetes container with HTTP probes.
-
-#### `-health_check_port=8090`
-
-Specifies the port that the health check server listens and serves on. Defaults to 8090.
 
 ## Running as a Kubernetes Sidecar
 
