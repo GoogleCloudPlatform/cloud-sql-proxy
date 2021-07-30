@@ -152,6 +152,6 @@ func TestCloseHealthCheck(t *testing.T) {
 
 	_, err = http.Get("http://localhost:" + testPort + livenessPath)
 	if !errors.Is(err, syscall.ECONNREFUSED) {
-		t.Fatalf("HTTP GET did not give a 'connection refused' error after closing health check")
+		t.Fatalf("Got '%v' instead of 'connected fused' error after closing health check server.", err)
 	}
 }
