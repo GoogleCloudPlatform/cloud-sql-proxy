@@ -39,4 +39,4 @@ tag_latest() {
     done
 }
 
-tag_latest $1
+tag_latest "$1"
