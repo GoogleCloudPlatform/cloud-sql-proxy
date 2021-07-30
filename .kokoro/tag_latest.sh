@@ -32,7 +32,7 @@ tag_latest() {
         local base_image="$registry/cloudsql-docker/gce-proxy"
         if [ "$dry_run" != true ]
         then
-            gcloud container images add-tag $base_image:$new_version $base_image:latest
+            gcloud container images add-tag "$base_image:$new_version" "$base_image:latest"
         else
             echo [DRY RUN] gcloud container images add-tag $base_image:$new_version $base_image:latest
         fi
