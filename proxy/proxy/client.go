@@ -396,7 +396,7 @@ func (c *Client) DialContext(ctx context.Context, instance string) (net.Conn, er
 	}
 
 	// TODO: attempt an early refresh if an connect fails?
-	return c.tryConnect(ctx, addr, cfg)
+	return c.tryConnect(ctx, addr, instance, cfg)
 }
 
 // Dial does the same as DialContext but using context.Background() as the context.
@@ -404,7 +404,7 @@ func (c *Client) Dial(instance string) (net.Conn, error) {
 	return c.DialContext(context.Background(), instance)
 }
 
-func (c *Client) tryConnect(ctx context.Context, addr string, cfg *tls.Config) (net.Conn, error) {
+func (c *Client) tryConnect(ctx context.Context, addr, instance string, cfg *tls.Config) (net.Conn, error) {
 	dial := c.selectDialer()
 	conn, err := dial(ctx, "tcp", addr)
 	if err != nil {
@@ -428,6 +428,7 @@ func (c *Client) tryConnect(ctx context.Context, addr string, cfg *tls.Config) (
 	ret := tls.Client(conn, cfg)
 	if err := ret.Handshake(); err != nil {
 		ret.Close()
+		c.invalidateCfg(cfg, instance)
 		return nil, err
 	}
 	return ret, nil
@@ -453,6 +454,26 @@ func (c *Client) selectDialer() func(context.Context, string, string) (net.Conn,
 
 	return func(_ context.Context, net, addr string) (net.Conn, error) {
 		return dialer.Dial(net, addr)
+	}
+}
+
+func (c *Client) invalidateCfg(cfg *tls.Config, instance string) {
+	c.cacheL.RLock()
+	e := c.cfgCache[instance]
+	c.cacheL.RUnlock()
+	if e.cfg != cfg {
+		return
+	}
+	c.cacheL.Lock()
+	defer c.cacheL.Unlock()
+	e = c.cfgCache[instance]
+	// the state may have changed between critical sections, so double check
+	if e.cfg != cfg {
+		return
+	}
+	c.cfgCache[instance] = cacheEntry{
+		done:          e.done,
+		lastRefreshed: e.lastRefreshed,
 	}
 }
 
