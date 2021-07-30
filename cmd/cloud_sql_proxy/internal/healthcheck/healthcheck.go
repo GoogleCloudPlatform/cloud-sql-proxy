@@ -27,14 +27,14 @@ import (
 )
 
 const (
-	startupPath = "/startup"
-	livenessPath = "/liveness"
+	startupPath   = "/startup"
+	livenessPath  = "/liveness"
 	readinessPath = "/readiness"
 )
 
 // Server is a type used to implement health checks for the proxy.
 type Server struct {
-	// started is used to indicate whether the proxy has finished starting up. 
+	// started is used to indicate whether the proxy has finished starting up.
 	// If started is open, startup has not finished. If started is closed,
 	// startup is complete.
 	started chan struct{}
@@ -52,15 +52,15 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
-		Addr: ":" + port,
+		Addr:    ":" + port,
 		Handler: mux,
 	}
 
 	hcServer := &Server{
 		started: make(chan struct{}),
-		once: &sync.Once{},
-		port: port,
-		srv:  srv,
+		once:    &sync.Once{},
+		port:    port,
+		srv:     srv,
 	}
 
 	mux.HandleFunc(startupPath, func(w http.ResponseWriter, _ *http.Request) {
@@ -97,7 +97,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	go func() {
 		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logging.Errorf("Failed to start health check HTTP server: %v", err)
@@ -120,7 +120,7 @@ func (s *Server) NotifyStarted() {
 // proxyStarted returns true if started is closed, false otherwise.
 func (s *Server) proxyStarted() bool {
 	select {
-	case <- s.started:
+	case <-s.started:
 		return true
 	default:
 		return false

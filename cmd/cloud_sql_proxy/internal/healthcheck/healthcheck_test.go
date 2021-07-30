@@ -18,15 +18,15 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"testing"
 	"syscall"
+	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
 )
 
 const (
-	startupPath = "/startup"
+	startupPath   = "/startup"
 	livenessPath  = "/liveness"
 	readinessPath = "/readiness"
 	testPort      = "8090"
@@ -75,7 +75,7 @@ func TestStartupFail(t *testing.T) {
 	}
 }
 
-// Test to verify that when startup HAS finished (and MaxConnections limit not specified), 
+// Test to verify that when startup HAS finished (and MaxConnections limit not specified),
 // the startup and readiness endpoints write http.StatusOK.
 func TestStartupPass(t *testing.T) {
 	s, err := healthcheck.NewServer(&proxy.Client{}, testPort)
