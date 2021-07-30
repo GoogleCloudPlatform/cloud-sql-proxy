@@ -34,7 +34,7 @@ tag_latest() {
         then
             gcloud container images add-tag "$base_image:$new_version" "$base_image:latest"
         else
-            echo [DRY RUN] gcloud container images add-tag $base_image:$new_version $base_image:latest
+            echo [DRY RUN] gcloud container images add-tag "$base_image:$new_version" "$base_image:latest"
         fi
     done
 }
