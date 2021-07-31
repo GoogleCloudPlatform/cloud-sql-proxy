@@ -16,9 +16,7 @@ package healthcheck_test
 
 import (
 	"context"
-	"errors"
 	"net/http"
-	"syscall"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/internal/healthcheck"
@@ -151,7 +149,7 @@ func TestCloseHealthCheck(t *testing.T) {
 	}
 
 	_, err = http.Get("http://localhost:" + testPort + livenessPath)
-	if !errors.Is(err, syscall.ECONNREFUSED) {
-		t.Fatalf("Got '%v' instead of 'connected fused' error after closing health check server.", err)
+	if err == nil {
+		t.Fatalf("HTTP GET did not return error after closing health check server.")
 	}
 }
