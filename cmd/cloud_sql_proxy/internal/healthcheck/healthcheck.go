@@ -42,11 +42,11 @@ type Server struct {
 	once *sync.Once
 	// port designates the port number on which Server listens and serves.
 	port string
-	// srv is a pointer to the HTTP server used to communicated proxy health.
+	// srv is a pointer to the HTTP server used to communicate proxy health.
 	srv *http.Server
 }
 
-// NewServer initializes a Server object and exposes HTTP endpoints used to
+// NewServer initializes a Server and exposes HTTP endpoints used to
 // communicate proxy health.
 func NewServer(c *proxy.Client, port string) (*Server, error) {
 	mux := http.NewServeMux()
@@ -107,7 +107,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	return hcServer, nil
 }
 
-// Close gracefully shuts down the HTTP server belonging to the Server object.
+// Close gracefully shuts down the HTTP server belonging to the Server.
 func (s *Server) Close(ctx context.Context) error {
 	return s.srv.Shutdown(ctx)
 }
