@@ -46,8 +46,11 @@ spec:
           # Replace DB_PORT with the port the proxy should listen on
           # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
           - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:<DB_PORT>"
-          # Enable HTTP health checks on the default port (8090).
+          # Enables HTTP health checks.
           - "-use_http_health_check"
+          # Specifies the health check server port.
+          # Defaults to 8090.
+          - "-health_check_port=<YOUR-HEALTH-CHECK-PORT>"
           # This flag specifies where the service account key can be found
           - "-credential_file=/secrets/service_account.json"
         securityContext:
