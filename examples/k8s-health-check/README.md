@@ -1,9 +1,9 @@
 # Cloud SQL proxy health checks
 
-Kubernetes supports three types of health checks. 
-1. Liveness probes determine whether a container is healthy. When this probe is unsuccessful, the container is restarted.
-2. Readiness probes determine whether a container can serve new traffic. When this probe fails, Kubernetes will wait to send requests to the container.
-3. Startup probes determine whether a container is done starting up. As soon as this probe succeeds, Kubernetes switches over to using liveness and readiness probing.
+Kubernetes supports three types of health checks.
+1. Startup probes determine whether a container is done starting up. As soon as this probe succeeds, Kubernetes switches over to using liveness and readiness probing.
+2. Liveness probes determine whether a container is healthy. When this probe is unsuccessful, the container is restarted.
+3. Readiness probes determine whether a container can serve new traffic. When this probe fails, Kubernetes will wait to send requests to the container.
 
 ## Running Cloud SQL proxy with health checks in Kubernetes
 1. Configure your Cloud SQL proxy container to include health check probes. 
