@@ -276,13 +276,11 @@ this flag to true.  Defaults to false.
 
 #### `-structured_logs`
 
-Writes all logging output as JSON with the following keys: level, ts, caller,
-msg. For example, the startup message looks like:
+Writes all logging output as JSON with the following keys: severity, timestamp, caller,
+message and optionally stacktrace. For example, the startup message looks like:
 
-```
-{"level":"info","ts":1616014011.8132386,"caller":"cloud_sql_proxy/cloud_sql_proxy.go:510","msg":"Using
-gcloud's active project: [my-project-id]"}
-
+```json
+{"severity":"INFO","timestamp":"2020-10-12T07:20:50.52Z","caller":"cloud_sql_proxy/cloud_sql_proxy.go:510","message":"Using gcloud's active project: [my-project-id]"}
 ```
 
 ## Running as a Kubernetes Sidecar
