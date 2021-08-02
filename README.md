@@ -288,7 +288,7 @@ gcloud's active project: [my-project-id]"}
 #### `-use_http_health_check`
 
 Enables HTTP health checks for the proxy, including startup, liveness, and readiness probing.
-Requires that you configure the Kubernetes container with HTTP probes ([sample](https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/examples/k8s-health-check/proxy_with_http_health_check.yaml)).
+Requires that you configure the Kubernetes container with HTTP probes ([example][health-check-example]).
 
 #### `-health_check_port=8090`
 
@@ -345,6 +345,7 @@ Install via Nuget, follow these
 [connect-to-k8s]: https://cloud.google.com/sql/docs/mysql/connect-kubernetes-engine
 [connection-overview]: https://cloud.google.com/sql/docs/mysql/connect-overview
 [contributing]: CONTRIBUTING.md
+[health-check-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/examples/k8s-health-check/proxy_with_http_health_check.yaml
 [iam-auth]: https://cloud.google.com/sql/docs/postgres/authentication
 [pkg-badge]: https://pkg.go.dev/badge/github.com/GoogleCloudPlatform/cloudsql-proxy.svg
 [pkg-docs]: https://pkg.go.dev/github.com/GoogleCloudPlatform/cloudsql-proxy
