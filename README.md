@@ -286,7 +286,7 @@ message and optionally stacktrace. For example, the startup message looks like:
 #### `-use_http_health_check`
 
 Enables HTTP health checks for the proxy, including startup, liveness, and readiness probing.
-Requires that you configure the Kubernetes container with HTTP probes ([example][health-check-example]).
+Requires that you configure the Kubernetes container with HTTP probes ([instructions][health-check-example]).
 
 #### `-health_check_port=8090`
 
@@ -343,7 +343,7 @@ Install via Nuget, follow these
 [connect-to-k8s]: https://cloud.google.com/sql/docs/mysql/connect-kubernetes-engine
 [connection-overview]: https://cloud.google.com/sql/docs/mysql/connect-overview
 [contributing]: CONTRIBUTING.md
-[health-check-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/examples/k8s-health-check/proxy_with_http_health_check.yaml
+[health-check-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/examples/k8s-health-check#cloud-sql-proxy-health-checks
 [iam-auth]: https://cloud.google.com/sql/docs/postgres/authentication
 [pkg-badge]: https://pkg.go.dev/badge/github.com/GoogleCloudPlatform/cloudsql-proxy.svg
 [pkg-docs]: https://pkg.go.dev/github.com/GoogleCloudPlatform/cloudsql-proxy
