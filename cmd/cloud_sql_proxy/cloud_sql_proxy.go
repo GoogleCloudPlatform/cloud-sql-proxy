@@ -131,6 +131,10 @@ unavailable.`,
 		`When set, the proxy uses this host as the base API path. Example:
 	https://sqladmin.googleapis.com`,
 	)
+
+	// Settings to use sslCerts apis instead of connect apis
+        useSslCerts = flag.Bool("use_sslcerts_api",false,"Use sslCerts apis instead of connect apis to handle certificates.")
+
 )
 
 const (
@@ -248,7 +252,11 @@ Connection:
     When using Unix sockets (the default for systems which support them), the
     Proxy places the sockets in the directory specified by the -dir parameter.
 
-Automatic instance discovery:
+  -use_sslcerts_api
+   You can use this flag to use sslCerts api to generate/retrieve certificates instead 
+   of the connect apis  
+
+ Automatic instance discovery:
    If the Google Cloud SQL is installed on the local machine and no instance
    connection flags are specified, the proxy connects to all instances in the
    gcloud tool's active project. Run 'gcloud config list project' to
@@ -574,6 +582,7 @@ func main() {
 			IPAddrTypeOpts: ipAddrTypeOptsInput,
 			EnableIAMLogin: *enableIAMLogin,
 			TokenSource:    tokSrc,
+			UseSslCerts: *useSslCerts,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
