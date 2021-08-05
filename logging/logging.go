@@ -78,12 +78,17 @@ func EnableStructuredLogs(logDebugStdout, verbose bool) (func(), error) {
 		consoleDebugging = zapcore.Lock(os.Stdout)
 	}
 
-	consoleEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+	config := zap.NewProductionEncoderConfig()
+	config.LevelKey = "severity"
+	config.MessageKey = "message"
+	config.TimeKey = "timestamp"
+	config.EncodeLevel = zapcore.CapitalLevelEncoder
+	config.EncodeTime = zapcore.ISO8601TimeEncoder
+	consoleEncoder := zapcore.NewJSONEncoder(config)
 	core := zapcore.NewTee(
 		zapcore.NewCore(consoleEncoder, consoleErrors, highPriority),
 		zapcore.NewCore(consoleEncoder, consoleDebugging, lowPriority),
 	)
-
 	// By default, caller and stacktrace are not included, so add them here
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 

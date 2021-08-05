@@ -110,7 +110,7 @@ func NewServer(c *proxy.Client, port string, staticInst []string) (*Server, erro
 	return hcServer, nil
 }
 
-// Close gracefully shuts down the HTTP server belonging to the Server object.
+// Close gracefully shuts down the HTTP server belonging to the Server.
 func (s *Server) Close(ctx context.Context) error {
 	return s.srv.Shutdown(ctx)
 }

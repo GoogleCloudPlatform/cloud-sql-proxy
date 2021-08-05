@@ -21,7 +21,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"syscall"
 	"testing"
 	"time"
 
@@ -109,7 +108,7 @@ func TestStartupFail(t *testing.T) {
 
 	resp, err := http.Get("http://localhost:" + testPort + startupPath)
 	if err != nil {
-		t.Fatalf("HTTP GET failed: %v", err)
+		t.Fatalf("HTTP GET failed: %v\n", err)
 	}
 	if resp.StatusCode != http.StatusServiceUnavailable {
 		t.Errorf("%v returned status code %v instead of %v", startupPath, resp.StatusCode, http.StatusServiceUnavailable)
@@ -117,7 +116,7 @@ func TestStartupFail(t *testing.T) {
 
 	resp, err = http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
-		t.Fatalf("HTTP GET failed: %v", err)
+		t.Fatalf("HTTP GET failed: %v\n", err)
 	}
 	if resp.StatusCode != http.StatusServiceUnavailable {
 		t.Errorf("%v returned status code %v instead of %v", readinessPath, resp.StatusCode, http.StatusServiceUnavailable)
@@ -187,8 +186,9 @@ func TestMultiInstanceFail(t *testing.T) {
 		t.Fatalf("Could not initialize health check: %v", err)
 	}
 	defer s.Close(context.Background())
+
 	s.NotifyStarted()
-	
+
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
@@ -221,7 +221,7 @@ func TestCloseHealthCheck(t *testing.T) {
 	}
 
 	_, err = http.Get("http://localhost:" + testPort + livenessPath)
-	if !errors.Is(err, syscall.ECONNREFUSED) {
-		t.Fatalf("HTTP GET did not give a 'connection refused' error after closing health check")
+	if err == nil {
+		t.Fatalf("HTTP GET did not return error after closing health check server.")
 	}
 }
