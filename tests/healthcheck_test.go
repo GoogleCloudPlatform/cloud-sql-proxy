@@ -31,10 +31,10 @@ const (
 
 var (
 	connName = flag.String("conn_name", os.Getenv("CONNECTION_NAME"), "Cloud SQL MYSQL instance connection name, in the form of 'project:region:instance'.")
-	port = flag.String("port", os.Getenv("PORT"), "TCP port for the proxy to listen on.")
+	port     = flag.String("port", os.Getenv("PORT"), "TCP port for the proxy to listen on.")
 
 	connName2 = flag.String("conn_name_2", os.Getenv("CONNECTION_NAME_2"), "A second Cloud SQL MYSQL instance connection name.")
-	port2 = flag.String("port_2", os.Getenv("PORT_2"), "A second TCP port.")
+	port2     = flag.String("port_2", os.Getenv("PORT_2"), "A second TCP port.")
 )
 
 // waitForStart blocks until the currently running proxy completes startup.
@@ -69,7 +69,7 @@ func TestSingleInstanceDial(t *testing.T) {
 	cmd := exec.Command(binPath, args...)
 	err = cmd.Start()
 	if err != nil {
-		t.Fatalf("Failed to start proxy: %s", err, )
+		t.Fatalf("Failed to start proxy: %s", err)
 	}
 	defer cmd.Process.Kill()
 
@@ -117,7 +117,7 @@ func TestMultiInstanceDial(t *testing.T) {
 	cmd := exec.Command(binPath, args...)
 	err = cmd.Start()
 	if err != nil {
-		t.Fatalf("Failed to start proxy: %s", err, )
+		t.Fatalf("Failed to start proxy: %s", err)
 	}
 	defer cmd.Process.Kill()
 

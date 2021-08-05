@@ -59,10 +59,10 @@ func NewServer(c *proxy.Client, port string, staticInst []string) (*Server, erro
 	}
 
 	hcServer := &Server{
-		started:   make(chan struct{}),
-		once:      &sync.Once{},
-		port:      port,
-		srv:       srv,
+		started:    make(chan struct{}),
+		once:       &sync.Once{},
+		port:       port,
+		srv:        srv,
 		staticInst: staticInst,
 	}
 

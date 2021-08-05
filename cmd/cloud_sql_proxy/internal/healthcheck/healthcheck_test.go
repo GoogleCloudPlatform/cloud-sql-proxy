@@ -162,7 +162,7 @@ func TestSingleInstanceFail(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 	s.NotifyStarted()
-	
+
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)

@@ -15,8 +15,10 @@
 // Package util contains utility functions for use throughout the Cloud SQL Auth proxy.
 package util
 
-import "fmt"
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // SplitName splits a fully qualified instance into its project, region, and
 // instance name components. While we make the transition to regionalized
