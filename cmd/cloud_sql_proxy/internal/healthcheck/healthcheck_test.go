@@ -108,7 +108,7 @@ func TestStartupFail(t *testing.T) {
 
 	resp, err := http.Get("http://localhost:" + testPort + startupPath)
 	if err != nil {
-		t.Fatalf("HTTP GET failed: %v\n", err)
+		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusServiceUnavailable {
 		t.Errorf("%v returned status code %v instead of %v", startupPath, resp.StatusCode, http.StatusServiceUnavailable)
@@ -116,7 +116,7 @@ func TestStartupFail(t *testing.T) {
 
 	resp, err = http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
-		t.Fatalf("HTTP GET failed: %v\n", err)
+		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusServiceUnavailable {
 		t.Errorf("%v returned status code %v instead of %v", readinessPath, resp.StatusCode, http.StatusServiceUnavailable)
