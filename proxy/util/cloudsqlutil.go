@@ -15,7 +15,10 @@
 // Package util contains utility functions for use throughout the Cloud SQL Auth proxy.
 package util
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // SplitName splits a fully qualified instance into its project, region, and
 // instance name components. While we make the transition to regionalized
@@ -42,4 +45,20 @@ func SplitName(instance string) (project, region, name string) {
 	default:
 		return spl[0], spl[1], spl[2]
 	}
+}
+
+// Validate verifies that instances are in the expected format and include
+// the appropriate components.
+func Validate(instance string) (bool, error) {
+	args := strings.Split(instance, "=")
+	if len(args) > 2 {
+		return false, fmt.Errorf("invalid instance argument: must be either form - `<instance_connection_string>` or `<instance_connection_string>=<options>`; invalid arg was %q", instance)
+	}
+	// Parse the instance connection name - everything before the "=".
+	instance = args[0]
+	proj, region, name := SplitName(instance)
+	if proj == "" || region == "" || name == "" {
+		return false, fmt.Errorf("invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was %q", args[0])
+	}
+	return true, nil
 }

@@ -329,6 +329,12 @@ func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 }
 
 func (c *Client) cachedCfg(ctx context.Context, instance string) (string, *tls.Config, string, error) {
+	// Validate instance string in order to exclude potentially unwanted directories picked up by fuse.
+	if valid, err := util.Validate(instance); !valid {
+		logging.Errorf(err.Error())
+		return "", nil, "", err
+	}
+
 	c.cacheL.RLock()
 
 	throttle := c.RefreshCfgThrottle
@@ -433,6 +439,7 @@ func (c *Client) tryConnect(ctx context.Context, addr, instance string, cfg *tls
 		c.invalidateCfg(cfg, instance)
 		return nil, err
 	}
+
 	return ret, nil
 }
 
@@ -537,6 +544,19 @@ func ParseInstanceConnectionName(instance string) (string, string, string, []str
 		return "", "", "", nil, fmt.Errorf("invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was %q", args[0])
 	}
 	return proj, region, name, args, nil
+}
+
+// GetInstances iterates through the client cache, returning a list of previously dialed
+// instances.
+func (c *Client) GetInstances() []string {
+	var instList []string
+	c.cacheL.Lock()
+	cfgCache := c.cfgCache
+	c.cacheL.Unlock()
+	for i := range cfgCache {
+		instList = append(instList, i)
+	}
+	return instList
 }
 
 // AvailableConn returns false if MaxConnections has been reached, true otherwise.
