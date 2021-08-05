@@ -283,26 +283,14 @@ message and optionally stacktrace. For example, the startup message looks like:
 {"severity":"INFO","timestamp":"2020-10-12T07:20:50.52Z","caller":"cloud_sql_proxy/cloud_sql_proxy.go:510","message":"Using gcloud's active project: [my-project-id]"}
 ```
 
-<<<<<<< HEAD
-```
-#### `-use_http_health_check`
-
-Enables HTTP health checks on /startup, /liveness, and /readiness endpoints. If 
-deployed on Kubernetes, the configuration file should specify the probes in use.
-=======
 #### `-use_http_health_check`
 
 Enables HTTP health checks for the proxy, including startup, liveness, and readiness probing.
 Requires that you configure the Kubernetes container with HTTP probes ([instructions][health-check-example]).
->>>>>>> d28a26ad03b758ff8a01aa8c4832edd792a89d2d
 
 #### `-health_check_port=8090`
 
 Specifies the port that the health check server listens and serves on. Defaults to 8090.
-<<<<<<< HEAD
-
-=======
->>>>>>> d28a26ad03b758ff8a01aa8c4832edd792a89d2d
 
 ## Running as a Kubernetes Sidecar
 
