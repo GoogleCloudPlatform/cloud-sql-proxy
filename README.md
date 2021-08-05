@@ -276,23 +276,33 @@ this flag to true.  Defaults to false.
 
 #### `-structured_logs`
 
-Writes all logging output as JSON with the following keys: level, ts, caller,
-msg. For example, the startup message looks like:
+Writes all logging output as JSON with the following keys: severity, timestamp, caller,
+message and optionally stacktrace. For example, the startup message looks like:
 
+```json
+{"severity":"INFO","timestamp":"2020-10-12T07:20:50.52Z","caller":"cloud_sql_proxy/cloud_sql_proxy.go:510","message":"Using gcloud's active project: [my-project-id]"}
 ```
-{"level":"info","ts":1616014011.8132386,"caller":"cloud_sql_proxy/cloud_sql_proxy.go:510","msg":"Using
-gcloud's active project: [my-project-id]"}
 
+<<<<<<< HEAD
 ```
 #### `-use_http_health_check`
 
 Enables HTTP health checks on /startup, /liveness, and /readiness endpoints. If 
 deployed on Kubernetes, the configuration file should specify the probes in use.
+=======
+#### `-use_http_health_check`
+
+Enables HTTP health checks for the proxy, including startup, liveness, and readiness probing.
+Requires that you configure the Kubernetes container with HTTP probes ([instructions][health-check-example]).
+>>>>>>> d28a26ad03b758ff8a01aa8c4832edd792a89d2d
 
 #### `-health_check_port=8090`
 
 Specifies the port that the health check server listens and serves on. Defaults to 8090.
+<<<<<<< HEAD
 
+=======
+>>>>>>> d28a26ad03b758ff8a01aa8c4832edd792a89d2d
 
 ## Running as a Kubernetes Sidecar
 
@@ -345,6 +355,7 @@ Install via Nuget, follow these
 [connect-to-k8s]: https://cloud.google.com/sql/docs/mysql/connect-kubernetes-engine
 [connection-overview]: https://cloud.google.com/sql/docs/mysql/connect-overview
 [contributing]: CONTRIBUTING.md
+[health-check-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/examples/k8s-health-check#cloud-sql-proxy-health-checks
 [iam-auth]: https://cloud.google.com/sql/docs/postgres/authentication
 [pkg-badge]: https://pkg.go.dev/badge/github.com/GoogleCloudPlatform/cloudsql-proxy.svg
 [pkg-docs]: https://pkg.go.dev/github.com/GoogleCloudPlatform/cloudsql-proxy

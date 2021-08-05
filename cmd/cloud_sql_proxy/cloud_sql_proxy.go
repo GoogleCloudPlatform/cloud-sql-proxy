@@ -135,7 +135,7 @@ unavailable.`,
 
 	// Settings for healthcheck
 	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an HTTP server that checks and communicates the health of the proxy client.")
-	healthCheckPort = flag.String("health_check_port", "8090", "Health checks take place on this port number. Defaults to 8090.")
+	healthCheckPort    = flag.String("health_check_port", "8090", "When applicable, health checks take place on this port number. Defaults to 8090.")
 )
 
 const (
@@ -272,7 +272,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
-var versionString = "1.23.2-dev"
+var versionString = "1.24.1-dev"
 
 // metadataString indiciates additional build or distribution metadata.
 var metadataString = ""
