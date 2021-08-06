@@ -29,7 +29,7 @@ import (
 	"unsafe"
 )
 
-const instance = "instance-name"
+const instance = "project:region:instance"
 
 var (
 	sentinelError = errors.New("sentinel error")
