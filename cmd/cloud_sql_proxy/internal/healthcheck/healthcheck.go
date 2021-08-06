@@ -44,8 +44,8 @@ type Server struct {
 	port string
 	// srv is a pointer to the HTTP server used to communicate proxy health.
 	srv *http.Server
-	// staticInst is a list of all instances specified statically (e.g. as flags to the binary)
-	staticInst []string
+	// instances is a list of all instances specified statically (e.g. as flags to the binary)
+	instances []string
 }
 
 // NewServer initializes a Server and exposes HTTP endpoints used to
@@ -63,7 +63,7 @@ func NewServer(c *proxy.Client, port string, staticInst []string) (*Server, erro
 		once:       &sync.Once{},
 		port:       port,
 		srv:        srv,
-		staticInst: staticInst,
+		instances: staticInst,
 	}
 
 	mux.HandleFunc(startupPath, func(w http.ResponseWriter, _ *http.Request) {
@@ -148,13 +148,13 @@ func isReady(c *proxy.Client, s *Server) bool {
 
 	// Not ready if the proxy is at the optional MaxConnections limit.
 	if !c.AvailableConn() {
-		logging.Errorf("[Health Check] Readiness failed because proxy has reached the maximum connections limit (%d).", c.MaxConnections)
+		logging.Errorf("[Health Check] Readiness failed because proxy has reached the maximum connections limit (%v).", c.MaxConnections)
 		return false
 	}
 
 	// Not ready if one or more instances cannot be dialed.
-	instances := s.staticInst
-	if s.staticInst == nil { // Proxy is in fuse mode.
+	instances := s.instances
+	if s.instances == nil { // Proxy is in fuse mode.
 		instances = c.GetInstances()
 	}
 	for _, inst := range instances {
@@ -165,7 +165,11 @@ func isReady(c *proxy.Client, s *Server) bool {
 			return false
 		}
 		logging.Infof("[Health Check] Successful connection to %q", inst)
-		conn.Close()
+
+		err = conn.Close()
+		if err != nil {
+			logging.Errorf("[Health Check] Error while closing connection: %v", err)
+		}
 	}
 
 	return true

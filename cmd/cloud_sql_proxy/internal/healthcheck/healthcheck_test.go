@@ -35,14 +35,12 @@ const (
 	testPort      = "8090"
 )
 
-var forever = time.Date(9999, 0, 0, 0, 0, 0, 0, time.UTC)
-
 type fakeCertSource struct{}
 
 func (cs *fakeCertSource) Local(instance string) (tls.Certificate, error) {
 	return tls.Certificate{
 		Leaf: &x509.Certificate{
-			NotAfter: forever,
+			NotAfter: time.Date(9999, 0, 0, 0, 0, 0, 0, time.UTC),
 		},
 	}, nil
 }

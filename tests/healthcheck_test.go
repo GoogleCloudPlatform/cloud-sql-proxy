@@ -18,11 +18,13 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 )
 
 const (
@@ -32,7 +34,7 @@ const (
 )
 
 // waitForStart blocks until the currently running proxy completes startup.
-func waitForStart() {
+func waitForStart(ctx context.Context) {
 	for {
 		resp, err := http.Get("http://localhost:" + testPort + startupPath)
 		if err == nil && resp.StatusCode == http.StatusOK {
@@ -65,7 +67,9 @@ func TestSingleInstanceDial(t *testing.T) {
 	}
 	defer cmd.Process.Kill()
 
-	waitForStart()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+	defer cancel()
+	waitForStart(ctx)
 
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
@@ -102,7 +106,9 @@ func TestMultiInstanceDial(t *testing.T) {
 	}
 	defer cmd.Process.Kill()
 
-	waitForStart()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+	defer cancel()
+	waitForStart(ctx)
 
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {

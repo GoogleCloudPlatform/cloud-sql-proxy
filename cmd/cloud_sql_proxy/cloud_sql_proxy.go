@@ -588,11 +588,11 @@ func main() {
 	var hc *healthcheck.Server
 	if *useHTTPHealthCheck {
 		// Extract a list of all instances specified statically. List is empty when in fuse mode.
-		var staticInst []string
+		var insts []string
 		for _, cfg := range cfgs {
-			staticInst = append(staticInst, cfg.Instance)
+			insts = append(insts, cfg.Instance)
 		}
-		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort, staticInst)
+		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort, insts)
 		if err != nil {
 			logging.Errorf("[Health Check] Could not initialize health check server: %v", err)
 			os.Exit(1)
