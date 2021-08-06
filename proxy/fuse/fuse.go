@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !windows && !openbsd
 // +build !windows,!openbsd
 
 // Package fuse provides a connection source wherein the user does not need to
