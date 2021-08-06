@@ -18,7 +18,6 @@
 package tests
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -30,14 +29,6 @@ const (
 	startupPath   = "/startup"
 	readinessPath = "/readiness"
 	testPort      = "8090"
-)
-
-var (
-	connName = flag.String("conn_name", os.Getenv("CONNECTION_NAME"), "Cloud SQL MYSQL instance connection name, in the form of 'project:region:instance'.")
-	port     = flag.String("port", os.Getenv("PORT"), "TCP port for the proxy to listen on.")
-
-	connName2 = flag.String("conn_name_2", os.Getenv("CONNECTION_NAME_2"), "A second Cloud SQL MYSQL instance connection name.")
-	port2     = flag.String("port_2", os.Getenv("PORT_2"), "A second TCP port.")
 )
 
 // waitForStart blocks until the currently running proxy completes startup.
@@ -54,10 +45,8 @@ func waitForStart() {
 // the readiness endpoint serves http.StatusOK.
 func TestSingleInstanceDial(t *testing.T) {
 	switch "" {
-	case *connName:
-		t.Fatal("'conn_name' not set")
-	case *port:
-		t.Fatal("'port' not set")
+	case *mysqlConnName:
+		t.Fatal("'mysql_conn_name' not set")
 	}
 
 	binPath, err := compileProxy()
@@ -67,7 +56,7 @@ func TestSingleInstanceDial(t *testing.T) {
 	defer os.RemoveAll(binPath)
 
 	var args []string
-	args = append(args, fmt.Sprintf("-instances=%s=tcp:%s", *connName, *port), "-use_http_health_check")
+	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", *mysqlConnName, mysqlPort), "-use_http_health_check")
 
 	cmd := exec.Command(binPath, args...)
 	err = cmd.Start()
@@ -91,21 +80,10 @@ func TestSingleInstanceDial(t *testing.T) {
 // the readiness endpoint serves http.StatusOK.
 func TestMultiInstanceDial(t *testing.T) {
 	switch "" {
-	case *connName:
-		t.Fatal("'conn_name' not set")
-	case *port:
-		t.Fatal("'port' not set")
-	case *connName2:
-		t.Fatal("'conn_name_2' not set")
-	case *port2:
-		t.Fatal("'port_2' not set")
-	}
-
-	if connName == connName2 {
-		t.Fatal("'conn_name' and 'conn_name_2' are the same")
-	}
-	if port == port2 {
-		t.Fatal("'port' and 'port_2' are the same")
+	case *mysqlConnName:
+		t.Fatal("'mysql_conn_name' not set")
+	case *postgresConnName:
+		t.Fatal("'postgres_conn_name' not set")
 	}
 
 	binPath, err := compileProxy()
@@ -115,7 +93,7 @@ func TestMultiInstanceDial(t *testing.T) {
 	defer os.RemoveAll(binPath)
 
 	var args []string
-	args = append(args, fmt.Sprintf("-instances=%s=tcp:%s,%s=tcp:%s", *connName, *port, *connName2, *port2), "-use_http_health_check")
+	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d,%s=tcp:%d", *mysqlConnName, mysqlPort, *postgresConnName, postgresPort), "-use_http_health_check")
 
 	cmd := exec.Command(binPath, args...)
 	err = cmd.Start()

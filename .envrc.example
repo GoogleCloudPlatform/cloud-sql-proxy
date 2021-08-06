@@ -15,8 +15,3 @@ export SQLSERVER_CONNECTION_NAME="project:region:instance"
 export SQLSERVER_USER="sqlserver-user"
 export SQLSERVER_PASS="sqlserver-password"
 export SQLSERVER_DB="sqlserver-db-name"
-
-export CONNECTION_NAME="project:region:instance1"
-export PORT="port1"
-export CONNECTION_NAME_2="project:region:instance2"
-export PORT_2="port2"
