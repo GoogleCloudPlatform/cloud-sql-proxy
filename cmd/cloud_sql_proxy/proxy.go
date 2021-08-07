@@ -229,6 +229,7 @@ func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig,
 		return instanceConfig{}, err
 	}
 	ret.Instance = args[0]
+	regionName := fmt.Sprintf("%s~%s", region, name)
 	if len(args) == 1 {
 		// Default to listening via unix socket in specified directory
 		ret.Network = "unix"
