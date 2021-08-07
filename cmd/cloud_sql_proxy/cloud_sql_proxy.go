@@ -533,7 +533,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	client, tokSrc, err := authenticatedClient(ctx)
 	if err != nil {
 		logging.Errorf(err.Error())
@@ -642,6 +642,7 @@ func main() {
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
+		defer cancel()
 		<-signals
 		logging.Infof("Received TERM signal. Waiting up to %s before terminating.", *termTimeout)
 		go func() {
@@ -651,11 +652,10 @@ func main() {
 		}()
 
 		err := proxyClient.Shutdown(*termTimeout)
-		if err == nil {
-			os.Exit(0)
+		if err != nil {
+			logging.Errorf("Error during SIGTERM shutdown: %v", err)
+			os.Exit(1)
 		}
-		logging.Errorf("Error during SIGTERM shutdown: %v", err)
-		os.Exit(2)
 	}()
 
 	// If running under systemd with Type=notify, we'll send a message to the
@@ -666,5 +666,5 @@ func main() {
 			logging.Errorf("Failed to notify systemd of readiness: %v", err)
 		}
 	}()
-	proxyClient.Run(connSrc)
+	proxyClient.RunContext(ctx, connSrc)
 }
