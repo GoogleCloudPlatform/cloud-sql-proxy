@@ -58,7 +58,7 @@ func TestBadDir(t *testing.T) {
 	}
 	defer fuse.Close()
 
-	_, err = os.Stat(filepath.Join(dir, "dir1", "dir2"))
+	_, err = os.Stat(filepath.Join(dir, "dir:ectory:1", "dir:ectory:2"))
 	if err == nil {
 		t.Fatal("able to find a directory inside the mount point, expected only regular files")
 	}
@@ -90,7 +90,7 @@ func TestSingleInstance(t *testing.T) {
 	}
 	defer fuse.Close()
 
-	const want = "test:instance"
+	const want = "test:instance:string"
 	path := filepath.Join(dir, want)
 
 	fi, err := os.Stat(path)
@@ -155,7 +155,7 @@ func BenchmarkNewConnection(b *testing.B) {
 		}
 	}()
 
-	const instance = "test:instance"
+	const instance = "test:instance:string"
 	path := filepath.Join(dir, instance)
 
 	b.ResetTimer()

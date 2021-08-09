@@ -21,11 +21,13 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 	"golang.org/x/net/proxy"
 	"golang.org/x/time/rate"
 )
@@ -520,6 +522,21 @@ func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (s
 		return "", nil
 	}
 	return version, nil
+}
+
+// ParseInstanceConnectionName verifies that instances are in the expected format and include
+// the necessary components.
+func ParseInstanceConnectionName(instance string) (string, string, string, []string, error) {
+	args := strings.Split(instance, "=")
+	if len(args) > 2 {
+		return "", "", "", nil, fmt.Errorf("invalid instance argument: must be either form - `<instance_connection_string>` or `<instance_connection_string>=<options>`; invalid arg was %q", instance)
+	}
+	// Parse the instance connection name - everything before the "=".
+	proj, region, name := util.SplitName(args[0])
+	if proj == "" || region == "" || name == "" {
+		return "", "", "", nil, fmt.Errorf("invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was %q", args[0])
+	}
+	return proj, region, name, args, nil
 }
 
 // AvailableConn returns false if MaxConnections has been reached, true otherwise.

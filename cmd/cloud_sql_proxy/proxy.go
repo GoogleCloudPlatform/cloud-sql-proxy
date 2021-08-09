@@ -31,7 +31,6 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 
@@ -225,17 +224,12 @@ var validNets = func() map[string]bool {
 
 func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig, error) {
 	var ret instanceConfig
-	args := strings.Split(instance, "=")
-	if len(args) > 2 {
-		return instanceConfig{}, fmt.Errorf("invalid instance argument: must be either form - `<instance_connection_string>` or `<instance_connection_string>=<options>`; invalid arg was %q", instance)
+	proj, region, name, args, err := proxy.ParseInstanceConnectionName(instance)
+	if err != nil {
+		return instanceConfig{}, err
 	}
-	// Parse the instance connection name - everything before the "=".
 	ret.Instance = args[0]
-	proj, region, name := util.SplitName(ret.Instance)
 	regionName := fmt.Sprintf("%s~%s", region, name)
-	if proj == "" || region == "" || name == "" {
-		return instanceConfig{}, fmt.Errorf("invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was %q", args[0])
-	}
 	if len(args) == 1 {
 		// Default to listening via unix socket in specified directory
 		ret.Network = "unix"

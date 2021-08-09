@@ -317,3 +317,28 @@ func TestRemoteCertError(t *testing.T) {
 	}
 
 }
+
+func TestValidate(t *testing.T) {
+	// SplitName has its own tests and is not specifically tested here.
+	table := []struct {
+		in           string
+		wantValid    bool
+		wantErrorStr string
+	}{
+		{"proj:region:my-db", true, ""},
+		{"proj:region:my-db=options", true, ""},
+		{"proj=region=my-db", false, "invalid instance argument: must be either form - `<instance_connection_string>` or `<instance_connection_string>=<options>`; invalid arg was \"proj=region=my-db\""},
+		{"projregionmy-db", false, "invalid instance connection string: must be in the form `project:region:instance-name`; invalid name was \"projregionmy-db\""},
+	}
+
+	for _, test := range table {
+		_, _, _, _, gotError := ParseInstanceConnectionName(test.in)
+		var gotErrorStr string
+		if gotError != nil {
+			gotErrorStr = gotError.Error()
+		}
+		if gotErrorStr != test.wantErrorStr {
+			t.Errorf("Validate(%q): got \"%v\" for error, want \"%v\"", test.in, gotError, test.wantErrorStr)
+		}
+	}
+}
