@@ -42,14 +42,14 @@ func waitForStart(ctx context.Context) {
 	}
 }
 
-// Test to verify that when all instances can be dialed successfully, the readiness endpoint 
+// Test to verify that when all instances can be dialed successfully, the readiness endpoint
 // writes http.StatusOK.
 func TestDialPass(t *testing.T) {
-    tests := map[string]struct {
-        insts []string
+	tests := map[string]struct {
+		insts []string
 		ports []int
 	}{
-		"Single instance": {insts: []string{*mysqlConnName}, ports: []int{mysqlPort}},
+		"Single instance":    {insts: []string{*mysqlConnName}, ports: []int{mysqlPort}},
 		"Multiple instances": {insts: []string{*mysqlConnName, *postgresConnName}, ports: []int{mysqlPort, postgresPort}},
 	}
 
@@ -82,7 +82,7 @@ func TestDialPass(t *testing.T) {
 			}
 			defer cmd.Process.Kill()
 
-			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
 			defer cancel()
 			waitForStart(ctx)
 

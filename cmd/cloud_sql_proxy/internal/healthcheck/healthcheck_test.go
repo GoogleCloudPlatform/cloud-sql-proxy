@@ -145,13 +145,13 @@ func TestMaxConnectionsReached(t *testing.T) {
 	}
 }
 
-// Test to verify that when dialing instance(s) returns an error, the readiness endpoint 
+// Test to verify that when dialing instance(s) returns an error, the readiness endpoint
 // writes http.StatusServiceUnavailable.
 func TestDialFail(t *testing.T) {
-    tests := map[string]struct {
-        insts []string
+	tests := map[string]struct {
+		insts []string
 	}{
-		"Single instance": {insts: []string{"project:region:instance"}},
+		"Single instance":    {insts: []string{"project:region:instance"}},
 		"Multiple instances": {insts: []string{"project:region:instance-1", "project:region:instance-2", "project:region:instance-3"}},
 	}
 
@@ -170,7 +170,7 @@ func TestDialFail(t *testing.T) {
 			}
 			defer s.Close(context.Background())
 			s.NotifyStarted()
-		
+
 			resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 			if err != nil {
 				t.Fatalf("%v: HTTP GET failed: %v", name, err)
