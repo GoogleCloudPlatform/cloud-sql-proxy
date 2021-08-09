@@ -224,8 +224,8 @@ var validNets = func() map[string]bool {
 
 func parseInstanceConfig(dir, instance string, cl *http.Client) (instanceConfig, error) {
 	var ret instanceConfig
-	valid, err, proj, region, name, args := proxy.Validate(instance)
-	if !valid {
+	proj, region, name, args, err := proxy.ParseInstanceConnectionName(instance)
+	if err != nil {
 		return instanceConfig{}, err
 	}
 	ret.Instance = args[0]

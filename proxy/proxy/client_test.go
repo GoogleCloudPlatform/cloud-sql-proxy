@@ -332,16 +332,13 @@ func TestValidate(t *testing.T) {
 	}
 
 	for _, test := range table {
-		gotValid, gotError, _, _, _, _ := Validate(test.in)
-		if gotValid != test.wantValid {
-			t.Errorf("Validate(%q): got %v for valid, want %v", test.in, gotValid, test.wantValid)
-		}
+		_, _, _, _, gotError := ParseInstanceConnectionName(test.in)
 		var gotErrorStr string
 		if gotError != nil {
 			gotErrorStr = gotError.Error()
 		}
 		if gotErrorStr != test.wantErrorStr {
-			t.Errorf("Validate(%q): got %v for error, want %v", test.in, gotError, test.wantErrorStr)
+			t.Errorf("Validate(%q): got \"%v\" for error, want \"%v\"", test.in, gotError, test.wantErrorStr)
 		}
 	}
 }

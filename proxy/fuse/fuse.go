@@ -243,8 +243,7 @@ func (r *fsRoot) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse
 	r.sockLock.Lock()
 	defer r.sockLock.Unlock()
 
-	if valid, err, _, _, _, _ := proxy.Validate(instance); !valid {
-		logging.Errorf(err.Error())
+	if _, _, _, _, err := proxy.ParseInstanceConnectionName(instance); err != nil {
 		return nil, err
 	}
 
