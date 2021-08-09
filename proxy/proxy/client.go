@@ -329,12 +329,6 @@ func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 }
 
 func (c *Client) cachedCfg(ctx context.Context, instance string) (string, *tls.Config, string, error) {
-	// Validate instance string in order to exclude potentially unwanted directories picked up by fuse.
-	if valid, err := util.Validate(instance); !valid {
-		logging.Errorf(err.Error())
-		return "", nil, "", err
-	}
-
 	c.cacheL.RLock()
 
 	throttle := c.RefreshCfgThrottle
