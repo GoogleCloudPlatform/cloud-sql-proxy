@@ -17,7 +17,6 @@ package util
 
 import "strings"
 
-
 // SplitName splits a fully qualified instance into its project, region, and
 // instance name components. While we make the transition to regionalized
 // metadata, the region is optional.
