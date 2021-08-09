@@ -35,9 +35,14 @@ const (
 // waitForStart blocks until the currently running proxy completes startup.
 func waitForStart(ctx context.Context) {
 	for {
-		resp, err := http.Get("http://localhost:" + testPort + startupPath)
-		if err == nil && resp.StatusCode == http.StatusOK {
+		select {
+		case <-ctx.Done():
 			return
+		default:
+			resp, err := http.Get("http://localhost:" + testPort + startupPath)
+			if err == nil && resp.StatusCode == http.StatusOK {
+				return
+			}
 		}
 	}
 }
@@ -66,7 +71,7 @@ func TestSingleInstanceDial(t *testing.T) {
 	}
 	defer cmd.Process.Kill()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
 	defer cancel()
 	waitForStart(ctx)
 
@@ -105,7 +110,7 @@ func TestMultiInstanceDial(t *testing.T) {
 	}
 	defer cmd.Process.Kill()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10 * time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
 	defer cancel()
 	waitForStart(ctx)
 
