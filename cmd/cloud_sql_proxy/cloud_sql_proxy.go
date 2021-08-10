@@ -626,6 +626,7 @@ func startProxy() int {
 
 	shutdown := make(chan int, 1)
 	go func() {
+		defer func() { cancel(); close(shutdown) }()
 		<-signals
 		logging.Infof("Received TERM signal. Waiting up to %s before terminating.", *termTimeout)
 		go func() {
@@ -634,14 +635,12 @@ func startProxy() int {
 			}
 		}()
 
-		defer cancel()
 		err := proxyClient.Shutdown(*termTimeout)
 		if err != nil {
 			logging.Errorf("Error during SIGTERM shutdown: %v", err)
 			shutdown <- 2
 			return
 		}
-		close(shutdown)
 	}()
 
 	// If running under systemd with Type=notify, we'll send a message to the
