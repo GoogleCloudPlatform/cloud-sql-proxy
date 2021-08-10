@@ -654,7 +654,6 @@ func startProxy() error {
 	}()
 	proxyClient.RunContext(ctx, connSrc)
 	if err, ok := <-shutdown; ok {
-		fmt.Println("here")
 		return err
 	}
 	return nil
