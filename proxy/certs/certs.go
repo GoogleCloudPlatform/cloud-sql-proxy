@@ -81,7 +81,6 @@ type RemoteOpts struct {
 	// on the first connection to a database. The default behavior is to generate
 	// the key when the CertSource is created.
 	DelayKeyGenerate bool
-
 }
 
 // NewCertSourceOpts returns a CertSource configured with the provided Opts.
@@ -151,8 +150,6 @@ type RemoteCertSource struct {
 	EnableIAMLogin bool
 	// token source for the token information used in cert creation
 	TokenSource oauth2.TokenSource
-	// flag to use sslCerts apis instead of connect apis
-	UseSslCerts bool
 }
 
 // Constants for backoffAPIRetry. These cause the retry logic to scale the
@@ -235,6 +232,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		generateEphemeralCertRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
 	}
 	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, &generateEphemeralCertRequest)
+
 	var data *sqladmin.GenerateEphemeralCertResponse
 	err = backoffAPIRetry("generateEphemeral for", instance, func() error {
 		data, err = req.Do()
@@ -310,6 +308,7 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	p, region, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", region, n)
 	req := s.serv.Connect.Get(p, regionName)
+
 	var data *sqladmin.ConnectSettings
 	err = backoffAPIRetry("get instance", instance, func() error {
 		data, err = req.Do()
@@ -337,5 +336,4 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	c, err := parseCert(data.ServerCaCert.Cert)
 
 	return c, ipAddrInUse, p + ":" + n, data.DatabaseVersion, err
-
 }
