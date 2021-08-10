@@ -32,6 +32,17 @@ const (
 	testPort      = "8090"
 )
 
+func requireConnNames(t *testing.T) {
+	switch "" {
+	case *mysqlConnName:
+		t.Fatal("'mysql_conn_name' not set")
+	case *postgresConnName:
+		t.Fatal("'postgres_conn_name' not set")
+	case *sqlserverConnName:
+		t.Fatal("'sqlserver_conn_name' not set")
+	}
+}
+
 // waitForStart blocks until the currently running proxy completes startup.
 func waitForStart(ctx context.Context) {
 	for {
@@ -47,25 +58,14 @@ func waitForStart(ctx context.Context) {
 	}
 }
 
-// Test to verify that when a proxy client serves one instance that can successfully be dialed,
-// the readiness endpoint serves http.StatusOK.
-func TestSingleInstanceDial(t *testing.T) {
-	switch "" {
-	case *mysqlConnName:
-		t.Fatal("'mysql_conn_name' not set")
-	}
-
-	binPath, err := compileProxy()
-	if err != nil {
-		t.Fatalf("Failed to compile proxy: %s", err)
-	}
-	defer os.RemoveAll(binPath)
-
+// singleInstanceDial verifies that when a proxy client serves the given instance, the readiness
+// endpoint serves http.StatusOK.
+func singleInstanceDial(t *testing.T, binPath string, connName string, port int) {
 	var args []string
-	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", *mysqlConnName, mysqlPort), "-use_http_health_check")
+	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", connName, port), "-use_http_health_check")
 
 	cmd := exec.Command(binPath, args...)
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
 		t.Fatalf("Failed to start proxy: %s", err)
 	}
@@ -84,17 +84,26 @@ func TestSingleInstanceDial(t *testing.T) {
 	}
 }
 
+// Test to verify that when a proxy client serves one instance that can successfully be dialed,
+// the readiness endpoint serves http.StatusOK.
+func TestSingleInstanceDial(t *testing.T) {
+	requireConnNames(t)
+
+	binPath, err := compileProxy()
+	if err != nil {
+		t.Fatalf("Failed to compile proxy: %s", err)
+	}
+	defer os.RemoveAll(binPath)
+
+	singleInstanceDial(t, binPath, *mysqlConnName, mysqlPort)
+	singleInstanceDial(t, binPath, *postgresConnName, postgresPort)
+	singleInstanceDial(t, binPath, *sqlserverConnName, sqlserverPort)
+}
+
 // Test to verify that when a proxy client serves multiple instances that can all be successfully dialed,
 // the readiness endpoint serves http.StatusOK.
 func TestMultiInstanceDial(t *testing.T) {
-	switch "" {
-	case *mysqlConnName:
-		t.Fatal("'mysql_conn_name' not set")
-	case *postgresConnName:
-		t.Fatal("'postgres_conn_name' not set")
-	case *sqlserverConnName:
-		t.Fatal("'sqlserver_conn_name' not set")
-	}
+	requireConnNames(t)
 
 	binPath, err := compileProxy()
 	if err != nil {
