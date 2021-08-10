@@ -80,7 +80,7 @@ func TestSingleInstanceDial(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("%v returned status code %v instead of %v", readinessPath, resp.StatusCode, http.StatusOK)
+		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
 	}
 }
 
@@ -122,6 +122,6 @@ func TestMultiInstanceDial(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("%v returned status code %v instead of %v", readinessPath, resp.StatusCode, http.StatusOK)
+		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
 	}
 }

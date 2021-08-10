@@ -62,7 +62,7 @@ func TestLiveness(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusOK)
+		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
 	}
 }
 
@@ -83,7 +83,7 @@ func TestStartupPass(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("%v returned status code %v instead of %v", startupPath, resp.StatusCode, http.StatusOK)
+		t.Errorf("%v: want %v, got %v", startupPath, http.StatusOK, resp.StatusCode)
 	}
 
 	resp, err = http.Get("http://localhost:" + testPort + readinessPath)
@@ -91,7 +91,7 @@ func TestStartupPass(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("%v returned status code %v instead of %v", readinessPath, resp.StatusCode, http.StatusOK)
+		t.Errorf("%v: want %v, got %v", readinessPath, http.StatusOK, resp.StatusCode)
 	}
 }
 
@@ -109,7 +109,7 @@ func TestStartupFail(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusServiceUnavailable {
-		t.Errorf("%v returned status code %v instead of %v", startupPath, resp.StatusCode, http.StatusServiceUnavailable)
+		t.Errorf("%v: want %v, got %v", startupPath, http.StatusOK, resp.StatusCode)
 	}
 
 	resp, err = http.Get("http://localhost:" + testPort + readinessPath)
@@ -117,7 +117,7 @@ func TestStartupFail(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusServiceUnavailable {
-		t.Errorf("%v returned status code %v instead of %v", readinessPath, resp.StatusCode, http.StatusServiceUnavailable)
+		t.Errorf("%v: want %v, got %v", readinessPath, http.StatusOK, resp.StatusCode)
 	}
 }
 
@@ -141,7 +141,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusServiceUnavailable {
-		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusServiceUnavailable)
+		t.Errorf("want %v, got %v", http.StatusServiceUnavailable, resp.StatusCode)
 	}
 }
 
@@ -176,7 +176,7 @@ func TestDialFail(t *testing.T) {
 				t.Fatalf("%v: HTTP GET failed: %v", name, err)
 			}
 			if resp.StatusCode != http.StatusServiceUnavailable {
-				t.Errorf("%v: Got status code %v instead of %v", name, resp.StatusCode, http.StatusServiceUnavailable)
+				t.Errorf("want %v, got %v", http.StatusServiceUnavailable, resp.StatusCode)
 			}
 		}()
 	}
@@ -196,7 +196,7 @@ func TestCloseHealthCheck(t *testing.T) {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Got status code %v instead of %v", resp.StatusCode, http.StatusOK)
+		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
 	}
 
 	err = s.Close(context.Background())
