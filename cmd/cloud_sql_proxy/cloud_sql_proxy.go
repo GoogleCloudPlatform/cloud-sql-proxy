@@ -442,12 +442,12 @@ func gcloudProject() ([]string, error) {
 	return []string{cfg.Configuration.Properties.Core.Project}, nil
 }
 
-func startProxy() error {
+func startProxy() int {
 	flag.Parse()
 
 	if *version {
 		fmt.Println("Cloud SQL Auth proxy:", semanticVersion())
-		return nil
+		return 0
 	}
 
 	if *logDebugStdout {
@@ -462,7 +462,7 @@ func startProxy() error {
 		cleanup, err := logging.EnableStructuredLogs(*logDebugStdout, *verbose)
 		if err != nil {
 			logging.Errorf("failed to enable structured logs: %v", err)
-			return err
+			return 1
 		}
 		defer cleanup()
 	}
@@ -484,7 +484,7 @@ func startProxy() error {
 	if *host != "" && !strings.HasSuffix(*host, "/") {
 		logging.Errorf("Flag host should always end with /")
 		flag.PrintDefaults()
-		return errors.New("invalid command")
+		return 0
 	}
 
 	// TODO: needs a better place for consolidation
@@ -503,36 +503,36 @@ func startProxy() error {
 			logging.Infof("Using gcloud's active project: %v", projList)
 		} else if gErr, ok := err.(*util.GcloudError); ok && gErr.Status == util.GcloudNotFound {
 			logging.Errorf("gcloud is not in the path and -instances and -projects are empty")
-			return err
+			return 1
 		} else {
 			logging.Errorf("unable to retrieve the active gcloud project and -instances and -projects are empty: %v", err)
-			return err
+			return 1
 		}
 	}
 
 	onGCE := metadata.OnGCE()
 	if err := checkFlags(onGCE); err != nil {
 		logging.Errorf(err.Error())
-		return err
+		return 1
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	client, tokSrc, err := authenticatedClient(ctx)
 	if err != nil {
 		logging.Errorf(err.Error())
-		return err
+		return 1
 	}
 
 	ins, err := listInstances(ctx, client, projList)
 	if err != nil {
 		logging.Errorf(err.Error())
-		return err
+		return 1
 	}
 	instList = append(instList, ins...)
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client, *skipInvalidInstanceConfigs)
 	if err != nil {
 		logging.Errorf(err.Error())
-		return err
+		return 1
 	}
 
 	// We only need to store connections in a ConnSet if FUSE is used; otherwise
@@ -573,7 +573,7 @@ func startProxy() error {
 		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort)
 		if err != nil {
 			logging.Errorf("Could not initialize health check server: %v", err)
-			return err
+			return 1
 		}
 		defer hc.Close(ctx)
 	}
@@ -584,7 +584,7 @@ func startProxy() error {
 		c, fuse, err := fuse.NewConnSrc(*dir, *fuseTmp, proxyClient, connset)
 		if err != nil {
 			logging.Errorf("Could not start fuse directory at %q: %v", *dir, err)
-			return err
+			return 1
 		}
 		connSrc = c
 		defer fuse.Close()
@@ -610,7 +610,7 @@ func startProxy() error {
 		c, err := WatchInstances(*dir, cfgs, updates, client)
 		if err != nil {
 			logging.Errorf(err.Error())
-			return err
+			return 1
 		}
 		connSrc = c
 	}
@@ -624,7 +624,7 @@ func startProxy() error {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
 
-	shutdown := make(chan error, 1)
+	shutdown := make(chan int, 1)
 	go func() {
 		<-signals
 		logging.Infof("Received TERM signal. Waiting up to %s before terminating.", *termTimeout)
@@ -634,11 +634,11 @@ func startProxy() error {
 			}
 		}()
 
-		cancel()
+		defer cancel()
 		err := proxyClient.Shutdown(*termTimeout)
 		if err != nil {
 			logging.Errorf("Error during SIGTERM shutdown: %v", err)
-			shutdown <- err
+			shutdown <- 2
 			return
 		}
 		close(shutdown)
@@ -653,14 +653,13 @@ func startProxy() error {
 		}
 	}()
 	proxyClient.RunContext(ctx, connSrc)
-	if err, ok := <-shutdown; ok {
-		return err
+	if code, ok := <-shutdown; ok {
+		return code
 	}
-	return nil
+	return 0
 }
 
 func main() {
-	if err := startProxy(); err != nil {
-		os.Exit(1)
-	}
+	code := startProxy()
+	os.Exit(code)
 }
