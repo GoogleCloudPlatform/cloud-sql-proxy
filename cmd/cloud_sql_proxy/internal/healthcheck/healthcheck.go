@@ -158,10 +158,11 @@ func isReady(c *proxy.Client, s *Server) bool {
 		instances = c.GetInstances()
 	}
 
+	ctx := context.Background()
 	canDial := true
 	for _, inst := range instances {
 		go func(inst string) {
-			conn, err := c.Dial(inst)
+			conn, err := c.DialContext(ctx, inst)
 			if err != nil {
 				logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
 				canDial = false
