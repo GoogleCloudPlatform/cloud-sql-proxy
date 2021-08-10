@@ -82,8 +82,6 @@ type RemoteOpts struct {
 	// the key when the CertSource is created.
 	DelayKeyGenerate bool
 
-	// If set, use ssl certs apis instead of connect apis
-	UseSslCerts bool
 }
 
 // NewCertSourceOpts returns a CertSource configured with the provided Opts.
@@ -123,7 +121,6 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 		IPAddrTypes:    opts.IPAddrTypeOpts,
 		EnableIAMLogin: opts.EnableIAMLogin,
 		TokenSource:    opts.TokenSource,
-		UseSslCerts:    opts.UseSslCerts,
 	}
 	if !opts.DelayKeyGenerate {
 		// Generate the RSA key now, but don't block on it.
@@ -215,9 +212,6 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	p, r, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", r, n)
 	pubKey := string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"}))
-	createEphemeralRequest := sqladmin.SslCertsCreateEphemeralRequest{
-		PublicKey: pubKey,
-	}
 	generateEphemeralCertRequest := sqladmin.GenerateEphemeralCertRequest{
 		PublicKey: pubKey,
 	}
@@ -238,37 +232,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		}
 		// TODO: remove this once issue with OAuth2 Tokens is resolved.
 		// See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/852.
-		createEphemeralRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
 		generateEphemeralCertRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
-	}
-	// If UseSslCerts flag is used, use sslCerts apis instead of connect apis
-	if s.UseSslCerts {
-		req := s.serv.SslCerts.CreateEphemeral(p, regionName, &createEphemeralRequest)
-		var data *sqladmin.SslCert
-		err = backoffAPIRetry("createEphemeral for", instance, func() error {
-			data, err = req.Do()
-			return err
-		})
-		if err != nil {
-			return tls.Certificate{}, err
-		}
-
-		c, err := parseCert(data.Cert)
-		if err != nil {
-			return tls.Certificate{}, fmt.Errorf("couldn't parse ephemeral certificate for instance %q: %v", instance, err)
-		}
-		if s.EnableIAMLogin {
-			// Adjust the certificate's expiration to be the earlier of tok.Expiry or c.NotAfter
-			if tok.Expiry.Before(c.NotAfter) {
-				c.NotAfter = tok.Expiry
-			}
-		}
-		logging.Verbosef("get SSL EphemeralCert successful")
-		return tls.Certificate{
-			Certificate: [][]byte{c.Raw},
-			PrivateKey:  s.generateKey(),
-			Leaf:        c,
-		}, nil
 	}
 	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, &generateEphemeralCertRequest)
 	var data *sqladmin.GenerateEphemeralCertResponse
@@ -291,7 +255,6 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 			c.NotAfter = tok.Expiry
 		}
 	}
-	logging.Verbosef("get Connect SSL EphemeralCert successful")
 	return tls.Certificate{
 		Certificate: [][]byte{c.Raw},
 		PrivateKey:  s.generateKey(),
@@ -322,9 +285,9 @@ func (s *RemoteCertSource) generateKey() *rsa.PrivateKey {
 }
 
 // Find the first matching IP address by user input IP address types
-func (s *RemoteCertSource) findIPAddr(ipAddresses []*sqladmin.IpMapping, instance string) (ipAddrInUse string, err error) {
+func (s *RemoteCertSource) findIPAddr(data *sqladmin.ConnectSettings, instance string) (ipAddrInUse string, err error) {
 	for _, eachIPAddrTypeByUser := range s.IPAddrTypes {
-		for _, eachIPAddrTypeOfInstance := range ipAddresses {
+		for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
 			if strings.ToUpper(eachIPAddrTypeOfInstance.Type) == strings.ToUpper(eachIPAddrTypeByUser) {
 				ipAddrInUse = eachIPAddrTypeOfInstance.IpAddress
 				return ipAddrInUse, nil
@@ -333,7 +296,7 @@ func (s *RemoteCertSource) findIPAddr(ipAddresses []*sqladmin.IpMapping, instanc
 	}
 
 	ipAddrTypesOfInstance := ""
-	for _, eachIPAddrTypeOfInstance := range ipAddresses {
+	for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
 		ipAddrTypesOfInstance += fmt.Sprintf("(TYPE=%v, IP_ADDR=%v)", eachIPAddrTypeOfInstance.Type, eachIPAddrTypeOfInstance.IpAddress)
 	}
 
@@ -346,54 +309,6 @@ func (s *RemoteCertSource) findIPAddr(ipAddresses []*sqladmin.IpMapping, instanc
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
 	p, region, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", region, n)
-	if s.UseSslCerts {
-		req := s.serv.Instances.Get(p, regionName)
-		var data *sqladmin.DatabaseInstance
-		err = backoffAPIRetry("get instance", instance, func() error {
-			data, err = req.Do()
-			return err
-		})
-		if err != nil {
-			return nil, "", "", "", err
-		}
-
-		// TODO(chowski): remove this when us-central is removed.
-		if data.Region == "us-central" {
-			data.Region = "us-central1"
-		}
-		if data.Region != region {
-			if region == "" {
-				err = fmt.Errorf("instance %v doesn't provide region", instance)
-			} else {
-				err = fmt.Errorf(`for connection string "%s": got region %q, want %q`, instance, region, data.Region)
-			}
-			if s.checkRegion {
-				return nil, "", "", "", err
-			}
-			logging.Errorf("%v", err)
-			logging.Errorf("WARNING: specifying the correct region in an instance string will become required in a future version!")
-		}
-
-		if len(data.IpAddresses) == 0 {
-			return nil, "", "", "", fmt.Errorf("no IP address found for %v", instance)
-		}
-		if data.BackendType == "FIRST_GEN" {
-			logging.Errorf("WARNING: proxy client does not support first generation Cloud SQL instances.")
-			return nil, "", "", "", fmt.Errorf("%q is a first generation instance", instance)
-		}
-
-		// Find the first matching IP address by user input IP address types
-		ipAddrInUse := ""
-		ipAddrInUse, err = s.findIPAddr(data.IpAddresses, instance)
-		if err != nil {
-			return nil, "", "", "", err
-		}
-		c, err := parseCert(data.ServerCaCert.Cert)
-
-		return c, ipAddrInUse, p + ":" + n, data.DatabaseVersion, err
-
-	}
-
 	req := s.serv.Connect.Get(p, regionName)
 	var data *sqladmin.ConnectSettings
 	err = backoffAPIRetry("get instance", instance, func() error {
@@ -414,7 +329,7 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 
 	// Find the first matching IP address by user input IP address types
 	ipAddrInUse := ""
-	ipAddrInUse, err = s.findIPAddr(data.IpAddresses, instance)
+	ipAddrInUse, err = s.findIPAddr(data, instance)
 	if err != nil {
 		return nil, "", "", "", err
 	}

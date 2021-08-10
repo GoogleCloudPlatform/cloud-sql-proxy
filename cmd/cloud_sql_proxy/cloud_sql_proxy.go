@@ -136,9 +136,6 @@ unavailable.`,
 	// Settings for healthcheck
 	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an HTTP server that checks and communicates the health of the proxy client.")
 	healthCheckPort    = flag.String("health_check_port", "8090", "When applicable, health checks take place on this port number. Defaults to 8090.")
-
-	// Settings to use sslCerts apis instead of connect apis
-	useSslCerts = flag.Bool("use_sslcerts_api", false, "When set, sslCerts apis are used instead of connect apis to handle certificates.")
 )
 
 const (
@@ -255,10 +252,6 @@ Connection:
   -dir
     When using Unix sockets (the default for systems which support them), the
     Proxy places the sockets in the directory specified by the -dir parameter.
-
-  -use_sslcerts_api
-   You can use this flag to use sslCerts api to generate/retrieve certificates instead 
-   of the connect apis  
 
 Automatic instance discovery:
    If the Google Cloud SQL is installed on the local machine and no instance
@@ -586,7 +579,6 @@ func main() {
 			IPAddrTypeOpts: ipAddrTypeOptsInput,
 			EnableIAMLogin: *enableIAMLogin,
 			TokenSource:    tokSrc,
-			UseSslCerts:    *useSslCerts,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
