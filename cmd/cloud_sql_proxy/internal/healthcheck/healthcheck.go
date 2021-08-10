@@ -157,17 +157,24 @@ func isReady(c *proxy.Client, s *Server) bool {
 	if s.instances == nil { // Proxy is in fuse mode.
 		instances = c.GetInstances()
 	}
-	for _, inst := range instances {
-		conn, err := c.Dial(inst)
-		if err != nil {
-			logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
-			return false
-		}
 
-		err = conn.Close()
-		if err != nil {
-			logging.Errorf("[Health Check] Readiness: error while closing connection: %v", err)
-		}
+	canDial := true
+	for _, inst := range instances {
+		go func(inst string) {
+			conn, err := c.Dial(inst)
+			if err != nil {
+				logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
+				canDial = false
+			}
+
+			err = conn.Close()
+			if err != nil {
+				logging.Errorf("[Health Check] Readiness: error while closing connection: %v", err)
+			}
+		}(inst)
+	}
+	if !canDial {
+		return false
 	}
 
 	return true
