@@ -166,7 +166,7 @@ func isReady(c *proxy.Client, s *Server) bool {
 
 		err = conn.Close()
 		if err != nil {
-			logging.Errorf("[Health Check] Error while closing connection: %v", err)
+			logging.Errorf("[Health Check] Readiness: error while closing connection: %v", err)
 		}
 	}
 
