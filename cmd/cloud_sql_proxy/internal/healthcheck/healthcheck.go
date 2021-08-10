@@ -160,8 +160,10 @@ func isReady(c *proxy.Client, s *Server) bool {
 
 	ctx := context.Background()
 	canDial := true
+	var wg sync.WaitGroup
 	for _, inst := range instances {
 		go func(inst string) {
+			wg.Add(1)
 			conn, err := c.DialContext(ctx, inst)
 			if err != nil {
 				logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
@@ -172,8 +174,10 @@ func isReady(c *proxy.Client, s *Server) bool {
 			if err != nil {
 				logging.Errorf("[Health Check] Readiness: error while closing connection: %v", err)
 			}
+			wg.Done()
 		}(inst)
 	}
+	wg.Wait()
 	if !canDial {
 		return false
 	}
