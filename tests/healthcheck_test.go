@@ -92,6 +92,8 @@ func TestMultiInstanceDial(t *testing.T) {
 		t.Fatal("'mysql_conn_name' not set")
 	case *postgresConnName:
 		t.Fatal("'postgres_conn_name' not set")
+	case *sqlserverConnName:
+		t.Fatal("'sqlserver_conn_name' not set")
 	}
 
 	binPath, err := compileProxy()
@@ -101,7 +103,8 @@ func TestMultiInstanceDial(t *testing.T) {
 	defer os.RemoveAll(binPath)
 
 	var args []string
-	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d,%s=tcp:%d", *mysqlConnName, mysqlPort, *postgresConnName, postgresPort), "-use_http_health_check")
+	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d,%s=tcp:%d,%s=tcp:%d", *mysqlConnName, mysqlPort, *postgresConnName, postgresPort, *sqlserverConnName, sqlserverPort))
+	args = append(args, "-use_http_health_check")
 
 	cmd := exec.Command(binPath, args...)
 	err = cmd.Start()
