@@ -158,13 +158,11 @@ func isReady(c *proxy.Client, s *Server) bool {
 		instances = c.GetInstances()
 	}
 	for _, inst := range instances {
-		logging.Infof("[Health Check] Trying to connect to %q", inst)
 		conn, err := c.Dial(inst)
 		if err != nil {
 			logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
 			return false
 		}
-		logging.Infof("[Health Check] Successful connection to %q", inst)
 
 		err = conn.Close()
 		if err != nil {
