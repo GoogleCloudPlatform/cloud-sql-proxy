@@ -30,17 +30,6 @@ const (
 	testPort      = "8090"
 )
 
-func requireConnNames(t *testing.T) {
-	switch "" {
-	case *mysqlConnName:
-		t.Fatal("'mysql_conn_name' not set")
-	case *postgresConnName:
-		t.Fatal("'postgres_conn_name' not set")
-	case *sqlserverConnName:
-		t.Fatal("'sqlserver_conn_name' not set")
-	}
-}
-
 // waitForStart blocks until the currently running proxy completes startup.
 func waitForStart(ctx context.Context) {
 	for {
