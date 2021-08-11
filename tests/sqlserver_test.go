@@ -62,7 +62,7 @@ func TestSqlserverConnLimit(t *testing.T) {
 	proxyConnLimitTest(t, *sqlserverConnName, "sqlserver", dsn, sqlserverPort)
 }
 
-// Test to verify that when a proxy client serves one sqlserver instance that can be 
+// Test to verify that when a proxy client serves one sqlserver instance that can be
 // dialed successfully, the health check readiness endpoint serves http.StatusOK.
 func TestSqlserverDial(t *testing.T) {
 	switch "" {

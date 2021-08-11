@@ -137,7 +137,7 @@ func TestPostgresHook(t *testing.T) {
 	}
 }
 
-// Test to verify that when a proxy client serves one postgres instance that can be 
+// Test to verify that when a proxy client serves one postgres instance that can be
 // dialed successfully, the health check readiness endpoint serves http.StatusOK.
 func TestPostgresDial(t *testing.T) {
 	switch "" {

@@ -31,7 +31,7 @@ func requireAllVars(t *testing.T) {
 	allVars = append(allVars, *mysqlConnName, *mysqlUser, *mysqlPass, *mysqlDb)
 	allVars = append(allVars, *postgresConnName, *postgresUser, *postgresPass, *postgresDb)
 	allVars = append(allVars, *sqlserverConnName, *sqlserverUser, *sqlserverPass, *sqlserverDb)
-	
+
 	for _, envVar := range allVars {
 		if envVar == "" {
 			t.Skip("skipping test, all environment variable must be defined")
