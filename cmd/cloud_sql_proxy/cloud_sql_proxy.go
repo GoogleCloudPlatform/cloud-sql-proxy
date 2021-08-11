@@ -442,29 +442,12 @@ func gcloudProject() ([]string, error) {
 	return []string{cfg.Configuration.Properties.Core.Project}, nil
 }
 
-// Main executes the main function of the proxy, allowing it to be called from tests.
-//
-// Setting timeout to a value greater than 0 causes the process to panic after
-// that amount of time. This is to sidestep an issue where sending a Signal to
-// the process (via the SSH library) doesn't seem to have an effect, and
-// closing the SSH session causes the process to get leaked. This timeout will
-// at least cause the proxy to exit eventually.
-func Main(timeout time.Duration) {
-	if timeout > 0 {
-		go func() {
-			time.Sleep(timeout)
-			panic("timeout exceeded")
-		}()
-	}
-	main()
-}
-
-func main() {
+func runProxy() int {
 	flag.Parse()
 
 	if *version {
 		fmt.Println("Cloud SQL Auth proxy:", semanticVersion())
-		return
+		return 0
 	}
 
 	if *logDebugStdout {
@@ -479,7 +462,7 @@ func main() {
 		cleanup, err := logging.EnableStructuredLogs(*logDebugStdout, *verbose)
 		if err != nil {
 			logging.Errorf("failed to enable structured logs: %v", err)
-			os.Exit(1)
+			return 1
 		}
 		defer cleanup()
 	}
@@ -501,7 +484,7 @@ func main() {
 	if *host != "" && !strings.HasSuffix(*host, "/") {
 		logging.Errorf("Flag host should always end with /")
 		flag.PrintDefaults()
-		return
+		return 0
 	}
 
 	// TODO: needs a better place for consolidation
@@ -520,36 +503,36 @@ func main() {
 			logging.Infof("Using gcloud's active project: %v", projList)
 		} else if gErr, ok := err.(*util.GcloudError); ok && gErr.Status == util.GcloudNotFound {
 			logging.Errorf("gcloud is not in the path and -instances and -projects are empty")
-			os.Exit(1)
+			return 1
 		} else {
 			logging.Errorf("unable to retrieve the active gcloud project and -instances and -projects are empty: %v", err)
-			os.Exit(1)
+			return 1
 		}
 	}
 
 	onGCE := metadata.OnGCE()
 	if err := checkFlags(onGCE); err != nil {
 		logging.Errorf(err.Error())
-		os.Exit(1)
+		return 1
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	client, tokSrc, err := authenticatedClient(ctx)
 	if err != nil {
 		logging.Errorf(err.Error())
-		os.Exit(1)
+		return 1
 	}
 
 	ins, err := listInstances(ctx, client, projList)
 	if err != nil {
 		logging.Errorf(err.Error())
-		os.Exit(1)
+		return 1
 	}
 	instList = append(instList, ins...)
 	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client, *skipInvalidInstanceConfigs)
 	if err != nil {
 		logging.Errorf(err.Error())
-		os.Exit(1)
+		return 1
 	}
 
 	// We only need to store connections in a ConnSet if FUSE is used; otherwise
@@ -606,7 +589,7 @@ func main() {
 		c, fuse, err := fuse.NewConnSrc(*dir, *fuseTmp, proxyClient, connset)
 		if err != nil {
 			logging.Errorf("Could not start fuse directory at %q: %v", *dir, err)
-			os.Exit(1)
+			return 1
 		}
 		connSrc = c
 		defer fuse.Close()
@@ -632,7 +615,7 @@ func main() {
 		c, err := WatchInstances(*dir, cfgs, updates, client)
 		if err != nil {
 			logging.Errorf(err.Error())
-			os.Exit(1)
+			return 1
 		}
 		connSrc = c
 	}
@@ -646,7 +629,9 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
 
+	shutdown := make(chan int, 1)
 	go func() {
+		defer func() { cancel(); close(shutdown) }()
 		<-signals
 		logging.Infof("Received TERM signal. Waiting up to %s before terminating.", *termTimeout)
 		go func() {
@@ -656,11 +641,11 @@ func main() {
 		}()
 
 		err := proxyClient.Shutdown(*termTimeout)
-		if err == nil {
-			os.Exit(0)
+		if err != nil {
+			logging.Errorf("Error during SIGTERM shutdown: %v", err)
+			shutdown <- 2
+			return
 		}
-		logging.Errorf("Error during SIGTERM shutdown: %v", err)
-		os.Exit(2)
 	}()
 
 	// If running under systemd with Type=notify, we'll send a message to the
@@ -671,5 +656,14 @@ func main() {
 			logging.Errorf("Failed to notify systemd of readiness: %v", err)
 		}
 	}()
-	proxyClient.Run(connSrc)
+	proxyClient.RunContext(ctx, connSrc)
+	if code, ok := <-shutdown; ok {
+		return code
+	}
+	return 0
+}
+
+func main() {
+	code := runProxy()
+	os.Exit(code)
 }
