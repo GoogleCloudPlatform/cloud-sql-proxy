@@ -442,7 +442,7 @@ func gcloudProject() ([]string, error) {
 	return []string{cfg.Configuration.Properties.Core.Project}, nil
 }
 
-func startProxy() int {
+func runProxy() int {
 	flag.Parse()
 
 	if *version {
@@ -659,6 +659,6 @@ func startProxy() int {
 }
 
 func main() {
-	code := startProxy()
+	code := runProxy()
 	os.Exit(code)
 }
