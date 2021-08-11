@@ -136,3 +136,20 @@ func TestPostgresHook(t *testing.T) {
 		t.Fatalf("query failed: %s", err)
 	}
 }
+
+// Test to verify that when a proxy client serves one postgres instance that can be 
+// dialed successfully, the health check readiness endpoint serves http.StatusOK.
+func TestPostgresDial(t *testing.T) {
+	switch "" {
+	case *postgresConnName:
+		t.Fatal("'postgres_conn_name' not set")
+	}
+
+	binPath, err := compileProxy()
+	if err != nil {
+		t.Fatalf("Failed to compile proxy: %s", err)
+	}
+	defer os.RemoveAll(binPath)
+
+	singleInstanceDial(t, binPath, *postgresConnName, postgresPort)
+}

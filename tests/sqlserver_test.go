@@ -61,3 +61,20 @@ func TestSqlserverConnLimit(t *testing.T) {
 	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1:%d/%s", *sqlserverUser, *sqlserverPass, sqlserverPort, *sqlserverDb)
 	proxyConnLimitTest(t, *sqlserverConnName, "sqlserver", dsn, sqlserverPort)
 }
+
+// Test to verify that when a proxy client serves one sqlserver instance that can be 
+// dialed successfully, the health check readiness endpoint serves http.StatusOK.
+func TestSqlserverDial(t *testing.T) {
+	switch "" {
+	case *sqlserverConnName:
+		t.Fatal("'sqlserver_conn_name' not set")
+	}
+
+	binPath, err := compileProxy()
+	if err != nil {
+		t.Fatalf("Failed to compile proxy: %s", err)
+	}
+	defer os.RemoveAll(binPath)
+
+	singleInstanceDial(t, binPath, *sqlserverConnName, sqlserverPort)
+}

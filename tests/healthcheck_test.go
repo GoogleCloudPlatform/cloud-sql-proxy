@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !skip_healthcheck
-
+// healthcheck_test.go provides some helpers for end to end health check server tests.
 package tests
 
 import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -66,57 +64,6 @@ func singleInstanceDial(t *testing.T, binPath string, connName string, port int)
 
 	cmd := exec.Command(binPath, args...)
 	err := cmd.Start()
-	if err != nil {
-		t.Fatalf("Failed to start proxy: %s", err)
-	}
-	defer cmd.Process.Kill()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
-	defer cancel()
-	waitForStart(ctx)
-
-	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
-	if err != nil {
-		t.Fatalf("HTTP GET failed: %v", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
-	}
-}
-
-// Test to verify that when a proxy client serves one instance that can successfully be dialed,
-// the readiness endpoint serves http.StatusOK.
-func TestSingleInstanceDial(t *testing.T) {
-	requireConnNames(t)
-
-	binPath, err := compileProxy()
-	if err != nil {
-		t.Fatalf("Failed to compile proxy: %s", err)
-	}
-	defer os.RemoveAll(binPath)
-
-	singleInstanceDial(t, binPath, *mysqlConnName, mysqlPort)
-	singleInstanceDial(t, binPath, *postgresConnName, postgresPort)
-	singleInstanceDial(t, binPath, *sqlserverConnName, sqlserverPort)
-}
-
-// Test to verify that when a proxy client serves multiple instances that can all be successfully dialed,
-// the readiness endpoint serves http.StatusOK.
-func TestMultiInstanceDial(t *testing.T) {
-	requireConnNames(t)
-
-	binPath, err := compileProxy()
-	if err != nil {
-		t.Fatalf("Failed to compile proxy: %s", err)
-	}
-	defer os.RemoveAll(binPath)
-
-	var args []string
-	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d,%s=tcp:%d,%s=tcp:%d", *mysqlConnName, mysqlPort, *postgresConnName, postgresPort, *sqlserverConnName, sqlserverPort))
-	args = append(args, "-use_http_health_check")
-
-	cmd := exec.Command(binPath, args...)
-	err = cmd.Start()
 	if err != nil {
 		t.Fatalf("Failed to start proxy: %s", err)
 	}
