@@ -450,7 +450,6 @@ func (c *Client) tryConnect(ctx context.Context, addr, instance string, cfg *tls
 		c.invalidateCfg(cfg, instance)
 		return nil, err
 	}
-
 	return ret, nil
 }
 
