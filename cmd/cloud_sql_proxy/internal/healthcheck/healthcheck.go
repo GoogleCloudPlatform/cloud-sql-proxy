@@ -161,11 +161,11 @@ func isReady(c *proxy.Client, s *Server) bool {
 	ctx := context.Background()
 
 	canDial := true
-	dialL := sync.Mutex{}
+	var dialL sync.Mutex
 	var wg sync.WaitGroup
-	wg.Add(len(instances))
 
 	for _, inst := range instances {
+		wg.Add(1)
 		go func(inst string) {
 			conn, err := c.DialContext(ctx, inst)
 			if err != nil {
@@ -184,9 +184,5 @@ func isReady(c *proxy.Client, s *Server) bool {
 	}
 	wg.Wait()
 
-	if !canDial {
-		return false
-	}
-
-	return true
+	return canDial
 }

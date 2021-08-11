@@ -27,7 +27,11 @@ import (
 
 // requireAllVars skips the given test if at least one environment variable is undefined.
 func requireAllVars(t *testing.T) {
-	allVars := []string{*mysqlConnName, *mysqlUser, *mysqlPass, *mysqlDb, *postgresConnName, *postgresUser, *postgresPass, *postgresDb, *sqlserverConnName, *sqlserverUser, *sqlserverPass, *sqlserverDb}
+	var allVars []string
+	allVars = append(allVars, *mysqlConnName, *mysqlUser, *mysqlPass, *mysqlDb)
+	allVars = append(allVars, *postgresConnName, *postgresUser, *postgresPass, *postgresDb)
+	allVars = append(allVars, *sqlserverConnName, *sqlserverUser, *sqlserverPass, *sqlserverDb)
+	
 	for _, envVar := range allVars {
 		if envVar == "" {
 			t.Skip("skipping test, all environment variable must be defined")
