@@ -167,19 +167,20 @@ func isReady(c *proxy.Client, s *Server) bool {
 	for _, inst := range instances {
 		wg.Add(1)
 		go func(inst string) {
+			defer wg.Done()
 			conn, err := c.DialContext(ctx, inst)
 			if err != nil {
 				logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
 				dialL.Lock()
 				canDial = false
 				dialL.Unlock()
-			} else {
-				err = conn.Close()
-				if err != nil {
-					logging.Errorf("[Health Check] Readiness: error while closing connection: %v", err)
-				}
+				return
 			}
-			wg.Done()
+
+			err = conn.Close()
+			if err != nil {
+				logging.Errorf("[Health Check] Readiness: error while closing connection: %v", err)
+			}
 		}(inst)
 	}
 	wg.Wait()
