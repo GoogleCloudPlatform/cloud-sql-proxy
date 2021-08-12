@@ -95,3 +95,14 @@ func TestMysqlConnLimit(t *testing.T) {
 	}
 	proxyConnLimitTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort)
 }
+
+// Test to verify that when a proxy client serves one mysql instance that can be
+// dialed successfully, the health check readiness endpoint serves http.StatusOK.
+func TestMysqlDial(t *testing.T) {
+	switch "" {
+	case *mysqlConnName:
+		t.Fatal("'mysql_conn_name' not set")
+	}
+
+	singleInstanceDial(t, *mysqlConnName, mysqlPort)
+}

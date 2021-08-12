@@ -556,6 +556,19 @@ func ParseInstanceConnectionName(instance string) (string, string, string, []str
 	return proj, region, name, args, nil
 }
 
+// GetInstances iterates through the client cache, returning a list of previously dialed
+// instances.
+func (c *Client) GetInstances() []string {
+	var insts []string
+	c.cacheL.Lock()
+	cfgCache := c.cfgCache
+	c.cacheL.Unlock()
+	for i := range cfgCache {
+		insts = append(insts, i)
+	}
+	return insts
+}
+
 // AvailableConn returns false if MaxConnections has been reached, true otherwise.
 // When MaxConnections is 0, there is no limit.
 func (c *Client) AvailableConn() bool {

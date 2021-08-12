@@ -570,9 +570,14 @@ func runProxy() int {
 
 	var hc *healthcheck.Server
 	if *useHTTPHealthCheck {
-		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort)
+		// Extract a list of all instances specified statically. List is empty when in fuse mode.
+		var insts []string
+		for _, cfg := range cfgs {
+			insts = append(insts, cfg.Instance)
+		}
+		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort, insts)
 		if err != nil {
-			logging.Errorf("Could not initialize health check server: %v", err)
+			logging.Errorf("[Health Check] Could not initialize health check server: %v", err)
 			return 1
 		}
 		defer hc.Close(ctx)
