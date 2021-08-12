@@ -19,48 +19,32 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os/exec"
 	"testing"
-	"time"
 )
 
 const (
-	startupPath   = "/startup"
 	readinessPath = "/readiness"
 	testPort      = "8090"
 )
 
-// waitForStart blocks until the currently running proxy completes startup.
-func waitForStart(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			resp, err := http.Get("http://localhost:" + testPort + startupPath)
-			if err == nil && resp.StatusCode == http.StatusOK {
-				return
-			}
-		}
-	}
-}
-
 // singleInstanceDial verifies that when a proxy client serves the given instance, the readiness
 // endpoint serves http.StatusOK.
-func singleInstanceDial(t *testing.T, binPath string, connName string, port int) {
+func singleInstanceDial(t *testing.T, connName string, port int) {
+	ctx := context.Background()
+
 	var args []string
 	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", connName, port), "-use_http_health_check")
 
-	cmd := exec.Command(binPath, args...)
-	err := cmd.Start()
+	// Start the proxy.
+	p, err := StartProxy(ctx, args...)
 	if err != nil {
-		t.Fatalf("Failed to start proxy: %s", err)
+		t.Fatalf("unable to start proxy: %v", err)
 	}
-	defer cmd.Process.Kill()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
-	defer cancel()
-	waitForStart(ctx)
+	defer p.Close()
+	output, err := p.WaitForServe(ctx)
+	if err != nil {
+		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
+	}
 
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {

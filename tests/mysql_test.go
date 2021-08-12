@@ -104,11 +104,5 @@ func TestMysqlDial(t *testing.T) {
 		t.Fatal("'mysql_conn_name' not set")
 	}
 
-	binPath, err := compileProxy()
-	if err != nil {
-		t.Fatalf("Failed to compile proxy: %s", err)
-	}
-	defer os.RemoveAll(binPath)
-
-	singleInstanceDial(t, binPath, *mysqlConnName, mysqlPort)
+	singleInstanceDial(t, *mysqlConnName, mysqlPort)
 }

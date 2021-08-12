@@ -70,11 +70,5 @@ func TestSqlserverDial(t *testing.T) {
 		t.Fatal("'sqlserver_conn_name' not set")
 	}
 
-	binPath, err := compileProxy()
-	if err != nil {
-		t.Fatalf("Failed to compile proxy: %s", err)
-	}
-	defer os.RemoveAll(binPath)
-
-	singleInstanceDial(t, binPath, *sqlserverConnName, sqlserverPort)
+	singleInstanceDial(t, *sqlserverConnName, sqlserverPort)
 }

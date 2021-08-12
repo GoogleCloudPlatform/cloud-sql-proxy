@@ -19,10 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"os/exec"
 	"testing"
-	"time"
 )
 
 // requireAllVars skips the given test if at least one environment variable is undefined.
@@ -43,27 +40,22 @@ func requireAllVars(t *testing.T) {
 // the health check readiness endpoint serves http.StatusOK.
 func TestMultiInstanceDial(t *testing.T) {
 	requireAllVars(t)
-
-	binPath, err := compileProxy()
-	if err != nil {
-		t.Fatalf("Failed to compile proxy: %s", err)
-	}
-	defer os.RemoveAll(binPath)
+	ctx := context.Background()
 
 	var args []string
 	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d,%s=tcp:%d,%s=tcp:%d", *mysqlConnName, mysqlPort, *postgresConnName, postgresPort, *sqlserverConnName, sqlserverPort))
 	args = append(args, "-use_http_health_check")
 
-	cmd := exec.Command(binPath, args...)
-	err = cmd.Start()
+	// Start the proxy.
+	p, err := StartProxy(ctx, args...)
 	if err != nil {
-		t.Fatalf("Failed to start proxy: %s", err)
+		t.Fatalf("unable to start proxy: %v", err)
 	}
-	defer cmd.Process.Kill()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
-	defer cancel()
-	waitForStart(ctx)
+	defer p.Close()
+	output, err := p.WaitForServe(ctx)
+	if err != nil {
+		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
+	}
 
 	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
 	if err != nil {
