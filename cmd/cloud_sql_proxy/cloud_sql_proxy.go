@@ -578,7 +578,7 @@ func runProxy() int {
 		hc, err = healthcheck.NewServer(proxyClient, *healthCheckPort, insts)
 		if err != nil {
 			logging.Errorf("[Health Check] Could not initialize health check server: %v", err)
-			os.Exit(1)
+			return 1
 		}
 		defer hc.Close(ctx)
 	}
