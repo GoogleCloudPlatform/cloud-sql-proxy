@@ -161,7 +161,7 @@ func isReady(c *proxy.Client, s *Server) bool {
 	ctx := context.Background()
 
 	canDial := true
-	var dialL sync.Mutex
+	var once sync.Once
 	var wg sync.WaitGroup
 
 	for _, inst := range instances {
@@ -171,9 +171,7 @@ func isReady(c *proxy.Client, s *Server) bool {
 			conn, err := c.DialContext(ctx, inst)
 			if err != nil {
 				logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
-				dialL.Lock()
-				canDial = false
-				dialL.Unlock()
+				once.Do(func() { canDial = false })
 				return
 			}
 
