@@ -77,7 +77,9 @@ func NewServer(c *proxy.Client, port string, staticInst []string) (*Server, erro
 	})
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !isReady(c, hcServer) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		if !isReady(c, hcServer, ctx) {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("error"))
 			return
@@ -139,7 +141,7 @@ func isLive() bool {
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
 // 2. Not yet hit the MaxConnections limit, if set.
 // 3. Able to dial all specified instances without error.
-func isReady(c *proxy.Client, s *Server) bool {
+func isReady(c *proxy.Client, s *Server, ctx context.Context) bool {
 	// Not ready until we reach the 'Ready for Connections' log.
 	if !s.proxyStarted() {
 		logging.Errorf("[Health Check] Readiness failed because proxy has not finished starting up.")
@@ -157,8 +159,6 @@ func isReady(c *proxy.Client, s *Server) bool {
 	if s.instances == nil { // Proxy is in fuse mode.
 		instances = c.GetInstances()
 	}
-
-	ctx := context.Background()
 
 	canDial := true
 	var once sync.Once
