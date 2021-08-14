@@ -83,7 +83,7 @@ func TestReadme(t *testing.T) {
 	}
 	defer fuse.Close()
 
-	data, err := os.ReadFile(filepath.Join(dir, "README"))
+	data, err := ioutil.ReadFile(filepath.Join(dir, "README"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func BenchmarkNewConnection(b *testing.B) {
 			b.Errorf("couldn't dial: %v", err)
 		}
 
-		data, err := io.ReadAll(c)
+		data, err := ioutil.ReadAll(c)
 		if err != nil {
 			b.Errorf("got read error: %v", err)
 		} else if got := string(data); got != want {
