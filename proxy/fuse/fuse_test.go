@@ -27,6 +27,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 
 	"bazil.org/fuse"
 )
@@ -39,6 +40,23 @@ func randTmpDir() string {
 	return name
 }
 
+// tryFunc executes the provided function up to maxCount times, sleeping 100ms
+// between attempts.
+func tryFunc(f func() error, maxCount int) error {
+	var errCount int
+	for {
+		err := f()
+		if err == nil {
+			return nil
+		}
+		errCount++
+		if errCount == maxCount {
+			return err
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 func TestFuseClose(t *testing.T) {
 	dir := randTmpDir()
 	tmpdir := randTmpDir()
@@ -47,7 +65,7 @@ func TestFuseClose(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := fuse.Close(); err != nil {
+	if err := tryFunc(fuse.Close, 10); err != nil {
 		t.Fatal(err)
 	}
 	if got, ok := <-src; ok {
@@ -63,9 +81,13 @@ func TestBadDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer fuse.Close()
+	defer func() {
+		if err := tryFunc(fuse.Close, 10); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
-	_, err = os.Stat(filepath.Join(dir, "dir:ectory:1", "dir:ectory:2"))
+	_, err = os.Stat(filepath.Join(dir, "proj:region:inst-1", "proj:region:inst-2"))
 	if err == nil {
 		t.Fatal("able to find a directory inside the mount point, expected only regular files")
 	}
@@ -81,7 +103,11 @@ func TestReadme(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer fuse.Close()
+	defer func() {
+		if err := tryFunc(fuse.Close, 10); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	data, err := ioutil.ReadFile(filepath.Join(dir, "README"))
 	if err != nil {
@@ -99,7 +125,11 @@ func TestSingleInstance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer fuse.Close()
+	defer func() {
+		if err := tryFunc(fuse.Close, 10); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	const want = "test:instance:string"
 	path := filepath.Join(dir, want)
@@ -200,14 +230,14 @@ func TestMain(m *testing.M) {
 	dir := randTmpDir()
 	// Unmount before the tests start, else they won't work correctly.
 	if err := fuse.Unmount(dir); err != nil {
-		log.Printf("couldn't unmount fuse directory %q: %v", dir, err)
+		log.Printf("TestMain: couldn't unmount fuse directory %q: %v", dir, err)
 	}
 
 	ret := m.Run()
 	// Make sure to unmount at the end, so that we don't leave the system in an
 	// inconsistent state in case something weird happened.
 	if err := fuse.Unmount(dir); err != nil {
-		log.Printf("couldn't unmount fuse directory %q: %v", dir, err)
+		log.Printf("TestMain: couldn't unmount fuse directory %q: %v", dir, err)
 	}
 
 	os.Exit(ret)
