@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -28,8 +27,6 @@ import (
 	"syscall"
 	"testing"
 	"time"
-
-	"bazil.org/fuse"
 )
 
 func randTmpDir() string {
@@ -224,21 +221,4 @@ func BenchmarkNewConnection(b *testing.B) {
 	if incomingCount != b.N {
 		b.Fatalf("got %d connections, want %d", incomingCount, b.N)
 	}
-}
-
-func TestMain(m *testing.M) {
-	dir := randTmpDir()
-	// Unmount before the tests start, else they won't work correctly.
-	if err := fuse.Unmount(dir); err != nil {
-		log.Printf("TestMain: couldn't unmount fuse directory %q: %v", dir, err)
-	}
-
-	ret := m.Run()
-	// Make sure to unmount at the end, so that we don't leave the system in an
-	// inconsistent state in case something weird happened.
-	if err := fuse.Unmount(dir); err != nil {
-		log.Printf("TestMain: couldn't unmount fuse directory %q: %v", dir, err)
-	}
-
-	os.Exit(ret)
 }
