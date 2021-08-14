@@ -31,12 +31,17 @@ import (
 	"bazil.org/fuse"
 )
 
-var (
-	dir    = filepath.Join(os.TempDir(), "cloudsql")
-	tmpdir = filepath.Join(os.TempDir(), "cloudsql-tmp")
-)
+func randTmpDir() string {
+	name, err := ioutil.TempDir("", "*")
+	if err != nil {
+		panic(err)
+	}
+	return name
+}
 
 func TestFuseClose(t *testing.T) {
+	dir := randTmpDir()
+	tmpdir := randTmpDir()
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -52,6 +57,8 @@ func TestFuseClose(t *testing.T) {
 
 // TestBadDir verifies that the fuse module does not create directories, only simple files.
 func TestBadDir(t *testing.T) {
+	dir := randTmpDir()
+	tmpdir := randTmpDir()
 	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -68,13 +75,15 @@ func TestBadDir(t *testing.T) {
 }
 
 func TestReadme(t *testing.T) {
+	dir := randTmpDir()
+	tmpdir := randTmpDir()
 	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer fuse.Close()
 
-	data, err := ioutil.ReadFile(filepath.Join(dir, "README"))
+	data, err := os.ReadFile(filepath.Join(dir, "README"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,6 +93,8 @@ func TestReadme(t *testing.T) {
 }
 
 func TestSingleInstance(t *testing.T) {
+	dir := randTmpDir()
+	tmpdir := randTmpDir()
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -136,6 +147,8 @@ func TestSingleInstance(t *testing.T) {
 }
 
 func BenchmarkNewConnection(b *testing.B) {
+	dir := randTmpDir()
+	tmpdir := randTmpDir()
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		b.Fatal(err)
@@ -165,7 +178,7 @@ func BenchmarkNewConnection(b *testing.B) {
 			b.Errorf("couldn't dial: %v", err)
 		}
 
-		data, err := ioutil.ReadAll(c)
+		data, err := io.ReadAll(c)
 		if err != nil {
 			b.Errorf("got read error: %v", err)
 		} else if got := string(data); got != want {
@@ -184,9 +197,7 @@ func BenchmarkNewConnection(b *testing.B) {
 }
 
 func TestMain(m *testing.M) {
-	// Ensure this directory exists.
-	os.MkdirAll(dir, 0777)
-
+	dir := randTmpDir()
 	// Unmount before the tests start, else they won't work correctly.
 	if err := fuse.Unmount(dir); err != nil {
 		log.Printf("couldn't unmount fuse directory %q: %v", dir, err)
