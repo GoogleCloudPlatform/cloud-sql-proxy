@@ -297,6 +297,16 @@ Specifies the port that the health check server listens and serves on. Defaults 
 See the [example here][sidecar-example] as well as [Connecting from Google
 Kubernetes Engine][connect-to-k8s].
 
+## Running behind a Socks5 proxy
+
+The Cloud SQL Auth Proxy includes support for sending requests through a SOCKs5
+proxy. If a Socks5 proxy is running on `localhost:8000`, the command to start
+the Cloud SQL Auth Proxy would look like:
+
+```
+ALL_PROXY=socks5://localhost:8000 cloud_sql_proxy -instances=$INSTANCE_CONNECTION_NAME=tcp:5432
+```
+
 ## Reference Documentation
 
 - [Cloud SQL][cloud-sql]
