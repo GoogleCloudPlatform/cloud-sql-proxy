@@ -29,10 +29,12 @@ import (
 	"time"
 )
 
-func randTmpDir() string {
+func randTmpDir(t interface {
+	Fatalf(format string, args ...interface{})
+}) string {
 	name, err := ioutil.TempDir("", "*")
 	if err != nil {
-		panic(err)
+		t.Fatalf("failed to create tmp dir: %v", err)
 	}
 	return name
 }
@@ -55,8 +57,8 @@ func tryFunc(f func() error, maxCount int) error {
 }
 
 func TestFuseClose(t *testing.T) {
-	dir := randTmpDir()
-	tmpdir := randTmpDir()
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -72,8 +74,8 @@ func TestFuseClose(t *testing.T) {
 
 // TestBadDir verifies that the fuse module does not create directories, only simple files.
 func TestBadDir(t *testing.T) {
-	dir := randTmpDir()
-	tmpdir := randTmpDir()
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
 	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -94,8 +96,8 @@ func TestBadDir(t *testing.T) {
 }
 
 func TestReadme(t *testing.T) {
-	dir := randTmpDir()
-	tmpdir := randTmpDir()
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
 	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -116,8 +118,8 @@ func TestReadme(t *testing.T) {
 }
 
 func TestSingleInstance(t *testing.T) {
-	dir := randTmpDir()
-	tmpdir := randTmpDir()
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -174,8 +176,8 @@ func TestSingleInstance(t *testing.T) {
 }
 
 func BenchmarkNewConnection(b *testing.B) {
-	dir := randTmpDir()
-	tmpdir := randTmpDir()
+	dir := randTmpDir(b)
+	tmpdir := randTmpDir(b)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		b.Fatal(err)
