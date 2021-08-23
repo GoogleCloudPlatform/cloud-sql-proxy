@@ -163,7 +163,7 @@ When set, the proxy uses this Bearer token for authorization.
 Enables the proxy to use Cloud SQL IAM database authentication. This will cause
 the proxy to use IAM account credentials for database user authentication. For
 details, see [Overview of Cloud SQL IAM database authentication][iam-auth].
-NOTE: This feature only works with Postgres database instances.
+NOTE: This feature only works with Postgres and Mysql database instances.
 
 ### Connection Flags
 
