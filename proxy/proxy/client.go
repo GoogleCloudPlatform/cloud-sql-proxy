@@ -227,6 +227,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 		// that will verify that the certificate is OK.
 		InsecureSkipVerify:    true,
 		VerifyPeerCertificate: genVerifyPeerCertificateFunc(name, certs),
+		MinVersion:            tls.VersionTLS13,
 	}
 
 	return fmt.Sprintf("%s:%d", addr, c.Port), cfg, version, nil
