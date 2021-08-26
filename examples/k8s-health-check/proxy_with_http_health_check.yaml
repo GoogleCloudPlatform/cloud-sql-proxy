@@ -35,7 +35,7 @@ spec:
       - name: cloud-sql-proxy
         # It is recommended to use the latest version of the Cloud SQL proxy
         # Make sure to update on a regular schedule!
-        image: gcr.io/cloudsql-docker/gce-proxy:1.17
+        image: gcr.io/cloudsql-docker/gce-proxy:1.25.0
         command:
           - "/cloud_sql_proxy"
 
@@ -93,7 +93,7 @@ spec:
           failureThreshold: 1
         readinessProbe:
           httpGet:
-            path: /liveness
+            path: /readiness
             port: 8090
           initialDelaySeconds: 0
           periodSeconds: 10
