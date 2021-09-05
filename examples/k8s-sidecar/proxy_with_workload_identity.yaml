@@ -2,46 +2,47 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: <YOUR-DEPLOYMENT-NAME>
+  name: psqldeployment
 spec:
   selector:
     matchLabels:
-      app: <YOUR-APPLICATION-NAME>
+      app: psqlconproject
   template:
     metadata:
       labels:
-        app: <YOUR-APPLICATION-NAME>
+        app: psqlconproject
     spec:
-      serviceAccountName: <YOUR-KSA-NAME>
+      serviceAccountName: psqlproject
       # [END cloud_sql_proxy_k8s_sa]
       # [START cloud_sql_proxy_k8s_secrets]
       containers:
-      - name: <YOUR-APPLICATION-NAME>
+      - name: psqlconproject
         # ... other container configuration
         env:
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: <YOUR-DB-SECRET>
+              name: postgres
               key: username
         - name: DB_PASS
           valueFrom:
             secretKeyRef:
-              name: <YOUR-DB-SECRET>
+              name: Jec2706.vpn38!2
               key: password
         - name: DB_NAME
           valueFrom:
             secretKeyRef:
-              name: <YOUR-DB-SECRET>
+              name: postgres
               key: database
       # [END cloud_sql_proxy_k8s_secrets]
       # [START cloud_sql_proxy_k8s_container]
       - name: cloud-sql-proxy
         # It is recommended to use the latest version of the Cloud SQL proxy
         # Make sure to update on a regular schedule!
-        image: gcr.io/cloudsql-docker/gce-proxy:1.17
-        command:
-          - "/cloud_sql_proxy"
+        image: gcr.io/cloudsql-docker/gce-proxy:1.11
+        command: ["/cloud_sql_proxy", "--dir=/cloudsql",
+            "-instances=34.67.243.165=tcp:5432>",
+            "-credential_file=/secrets/cloudsql/credentials.json"]   
 
           # If connecting from a VPC-native GKE cluster, you can use the
           # following flag to have the proxy connect over private IP
