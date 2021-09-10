@@ -35,6 +35,8 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   ls -la /Volumes/BuildData/
   echo
   ls -la /Volumes/BuildData/tmpfs
+
+  touch /tmp/mycoolfile
 fi
 
 # On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
