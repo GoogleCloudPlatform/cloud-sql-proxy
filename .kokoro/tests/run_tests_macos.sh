@@ -33,7 +33,7 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   echo Making tmp writable for tests
   sudo chmod 1777 /private/tmp
   sudo chmod 1777 /tmp
-  ls -lax /
+  ls -la /
 fi
 
 # On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
