@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.25.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.24.0...v1.25.0) (2021-09-07)
+
+
+### Features
+
+* add health checks to proxy ([#859](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/859)) ([ea62bdd](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/ea62bddaaf3aa7df79250d045ba2f5f3fe7edaea))
+* add instance dialing to health check ([#871](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/871)) ([eca3793](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/eca37935e7cd54efcd612c170e46f45c1d8e3556))
+* require TLS v1.3 at minimum ([#906](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/906)) ([cafa966](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/cafa966e50170ad94f12f067549ba3aedf8ecdca))
+
+
+### Bug Fixes
+
+* ensure proxy shuts down gracefully on SIGTERM ([#877](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/877)) ([9793555](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/97935551ac44cb7a92e2901def1938d604dfeecb))
+* validate instances in fuse mode ([#875](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/875)) ([96f8b65](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/96f8b655b09b711fd9adfcb486626b64d3b917f3))
+
 ## [1.24.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.23.1...v1.24.0) (2021-08-02)
 
 

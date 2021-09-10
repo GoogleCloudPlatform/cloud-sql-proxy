@@ -297,6 +297,16 @@ Specifies the port that the health check server listens and serves on. Defaults 
 See the [example here][sidecar-example] as well as [Connecting from Google
 Kubernetes Engine][connect-to-k8s].
 
+## Running behind a Socks5 proxy
+
+The Cloud SQL Auth Proxy includes support for sending requests through a SOCKs5
+proxy. If a Socks5 proxy is running on `localhost:8000`, the command to start
+the Cloud SQL Auth Proxy would look like:
+
+```
+ALL_PROXY=socks5://localhost:8000 cloud_sql_proxy -instances=$INSTANCE_CONNECTION_NAME=tcp:5432
+```
+
 ## Reference Documentation
 
 - [Cloud SQL][cloud-sql]
@@ -304,6 +314,27 @@ Kubernetes Engine][connect-to-k8s].
 - [Cloud SQL Auth proxy Quickstarts][quickstarts]
 - [Cloud SQL Code Samples][code-samples]
 - [Cloud SQL Auth proxy Package Documentation][pkg-docs]
+
+## Support policy
+
+### Major version lifecycle
+
+This project uses [semantic versioning](https://semver.org/), and uses the
+following lifecycle regarding support for a major version:
+
+**Active** - Active versions get all new features and security fixes (that
+wouldn’t otherwise introduce a breaking change). New major versions are
+guaranteed to be "active" for a minimum of 1 year.
+**Deprecated** - Deprecated versions continue to receive security and critical
+bug fixes, but do not receive new features. Deprecated versions will be publicly
+supported for 1 year.
+**Unsupported** - Any major version that has been deprecated for >=1 year is
+considered publicly unsupported.
+
+### Release cadence
+The Cloud SQL Auth proxy aims for a minimum monthly release cadence. If no new
+features or fixes have been added, a new PATCH version with the latest
+dependencies is released.
 
 ## Contributing
 

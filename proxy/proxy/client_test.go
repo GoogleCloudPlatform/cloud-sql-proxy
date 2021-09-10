@@ -29,7 +29,7 @@ import (
 	"unsafe"
 )
 
-const instance = "instance-name"
+const instance = "project:region:instance"
 
 var (
 	sentinelError = errors.New("sentinel error")
@@ -214,7 +214,7 @@ func TestMaximumConnectionsCount(t *testing.T) {
 				Instance: instanceName,
 				Conn:     &dummyConn{},
 			}
-			c.handleConn(conn)
+			c.handleConn(context.Background(), conn)
 
 			firstDialOnce.Do(func() { close(firstDialExited) })
 		}(instanceName)

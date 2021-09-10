@@ -74,7 +74,7 @@ func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.Co
 	c, err := fuse.Mount(mountdir, fuse.AllowOther())
 	if err != nil {
 		// a common cause of failed mounts is that a previous instance did not shutdown cleanly, leaving an abandoned mount
-		logging.Errorf("WARNING: Mount failed - attempting to unmount dir to resolve...", mountdir)
+		logging.Errorf("WARNING: Mount failed - attempting to unmount dir to resolve..., dir=%v", mountdir)
 		if err = fuse.Unmount(mountdir); err != nil {
 			logging.Errorf("Unmount failed: %v", err)
 		}

@@ -20,29 +20,51 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"sync"
 	"syscall"
 	"testing"
-
-	"bazil.org/fuse"
+	"time"
 )
 
-var (
-	dir    = filepath.Join(os.TempDir(), "cloudsql")
-	tmpdir = filepath.Join(os.TempDir(), "cloudsql-tmp")
-)
+func randTmpDir(t interface {
+	Fatalf(format string, args ...interface{})
+}) string {
+	name, err := ioutil.TempDir("", "*")
+	if err != nil {
+		t.Fatalf("failed to create tmp dir: %v", err)
+	}
+	return name
+}
+
+// tryFunc executes the provided function up to maxCount times, sleeping 100ms
+// between attempts.
+func tryFunc(f func() error, maxCount int) error {
+	var errCount int
+	for {
+		err := f()
+		if err == nil {
+			return nil
+		}
+		errCount++
+		if errCount == maxCount {
+			return err
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
 
 func TestFuseClose(t *testing.T) {
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := fuse.Close(); err != nil {
+	if err := tryFunc(fuse.Close, 10); err != nil {
 		t.Fatal(err)
 	}
 	if got, ok := <-src; ok {
@@ -52,13 +74,19 @@ func TestFuseClose(t *testing.T) {
 
 // TestBadDir verifies that the fuse module does not create directories, only simple files.
 func TestBadDir(t *testing.T) {
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
 	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer fuse.Close()
+	defer func() {
+		if err := tryFunc(fuse.Close, 10); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
-	_, err = os.Stat(filepath.Join(dir, "dir:ectory:1", "dir:ectory:2"))
+	_, err = os.Stat(filepath.Join(dir, "proj:region:inst-1", "proj:region:inst-2"))
 	if err == nil {
 		t.Fatal("able to find a directory inside the mount point, expected only regular files")
 	}
@@ -68,11 +96,17 @@ func TestBadDir(t *testing.T) {
 }
 
 func TestReadme(t *testing.T) {
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
 	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer fuse.Close()
+	defer func() {
+		if err := tryFunc(fuse.Close, 10); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	data, err := ioutil.ReadFile(filepath.Join(dir, "README"))
 	if err != nil {
@@ -84,11 +118,17 @@ func TestReadme(t *testing.T) {
 }
 
 func TestSingleInstance(t *testing.T) {
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer fuse.Close()
+	defer func() {
+		if err := tryFunc(fuse.Close, 10); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	const want = "test:instance:string"
 	path := filepath.Join(dir, want)
@@ -136,6 +176,8 @@ func TestSingleInstance(t *testing.T) {
 }
 
 func BenchmarkNewConnection(b *testing.B) {
+	dir := randTmpDir(b)
+	tmpdir := randTmpDir(b)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
 	if err != nil {
 		b.Fatal(err)
@@ -181,23 +223,4 @@ func BenchmarkNewConnection(b *testing.B) {
 	if incomingCount != b.N {
 		b.Fatalf("got %d connections, want %d", incomingCount, b.N)
 	}
-}
-
-func TestMain(m *testing.M) {
-	// Ensure this directory exists.
-	os.MkdirAll(dir, 0777)
-
-	// Unmount before the tests start, else they won't work correctly.
-	if err := fuse.Unmount(dir); err != nil {
-		log.Printf("couldn't unmount fuse directory %q: %v", dir, err)
-	}
-
-	ret := m.Run()
-	// Make sure to unmount at the end, so that we don't leave the system in an
-	// inconsistent state in case something weird happened.
-	if err := fuse.Unmount(dir); err != nil {
-		log.Printf("couldn't unmount fuse directory %q: %v", dir, err)
-	}
-
-	os.Exit(ret)
 }

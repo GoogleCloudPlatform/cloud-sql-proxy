@@ -44,11 +44,13 @@ type Server struct {
 	port string
 	// srv is a pointer to the HTTP server used to communicate proxy health.
 	srv *http.Server
+	// instances is a list of all instances specified statically (e.g. as flags to the binary)
+	instances []string
 }
 
 // NewServer initializes a Server and exposes HTTP endpoints used to
 // communicate proxy health.
-func NewServer(c *proxy.Client, port string) (*Server, error) {
+func NewServer(c *proxy.Client, port string, staticInst []string) (*Server, error) {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
@@ -57,10 +59,11 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	}
 
 	hcServer := &Server{
-		started: make(chan struct{}),
-		once:    &sync.Once{},
-		port:    port,
-		srv:     srv,
+		started:   make(chan struct{}),
+		once:      &sync.Once{},
+		port:      port,
+		srv:       srv,
+		instances: staticInst,
 	}
 
 	mux.HandleFunc(startupPath, func(w http.ResponseWriter, _ *http.Request) {
@@ -74,7 +77,9 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 	})
 
 	mux.HandleFunc(readinessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !isReady(c, hcServer) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		if !isReady(ctx, c, hcServer) {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("error"))
 			return
@@ -100,7 +105,7 @@ func NewServer(c *proxy.Client, port string) (*Server, error) {
 
 	go func() {
 		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logging.Errorf("Failed to start health check HTTP server: %v", err)
+			logging.Errorf("[Health Check] Failed to serve: %v", err)
 		}
 	}()
 
@@ -132,22 +137,51 @@ func isLive() bool {
 	return true
 }
 
-// isReady will check the following criteria before determining whether the
-// proxy is ready for new connections.
+// isReady will check the following criteria:
 // 1. Finished starting up / been sent the 'Ready for Connections' log.
-// 2. Not yet hit the MaxConnections limit, if applicable.
-func isReady(c *proxy.Client, s *Server) bool {
-	// Not ready until we reach the 'Ready for Connections' log
+// 2. Not yet hit the MaxConnections limit, if set.
+// 3. Able to dial all specified instances without error.
+func isReady(ctx context.Context, c *proxy.Client, s *Server) bool {
+	// Not ready until we reach the 'Ready for Connections' log.
 	if !s.proxyStarted() {
-		logging.Errorf("Readiness failed because proxy has not finished starting up.")
+		logging.Errorf("[Health Check] Readiness failed because proxy has not finished starting up.")
 		return false
 	}
 
 	// Not ready if the proxy is at the optional MaxConnections limit.
 	if !c.AvailableConn() {
-		logging.Errorf("Readiness failed because proxy has reached the maximum connections limit (%d).", c.MaxConnections)
+		logging.Errorf("[Health Check] Readiness failed because proxy has reached the maximum connections limit (%v).", c.MaxConnections)
 		return false
 	}
 
-	return true
+	// Not ready if one or more instances cannot be dialed.
+	instances := s.instances
+	if s.instances == nil { // Proxy is in fuse mode.
+		instances = c.GetInstances()
+	}
+
+	canDial := true
+	var once sync.Once
+	var wg sync.WaitGroup
+
+	for _, inst := range instances {
+		wg.Add(1)
+		go func(inst string) {
+			defer wg.Done()
+			conn, err := c.DialContext(ctx, inst)
+			if err != nil {
+				logging.Errorf("[Health Check] Readiness failed because proxy couldn't connect to %q: %v", inst, err)
+				once.Do(func() { canDial = false })
+				return
+			}
+
+			err = conn.Close()
+			if err != nil {
+				logging.Errorf("[Health Check] Readiness: error while closing connection: %v", err)
+			}
+		}(inst)
+	}
+	wg.Wait()
+
+	return canDial
 }

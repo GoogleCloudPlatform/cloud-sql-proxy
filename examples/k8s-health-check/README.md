@@ -28,7 +28,7 @@ Kubernetes supports three types of health checks.
           failureThreshold: 1
         readinessProbe:
           httpGet:
-            path: /liveness
+            path: /readiness
             port: 8090
           initialDelaySeconds: 0
           periodSeconds: 10
