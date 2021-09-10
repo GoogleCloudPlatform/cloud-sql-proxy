@@ -38,10 +38,13 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   ls -la /
   ls -la /Volumes/BuildData/
   ls -la /Volumes/BuildData/tmpfs
+
+  mkdir /tmp2
+
 fi
 
 # On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
-# export TMPDIR="/tmp"
+export TMPDIR="/tmp2"
 echo -e "******************** Running tests... ********************\n"
 go test -race -v ./...
 echo -e "******************** Tests complete.  ********************\n"
