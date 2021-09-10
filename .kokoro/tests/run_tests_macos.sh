@@ -30,7 +30,9 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
 
   # allow write access to tmp dir
+  echo Making tmp writable for tests
   sudo chmod 1777 /private/tmp
+  sudo chmod 1777 /tmp
 fi
 
 # On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
