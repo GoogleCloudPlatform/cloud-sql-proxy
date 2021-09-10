@@ -28,6 +28,9 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   # source secrets
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
   export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
+
+  # allow write access to tmp dir
+  sudo chmod 1777 /private/tmp
 fi
 
 # On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
