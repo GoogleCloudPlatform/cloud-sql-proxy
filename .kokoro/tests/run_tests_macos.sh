@@ -24,7 +24,7 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   cd github/cloud-sql-proxy
   # install fuse project
   brew update > /dev/null
-  brew install --cask --quiet osxfuse
+  brew install --cask --quiet macfuse
   # source secrets
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
   export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
