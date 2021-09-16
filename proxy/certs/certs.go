@@ -209,7 +209,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	p, r, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", r, n)
 	pubKey := string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"}))
-	createEphemeralRequest := sqladmin.SslCertsCreateEphemeralRequest{
+	generateEphemeralCertRequest := sqladmin.GenerateEphemeralCertRequest{
 		PublicKey: pubKey,
 	}
 	var tok *oauth2.Token
@@ -229,12 +229,12 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		}
 		// TODO: remove this once issue with OAuth2 Tokens is resolved.
 		// See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/852.
-		createEphemeralRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
+		generateEphemeralCertRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
 	}
-	req := s.serv.SslCerts.CreateEphemeral(p, regionName, &createEphemeralRequest)
+	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, &generateEphemeralCertRequest)
 
-	var data *sqladmin.SslCert
-	err = backoffAPIRetry("createEphemeral for", instance, func() error {
+	var data *sqladmin.GenerateEphemeralCertResponse
+	err = backoffAPIRetry("generateEphemeral for", instance, func() error {
 		data, err = req.Do()
 		return err
 	})
@@ -242,10 +242,11 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		return tls.Certificate{}, err
 	}
 
-	c, err := parseCert(data.Cert)
+	c, err := parseCert(data.EphemeralCert.Cert)
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("couldn't parse ephemeral certificate for instance %q: %v", instance, err)
 	}
+
 	if s.EnableIAMLogin {
 		// Adjust the certificate's expiration to be the earlier of tok.Expiry or c.NotAfter
 		if tok.Expiry.Before(c.NotAfter) {
@@ -282,7 +283,7 @@ func (s *RemoteCertSource) generateKey() *rsa.PrivateKey {
 }
 
 // Find the first matching IP address by user input IP address types
-func (s *RemoteCertSource) findIPAddr(data *sqladmin.DatabaseInstance, instance string) (ipAddrInUse string, err error) {
+func (s *RemoteCertSource) findIPAddr(data *sqladmin.ConnectSettings, instance string) (ipAddrInUse string, err error) {
 	for _, eachIPAddrTypeByUser := range s.IPAddrTypes {
 		for _, eachIPAddrTypeOfInstance := range data.IpAddresses {
 			if strings.ToUpper(eachIPAddrTypeOfInstance.Type) == strings.ToUpper(eachIPAddrTypeByUser) {
@@ -306,9 +307,9 @@ func (s *RemoteCertSource) findIPAddr(data *sqladmin.DatabaseInstance, instance 
 func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
 	p, region, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", region, n)
-	req := s.serv.Instances.Get(p, regionName)
+	req := s.serv.Connect.Get(p, regionName)
 
-	var data *sqladmin.DatabaseInstance
+	var data *sqladmin.ConnectSettings
 	err = backoffAPIRetry("get instance", instance, func() error {
 		data, err = req.Do()
 		return err
