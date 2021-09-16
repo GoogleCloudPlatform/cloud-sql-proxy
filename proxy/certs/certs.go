@@ -318,6 +318,23 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 		return nil, "", "", "", err
 	}
 
+	// TODO(chowski): remove this when us-central is removed.
+	if data.Region == "us-central" {
+		data.Region = "us-central1"
+	}
+	if data.Region != region {
+		if region == "" {
+			err = fmt.Errorf("instance %v doesn't provide region", instance)
+		} else {
+			err = fmt.Errorf(`for connection string "%s": got region %q, want %q`, instance, region, data.Region)
+		}
+		if s.checkRegion {
+			return nil, "", "", "", err
+		}
+		logging.Errorf("%v", err)
+		logging.Errorf("WARNING: specifying the correct region in an instance string will become required in a future version!")
+	}
+
 	if len(data.IpAddresses) == 0 {
 		return nil, "", "", "", fmt.Errorf("no IP address found for %v", instance)
 	}
