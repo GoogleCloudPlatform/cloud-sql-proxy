@@ -43,12 +43,14 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
-	"bazil.org/fuse"
-	"bazil.org/fuse/fs"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/hanwen/go-fuse/v2/fs"
+	"github.com/hanwen/go-fuse/v2/fuse"
+	"github.com/hanwen/go-fuse/v2/fuse/nodefs"
 	"golang.org/x/net/context"
 )
 
@@ -69,21 +71,6 @@ func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.Co
 	if err := os.MkdirAll(tmpdir, 0777); err != nil {
 		return nil, nil, err
 	}
-
-	logging.Verbosef("Mounting %v...", mountdir)
-	c, err := fuse.Mount(mountdir, fuse.AllowOther())
-	if err != nil {
-		// a common cause of failed mounts is that a previous instance did not shutdown cleanly, leaving an abandoned mount
-		logging.Errorf("WARNING: Mount failed - attempting to unmount dir to resolve..., dir=%v", mountdir)
-		if err = fuse.Unmount(mountdir); err != nil {
-			logging.Errorf("Unmount failed: %v", err)
-		}
-		if c, err = fuse.Mount(mountdir, fuse.AllowOther()); err != nil {
-			return nil, nil, fmt.Errorf("cannot mount %q: %v", mountdir, err)
-		}
-	}
-	logging.Infof("Mounted %v", mountdir)
-
 	if connset == nil {
 		// Make a dummy one.
 		connset = proxy.NewConnSet()
@@ -93,56 +80,58 @@ func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.Co
 		tmpDir:  tmpdir,
 		linkDir: mountdir,
 		dst:     conns,
-		links:   make(map[string]symlink),
-		closers: []io.Closer{c},
+		links:   make(map[string]*symlink),
 		connset: connset,
 		client:  client,
 	}
 
-	server := fs.New(c, &fs.Config{
-		Debug: func(msg interface{}) {},
+	srv, err := fs.Mount(mountdir, root, &fs.Options{
+		MountOptions: fuse.MountOptions{AllowOther: true},
 	})
-
-	go func() {
-		if err := server.Serve(root); err != nil {
-			logging.Errorf("serve %q exited due to error: %v", mountdir, err)
-		}
-		// The server exited but we don't know whether this is because of a
-		// graceful reason (via root.Close) or via an external force unmounting.
-		// Closing the root will ensure the 'dst' chan is closed correctly to
-		// signify that no new connections are possible.
-		if err := root.Close(); err != nil {
-			logging.Errorf("root.Close() error: %v", err)
-		}
-		logging.Infof("FUSE exited")
-	}()
-
-	return conns, root, nil
-}
-
-// symlink implements a symbolic link, returning the underlying string when
-// Readlink is called.
-type symlink string
-
-var _ interface {
-	fs.Node
-	fs.NodeReadlinker
-} = symlink("")
-
-func (s symlink) Readlink(context.Context, *fuse.ReadlinkRequest) (string, error) {
-	return string(s), nil
-}
-
-// Attr helps implement fs.Node.
-func (symlink) Attr(ctx context.Context, a *fuse.Attr) error {
-	*a = fuse.Attr{
-		Mode: 0777 | os.ModeSymlink,
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot mount %q: %v", mountdir, err)
 	}
-	return nil
+
+	return conns, fuseCloser(func() error {
+		err := srv.Unmount() // Best effort unmount
+		if err != nil {
+			logging.Errorf("Unmount failed: %v", err)
+		}
+		return root.Close()
+	}), nil
 }
 
+type fuseCloser func() error
+
+func (fc fuseCloser) Close() error {
+	return fc()
+}
+
+// symlink implements a symbolic link, returning the underlying path when
+// Readlink is called.
+type symlink struct {
+	fs.Inode
+	path string
+}
+
+var _ fs.NodeReadlinker = &symlink{}
+
+func (s *symlink) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
+	return []byte(s.path), fs.OK
+}
+
+// fsRoot provides the in-memory file system that supports lazy connections to
+// Cloud SQL instances.
 type fsRoot struct {
-	tmpDir, linkDir string
+	fs.Inode
+
+	// tmpDir defines a temporary directory where all the sockets are placed
+	// faciliating connections to Cloud SQL instances.
+	tmpDir string
+	// linkDir is the directory that holds symbolic links to the tmp dir for
+	// each Cloud SQL instance connection. After shutdown, this directory is
+	// cleaned out.
+	linkDir string
 
 	client  *proxy.Client
 	connset *proxy.ConnSet
@@ -150,41 +139,35 @@ type fsRoot struct {
 	// sockLock protects fields in this struct related to sockets; specifically
 	// 'links' and 'closers'.
 	sockLock sync.Mutex
-	links    map[string]symlink
-	// closers holds a slice of things to close when fsRoot.Close is called.
+	links    map[string]*symlink
+	// closers includes a reference to all open Unix socket listeners. When
+	// fs.Close is called, all of these listeners are also closed.
 	closers []io.Closer
 
 	sync.RWMutex
 	dst chan<- proxy.Conn
 }
 
-// Ensure that fsRoot implements the following interfaces.
 var _ interface {
-	fs.FS
-	fs.Node
-	fs.NodeRequestLookuper
-	fs.HandleReadDirAller
+	fs.InodeEmbedder
+	fs.NodeGetattrer
+	fs.NodeLookuper
+	fs.NodeReaddirer
 } = &fsRoot{}
 
 func (r *fsRoot) newConn(instance string, c net.Conn) {
 	r.RLock()
 	// dst will be nil if Close has been called already.
 	if ch := r.dst; ch != nil {
-		ch <- proxy.Conn{instance, c}
+		ch <- proxy.Conn{Instance: instance, Conn: c}
 	} else {
 		logging.Errorf("Ignored new conn request to %q: system has been closed", instance)
 	}
 	r.RUnlock()
 }
 
-func (r *fsRoot) Forget() {
-	logging.Verbosef("Forget called on %q", r.linkDir)
-}
-
-func (r *fsRoot) Destroy() {
-	logging.Verbosef("Destroy called on %q", r.linkDir)
-}
-
+// Close shuts down the fsRoot filesystem and closes all open Unix socket
+// listeners.
 func (r *fsRoot) Close() error {
 	r.Lock()
 	if r.dst != nil {
@@ -196,11 +179,6 @@ func (r *fsRoot) Close() error {
 		r.dst = nil
 	}
 	r.Unlock()
-
-	logging.Infof("unmount %q", r.linkDir)
-	if err := fuse.Unmount(r.linkDir); err != nil {
-		return err
-	}
 
 	var errs bytes.Buffer
 	r.sockLock.Lock()
@@ -218,92 +196,89 @@ func (r *fsRoot) Close() error {
 	return errors.New(errs.String())
 }
 
-// Root returns the fsRoot itself as the root directory.
-func (r *fsRoot) Root() (fs.Node, error) {
-	return r, nil
+// Getattr implements fs.NodeGetattrer and represents fsRoot as a directory.
+func (r *fsRoot) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+	*out = fuse.AttrOut{Attr: fuse.Attr{
+		Mode: 0555 | fuse.S_IFDIR,
+	}}
+	return fs.OK
 }
 
-// Attr helps implement fs.Node
-func (r *fsRoot) Attr(ctx context.Context, a *fuse.Attr) error {
-	*a = fuse.Attr{
-		Mode: 0555 | os.ModeDir,
+// Lookup implements fs.NodeLookuper and handles all requests, either for the
+// README, or for a new connection to a Cloud SQL instance. When receiving a
+// request for a Cloud SQL instance, Lookup will return a symlink to a Unix
+// socket that provides connectivity to a remote instance.
+func (r *fsRoot) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
+	if name == "README" {
+		return r.NewInode(ctx, &readme{}, fs.StableAttr{}), fs.OK
 	}
-	return nil
-}
-
-// Lookup helps implement fs.NodeRequestLookuper. If the requested file isn't
-// the README, it returns a node which is a symbolic link to a socket which
-// provides connectivity to a remote instance.  The instance which is connected
-// to is determined by req.Name.
-func (r *fsRoot) Lookup(ctx context.Context, req *fuse.LookupRequest, resp *fuse.LookupResponse) (fs.Node, error) {
-	if req.Name == "README" {
-		return readme{}, nil
-	}
-	instance := req.Name
 	r.sockLock.Lock()
 	defer r.sockLock.Unlock()
 
-	if _, _, _, _, err := proxy.ParseInstanceConnectionName(instance); err != nil {
-		return nil, err
+	if _, _, _, _, err := proxy.ParseInstanceConnectionName(name); err != nil {
+		return nil, syscall.ENOENT
 	}
 
-	if ret, ok := r.links[instance]; ok {
-		return ret, nil
+	if ret, ok := r.links[name]; ok {
+		return ret.EmbeddedInode(), fs.OK
 	}
 
-	path := filepath.Join(r.tmpDir, instance)
+	// path is the location of the Unix socket
+	path := filepath.Join(r.tmpDir, name)
 	os.RemoveAll(path) // Best effort; the following will fail if this does.
+	// linkpath is the location the symlink points to
 	linkpath := path
 
-	// MySQL expects a Unix domain socket at the symlinked path whereas Postgres expects
-	// a socket named ".s.PGSQL.5432" in the directory given by the database path.
-	// Look up instance database version to determine the correct socket path.
-	// Client is nil in unit tests.
+	// Add a ".s.PGSQL.5432" suffix to path for Postgres instances
 	if r.client != nil {
-		version, err := r.client.InstanceVersionContext(ctx, instance)
+		version, err := r.client.InstanceVersionContext(ctx, name)
 		if err != nil {
-			logging.Errorf("Failed to get Instance version for %s: %v", instance, err)
-			return nil, fuse.ENOENT
+			logging.Errorf("Failed to get Instance version for %s: %v", name, err)
+			return nil, syscall.ENOENT
 		}
 		if strings.HasPrefix(strings.ToLower(version), "postgres") {
 			if err := os.MkdirAll(path, 0755); err != nil {
 				logging.Errorf("Failed to create path %s: %v", path, err)
-				return nil, fuse.EIO
+				return nil, syscall.EIO
 			}
 			path = filepath.Join(linkpath, ".s.PGSQL.5432")
 		}
 	}
+	// TODO: check path length -- if it exceeds the max supported socket length,
+	// return an error that helps the user understand what went wrong.
+	// Otherwise, we get a "bind: invalid argument" error.
 
 	sock, err := net.Listen("unix", path)
 	if err != nil {
 		logging.Errorf("couldn't listen at %q: %v", path, err)
-		return nil, fuse.EEXIST
+		return nil, syscall.EEXIST
 	}
 	if err := os.Chmod(path, 0777|os.ModeSocket); err != nil {
 		logging.Errorf("couldn't update permissions for socket file %q: %v; other users may be unable to connect", path, err)
 	}
 
-	go r.listenerLifecycle(sock, instance, path)
+	go r.listenerLifecycle(sock, name, path)
 
-	ret := symlink(linkpath)
-	r.links[instance] = ret
+	ret := &symlink{path: linkpath}
+	inode := r.NewInode(ctx, ret, fs.StableAttr{Mode: 0777 | fuse.S_IFLNK})
+	r.links[name] = ret
 	// TODO(chowski): memory leak when listeners exit on their own via removeListener.
 	r.closers = append(r.closers, sock)
 
-	return ret, nil
+	return inode, fs.OK
 }
 
 // removeListener marks that a Listener for an instance has exited and is no
 // longer serving new connections.
 func (r *fsRoot) removeListener(instance, path string) {
 	r.sockLock.Lock()
+	defer r.sockLock.Unlock()
 	v, ok := r.links[instance]
-	if ok && string(v) == path {
+	if ok && v.path == path {
 		delete(r.links, instance)
 	} else {
 		logging.Errorf("Removing a listener for %q at %q which was already replaced", instance, path)
 	}
-	r.sockLock.Unlock()
 }
 
 // listenerLifecycle calls l.Accept in a loop, and for each new connection
@@ -332,56 +307,76 @@ func (r *fsRoot) listenerLifecycle(l net.Listener, instance, path string) {
 	}
 }
 
-// ReadDirAll returns a list of files contained in the root directory.
-// It contains a README file which explains how to use the directory.
-// In addition, there will be a file for each instance to which the
-// proxy is actively connected.
-func (r *fsRoot) ReadDirAll(context.Context) ([]fuse.Dirent, error) {
-	ret := []fuse.Dirent{
-		{Name: "README", Type: fuse.DT_File},
+// Readdir implements fs.NodeReaddirer and returns a list of files for each
+// instance to which the proxy is actively connected. In addition, the list
+// includes a README.
+func (r *fsRoot) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
+	activeConns := r.connset.IDs()
+	entries := []fuse.DirEntry{
+		{Name: "README", Mode: 0777 | fuse.S_IFREG},
 	}
-
-	for _, v := range r.connset.IDs() {
-		ret = append(ret, fuse.Dirent{Name: v, Type: fuse.DT_Socket})
+	for _, conn := range activeConns {
+		entries = append(entries, fuse.DirEntry{
+			Name: conn,
+			Mode: 0777 | syscall.S_IFSOCK,
+		})
 	}
-
-	return ret, nil
+	ds := fs.NewListDirStream(entries)
+	return ds, fs.OK
 }
 
-// readme implements the REAME file found in the mounted folder. It is a
-// static read-only text file.
-type readme struct{}
+// readme represents a static read-only text file.
+type readme struct {
+	fs.Inode
+}
 
 var _ interface {
-	fs.Node
-	fs.HandleReadAller
-} = readme{}
+	fs.InodeEmbedder
+	fs.NodeGetattrer
+	fs.NodeReader
+	fs.NodeOpener
+} = &readme{}
 
 const readmeText = `
 When programs attempt to open files in this directory, a remote connection to
 the Cloud SQL instance of the same name will be established.
 
-That is, running :
+That is, running:
 
-	mysql -u root -S "/path/to/this/directory/project:instance-2"
+	mysql -u root -S "/path/to/this/directory/project:region:instance-2"
+	-or-
+	psql "host=/path/to/this/directory/project:region:instance-2 dbname=mydb user=myuser"
 
-will open a new connection to project:instance-2, given you have the correct
+will open a new connection to the specified instance, given you have the correct
 permissions.
 
 Listing the contents of this directory will show all instances with active
 connections.
 `
 
-// Attr helps implement fs.Node.
-func (readme) Attr(ctx context.Context, a *fuse.Attr) error {
-	*a = fuse.Attr{
-		Mode: 0444,
+// Getattr implements fs.NodeGetattrer and indicates that this file is a regular
+// file.
+func (*readme) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+	*out = fuse.AttrOut{Attr: fuse.Attr{
+		Mode: 0444 | syscall.S_IFREG,
 		Size: uint64(len(readmeText)),
-	}
-	return nil
+	}}
+	return fs.OK
 }
 
-// ReadAll helps implement fs.HandleReadAller.
-func (readme) ReadAll(context.Context) ([]byte, error) {
-	return []byte(readmeText), nil
+// Read implements fs.NodeReader and supports incremental reads.
+func (r *readme) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
+	end := int(off) + len(dest)
+	if end > len(readmeText) {
+		end = len(readmeText)
+	}
+	return fuse.ReadResultData([]byte(readmeText[off:end])), fs.OK
+}
+
+// Open implements fs.NodeOpener and supports opening the README as a read-only
+// file.
+func (r *readme) Open(ctx context.Context, mode uint32) (fs.FileHandle, uint32, syscall.Errno) {
+	df := nodefs.NewDataFile([]byte(readmeText))
+	rf := nodefs.NewReadOnlyFile(df)
+	return rf, 0, fs.OK
 }
