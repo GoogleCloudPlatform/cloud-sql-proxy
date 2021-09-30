@@ -1,6 +1,10 @@
 package fuse
 
-import "os"
+import (
+	"os"
+
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/logging"
+)
 
 const (
 	macfusePath = "/Library/Filesystems/macfuse.fs/Contents/Resources/mount_macfuse"
