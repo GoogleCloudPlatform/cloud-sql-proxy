@@ -23,6 +23,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 	"testing"
@@ -92,6 +93,46 @@ func TestBadDir(t *testing.T) {
 	}
 	if err := err.(*os.PathError); err.Err != syscall.ENOTDIR {
 		t.Fatalf("got %#v, want ENOTDIR (%v)", err.Err, syscall.ENOTDIR)
+	}
+}
+
+func TestSocketPathLengthExceeded(t *testing.T) {
+	dir := randTmpDir(t)
+	tmpdir := randTmpDir(t)
+	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := tryFunc(fuse.Close, 10); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	var tooLong strings.Builder
+	tooLong.WriteString("project:region:")
+	// the total path includes path delimiters
+	toWrite := maxAllowsSocketPathLength - len(filepath.Join(dir+tooLong.String()))
+	for i := 0; i < toWrite; i++ {
+		tooLong.WriteString("a")
+	}
+
+	_, err = ioutil.ReadFile(filepath.Join(dir, tooLong.String()))
+	if !strings.Contains(err.Error(), "no such file or directory") {
+		t.Fatalf("want = no such file or directory, got = %v", err)
+	}
+
+	var justRight strings.Builder
+	justRight.WriteString("project:region:")
+	// the total path includes path delimiters
+	toWrite = maxAllowsSocketPathLength - len(filepath.Join(dir+justRight.String())) - 1
+	for i := 0; i < toWrite; i++ {
+		justRight.WriteString("a")
+	}
+
+	_, err = ioutil.ReadFile(filepath.Join(dir, justRight.String()))
+	if strings.Contains(err.Error(), "no such file or directory") {
+		t.Fatalf("want = no such file or directory, got = %v", err)
 	}
 }
 

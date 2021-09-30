@@ -54,6 +54,14 @@ import (
 	"golang.org/x/net/context"
 )
 
+// maxAllowsSocketPathLength is the maximum socket path length. The value
+// differs between platforms. Typically Linux supports 108 characters, but here
+// we tune the value down slightly to support macOS as well. Note: the value
+// leaves room for one additional null character to terminate the string.
+//
+// See https://unix.stackexchange.com/questions/367008/why-is-socket-path-length-limited-to-a-hundred-chars
+const maxAllowsSocketPathLength = 103
+
 // Supported returns true if the current system supports FUSE.
 // TODO: for OSX, check to see if OSX FUSE is installed.
 func Supported() bool {
@@ -244,9 +252,10 @@ func (r *fsRoot) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*
 			path = filepath.Join(linkpath, ".s.PGSQL.5432")
 		}
 	}
-	// TODO: check path length -- if it exceeds the max supported socket length,
-	// return an error that helps the user understand what went wrong.
-	// Otherwise, we get a "bind: invalid argument" error.
+	if len(path) > maxAllowsSocketPathLength {
+		logging.Errorf("Path name (mount dir + instance connection name) exceeded maximum allowed socket path length. Try a shorter mount dir path name.")
+		return nil, syscall.ENOENT
+	}
 
 	sock, err := net.Listen("unix", path)
 	if err != nil {
