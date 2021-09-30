@@ -55,7 +55,6 @@ import (
 )
 
 // Supported returns true if the current system supports FUSE.
-// TODO: for OSX, check to see if OSX FUSE is installed.
 func Supported() bool {
 	return true
 }
