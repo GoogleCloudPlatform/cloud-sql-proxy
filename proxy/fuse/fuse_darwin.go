@@ -3,7 +3,7 @@ package fuse
 import (
 	"os"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
 )
 
 const (
