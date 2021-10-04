@@ -6,7 +6,7 @@ require (
 	bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
 	cloud.google.com/go v0.97.0
 	github.com/coreos/go-systemd/v22 v22.3.2
-	github.com/denisenkom/go-mssqldb v0.9.0
+	github.com/denisenkom/go-mssqldb v0.11.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/lib/pq v1.10.3
 	go.uber.org/zap v1.19.1
