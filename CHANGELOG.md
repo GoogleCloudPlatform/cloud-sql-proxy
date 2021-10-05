@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.25.0...v1.26.0) (2021-10-05)
+
+
+### Features
+
+* improve reliability of refresh operations ([#883](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/883)) ([480992a](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/480992a7671abe9b76f940175f4ed17f5271d3f8))
+
 ## [1.25.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.24.0...v1.25.0) (2021-09-07)
 
 
