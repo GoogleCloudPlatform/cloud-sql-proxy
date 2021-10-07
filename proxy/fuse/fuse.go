@@ -365,7 +365,7 @@ func (*readme) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) 
 }
 
 // Read implements fs.NodeReader and supports incremental reads.
-func (r *readme) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
+func (*readme) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
 	end := int(off) + len(dest)
 	if end > len(readmeText) {
 		end = len(readmeText)
@@ -375,7 +375,7 @@ func (r *readme) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int
 
 // Open implements fs.NodeOpener and supports opening the README as a read-only
 // file.
-func (r *readme) Open(ctx context.Context, mode uint32) (fs.FileHandle, uint32, syscall.Errno) {
+func (*readme) Open(ctx context.Context, mode uint32) (fs.FileHandle, uint32, syscall.Errno) {
 	df := nodefs.NewDataFile([]byte(readmeText))
 	rf := nodefs.NewReadOnlyFile(df)
 	return rf, 0, fs.OK
