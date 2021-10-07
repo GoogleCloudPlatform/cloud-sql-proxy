@@ -119,9 +119,7 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 			opts.IPAddrTypeOpts[index] = "PRIMARY"
 		}
 	}
-	if opts.CertDuration == time.Duration(0) ||
-		opts.CertDuration < time.Hour ||
-		opts.CertDuration > 24*time.Hour {
+	if opts.CertDuration < time.Hour || opts.CertDuration > 24*time.Hour {
 		opts.CertDuration = time.Hour
 	}
 
