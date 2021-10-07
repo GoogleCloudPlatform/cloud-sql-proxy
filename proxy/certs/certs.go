@@ -81,6 +81,12 @@ type RemoteOpts struct {
 	// on the first connection to a database. The default behavior is to generate
 	// the key when the CertSource is created.
 	DelayKeyGenerate bool
+
+	// CertDuration is the duration for which an ephemeral certificate will be
+	// valid. By default, it is 1 hour. Values should be between 1 hour and 24
+	// hours (inclusive). If an invalid duration is provided, defaults to 1
+	// hour.
+	CertDuration time.Duration
 }
 
 // NewCertSourceOpts returns a CertSource configured with the provided Opts.
@@ -113,6 +119,11 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 			opts.IPAddrTypeOpts[index] = "PRIMARY"
 		}
 	}
+	if opts.CertDuration == time.Duration(0) ||
+		opts.CertDuration < time.Hour ||
+		opts.CertDuration > 24*time.Hour {
+		opts.CertDuration = time.Hour
+	}
 
 	certSource := &RemoteCertSource{
 		serv:           serv,
@@ -120,6 +131,7 @@ func NewCertSourceOpts(c *http.Client, opts RemoteOpts) *RemoteCertSource {
 		IPAddrTypes:    opts.IPAddrTypeOpts,
 		EnableIAMLogin: opts.EnableIAMLogin,
 		TokenSource:    opts.TokenSource,
+		CertDuration:   opts.CertDuration,
 	}
 	if !opts.DelayKeyGenerate {
 		// Generate the RSA key now, but don't block on it.
@@ -150,6 +162,8 @@ type RemoteCertSource struct {
 	EnableIAMLogin bool
 	// token source for the token information used in cert creation
 	TokenSource oauth2.TokenSource
+	// CertDuration is the duration of validity for each ephemeral certificate.
+	CertDuration time.Duration
 }
 
 // Constants for backoffAPIRetry. These cause the retry logic to scale the
@@ -210,6 +224,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	regionName := fmt.Sprintf("%s~%s", r, n)
 	pubKey := string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"}))
 	generateEphemeralCertRequest := sqladmin.GenerateEphemeralCertRequest{
+		// TODO: provide s.CertDuration when the client supports it.
 		PublicKey: pubKey,
 	}
 	var tok *oauth2.Token

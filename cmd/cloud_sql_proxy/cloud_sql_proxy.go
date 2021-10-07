@@ -106,6 +106,11 @@ Defaults to a value which can support 4K connections to one instance`,
 terminating. Any connections that haven't closed after the timeout will be
 dropped`,
 	)
+	certDuration = flag.Duration("cert_duration", time.Hour,
+		`The duration of each ephemeral certificate's validity. Values should be greater
+than or equal to 1 hour and less than or equal to 24 hours. Higher values result in
+less frequent refresh operations.`,
+	)
 
 	// Settings for authentication.
 	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
@@ -542,6 +547,12 @@ func runProxy() int {
 		connset = proxy.NewConnSet()
 	}
 
+	certDur := *certDuration
+	if certDur < time.Hour || certDur > 24*time.Hour {
+		logging.Errorf("certificate duration should be >= 1 hour and <= 24 hours, provided duration was: %v", certDur)
+		return 1
+	}
+
 	// Create proxy client first; fuse uses its cache to resolve database version.
 	refreshCfgThrottle := *refreshCfgThrottle
 	if refreshCfgThrottle < minimumRefreshCfgThrottle {
@@ -562,6 +573,7 @@ func runProxy() int {
 			IPAddrTypeOpts: ipAddrTypeOptsInput,
 			EnableIAMLogin: *enableIAMLogin,
 			TokenSource:    tokSrc,
+			CertDuration:   certDur,
 		}),
 		Conns:              connset,
 		RefreshCfgThrottle: refreshCfgThrottle,
