@@ -313,7 +313,7 @@ func (r *fsRoot) listenerLifecycle(l net.Listener, instance, path string) {
 func (r *fsRoot) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	activeConns := r.connset.IDs()
 	entries := []fuse.DirEntry{
-		{Name: "README", Mode: 0777 | fuse.S_IFREG},
+		{Name: "README", Mode: 0555 | fuse.S_IFREG},
 	}
 	for _, conn := range activeConns {
 		entries = append(entries, fuse.DirEntry{
