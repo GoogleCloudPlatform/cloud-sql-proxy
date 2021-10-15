@@ -89,7 +89,7 @@ func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.Co
 		MountOptions: fuse.MountOptions{AllowOther: true},
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot mount %q: %v", mountdir, err)
+		return nil, nil, fmt.Errorf("FUSE mount failed: %q: %v", mountdir, err)
 	}
 
 	return conns, fuseCloser(func() error {
@@ -208,32 +208,32 @@ func (r *fsRoot) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut
 // README, or for a new connection to a Cloud SQL instance. When receiving a
 // request for a Cloud SQL instance, Lookup will return a symlink to a Unix
 // socket that provides connectivity to a remote instance.
-func (r *fsRoot) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	if name == "README" {
+func (r *fsRoot) Lookup(ctx context.Context, instance string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
+	if instance == "README" {
 		return r.NewInode(ctx, &readme{}, fs.StableAttr{}), fs.OK
 	}
 	r.sockLock.Lock()
 	defer r.sockLock.Unlock()
 
-	if _, _, _, _, err := proxy.ParseInstanceConnectionName(name); err != nil {
+	if _, _, _, _, err := proxy.ParseInstanceConnectionName(instance); err != nil {
 		return nil, syscall.ENOENT
 	}
 
-	if ret, ok := r.links[name]; ok {
+	if ret, ok := r.links[instance]; ok {
 		return ret.EmbeddedInode(), fs.OK
 	}
 
 	// path is the location of the Unix socket
-	path := filepath.Join(r.tmpDir, name)
+	path := filepath.Join(r.tmpDir, instance)
 	os.RemoveAll(path) // Best effort; the following will fail if this does.
 	// linkpath is the location the symlink points to
 	linkpath := path
 
 	// Add a ".s.PGSQL.5432" suffix to path for Postgres instances
 	if r.client != nil {
-		version, err := r.client.InstanceVersionContext(ctx, name)
+		version, err := r.client.InstanceVersionContext(ctx, instance)
 		if err != nil {
-			logging.Errorf("Failed to get Instance version for %s: %v", name, err)
+			logging.Errorf("Failed to get Instance version for %s: %v", instance, err)
 			return nil, syscall.ENOENT
 		}
 		if strings.HasPrefix(strings.ToLower(version), "postgres") {
@@ -257,11 +257,11 @@ func (r *fsRoot) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*
 		logging.Errorf("couldn't update permissions for socket file %q: %v; other users may be unable to connect", path, err)
 	}
 
-	go r.listenerLifecycle(sock, name, path)
+	go r.listenerLifecycle(sock, instance, path)
 
 	ret := &symlink{path: linkpath}
 	inode := r.NewInode(ctx, ret, fs.StableAttr{Mode: 0777 | fuse.S_IFLNK})
-	r.links[name] = ret
+	r.links[instance] = ret
 	// TODO(chowski): memory leak when listeners exit on their own via removeListener.
 	r.closers = append(r.closers, sock)
 
