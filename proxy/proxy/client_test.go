@@ -20,6 +20,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http/httptest"
 	"sync"
@@ -340,4 +341,161 @@ func TestParseInstanceConnectionName(t *testing.T) {
 			t.Errorf("ParseInstanceConnectionName(%q): got \"%v\" for error, want \"%v\"", test.in, gotErrorStr, test.wantErrorStr)
 		}
 	}
+}
+
+type localhostCertSource struct {
+}
+
+func (c localhostCertSource) Local(instance string) (tls.Certificate, error) {
+	return tls.Certificate{
+		Leaf: &x509.Certificate{
+			NotAfter: forever,
+		},
+	}, nil
+}
+
+func (c localhostCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
+	return &x509.Certificate{}, "localhost", "fake name", "fake version", nil
+}
+
+var _ CertSource = &localhostCertSource{}
+
+func TestClientHandshakeCancelled(t *testing.T) {
+	withTestHarness := func(t *testing.T, f func(port int)) {
+		// serverShutdown is closed to free the server
+		// goroutine that is holding up the client request.
+		serverShutdown := make(chan struct{})
+
+		l, err := tls.Listen(
+			"tcp",
+			":",
+			&tls.Config{
+				GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+					// Make the client wait forever to handshake.
+					<-serverShutdown
+					return nil, errors.New("some error")
+				},
+			})
+		if err != nil {
+			t.Fatalf("tls.Listen: %v", err)
+		}
+
+		port := l.Addr().(*net.TCPAddr).Port
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for {
+				conn, err := l.Accept()
+				if err != nil {
+					if !errors.Is(err, net.ErrClosed) {
+						t.Errorf("l.Accept: %v", err)
+					}
+					return
+				}
+
+				_, _ = ioutil.ReadAll(conn) // Trigger the handshake.
+				_ = conn.Close()
+			}
+		}()
+
+		f(port)
+		close(serverShutdown) // Free the server thread.
+		_ = l.Close()
+		wg.Wait()
+	}
+
+	validateError := func(t *testing.T, err error) {
+		if err == nil {
+			t.Fatal("nil error unexpected")
+		}
+		if !errorIsDeadlineOrTimeout(err) {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	}
+
+	newClient := func(port int) *Client {
+		return &Client{
+			Port:  port,
+			Certs: &localhostCertSource{},
+		}
+	}
+
+	// Makes it to Handshake.
+	t.Run("with timeout", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			_, err := c.DialContext(ctx, instance)
+			validateError(t, err)
+		})
+
+	})
+
+	// Doesn't make it to Handshake.
+	t.Run("with short timeout", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+			defer cancel()
+
+			_, err := c.DialContext(ctx, instance)
+			validateError(t, err)
+		})
+	})
+
+	// Doesn't make it to Handshake.
+	t.Run("cancelled without timeout", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			_, err := c.DialContext(ctx, instance)
+			validateError(t, err)
+		})
+	})
+
+	// Makes it to Handshake.
+	t.Run("hangs forever without timeout", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel() // Not yet called.
+
+			done := make(chan struct{}) // Closed when DialContext returns.
+
+			var wg sync.WaitGroup
+			var err error
+			wg.Add(1)
+			go func() {
+				defer close(done)
+				defer wg.Done()
+				_, err = c.DialContext(ctx, instance)
+			}()
+
+			// After waiting 2 seconds, DialContext still will not be done.
+			// We are trying to strike a balance between test runtime and
+			// proof that it would actually hang ~forever (or at least minutes).
+			wait := 2 * time.Second
+			select {
+			case <-done:
+				t.Fatalf("unexpected done is closed: %v", err)
+			case <-time.After(wait):
+				break
+			}
+			cancel()
+			wg.Wait()
+			<-done
+			validateError(t, err)
+		})
+	})
 }

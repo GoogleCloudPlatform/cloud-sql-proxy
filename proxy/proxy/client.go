@@ -445,13 +445,7 @@ func (c *Client) tryConnect(ctx context.Context, addr, instance string, cfg *tls
 		logging.Verbosef("KeepAlive not supported: long-running tcp connections may be killed by the OS.")
 	}
 
-	ret := tls.Client(conn, cfg)
-	if err := ret.Handshake(); err != nil {
-		ret.Close()
-		c.invalidateCfg(cfg, instance)
-		return nil, err
-	}
-	return ret, nil
+	return c.connectTLS(ctx, conn, instance, cfg)
 }
 
 func (c *Client) selectDialer() func(context.Context, string, string) (net.Conn, error) {
