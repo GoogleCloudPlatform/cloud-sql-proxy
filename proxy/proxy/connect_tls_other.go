@@ -51,7 +51,7 @@ func newCancelationWatcher(ctx context.Context, conn net.Conn) *cancelationWatch
 			// Set the deadline to some point in the past, but not
 			// the zero value. This will cancel ongoing requests
 			// and refuse future ones.
-			_ = conn.SetDeadline(time.Now().Add(-time.Hour))
+			_ = conn.SetDeadline(time.Time{}.Add(1))
 		case <-cw.done:
 			return
 		}
