@@ -455,6 +455,24 @@ func TestClientHandshakeCanceled(t *testing.T) {
 
 	})
 
+	// Makes it to Handshake.
+	// Same as the above but the context doesn't have a deadline,
+	// it is canceled manually after a while.
+	t.Run("canceled after a while, no deadline", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			time.AfterFunc(3 * time.Second, cancel)
+
+			_, err := c.DialContext(ctx, instance)
+			validateError(t, err)
+		})
+
+	})
+
 	// Doesn't make it to Handshake.
 	t.Run("with short timeout", func(t *testing.T) {
 		withTestHarness(t, func(port int) {
@@ -481,39 +499,4 @@ func TestClientHandshakeCanceled(t *testing.T) {
 		})
 	})
 
-	// Makes it to Handshake.
-	t.Run("hangs forever without timeout", func(t *testing.T) {
-		withTestHarness(t, func(port int) {
-			c := newClient(port)
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel() // Not yet called.
-
-			done := make(chan struct{}) // Closed when DialContext returns.
-
-			var wg sync.WaitGroup
-			var err error
-			wg.Add(1)
-			go func() {
-				defer close(done)
-				defer wg.Done()
-				_, err = c.DialContext(ctx, instance)
-			}()
-
-			// After waiting 2 seconds, DialContext still will not be done.
-			// We are trying to strike a balance between test runtime and
-			// proof that it would actually hang ~forever (or at least minutes).
-			wait := 2 * time.Second
-			select {
-			case <-done:
-				t.Fatalf("unexpected done is closed: %v", err)
-			case <-time.After(wait):
-				break
-			}
-			cancel()
-			wg.Wait()
-			<-done
-			validateError(t, err)
-		})
-	})
 }
