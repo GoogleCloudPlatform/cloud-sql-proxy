@@ -89,6 +89,9 @@ func (c *Client) connectTLS(
 		// The connection didn't originally have a read deadline (we
 		// just created it). So no matter what happens here, restore
 		// the lack-of-deadline.
+		//
+		// In other words, only apply the deadline while dialing,
+		// not during subsequent usage.
 		_ = conn.SetDeadline(time.Time{})
 	}()
 
