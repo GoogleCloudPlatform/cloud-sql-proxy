@@ -406,7 +406,9 @@ func TestClientHandshakeCancelled(t *testing.T) {
 			for {
 				conn, err := l.Accept()
 				if err != nil {
-					if !errors.Is(err, net.ErrClosed) {
+					// Below Go 1.16, we have to string match here.
+					// https://golang.org/doc/go1.16#net
+					if !strings.Contains(err.Error(), "use of closed network connection") {
 						t.Errorf("l.Accept: %v", err)
 					}
 					return
