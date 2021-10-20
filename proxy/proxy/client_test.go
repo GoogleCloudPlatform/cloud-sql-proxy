@@ -361,7 +361,7 @@ func (c localhostCertSource) Remote(instance string) (cert *x509.Certificate, ad
 
 var _ CertSource = &localhostCertSource{}
 
-func TestClientHandshakeCancelled(t *testing.T) {
+func TestClientHandshakeCanceled(t *testing.T) {
 	errorIsDeadlineOrTimeout := func(err error) bool {
 		if errors.Is(err, context.Canceled) {
 			return true
@@ -469,7 +469,7 @@ func TestClientHandshakeCancelled(t *testing.T) {
 	})
 
 	// Doesn't make it to Handshake.
-	t.Run("cancelled without timeout", func(t *testing.T) {
+	t.Run("canceled without timeout", func(t *testing.T) {
 		withTestHarness(t, func(port int) {
 			c := newClient(port)
 

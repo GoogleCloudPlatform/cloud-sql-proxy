@@ -25,23 +25,23 @@ import (
 	"time"
 )
 
-type cancellationWatcher struct {
+type cancelationWatcher struct {
 	done chan struct{} // closed when the caller requests shutdown by calling stop().
 	wg   sync.WaitGroup
 }
 
-// newCancellationWatcher starts a goroutine that will monitor
-// ctx for cancellation. If ctx is cancelled, the I/O
-// deadline on conn is set to some point in the past, cancelling
+// newCancelationWatcher starts a goroutine that will monitor
+// ctx for cancelation. If ctx is canceled, the I/O
+// deadline on conn is set to some point in the past, canceling
 // ongoing I/O and refusing new I/O.
 //
 // The caller must call stop() on the returned struct to
 // release resources associated with this.
-func newCancellationWatcher(ctx context.Context, conn net.Conn) *cancellationWatcher {
-	cw := &cancellationWatcher{
+func newCancelationWatcher(ctx context.Context, conn net.Conn) *cancelationWatcher {
+	cw := &cancelationWatcher{
 		done: make(chan struct{}),
 	}
-	// Monitor for context cancellation.
+	// Monitor for context cancelation.
 	cw.wg.Add(1)
 	go func() {
 		defer cw.wg.Done()
@@ -59,13 +59,13 @@ func newCancellationWatcher(ctx context.Context, conn net.Conn) *cancellationWat
 	return cw
 }
 
-// stop shuts down this cancellationWatcher and releases
+// stop shuts down this cancelationWatcher and releases
 // the resources associated with it.
 //
 // Once stop has returned, the provided context is no longer
-// watched for cancellation and the deadline on the
+// watched for cancelation and the deadline on the
 // provided net.Conn is no longer manipulated.
-func (cw *cancellationWatcher) stop() {
+func (cw *cancelationWatcher) stop() {
 	close(cw.done)
 	cw.wg.Wait()
 }
@@ -97,7 +97,7 @@ func (c *Client) connectTLS(
 		_ = conn.SetDeadline(dl)
 	}
 
-	cw := newCancellationWatcher(ctx, conn)
+	cw := newCancelationWatcher(ctx, conn)
 	defer cw.stop() // Always free the context watcher.
 
 	ret := tls.Client(conn, cfg)
