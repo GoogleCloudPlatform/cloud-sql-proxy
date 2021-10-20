@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -361,6 +362,21 @@ func (c localhostCertSource) Remote(instance string) (cert *x509.Certificate, ad
 var _ CertSource = &localhostCertSource{}
 
 func TestClientHandshakeCancelled(t *testing.T) {
+	errorIsDeadlineOrTimeout := func(err error) bool {
+		if errors.Is(err, context.Canceled) {
+			return true
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			return true
+		}
+		if strings.Contains(err.Error(), "i/o timeout") {
+			// We should use os.ErrDeadlineExceeded exceeded here,
+			// but it is not present in Go versions below 1.15.
+			return true
+		}
+		return false
+	}
+
 	withTestHarness := func(t *testing.T, f func(port int)) {
 		// serverShutdown is closed to free the server
 		// goroutine that is holding up the client request.
