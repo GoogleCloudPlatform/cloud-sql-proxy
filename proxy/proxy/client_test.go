@@ -465,7 +465,7 @@ func TestClientHandshakeCanceled(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			time.AfterFunc(3 * time.Second, cancel)
+			time.AfterFunc(3*time.Second, cancel)
 
 			_, err := c.DialContext(ctx, instance)
 			validateError(t, err)
