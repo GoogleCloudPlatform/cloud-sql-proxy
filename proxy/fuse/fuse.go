@@ -92,13 +92,14 @@ func NewConnSrc(mountdir, tmpdir string, client *proxy.Client, connset *proxy.Co
 		return nil, nil, fmt.Errorf("FUSE mount failed: %q: %v", mountdir, err)
 	}
 
-	return conns, fuseCloser(func() error {
+	closer := fuseCloser(func() error {
 		err := srv.Unmount() // Best effort unmount
 		if err != nil {
 			logging.Errorf("Unmount failed: %v", err)
 		}
 		return root.Close()
-	}), nil
+	})
+	return conns, closer, nil
 }
 
 type fuseCloser func() error
