@@ -19,3 +19,4 @@ allowedLicenses:
 sourceFileExtensions:
   - 'go'
   - 'yaml'
+  - 'yml'
