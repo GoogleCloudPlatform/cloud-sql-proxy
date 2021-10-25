@@ -20,8 +20,10 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -340,4 +342,161 @@ func TestParseInstanceConnectionName(t *testing.T) {
 			t.Errorf("ParseInstanceConnectionName(%q): got \"%v\" for error, want \"%v\"", test.in, gotErrorStr, test.wantErrorStr)
 		}
 	}
+}
+
+type localhostCertSource struct {
+}
+
+func (c localhostCertSource) Local(instance string) (tls.Certificate, error) {
+	return tls.Certificate{
+		Leaf: &x509.Certificate{
+			NotAfter: forever,
+		},
+	}, nil
+}
+
+func (c localhostCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
+	return &x509.Certificate{}, "localhost", "fake name", "fake version", nil
+}
+
+var _ CertSource = &localhostCertSource{}
+
+func TestClientHandshakeCanceled(t *testing.T) {
+	errorIsDeadlineOrTimeout := func(err error) bool {
+		if errors.Is(err, context.Canceled) {
+			return true
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			return true
+		}
+		if strings.Contains(err.Error(), "i/o timeout") {
+			// We should use os.ErrDeadlineExceeded exceeded here,
+			// but it is not present in Go versions below 1.15.
+			return true
+		}
+		return false
+	}
+
+	withTestHarness := func(t *testing.T, f func(port int)) {
+		// serverShutdown is closed to free the server
+		// goroutine that is holding up the client request.
+		serverShutdown := make(chan struct{})
+
+		l, err := tls.Listen(
+			"tcp",
+			":",
+			&tls.Config{
+				GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+					// Make the client wait forever to handshake.
+					<-serverShutdown
+					return nil, errors.New("some error")
+				},
+			})
+		if err != nil {
+			t.Fatalf("tls.Listen: %v", err)
+		}
+
+		port := l.Addr().(*net.TCPAddr).Port
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for {
+				conn, err := l.Accept()
+				if err != nil {
+					// Below Go 1.16, we have to string match here.
+					// https://golang.org/doc/go1.16#net
+					if !strings.Contains(err.Error(), "use of closed network connection") {
+						t.Errorf("l.Accept: %v", err)
+					}
+					return
+				}
+
+				_, _ = ioutil.ReadAll(conn) // Trigger the handshake.
+				_ = conn.Close()
+			}
+		}()
+
+		f(port)
+		close(serverShutdown) // Free the server thread.
+		_ = l.Close()
+		wg.Wait()
+	}
+
+	validateError := func(t *testing.T, err error) {
+		if err == nil {
+			t.Fatal("nil error unexpected")
+		}
+		if !errorIsDeadlineOrTimeout(err) {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	}
+
+	newClient := func(port int) *Client {
+		return &Client{
+			Port:  port,
+			Certs: &localhostCertSource{},
+		}
+	}
+
+	// Makes it to Handshake.
+	t.Run("with timeout", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			_, err := c.DialContext(ctx, instance)
+			validateError(t, err)
+		})
+
+	})
+
+	// Makes it to Handshake.
+	// Same as the above but the context doesn't have a deadline,
+	// it is canceled manually after a while.
+	t.Run("canceled after a while, no deadline", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			time.AfterFunc(3*time.Second, cancel)
+
+			_, err := c.DialContext(ctx, instance)
+			validateError(t, err)
+		})
+
+	})
+
+	// Doesn't make it to Handshake.
+	t.Run("with short timeout", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+			defer cancel()
+
+			_, err := c.DialContext(ctx, instance)
+			validateError(t, err)
+		})
+	})
+
+	// Doesn't make it to Handshake.
+	t.Run("canceled without timeout", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			_, err := c.DialContext(ctx, instance)
+			validateError(t, err)
+		})
+	})
+
 }
