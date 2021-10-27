@@ -329,6 +329,19 @@ func isValid(c cacheEntry) bool {
 	return c.err == nil && c.cfg != nil
 }
 
+// Valid reports whether the existing connections have valid configuration.
+func (c *Client) Valid() bool {
+	c.cacheL.RLock()
+	defer c.cacheL.RUnlock()
+
+	for _, entry := range c.cfgCache {
+		if !isValid(entry) {
+			return false
+		}
+	}
+	return true
+}
+
 func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 	if e.done == nil { // no refresh started
 		return true

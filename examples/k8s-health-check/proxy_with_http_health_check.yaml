@@ -84,13 +84,19 @@ spec:
           # Number of seconds after the container has started before the first probe is scheduled. Defaults to 0.
           # Not necessary when the startup probe is in use.
           initialDelaySeconds: 0
-          # Frequency of the probe. Defaults to 10.
-          periodSeconds: 10
-          # Number of seconds after which the probe times out. Defaults to 1.
-          timeoutSeconds: 5
-          # Number of times the probe is allowed to fail before the transition from healthy to failure state. 
-          # Defaults to 3.
-          failureThreshold: 1
+          # Frequency of the probe.
+          periodSeconds: 60
+          # Number of seconds after which the probe times out.
+          timeoutSeconds: 30
+          # Number of times the probe is allowed to fail before the transition
+          # from healthy to failure state.
+          #
+          # If periodSeconds = 60, 5 tries will result in five minutes of
+          # checks. The proxy starts to refresh a certificate five minutes
+          # before its expiration. If those five minutes lapse without a
+          # successful refresh, the liveness probe will fail and the pod will be
+          # restarted.
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /readiness

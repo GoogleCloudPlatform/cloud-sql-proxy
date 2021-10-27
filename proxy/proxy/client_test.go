@@ -146,6 +146,47 @@ func TestInvalidateConfigCache(t *testing.T) {
 	}
 }
 
+func TestValidClient(t *testing.T) {
+	testCases := []struct {
+		desc  string
+		cache map[string]cacheEntry
+		want  bool
+	}{
+		{
+			desc:  "when the cache has only valid entries",
+			cache: map[string]cacheEntry{"proj:region:inst": cacheEntry{cfg: &tls.Config{}}},
+			want:  true,
+		},
+		{
+			desc:  "when the cache has invalid TLS entries",
+			cache: map[string]cacheEntry{"proj:region:inst": cacheEntry{}},
+			want:  false,
+		},
+		{
+			desc:  "when the cache has errored entries",
+			cache: map[string]cacheEntry{"proj:region:inst": cacheEntry{err: errors.New("error")}},
+			want:  false,
+		},
+		{
+			desc: "when the cache has a mix of invalid and valid",
+			cache: map[string]cacheEntry{
+				"proj:region:inst":  cacheEntry{cfg: &tls.Config{}},
+				"proj:region:inst2": cacheEntry{err: errors.New("error")},
+			},
+			want: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			client := &Client{cfgCache: tc.cache}
+			if got := client.Valid(); got != tc.want {
+				t.Errorf("want = %v, got = %v", tc.want, got)
+			}
+		})
+	}
+}
+
 func TestConcurrentRefresh(t *testing.T) {
 	b := &fakeCerts{}
 	c := newClient(newCertSource(b, forever))
