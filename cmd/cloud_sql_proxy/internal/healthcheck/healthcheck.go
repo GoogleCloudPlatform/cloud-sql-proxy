@@ -134,7 +134,14 @@ func (s *Server) proxyStarted() bool {
 
 // isLive returns true as long as the proxy Client has all valid connections.
 func isLive(c *proxy.Client) bool {
-	return c.Valid()
+	invalid := c.InvalidInstances()
+	alive := len(invalid) == 0
+	if !alive {
+		for _, err := range invalid {
+			logging.Errorf("[Health Check] Liveness failed: %v", err)
+		}
+	}
+	return alive
 }
 
 // isReady will check the following criteria:
