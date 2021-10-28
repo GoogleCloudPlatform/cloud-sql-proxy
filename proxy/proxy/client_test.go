@@ -146,6 +146,67 @@ func TestInvalidateConfigCache(t *testing.T) {
 	}
 }
 
+func TestValidClient(t *testing.T) {
+	someErr := errors.New("error")
+	openCh := make(chan struct{})
+	closedCh := make(chan struct{})
+	close(closedCh)
+
+	equalErrors := func(a, b []*InvalidError) bool {
+		if len(a) != len(b) {
+			return false
+		}
+		for i := range a {
+			if a[i].instance != b[i].instance {
+				return false
+			}
+			if a[i].err != b[i].err {
+				return false
+			}
+			if a[i].hasTLS != b[i].hasTLS {
+				return false
+			}
+		}
+		return true
+	}
+
+	testCases := []struct {
+		desc  string
+		cache map[string]cacheEntry
+		want  []*InvalidError
+	}{
+		{
+			desc:  "when the cache has only valid entries",
+			cache: map[string]cacheEntry{"proj:region:inst": cacheEntry{cfg: &tls.Config{}, done: closedCh}},
+			want:  nil,
+		},
+		{
+			desc:  "when the cache has invalid TLS entries",
+			cache: map[string]cacheEntry{"proj:region:inst": cacheEntry{done: closedCh}},
+			want:  []*InvalidError{&InvalidError{instance: "proj:region:inst", hasTLS: false}},
+		},
+		{
+			desc:  "when the cache has errored entries",
+			cache: map[string]cacheEntry{"proj:region:inst": cacheEntry{err: someErr, done: closedCh}},
+			want:  []*InvalidError{&InvalidError{instance: "proj:region:inst", hasTLS: false, err: someErr}},
+		},
+		{
+			desc:  "when the cache has an entry with an in-progress refresh",
+			cache: map[string]cacheEntry{"proj:region:inst": cacheEntry{err: someErr, done: openCh}},
+			want:  nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			client := &Client{cfgCache: tc.cache}
+			if got := client.InvalidInstances(); !equalErrors(got, tc.want) {
+				t.Errorf("want = %v, got = %v", tc.want, got)
+			}
+		})
+	}
+}
+
 func TestConcurrentRefresh(t *testing.T) {
 	b := &fakeCerts{}
 	c := newClient(newCertSource(b, forever))

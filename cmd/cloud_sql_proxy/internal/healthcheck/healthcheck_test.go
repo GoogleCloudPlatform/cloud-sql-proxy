@@ -49,8 +49,18 @@ func (cs *fakeCertSource) Remote(instance string) (cert *x509.Certificate, addr,
 	return &x509.Certificate{}, "fake address", "fake name", "fake version", nil
 }
 
+type failingCertSource struct{}
+
+func (cs *failingCertSource) Local(instance string) (tls.Certificate, error) {
+	return tls.Certificate{}, errors.New("failed")
+}
+
+func (cs *failingCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
+	return nil, "", "", "", errors.New("failed")
+}
+
 // Test to verify that when the proxy client is up, the liveness endpoint writes http.StatusOK.
-func TestLiveness(t *testing.T) {
+func TestLivenessPasses(t *testing.T) {
 	s, err := healthcheck.NewServer(&proxy.Client{}, testPort, nil)
 	if err != nil {
 		t.Fatalf("Could not initialize health check: %v", err)
@@ -63,6 +73,36 @@ func TestLiveness(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
+	}
+}
+
+func TestLivenessFails(t *testing.T) {
+	c := &proxy.Client{
+		Certs: &failingCertSource{},
+		Dialer: func(string, string) (net.Conn, error) {
+			return nil, errors.New("error")
+		},
+	}
+	// ensure cache has errored config
+	_, err := c.Dial("proj:region:instance")
+	if err == nil {
+		t.Fatalf("expected Dial to fail, but it succeeded")
+	}
+
+	s, err := healthcheck.NewServer(c, testPort, []string{"proj:region:instance"})
+	if err != nil {
+		t.Fatalf("Could not initialize health check: %v", err)
+	}
+	defer s.Close(context.Background())
+
+	resp, err := http.Get("http://localhost:" + testPort + livenessPath)
+	if err != nil {
+		t.Fatalf("HTTP GET failed: %v", err)
+	}
+	defer resp.Body.Close()
+	want := http.StatusServiceUnavailable
+	if got := resp.StatusCode; got != want {
+		t.Errorf("want %v, got %v", want, got)
 	}
 }
 

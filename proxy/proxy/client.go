@@ -329,6 +329,50 @@ func isValid(c cacheEntry) bool {
 	return c.err == nil && c.cfg != nil
 }
 
+// InvalidError is an error from an instance connection that is invalid because
+// its recent refresh attempt has failed, its TLS config is invalid, etc.
+type InvalidError struct {
+	// instance is the instance connection name
+	instance string
+	// err is what makes the instance invalid
+	err error
+	// hasTLS reports whether the instance has a valid TLS config
+	hasTLS bool
+}
+
+func (e *InvalidError) Error() string {
+	if e.hasTLS {
+		return e.instance + ": " + e.err.Error()
+	}
+	return e.instance + ": missing TLS config, " + e.err.Error()
+}
+
+// InvalidInstances reports whether the existing connections have valid
+// configuration.
+func (c *Client) InvalidInstances() []*InvalidError {
+	c.cacheL.RLock()
+	defer c.cacheL.RUnlock()
+
+	var invalid []*InvalidError
+	for instance, entry := range c.cfgCache {
+		var refreshInProgress bool
+		select {
+		case <-entry.done:
+			// refresh has already completed
+		default:
+			refreshInProgress = true
+		}
+		if !isValid(entry) && !refreshInProgress {
+			invalid = append(invalid, &InvalidError{
+				instance: instance,
+				err:      entry.err,
+				hasTLS:   entry.cfg != nil,
+			})
+		}
+	}
+	return invalid
+}
+
 func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 	if e.done == nil { // no refresh started
 		return true

@@ -89,7 +89,7 @@ func NewServer(c *proxy.Client, port string, staticInst []string) (*Server, erro
 	})
 
 	mux.HandleFunc(livenessPath, func(w http.ResponseWriter, _ *http.Request) {
-		if !isLive() { // Because isLive() always returns true, this case should not be reached.
+		if !isLive(c) {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("error"))
 			return
@@ -132,9 +132,16 @@ func (s *Server) proxyStarted() bool {
 	}
 }
 
-// isLive returns true as long as the proxy is running.
-func isLive() bool {
-	return true
+// isLive returns true as long as the proxy Client has all valid connections.
+func isLive(c *proxy.Client) bool {
+	invalid := c.InvalidInstances()
+	alive := len(invalid) == 0
+	if !alive {
+		for _, err := range invalid {
+			logging.Errorf("[Health Check] Liveness failed: %v", err)
+		}
+	}
+	return alive
 }
 
 // isReady will check the following criteria:
