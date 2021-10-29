@@ -468,7 +468,18 @@ func (c *Client) Dial(instance string) (net.Conn, error) {
 	return c.DialContext(context.Background(), instance)
 }
 
+// ErrUnexpectedFailure indicates the internal refresh operation failed unexpectedly.
+var ErrUnexpectedFailure = errors.New("ErrUnexpectedFailure")
+
 func (c *Client) tryConnect(ctx context.Context, addr, instance string, cfg *tls.Config) (net.Conn, error) {
+	// When multiple dial attempts start in quick succession, the internal
+	// refresh logic is sometimes subject to a race condition. If the first
+	// attempt fails on a handshake error, it will invalidate the cached config.
+	// In some cases, a second dial attempt will initiate a connection with an
+	// invalid config. This check fails fast in such cases.
+	if addr == "" {
+		return nil, ErrUnexpectedFailure
+	}
 	dial := c.selectDialer()
 	conn, err := dial(ctx, "tcp", addr)
 	if err != nil {
