@@ -221,9 +221,11 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	p, r, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", r, n)
 	pubKey := string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"}))
-	generateEphemeralCertRequest := sqladmin.GenerateEphemeralCertRequest{
-		// TODO: provide s.CertDuration when the client supports it.
+	certReq := sqladmin.GenerateEphemeralCertRequest{
 		PublicKey: pubKey,
+	}
+	if s.CertDuration != time.Duration(0) {
+		certReq.ValidDuration = fmt.Sprintf("%ds", s.CertDuration/time.Second)
 	}
 	var tok *oauth2.Token
 	// If IAM login is enabled, add the OAuth2 token into the ephemeral
@@ -242,9 +244,9 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		}
 		// TODO: remove this once issue with OAuth2 Tokens is resolved.
 		// See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/852.
-		generateEphemeralCertRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
+		certReq.AccessToken = strings.TrimRight(tok.AccessToken, ".")
 	}
-	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, &generateEphemeralCertRequest)
+	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, &certReq)
 
 	var data *sqladmin.GenerateEphemeralCertResponse
 	err = backoffAPIRetry("generateEphemeral for", instance, func() error {
