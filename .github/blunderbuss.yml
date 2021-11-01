@@ -1,11 +1,11 @@
 assign_issues:
-  - shubha-rajan
+#   - shubha-rajan
   - enocom
-  - jackwotherspoon
+#   - jackwotherspoon
 #  - kurtisvg
 
 assign_prs:
-  - shubha-rajan
+#   - shubha-rajan
   - enocom
-  - jackwotherspoon
+#   - jackwotherspoon
 #  - kurtisvg
