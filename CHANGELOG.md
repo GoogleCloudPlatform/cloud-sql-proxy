@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.27.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.26.0...v1.27.0) (2021-11-02)
+
+
+### Features
+
+* switch to supported FUSE library ([#953](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/953)) ([10f2133](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/10f2133010f3bf7ef8a13b43e0bfa16bdca8cedb))
+* verify FUSE is installed on macOS / linux ([#959](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/959)) ([9ab868e](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/9ab868ef344b9a82c06f97928420f98a4d37c5ce))
+
+
+### Bug Fixes
+
+* fail fast on invalid config ([#999](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/999)) ([18a0960](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/18a096037d9ceb2ca71218984b65fe342fc2a778))
+* respect context deadline for TLS handshakes ([#987](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/987)) ([12ff12c](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/12ff12c9f87459dc40e2e6e4a2d08bebb0786ee7)), closes [#986](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/986)
+* validate instance connections in liveness probe ([#995](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/995)) ([e5cc8d4](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/e5cc8d4f8676fed2013cc491578a1aaf7416ec3e))
+
 ## [1.26.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.25.0...v1.26.0) (2021-10-05)
 
 
