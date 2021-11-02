@@ -67,7 +67,7 @@ func TestLivenessPasses(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 
-	resp, err := http.Get("http://localhost:" + testPort + livenessPath)
+	resp, err := http.Get("http://[::1]:" + testPort + livenessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestLivenessFails(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 
-	resp, err := http.Get("http://localhost:" + testPort + livenessPath)
+	resp, err := http.Get("http://[::1]:" + testPort + livenessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
@@ -118,7 +118,7 @@ func TestStartupPass(t *testing.T) {
 	// Simulate the proxy client completing startup.
 	s.NotifyStarted()
 
-	resp, err := http.Get("http://localhost:" + testPort + startupPath)
+	resp, err := http.Get("http://[::1]:" + testPort + startupPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestStartupPass(t *testing.T) {
 		t.Errorf("%v: want %v, got %v", startupPath, http.StatusOK, resp.StatusCode)
 	}
 
-	resp, err = http.Get("http://localhost:" + testPort + readinessPath)
+	resp, err = http.Get("http://[::1]:" + testPort + readinessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
@@ -144,7 +144,7 @@ func TestStartupFail(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 
-	resp, err := http.Get("http://localhost:" + testPort + startupPath)
+	resp, err := http.Get("http://[::1]:" + testPort + startupPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
@@ -152,7 +152,7 @@ func TestStartupFail(t *testing.T) {
 		t.Errorf("%v: want %v, got %v", startupPath, http.StatusOK, resp.StatusCode)
 	}
 
-	resp, err = http.Get("http://localhost:" + testPort + readinessPath)
+	resp, err = http.Get("http://[::1]:" + testPort + readinessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestMaxConnectionsReached(t *testing.T) {
 	s.NotifyStarted()
 	c.ConnectionsCounter = c.MaxConnections // Simulate reaching the limit for maximum number of connections
 
-	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+	resp, err := http.Get("http://[::1]:" + testPort + readinessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
@@ -211,7 +211,7 @@ func TestDialFail(t *testing.T) {
 			defer s.Close(context.Background())
 			s.NotifyStarted()
 
-			resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+			resp, err := http.Get("http://[::1]:" + testPort + readinessPath)
 			if err != nil {
 				t.Fatalf("%v: HTTP GET failed: %v", name, err)
 			}
@@ -231,7 +231,7 @@ func TestCloseHealthCheck(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 
-	resp, err := http.Get("http://localhost:" + testPort + livenessPath)
+	resp, err := http.Get("http://[::1]:" + testPort + livenessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
@@ -244,7 +244,7 @@ func TestCloseHealthCheck(t *testing.T) {
 		t.Fatalf("Failed to close health check: %v", err)
 	}
 
-	_, err = http.Get("http://localhost:" + testPort + livenessPath)
+	_, err = http.Get("http://[::1]:" + testPort + livenessPath)
 	if err == nil {
 		t.Fatalf("HTTP GET did not return error after closing health check server.")
 	}

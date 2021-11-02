@@ -33,7 +33,7 @@ func singleInstanceDial(t *testing.T, connName string, port int) {
 	ctx := context.Background()
 
 	var args []string
-	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", connName, port), "-use_http_health_check")
+	args = append(args, fmt.Sprintf("-instances=%s=tcp6:%d", connName, port), "-use_http_health_check")
 
 	// Start the proxy.
 	p, err := StartProxy(ctx, args...)
@@ -46,7 +46,7 @@ func singleInstanceDial(t *testing.T, connName string, port int) {
 		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
 	}
 
-	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+	resp, err := http.Get("http://[::1]:" + testPort + readinessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}

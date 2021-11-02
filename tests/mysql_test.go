@@ -19,6 +19,7 @@ package tests
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -53,13 +54,13 @@ func requireMysqlVars(t *testing.T) {
 
 func TestMysqlTcp(t *testing.T) {
 	requireMysqlVars(t)
-	cfg := mysql.Config{
-		User:                 *mysqlUser,
-		Passwd:               *mysqlPass,
-		DBName:               *mysqlDb,
-		AllowNativePasswords: true,
-	}
-	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort, "")
+	// Connect to IPv6 localhost ::1
+	dsn := fmt.Sprintf("%s:%s@tcp(::1)/%s?checkConnLiveness=false&maxAllowedPacket=0",
+		*mysqlUser,
+		*mysqlPass,
+		*mysqlDb,
+	)
+	proxyConnTest(t, *mysqlConnName, "mysql", dsn, mysqlPort, "")
 }
 
 func TestMysqlSocket(t *testing.T) {
@@ -87,13 +88,13 @@ func TestMysqlSocket(t *testing.T) {
 
 func TestMysqlConnLimit(t *testing.T) {
 	requireMysqlVars(t)
-	cfg := mysql.Config{
-		User:                 *mysqlUser,
-		Passwd:               *mysqlPass,
-		DBName:               *mysqlDb,
-		AllowNativePasswords: true,
-	}
-	proxyConnLimitTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort)
+	// Connect to IPv6 localhost ::1
+	dsn := fmt.Sprintf("%s:%s@tcp(::1)/%s?checkConnLiveness=false&maxAllowedPacket=0",
+		*mysqlUser,
+		*mysqlPass,
+		*mysqlDb,
+	)
+	proxyConnLimitTest(t, *mysqlConnName, "mysql", dsn, mysqlPort)
 }
 
 // Test to verify that when a proxy client serves one mysql instance that can be

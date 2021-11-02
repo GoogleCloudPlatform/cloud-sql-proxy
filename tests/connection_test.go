@@ -31,7 +31,7 @@ func proxyConnTest(t *testing.T, connName, driver, dsn string, port int, dir str
 	if dir != "" { // unix port
 		args = append(args, fmt.Sprintf("-dir=%s", dir), fmt.Sprintf("-instances=%s", connName))
 	} else { // tcp socket
-		args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", connName, port))
+		args = append(args, fmt.Sprintf("-instances=%s=tcp6:%d", connName, port))
 	}
 
 	// Start the proxy
@@ -64,7 +64,7 @@ func proxyConnLimitTest(t *testing.T, connName, driver, dsn string, port int) {
 	maxConn, totConn := 5, 10
 
 	// Start the proxy
-	p, err := StartProxy(ctx, fmt.Sprintf("-instances=%s=tcp:%d", connName, port), fmt.Sprintf("-max_connections=%d", maxConn))
+	p, err := StartProxy(ctx, fmt.Sprintf("-instances=%s=tcp6:%d", connName, port), fmt.Sprintf("-max_connections=%d", maxConn))
 	if err != nil {
 		t.Fatalf("unable to start proxy: %v", err)
 	}

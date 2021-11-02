@@ -57,7 +57,7 @@ func TestMultiInstanceDial(t *testing.T) {
 		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
 	}
 
-	resp, err := http.Get("http://localhost:" + testPort + readinessPath)
+	resp, err := http.Get("http://[::1]:" + testPort + readinessPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
 	}
