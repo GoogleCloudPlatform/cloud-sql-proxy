@@ -12,18 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fuse
+//go:build linux
+// +build linux
 
-import "os/exec"
+package fuse_test
 
-// Supported returns true if the current system supports FUSE.
-func Supported() bool {
-	// This code follows the same strategy found in hanwen/go-fuse.
-	// See https://github.com/hanwen/go-fuse/blob/0f728ba15b38579efefc3dc47821882ca18ffea7/fuse/mount_linux.go#L184-L198.
-	if _, err := exec.LookPath("fusermount"); err != nil {
-		if _, err := exec.LookPath("/bin/fusermount"); err != nil {
-			return false
-		}
+import (
+	"os"
+	"testing"
+
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
+)
+
+func TestFUSESupport(t *testing.T) {
+	removePath := func() func() {
+		original := os.Getenv("PATH")
+		os.Unsetenv("PATH")
+		return func() { os.Setenv("PATH", original) }
 	}
-	return true
+	if !fuse.Supported() {
+		t.Fatal("expected FUSE to be supported")
+	}
+	cleanup := removePath()
+	defer cleanup()
+
+	if !fuse.Supported() {
+		t.Fatal("expected FUSE to be supported")
+	}
+
 }
