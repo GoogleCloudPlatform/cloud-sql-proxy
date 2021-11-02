@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !windows && !openbsd
 // +build !windows,!openbsd
 
 // Package fuse provides a connection source wherein the user does not need to
@@ -53,12 +54,6 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse/nodefs"
 	"golang.org/x/net/context"
 )
-
-// Supported returns true if the current system supports FUSE.
-// TODO: for OSX, check to see if OSX FUSE is installed.
-func Supported() bool {
-	return true
-}
 
 // NewConnSrc returns a source of new connections based on Lookups in the
 // provided mount directory. If there isn't a directory located at tmpdir one
