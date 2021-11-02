@@ -14,7 +14,11 @@
 
 package fuse
 
-import "os/exec"
+import (
+	"os/exec"
+
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
+)
 
 // Supported returns true if the current system supports FUSE.
 func Supported() bool {
@@ -22,6 +26,7 @@ func Supported() bool {
 	// See https://github.com/hanwen/go-fuse/blob/0f728ba15b38579efefc3dc47821882ca18ffea7/fuse/mount_linux.go#L184-L198.
 	if _, err := exec.LookPath("fusermount"); err != nil {
 		if _, err := exec.LookPath("/bin/fusermount"); err != nil {
+			logging.Errorf("Failed to find fusermount binary in PATH or /bin. Verify FUSE installation and try again.")
 			return false
 		}
 	}

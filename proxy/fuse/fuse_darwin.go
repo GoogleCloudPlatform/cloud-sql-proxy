@@ -35,9 +35,7 @@ func Supported() bool {
 	if _, err := os.Stat(macfusePath); err != nil {
 		// if that fails, check for osxfuse next
 		if _, err := os.Stat(osxfusePath); err != nil {
-			logging.Errorf(`FUSE support on macOS depends on osxfuse or macfuse.
-Neither were found on your machine. For installation instructions,
-see https://osxfuse.github.io.`)
+			logging.Errorf("Failed to find osxfuse or macfuse. Verify FUSE installation and try again (see https://osxfuse.github.io).")
 			return false
 		}
 	}
