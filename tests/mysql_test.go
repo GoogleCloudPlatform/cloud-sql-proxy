@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !skip_mysql
-
 // mysql_test runs various tests against a MySQL flavored Cloud SQL instance.
 package tests
 
@@ -52,6 +50,9 @@ func requireMysqlVars(t *testing.T) {
 }
 
 func TestMysqlTcp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
 	requireMysqlVars(t)
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
@@ -63,6 +64,9 @@ func TestMysqlTcp(t *testing.T) {
 }
 
 func TestMysqlSocket(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipped Unix socket test on Windows")
 	}
@@ -86,6 +90,9 @@ func TestMysqlSocket(t *testing.T) {
 }
 
 func TestMysqlConnLimit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
 	requireMysqlVars(t)
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
@@ -99,6 +106,9 @@ func TestMysqlConnLimit(t *testing.T) {
 // Test to verify that when a proxy client serves one mysql instance that can be
 // dialed successfully, the health check readiness endpoint serves http.StatusOK.
 func TestMysqlDial(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
 	switch "" {
 	case *mysqlConnName:
 		t.Fatal("'mysql_conn_name' not set")
