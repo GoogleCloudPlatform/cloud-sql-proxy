@@ -96,6 +96,9 @@ func TestCreateInstanceConfigs(t *testing.T) {
 		if runtime.GOOS == "windows" && !v.supportedOnWindows {
 			continue
 		}
+		if v.useFuse && testing.Short() {
+			t.Skip("skipping fuse tests in short mode.")
+		}
 		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient, v.skipFailedInstanceConfig)
 		if v.wantErr {
 			if err == nil {

@@ -25,6 +25,10 @@ import (
 )
 
 func TestFUSESupport(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
+
 	removePath := func() func() {
 		original := os.Getenv("PATH")
 		os.Unsetenv("PATH")
