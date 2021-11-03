@@ -92,7 +92,7 @@ sudo apt-get install fuse
 On macOS, use:
 
 ```
-brew install --cask osxfuse
+brew install --cask macfuse
 ```
 
 ### How to run just unit tests
