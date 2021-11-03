@@ -58,6 +58,10 @@ func tryFunc(f func() error, maxCount int) error {
 }
 
 func TestFuseClose(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
+
 	dir := randTmpDir(t)
 	tmpdir := randTmpDir(t)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
@@ -75,6 +79,10 @@ func TestFuseClose(t *testing.T) {
 
 // TestBadDir verifies that the fuse module does not create directories, only simple files.
 func TestBadDir(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
+
 	dir := randTmpDir(t)
 	tmpdir := randTmpDir(t)
 	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
@@ -97,6 +105,10 @@ func TestBadDir(t *testing.T) {
 }
 
 func TestReadme(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
+
 	dir := randTmpDir(t)
 	tmpdir := randTmpDir(t)
 	_, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
@@ -119,6 +131,10 @@ func TestReadme(t *testing.T) {
 }
 
 func TestSingleInstance(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
+
 	dir := randTmpDir(t)
 	tmpdir := randTmpDir(t)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
@@ -177,6 +193,10 @@ func TestSingleInstance(t *testing.T) {
 }
 
 func BenchmarkNewConnection(b *testing.B) {
+	if testing.Short() {
+		b.Skip("skipping fuse tests in short mode.")
+	}
+
 	dir := randTmpDir(b)
 	tmpdir := randTmpDir(b)
 	src, fuse, err := NewConnSrc(dir, tmpdir, nil, nil)
