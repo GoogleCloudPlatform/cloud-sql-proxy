@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !skip_sqlserver
-
 // sqlserver_test runs various tests against a SqlServer flavored Cloud SQL instance.
 package tests
 
@@ -49,6 +47,9 @@ func requireSqlserverVars(t *testing.T) {
 }
 
 func TestSqlServerTcp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping SQL Server integration tests")
+	}
 	requireSqlserverVars(t)
 
 	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s", *sqlserverUser, *sqlserverPass, *sqlserverDb)
@@ -56,6 +57,9 @@ func TestSqlServerTcp(t *testing.T) {
 }
 
 func TestSqlserverConnLimit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping SQL Server integration tests")
+	}
 	requireSqlserverVars(t)
 
 	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s", *sqlserverUser, *sqlserverPass, *sqlserverDb)
@@ -65,6 +69,9 @@ func TestSqlserverConnLimit(t *testing.T) {
 // Test to verify that when a proxy client serves one sqlserver instance that can be
 // dialed successfully, the health check readiness endpoint serves http.StatusOK.
 func TestSqlserverDial(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping SQL Server integration tests")
+	}
 	switch "" {
 	case *sqlserverConnName:
 		t.Fatal("'sqlserver_conn_name' not set")

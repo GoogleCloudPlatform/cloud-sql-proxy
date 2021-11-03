@@ -98,14 +98,15 @@ brew install --cask macfuse
 ### How to run just unit tests
 
 ```
-go test -tags=skip_sqlserver,skip_mysql,skip_postgres ./...
+go test -short ./...
 ```
 
 ### How to run all tests
 
 To run all integration tests, users will need a Google Cloud project with a
-MySQL, PostgreSQL, and SQL Server database. Note: Pull Requests will run these
-tests and as a result may be skipped locally if necessary.
+MySQL, PostgreSQL, and SQL Server database, in addition to installing FUSE
+support. Note: Pull Requests will run these tests and as a result may be skipped
+locally if necessary.
 
 A sample `.envrc.example` file is included in the root directory which documents
 which environment variables must be set to run the integration tests. Copy this

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !skip_postgres
-
 // postgres_test runs various tests against a Postgres flavored Cloud SQL instance.
 package tests
 
@@ -59,6 +57,9 @@ func requirePostgresVars(t *testing.T) {
 }
 
 func TestPostgresTcp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
 	requirePostgresVars(t)
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
@@ -66,6 +67,9 @@ func TestPostgresTcp(t *testing.T) {
 }
 
 func TestPostgresSocket(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipped Unix socket test on Windows")
 	}
@@ -82,6 +86,9 @@ func TestPostgresSocket(t *testing.T) {
 }
 
 func TestPostgresConnLimit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
 	requirePostgresVars(t)
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
@@ -89,6 +96,9 @@ func TestPostgresConnLimit(t *testing.T) {
 }
 
 func TestPostgresIAMDBAuthn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
 	requirePostgresVars(t)
 	if *postgresIAMUser == "" {
 		t.Fatal("'postgres_user_iam' not set")
@@ -121,6 +131,9 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 }
 
 func TestPostgresHook(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
@@ -140,6 +153,9 @@ func TestPostgresHook(t *testing.T) {
 // Test to verify that when a proxy client serves one postgres instance that can be
 // dialed successfully, the health check readiness endpoint serves http.StatusOK.
 func TestPostgresDial(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
 	switch "" {
 	case *postgresConnName:
 		t.Fatal("'postgres_conn_name' not set")
