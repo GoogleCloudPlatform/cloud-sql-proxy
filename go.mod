@@ -1,6 +1,6 @@
-module github.com/GoogleCloudPlatform/cloudsql-proxy
+module github.com/GoogleCloudPlatform/cloudsql-proxy/v2
 
-go 1.13
+go 1.17
 
 require (
 	cloud.google.com/go v0.97.0

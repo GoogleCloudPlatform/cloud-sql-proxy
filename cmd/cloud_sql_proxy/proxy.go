@@ -28,9 +28,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/fuse"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/fuse"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/proxy"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 

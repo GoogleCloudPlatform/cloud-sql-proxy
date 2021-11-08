@@ -30,8 +30,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/util"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
@@ -228,7 +228,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 			return tls.Certificate{}, tokErr
 		}
 		// TODO: remove this once issue with OAuth2 Tokens is resolved.
-		// See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/852.
+		// See https://github.com/GoogleCloudPlatform/cloudsql-proxy/v2/issues/852.
 		generateEphemeralCertRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
 	}
 	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, &generateEphemeralCertRequest)

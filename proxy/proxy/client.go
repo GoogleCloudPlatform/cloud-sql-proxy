@@ -26,8 +26,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/util"
 	"golang.org/x/net/proxy"
 	"golang.org/x/time/rate"
 )
@@ -219,7 +219,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 		Certificates: []tls.Certificate{mycert},
 		RootCAs:      certs,
 		// We need to set InsecureSkipVerify to true due to
-		// https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/194
+		// https://github.com/GoogleCloudPlatform/cloudsql-proxy/v2/issues/194
 		// https://tip.golang.org/doc/go1.11#crypto/x509
 		//
 		// Since we have a secure channel to the Cloud SQL API which we use to retrieve the
