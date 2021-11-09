@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy/internal/healthcheck"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cmd/cloud_sql_proxy/internal/healthcheck"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/proxy"
 )
 
 const (
