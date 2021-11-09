@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/dialers/mysql"
 )
 
 // ExampleCfg shows how to use Cloud SQL Auth proxy dialer if you must update some

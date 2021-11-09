@@ -26,8 +26,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/util"
 	"golang.org/x/net/proxy"
 	"golang.org/x/time/rate"
 )

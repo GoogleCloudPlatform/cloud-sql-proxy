@@ -22,7 +22,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/proxy"
 	"github.com/go-sql-driver/mysql"
 )
 
