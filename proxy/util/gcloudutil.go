@@ -22,7 +22,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
 	"golang.org/x/oauth2"
 	exec "golang.org/x/sys/execabs"
 )
