@@ -17,7 +17,7 @@ package fuse
 import (
 	"os/exec"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
 )
 
 // Supported returns true if the current system supports FUSE.
