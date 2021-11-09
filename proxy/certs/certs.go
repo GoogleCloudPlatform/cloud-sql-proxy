@@ -30,8 +30,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/util"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/util"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
