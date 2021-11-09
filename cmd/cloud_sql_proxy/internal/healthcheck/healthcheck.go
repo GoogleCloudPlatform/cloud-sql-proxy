@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/logging"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/proxy"
 )
 
 const (
