@@ -10,7 +10,7 @@ require (
 	github.com/hanwen/go-fuse/v2 v2.1.0
 	github.com/lib/pq v1.10.4
 	go.uber.org/zap v1.19.1
-	golang.org/x/net v0.0.0-20211020060615-d418f374d309
+	golang.org/x/net v0.0.0-20211116231205-47ca1ff31462
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
