@@ -304,8 +304,16 @@ proxy. If a Socks5 proxy is running on `localhost:8000`, the command to start
 the Cloud SQL Auth Proxy would look like:
 
 ```
-ALL_PROXY=socks5://localhost:8000 cloud_sql_proxy -instances=$INSTANCE_CONNECTION_NAME=tcp:5432
+ALL_PROXY=socks5://localhost:8000 \
+HTTPS_PROXY=socks5://localhost:8000 \
+    cloud_sql_proxy -instances=$INSTANCE_CONNECTION_NAME=tcp:5432
 ```
+
+Note: the `ALL_PROXY` environment variable specifies the proxy for all TCP
+traffic to and from a Cloud SQL instance. The `HTTPS_PROXY` (or `HTTP_PROXY`)
+specifies the proxy for all HTTP(S) traffic. See
+[`http.ProxyFromEnvironment`](https://pkg.go.dev/net/http@go1.17.3#ProxyFromEnvironment)
+for possible values.
 
 ## Reference Documentation
 
