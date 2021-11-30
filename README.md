@@ -309,12 +309,14 @@ HTTPS_PROXY=socks5://localhost:8000 \
     cloud_sql_proxy -instances=$INSTANCE_CONNECTION_NAME=tcp:5432
 ```
 
-Note: the `ALL_PROXY` environment variable specifies the proxy for all TCP
+The `ALL_PROXY` environment variable specifies the proxy for all TCP
 traffic to and from a Cloud SQL instance. The `ALL_PROXY` environment variable
 supports `socks5` and `socks5h` protocols. To route DNS lookups through a proxy,
 use the `socks5h` protocol.
 
-The `HTTPS_PROXY` (or `HTTP_PROXY`) specifies the proxy for all HTTP(S) traffic. See
+The `HTTPS_PROXY` (or `HTTP_PROXY`) specifies the proxy for all HTTP(S) traffic
+to the SQL Admin API. Specifying `HTTPS_PROXY` or `HTTP_PROXY` is only necessary
+when you want to proxy this traffic. Otherwise, it is optional. See
 [`http.ProxyFromEnvironment`](https://pkg.go.dev/net/http@go1.17.3#ProxyFromEnvironment)
 for possible values.
 
