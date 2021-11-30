@@ -299,8 +299,8 @@ Kubernetes Engine][connect-to-k8s].
 
 ## Running behind a Socks5 proxy
 
-The Cloud SQL Auth Proxy includes support for sending requests through a SOCKs5
-proxy. If a Socks5 proxy is running on `localhost:8000`, the command to start
+The Cloud SQL Auth Proxy includes support for sending requests through a SOCKS5
+proxy. If a SOCKS5 proxy is running on `localhost:8000`, the command to start
 the Cloud SQL Auth Proxy would look like:
 
 ```
@@ -310,8 +310,11 @@ HTTPS_PROXY=socks5://localhost:8000 \
 ```
 
 Note: the `ALL_PROXY` environment variable specifies the proxy for all TCP
-traffic to and from a Cloud SQL instance. The `HTTPS_PROXY` (or `HTTP_PROXY`)
-specifies the proxy for all HTTP(S) traffic. See
+traffic to and from a Cloud SQL instance. The `ALL_PROXY` environment variable
+supports `socks5` and `socks5h` protocols. To route DNS lookups through a proxy,
+use the `socks5h` protocol.
+
+The `HTTPS_PROXY` (or `HTTP_PROXY`) specifies the proxy for all HTTP(S) traffic. See
 [`http.ProxyFromEnvironment`](https://pkg.go.dev/net/http@go1.17.3#ProxyFromEnvironment)
 for possible values.
 
