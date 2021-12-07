@@ -1,0 +1,3 @@
+handleGHRelease: true
+releaseType: simple
+packageName: cloud-sql-proxy
