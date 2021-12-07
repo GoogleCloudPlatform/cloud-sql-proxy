@@ -3,7 +3,7 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy
 go 1.13
 
 require (
-	cloud.google.com/go v0.98.0
+	cloud.google.com/go v0.99.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/denisenkom/go-mssqldb v0.11.0
 	github.com/go-sql-driver/mysql v1.6.0
