@@ -11,6 +11,9 @@
   "postUpdateOptions": [
     "gomodTidy"
   ],
+  "ignoreDeps": [
+      "golang.org/x/net"
+  ],
   "force": {
     "constraints": {
       "go": "1.16"
