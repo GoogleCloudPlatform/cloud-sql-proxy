@@ -160,10 +160,17 @@ const (
 	backoffRetries = 5
 )
 
-func backoffAPIRetry(desc, instance string, do func() error) error {
-	var err error
+var now = func() time.Time {
+	return time.Now().UTC()
+}
+
+func backoffAPIRetry(desc, instance string, do func(timestamp time.Time) error) error {
+	var (
+		err error
+		ts  time.Time
+	)
 	for i := 0; i < backoffRetries; i++ {
-		err = do()
+		err = do(ts)
 		gErr, ok := err.(*googleapi.Error)
 		switch {
 		case !ok:
@@ -184,6 +191,8 @@ func backoffAPIRetry(desc, instance string, do func() error) error {
 		sleep := time.Duration(baseBackoff * math.Pow(backoffMult, exp))
 		logging.Errorf("Error in %s %s: %v; retrying in %v", desc, instance, err, sleep)
 		time.Sleep(sleep)
+		// Create timestamp 30 seconds before now for stale read requests
+		ts = now().Add(-30 * time.Second)
 	}
 	return err
 }
@@ -209,7 +218,7 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	p, r, n := util.SplitName(instance)
 	regionName := fmt.Sprintf("%s~%s", r, n)
 	pubKey := string(pem.EncodeToMemory(&pem.Block{Bytes: pkix, Type: "RSA PUBLIC KEY"}))
-	generateEphemeralCertRequest := sqladmin.GenerateEphemeralCertRequest{
+	generateEphemeralCertRequest := &sqladmin.GenerateEphemeralCertRequest{
 		PublicKey: pubKey,
 	}
 	var tok *oauth2.Token
@@ -231,10 +240,13 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 		// See https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/852.
 		generateEphemeralCertRequest.AccessToken = strings.TrimRight(tok.AccessToken, ".")
 	}
-	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, &generateEphemeralCertRequest)
+	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, generateEphemeralCertRequest)
 
 	var data *sqladmin.GenerateEphemeralCertResponse
-	err = backoffAPIRetry("generateEphemeral for", instance, func() error {
+	err = backoffAPIRetry("generateEphemeral for", instance, func(timestamp time.Time) error {
+		if !timestamp.IsZero() {
+			generateEphemeralCertRequest.ReadTime = timestamp.Format(time.RFC3339)
+		}
 		data, err = req.Do()
 		return err
 	})
@@ -310,7 +322,10 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	req := s.serv.Connect.Get(p, regionName)
 
 	var data *sqladmin.ConnectSettings
-	err = backoffAPIRetry("get instance", instance, func() error {
+	err = backoffAPIRetry("get instance", instance, func(timestamp time.Time) error {
+		if !timestamp.IsZero() {
+			req.ReadTime(timestamp.Format(time.RFC3339))
+		}
 		data, err = req.Do()
 		return err
 	})
