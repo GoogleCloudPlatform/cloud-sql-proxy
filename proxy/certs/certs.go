@@ -160,17 +160,19 @@ const (
 	backoffRetries = 5
 )
 
+// now returns the current time in UTC. It is defined as a var so tests can
+// replace it with a fixed return value.
 var now = func() time.Time {
 	return time.Now().UTC()
 }
 
-func backoffAPIRetry(desc, instance string, do func(timestamp time.Time) error) error {
+func backoffAPIRetry(desc, instance string, do func(staleRead time.Time) error) error {
 	var (
 		err error
-		ts  time.Time
+		t   time.Time
 	)
 	for i := 0; i < backoffRetries; i++ {
-		err = do(ts)
+		err = do(t)
 		gErr, ok := err.(*googleapi.Error)
 		switch {
 		case !ok:
@@ -192,7 +194,7 @@ func backoffAPIRetry(desc, instance string, do func(timestamp time.Time) error) 
 		logging.Errorf("Error in %s %s: %v; retrying in %v", desc, instance, err, sleep)
 		time.Sleep(sleep)
 		// Create timestamp 30 seconds before now for stale read requests
-		ts = now().Add(-30 * time.Second)
+		t = now().Add(-30 * time.Second)
 	}
 	return err
 }
@@ -243,9 +245,9 @@ func (s *RemoteCertSource) Local(instance string) (tls.Certificate, error) {
 	req := s.serv.Connect.GenerateEphemeralCert(p, regionName, generateEphemeralCertRequest)
 
 	var data *sqladmin.GenerateEphemeralCertResponse
-	err = backoffAPIRetry("generateEphemeral for", instance, func(timestamp time.Time) error {
-		if !timestamp.IsZero() {
-			generateEphemeralCertRequest.ReadTime = timestamp.Format(time.RFC3339)
+	err = backoffAPIRetry("generateEphemeral for", instance, func(staleRead time.Time) error {
+		if !staleRead.IsZero() {
+			generateEphemeralCertRequest.ReadTime = staleRead.Format(time.RFC3339)
 		}
 		data, err = req.Do()
 		return err
@@ -322,9 +324,9 @@ func (s *RemoteCertSource) Remote(instance string) (cert *x509.Certificate, addr
 	req := s.serv.Connect.Get(p, regionName)
 
 	var data *sqladmin.ConnectSettings
-	err = backoffAPIRetry("get instance", instance, func(timestamp time.Time) error {
-		if !timestamp.IsZero() {
-			req.ReadTime(timestamp.Format(time.RFC3339))
+	err = backoffAPIRetry("get instance", instance, func(staleRead time.Time) error {
+		if !staleRead.IsZero() {
+			req.ReadTime(staleRead.Format(time.RFC3339))
 		}
 		data, err = req.Do()
 		return err

@@ -45,6 +45,8 @@ fOx52xqIUu3m4M3Ci0ZIp22TeGVuJ/Dy1CPbDOshcb0dXTE+mU5T91SHKRF4jz77
 +9TQIXHGk7lJyVVhbed8xm/p727f
 -----END CERTIFICATE-----`
 
+// patchNowFunc replaces the now function with a function that returns the
+// specified nowTime instead. The function is not threadsafe.
 func patchNowFunc(t *testing.T, nowTime string) func() {
 	oldNow := now
 
