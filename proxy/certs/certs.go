@@ -160,12 +160,6 @@ const (
 	backoffRetries = 5
 )
 
-// now returns the current time in UTC. It is defined as a var so tests can
-// replace it with a fixed return value.
-var now = func() time.Time {
-	return time.Now().UTC()
-}
-
 func backoffAPIRetry(desc, instance string, do func(staleRead time.Time) error) error {
 	var (
 		err error
@@ -194,7 +188,7 @@ func backoffAPIRetry(desc, instance string, do func(staleRead time.Time) error) 
 		logging.Errorf("Error in %s %s: %v; retrying in %v", desc, instance, err, sleep)
 		time.Sleep(sleep)
 		// Create timestamp 30 seconds before now for stale read requests
-		t = now().Add(-30 * time.Second)
+		t = time.Now().UTC().Add(-30 * time.Second)
 	}
 	return err
 }

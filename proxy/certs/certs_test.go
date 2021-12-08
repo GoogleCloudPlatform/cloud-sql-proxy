@@ -45,23 +45,7 @@ fOx52xqIUu3m4M3Ci0ZIp22TeGVuJ/Dy1CPbDOshcb0dXTE+mU5T91SHKRF4jz77
 +9TQIXHGk7lJyVVhbed8xm/p727f
 -----END CERTIFICATE-----`
 
-// patchNowFunc replaces the now function with a function that returns the
-// specified nowTime instead. The function is not threadsafe.
-func patchNowFunc(t *testing.T, nowTime string) func() {
-	oldNow := now
-
-	aTime, err := time.Parse(time.RFC3339, nowTime)
-	if err != nil {
-		t.Fatal(err)
-	}
-	now = func() time.Time { return aTime }
-	return func() { now = oldNow }
-}
-
 func TestLocalCertSupportsStaleReads(t *testing.T) {
-	cleanup := patchNowFunc(t, "2006-01-02T15:00:30Z")
-	defer cleanup()
-
 	var (
 		gotReadTimes []string
 		ok           bool
@@ -112,16 +96,23 @@ func TestLocalCertSupportsStaleReads(t *testing.T) {
 	if gotReadTimes[0] != "" {
 		t.Fatalf("expected empty ReadTime for first request, got = %v", gotReadTimes[0])
 	}
-	want := "2006-01-02T15:00:00Z" // 30 seconds earlier
-	if gotReadTimes[1] != want {
-		t.Fatal("expected non-empty ReadTime for second request, got empty value")
+	wantStaleness := 30 * time.Second
+	if !staleTimestamp(gotReadTimes[1], wantStaleness) {
+		t.Fatalf("expected timestamp at least %v old, got = %v (now = %v)",
+			wantStaleness, gotReadTimes[1], time.Now().UTC().Format(time.RFC3339))
 	}
 }
 
-func TestRemoteCertSupportsStaleReads(t *testing.T) {
-	cleanup := patchNowFunc(t, "2006-01-02T15:00:30Z")
-	defer cleanup()
+func staleTimestamp(ts string, staleness time.Duration) bool {
+	t, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		// ts was not in expected format, fail
+		return false
+	}
+	return t.Before(time.Now().Add(-staleness))
+}
 
+func TestRemoteCertSupportsStaleReads(t *testing.T) {
 	var (
 		gotReadTimes []string
 		ok           bool
@@ -175,8 +166,9 @@ func TestRemoteCertSupportsStaleReads(t *testing.T) {
 	if gotReadTimes[0] != "" {
 		t.Fatalf("expected empty ReadTime for first request, got = %v", gotReadTimes[0])
 	}
-	want := "2006-01-02T15:00:00Z" // 30 seconds earlier
-	if gotReadTimes[1] != want {
-		t.Fatal("expected non-empty ReadTime for second request, got empty value")
+	wantStaleness := 30 * time.Second
+	if !staleTimestamp(gotReadTimes[1], wantStaleness) {
+		t.Fatalf("expected timestamp at least %v old, got = %v (now = %v)",
+			wantStaleness, gotReadTimes[1], time.Now().UTC().Format(time.RFC3339))
 	}
 }
