@@ -130,8 +130,10 @@ unavailable.`,
 	// Setting to choose what API to connect to
 	host = flag.String("host", "",
 		`When set, the proxy uses this host as the base API path. Example:
-	https://sqladmin.googleapis.com`,
+https://sqladmin.googleapis.com`,
 	)
+	quotaProject = flag.String("quota_project", "",
+		`Specifies the project to use for Cloud SQL Admin API quota tracking.`)
 
 	// Settings for healthcheck
 	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an HTTP server that checks and communicates the health of the proxy client.")
@@ -374,6 +376,42 @@ func authenticatedClient(ctx context.Context) (*http.Client, oauth2.TokenSource,
 	return oauth2.NewClient(ctx, src), src, nil
 }
 
+// quotaProjectTransport is an http.RoundTripper that adds an X-Goog-User-Project
+// header to all requests for quota and billing purposes.
+//
+// For details, see:
+// https://cloud.google.com/apis/docs/system-parameters#definitions
+type quotaProjectTransport struct {
+	base    http.RoundTripper
+	project string
+}
+
+var _ http.RoundTripper = quotaProjectTransport{}
+
+// RoundTrip adds a X-Goog-User-Project header to each request.
+func (t quotaProjectTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
+	req.Header.Add("X-Goog-User-Project", t.project)
+	return t.base.RoundTrip(req)
+}
+
+// configureQuotaProject configures an HTTP client to use the provided project
+// for quota calculations for all requests.
+func configureQuotaProject(c *http.Client, project string) {
+	// Copy the given client's tripper. Note that tripper can be nil, which is equivalent to
+	// http.DefaultTransport. (See https://golang.org/pkg/net/http/#Client)
+	base := c.Transport
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	c.Transport = quotaProjectTransport{
+		base:    base,
+		project: project,
+	}
+}
+
 func stringList(s string) []string {
 	spl := strings.Split(s, ",")
 	if len(spl) == 1 && spl[0] == "" {
@@ -521,6 +559,11 @@ func runProxy() int {
 	if err != nil {
 		logging.Errorf(err.Error())
 		return 1
+	}
+
+	if *quotaProject != "" {
+		logging.Infof("Using the project %q for SQL Admin API quota", *quotaProject)
+		configureQuotaProject(client, *quotaProject)
 	}
 
 	ins, err := listInstances(ctx, client, projList)
