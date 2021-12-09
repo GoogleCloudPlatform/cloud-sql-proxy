@@ -388,7 +388,7 @@ type quotaProjectTransport struct {
 
 var _ http.RoundTripper = quotaProjectTransport{}
 
-// RoundTrip adds a X-Goog-User-Project header each request.
+// RoundTrip adds a X-Goog-User-Project header to each request.
 func (t quotaProjectTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.Header == nil {
 		req.Header = make(http.Header)
