@@ -404,7 +404,7 @@ func configureQuotaProject(c *http.Client, project string) {
 	// http.DefaultTransport. (See https://golang.org/pkg/net/http/#Client)
 	base := c.Transport
 	if base == nil {
-		baseTripper = http.DefaultTransport
+		base = http.DefaultTransport
 	}
 	c.Transport = quotaProjectTransport{
 		base:    base,
