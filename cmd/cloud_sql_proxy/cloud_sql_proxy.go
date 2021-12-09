@@ -397,8 +397,8 @@ func (t quotaProjectTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return t.base.RoundTrip(req)
 }
 
-// configureQuotaProject returns a HTTP client that adds a given user project for all
-// requests.
+// configureQuotaProject returns an HTTP client that uses the provided project
+// for quota calculations for all requests.
 func configureQuotaProject(cl *http.Client, project string) {
 	// Copy the given client's tripper. Note that tripper can be nil, which is equivalent to
 	// http.DefaultTransport. (See https://golang.org/pkg/net/http/#Client)
