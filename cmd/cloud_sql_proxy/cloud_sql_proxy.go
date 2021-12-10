@@ -49,6 +49,8 @@ import (
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 
+type instancesValue []string
+
 var (
 	version = flag.Bool("version", false, "Print the version of the proxy and exit")
 	verbose = flag.Bool("verbose", true,
@@ -73,15 +75,7 @@ Unix socket-based connections.`)
 		`Open sockets for each Cloud SQL Instance in the projects specified
 (comma-separated list)`,
 	)
-	instances = flag.String("instances", "",
-		`Comma-separated list of fully qualified instances (project:region:name)
-to connect to. If the name has the suffix '=tcp:port', a TCP server is opened
-on the specified port on localhost to proxy to that instance. It is also possible
-to listen on a custom address by providing a host, e.g., '=tcp:0.0.0.0:port'. If
-no value is provided for 'tcp', one socket file per instance is opened in 'dir'.
-You may use INSTANCES environment variable for the same effect. Using both will
-use value from flag, Not compatible with -fuse.`,
-	)
+	instances instancesValue // -instances flag is defined in runProxy()
 	instanceSrc = flag.String("instances_metadata", "", `If provided, it is treated as a path to a metadata value which
 is polled for a comma-separated list of instances to connect to. For example,
 to use the instance metadata value named 'cloud-sql-instances' you would
@@ -295,6 +289,19 @@ func userAgentFromVersionString() string {
 
 const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
 
+func (i *instancesValue) String() string {
+	return strings.Join(*i, ",")
+}
+
+func (i *instancesValue) Set(s string) error {
+	spl := strings.Split(s, ",")
+	if len(spl) == 1 && spl[0] == "" {
+		return nil
+	}
+	*i = append(*i, spl...)
+	return nil
+}
+
 func checkFlags(onGCE bool) error {
 	if !onGCE {
 		if *instanceSrc != "" {
@@ -481,6 +488,16 @@ func gcloudProject() ([]string, error) {
 }
 
 func runProxy() int {
+	flag.Var(&instances, "instances",
+		`Comma-separated list of fully qualified instances (project:region:name)
+to connect to. If the name has the suffix '=tcp:port', a TCP server is opened
+on the specified port on localhost to proxy to that instance. It is also possible
+to listen on a custom address by providing a host, e.g., '=tcp:0.0.0.0:port'. If
+no value is provided for 'tcp', one socket file per instance is opened in 'dir'.
+You may use INSTANCES environment variable for the same effect. Using both will
+use value from flag, Not compatible with -fuse.`,
+	)
+
 	flag.Parse()
 
 	if *version {
@@ -527,14 +544,13 @@ func runProxy() int {
 
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
-	if envInstances := os.Getenv("INSTANCES"); *instances == "" && envInstances != "" {
-		*instances = envInstances
+	if envInstances := os.Getenv("INSTANCES"); len(instances) == 0 && envInstances != "" {
+		instances.Set(envInstances)
 	}
 
-	instList := stringList(*instances)
 	projList := stringList(*projects)
 	// TODO: it'd be really great to consolidate flag verification in one place.
-	if len(instList) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
+	if len(instances) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
 		var err error
 		projList, err = gcloudProject()
 		if err == nil {
@@ -571,8 +587,8 @@ func runProxy() int {
 		logging.Errorf(err.Error())
 		return 1
 	}
-	instList = append(instList, ins...)
-	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client, *skipInvalidInstanceConfigs)
+	instances = append(instances, ins...)
+	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instances, *instanceSrc, client, *skipInvalidInstanceConfigs)
 	if err != nil {
 		logging.Errorf(err.Error())
 		return 1
