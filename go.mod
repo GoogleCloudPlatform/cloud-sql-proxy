@@ -8,6 +8,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.11.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/hanwen/go-fuse/v2 v2.1.0
+	github.com/jackc/pgx/v4 v4.14.1
 	github.com/lib/pq v1.10.4
 	go.uber.org/zap v1.19.1
 	golang.org/x/net v0.0.0-20211020060615-d418f374d309
