@@ -34,6 +34,9 @@ import (
 )
 
 func TestClientHandlesSSLReset(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping dialer integration tests")
+	}
 	src, err := google.DefaultTokenSource(context.Background(), proxy.SQLScope)
 	if err != nil {
 		t.Fatal(err)
