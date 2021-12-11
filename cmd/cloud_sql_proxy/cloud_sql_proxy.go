@@ -49,7 +49,7 @@ import (
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 
-type instancesValue []string
+type stringListValue []string
 
 var (
 	version = flag.Bool("version", false, "Print the version of the proxy and exit")
@@ -75,7 +75,7 @@ Unix socket-based connections.`)
 		`Open sockets for each Cloud SQL Instance in the projects specified
 (comma-separated list)`,
 	)
-	instances   instancesValue // -instances flag is defined in runProxy()
+	instances   stringListValue // -instances flag is defined in runProxy()
 	instanceSrc = flag.String("instances_metadata", "", `If provided, it is treated as a path to a metadata value which
 is polled for a comma-separated list of instances to connect to. For example,
 to use the instance metadata value named 'cloud-sql-instances' you would
@@ -289,16 +289,12 @@ func userAgentFromVersionString() string {
 
 const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
 
-func (i *instancesValue) String() string {
+func (i *stringListValue) String() string {
 	return strings.Join(*i, ",")
 }
 
-func (i *instancesValue) Set(s string) error {
-	spl := strings.Split(s, ",")
-	if len(spl) == 1 && spl[0] == "" {
-		return nil
-	}
-	*i = append(*i, spl...)
+func (i *stringListValue) Set(s string) error {
+	*i = append(*i, stringList(s)...)
 	return nil
 }
 
