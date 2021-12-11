@@ -75,7 +75,7 @@ Unix socket-based connections.`)
 		`Open sockets for each Cloud SQL Instance in the projects specified
 (comma-separated list)`,
 	)
-	instances instancesValue // -instances flag is defined in runProxy()
+	instances   instancesValue // -instances flag is defined in runProxy()
 	instanceSrc = flag.String("instances_metadata", "", `If provided, it is treated as a path to a metadata value which
 is polled for a comma-separated list of instances to connect to. For example,
 to use the instance metadata value named 'cloud-sql-instances' you would
