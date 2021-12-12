@@ -18,7 +18,10 @@ require (
 	google.golang.org/api v0.60.0
 )
 
+require github.com/google/uuid v1.3.0 // indirect
+
 require (
+	cloud.google.com/go/cloudsqlconn v0.0.0-20211025210206-86f37d7a784a
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
