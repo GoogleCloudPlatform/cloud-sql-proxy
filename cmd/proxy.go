@@ -51,7 +51,6 @@ func (s *socketMount) Listen(ctx context.Context, network string, host string) (
 }
 
 func (s *socketMount) Serve(ctx context.Context) error {
-	fmt.Printf("%v\n", s)
 	if s.listener == nil {
 		return fmt.Errorf("socket isn't mounted")
 	}
