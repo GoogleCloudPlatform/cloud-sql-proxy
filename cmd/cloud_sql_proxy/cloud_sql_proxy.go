@@ -49,8 +49,6 @@ import (
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 
-type stringListValue []string
-
 var (
 	version = flag.Bool("version", false, "Print the version of the proxy and exit")
 	verbose = flag.Bool("verbose", true,
@@ -192,6 +190,8 @@ Connection:
 
         -instances=my-project:my-region:my-instance
 
+    For convenience, this flag may be specified multiple times.
+
     For connectivity over TCP, you must specify a tcp port as part of the
     instance string. For example, the following example opens a loopback TCP
     socket on port 3306, which will be proxied to connect to the instance
@@ -288,6 +288,8 @@ func userAgentFromVersionString() string {
 }
 
 const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
+
+type stringListValue []string
 
 func (i *stringListValue) String() string {
 	return strings.Join(*i, ",")
@@ -490,6 +492,7 @@ to connect to. If the name has the suffix '=tcp:port', a TCP server is opened
 on the specified port on localhost to proxy to that instance. It is also possible
 to listen on a custom address by providing a host, e.g., '=tcp:0.0.0.0:port'. If
 no value is provided for 'tcp', one socket file per instance is opened in 'dir'.
+For convenience, this flag may be specified multiple times.
 You may use INSTANCES environment variable for the same effect. Using both will
 use value from flag, Not compatible with -fuse.`,
 	)
