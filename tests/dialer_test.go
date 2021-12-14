@@ -38,10 +38,10 @@ func TestClientHandlesSSLReset(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping dialer integration tests")
 	}
-	newClient := func() *proxy.Client {
+	newClient := func(c *http.Client) *proxy.Client {
 		return &proxy.Client{
 			Port: 3307,
-			Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
+			Certs: certs.NewCertSourceOpts(c, certs.RemoteOpts{
 				UserAgent:      "cloud_sql_proxy/test_build",
 				IPAddrTypeOpts: []string{"PUBLIC", "PRIVATE"},
 			}),
@@ -97,7 +97,7 @@ func TestClientHandlesSSLReset(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := oauth2.NewClient(context.Background(), src)
-	proxyClient := newClient()
+	proxyClient := newClient(client)
 
 	db, err := connectToDB(proxyClient)
 	if err != nil {
