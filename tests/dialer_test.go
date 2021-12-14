@@ -65,26 +65,6 @@ func TestClientHandlesSSLReset(t *testing.T) {
 		dbURI := stdlib.RegisterConnConfig(config)
 		return sql.Open("pgx", dbURI)
 	}
-
-	src, err := google.DefaultTokenSource(context.Background(), proxy.SQLScope)
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := oauth2.NewClient(context.Background(), src)
-	proxyClient := newClient()
-
-	db, err := connectToDB(proxyClient)
-	if err != nil {
-		t.Fatalf("failed to connect to DB: %v", err)
-	}
-
-	// Begin database transaction
-	tx, err := db.Begin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer tx.Rollback()
-
 	resetSSL := func(c *http.Client) error {
 		svc, err := sqladmin.NewService(context.Background(), option.WithHTTPClient(c))
 		if err != nil {
@@ -110,6 +90,27 @@ func TestClientHandlesSSLReset(t *testing.T) {
 		}
 		return nil
 	}
+
+	// SETUP: create HTTP client and proxy client, then connect to database
+	src, err := google.DefaultTokenSource(context.Background(), proxy.SQLScope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := oauth2.NewClient(context.Background(), src)
+	proxyClient := newClient()
+
+	db, err := connectToDB(proxyClient)
+	if err != nil {
+		t.Fatalf("failed to connect to DB: %v", err)
+	}
+
+	// Begin database transaction
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+
 	resetSSL(client)
 
 	// Re-dial twice, once to invalidate config, once to establish connection
