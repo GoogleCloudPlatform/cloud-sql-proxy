@@ -33,7 +33,7 @@ import (
 )
 
 // proxyExec represents an execution of the Cloud SQL proxy.
-type ProxyExec struct {
+type proxyExec struct {
 	Out io.ReadCloser
 
 	cmd     *cobra.Command
@@ -44,7 +44,7 @@ type ProxyExec struct {
 }
 
 // StartProxy returns a proxyExec representing a running instance of the proxy.
-func StartProxy(ctx context.Context, args ...string) (*ProxyExec, error) {
+func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	cmd := cmd.New()
 	cmd.SetArgs(args)
@@ -59,7 +59,7 @@ func StartProxy(ctx context.Context, args ...string) (*ProxyExec, error) {
 	cmd.SetOut(pw)
 	cmd.SetErr(pw)
 
-	p := &ProxyExec{
+	p := &proxyExec{
 		Out:     pr,
 		cmd:     cmd,
 		cancel:  cancel,
@@ -79,12 +79,12 @@ func StartProxy(ctx context.Context, args ...string) (*ProxyExec, error) {
 }
 
 // Stop sends the TERM signal to the proxy and returns.
-func (p *ProxyExec) Stop() {
+func (p *proxyExec) Stop() {
 	p.cancel()
 }
 
 // Waits until the execution is completed and returns any error.
-func (p *ProxyExec) Wait(ctx context.Context) error {
+func (p *proxyExec) Wait(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -94,7 +94,7 @@ func (p *ProxyExec) Wait(ctx context.Context) error {
 }
 
 // Stop sends the pskill signal to the proxy and returns.
-func (p *ProxyExec) Done() bool {
+func (p *proxyExec) Done() bool {
 	select {
 	case <-p.done:
 		return true
@@ -104,7 +104,7 @@ func (p *ProxyExec) Done() bool {
 }
 
 // Close releases any resources associated with the instance.
-func (p *ProxyExec) Close() {
+func (p *proxyExec) Close() {
 	p.cancel()
 	for _, c := range p.closers {
 		c.Close()
@@ -114,7 +114,7 @@ func (p *ProxyExec) Close() {
 // WaitForServe waits until the proxy ready to serve traffic. Returns any output from
 // the proxy while starting or any errors experienced before the proxy was ready to
 // server.
-func (p *ProxyExec) WaitForServe(ctx context.Context) (output string, err error) {
+func (p *proxyExec) WaitForServe(ctx context.Context) (output string, err error) {
 	// Watch for the "Ready for new connections" to indicate the proxy is listening
 	buf, in, errCh := new(bytes.Buffer), bufio.NewReader(p.Out), make(chan error, 1)
 	go func() {

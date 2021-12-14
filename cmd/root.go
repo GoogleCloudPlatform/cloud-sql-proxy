@@ -36,7 +36,7 @@ func New() *cobra.Command {
 		Use:   "cloud_sql_proxy instance_connection_name...",
 		Short: "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
 		Long: `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
-connecting to a Cloud SQL instance. It listens on a local port and forwards connections
+connecting to Cloud SQL instances. It listens on a local port and forwards connections
 to your instance's IP address, providing a secure connection without having to manage
 any client SSL certificates.`,
 		Run: runWrapper,
@@ -81,14 +81,14 @@ func runProxy(ctx context.Context, cmd *cobra.Command, args []string, shutdownCh
 
 	port := 5000 // TODO: figure out better port allocation strategy
 	mnt := make([]*socketMount, 0, len(args))
-	for _, i := range args {
-		m := newSocketMount(*dialer, i)
-		addr, err := m.Listen(ctx, "tcp4", net.JoinHostPort("", fmt.Sprint(port)))
+	for i, inst := range args {
+		m := newSocketMount(dialer, inst)
+		addr, err := m.Listen(ctx, "tcp4", net.JoinHostPort("", fmt.Sprint(port+i)))
 		if err != nil {
 			shutdownCh <- err
 			return
 		}
-		cmd.Printf("[%s] Listening on %s\n", i, addr.String())
+		cmd.Printf("[%s] Listening on %s\n", inst, addr.String())
 		mnt = append(mnt, m)
 	}
 	for _, m := range mnt {

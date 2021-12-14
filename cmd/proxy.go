@@ -26,20 +26,24 @@ import (
 	"cloud.google.com/go/cloudsqlconn"
 )
 
+// socketMount is a tcp/unix socket that listens for a Cloud SQL instance. It should
+// only be created with newSocketMount. 
 type socketMount struct {
-	dialer cloudsqlconn.Dialer
+	dialer *cloudsqlconn.Dialer
 	inst   string
 
 	listener net.Listener
 }
 
-func newSocketMount(dialer cloudsqlconn.Dialer, inst string) *socketMount {
+// newSocketMount creates a new socketMount struct for a specific Cloud SQL instance. 
+func newSocketMount(dialer *cloudsqlconn.Dialer, inst string) *socketMount {
 	return &socketMount{
 		dialer: dialer,
 		inst:   inst,
 	}
 }
 
+// Listen causes a socketMount to create a Listener at the specified network address. 
 func (s *socketMount) Listen(ctx context.Context, network string, host string) (net.Addr, error) {
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
 	l, err := lc.Listen(ctx, network, host)
@@ -50,9 +54,11 @@ func (s *socketMount) Listen(ctx context.Context, network string, host string) (
 	return s.listener.Addr(), nil
 }
 
+// Serve persistently listens to the socketMounts listener and proxies connections to a
+// given Cloud SQL instance.
 func (s *socketMount) Serve(ctx context.Context) error {
 	if s.listener == nil {
-		return fmt.Errorf("socket isn't mounted")
+		return fmt.Errorf("socket doesn't have a listener set")
 	}
 	for {
 		cConn, err := s.listener.Accept()
@@ -99,7 +105,7 @@ func proxyConn(inst string, client, server net.Conn) {
 
 	// copy bytes from client to server
 	go func() {
-		buf := make([]byte, 0x2000) // 8kb
+		buf := make([]byte, 8 * 1024) // 8kb
 		for {
 			n, cErr := client.Read(buf)
 			var sErr error
@@ -109,18 +115,22 @@ func proxyConn(inst string, client, server net.Conn) {
 			switch {
 			case cErr == io.EOF:
 				cleanup(fmt.Sprintf("[%s] client closed the connection", inst))
+				return
 			case cErr != nil:
 				cleanup(fmt.Sprintf("[%s] connection aborted - error reading from client: %v", inst, cErr))
+				return
 			case sErr == io.EOF:
 				cleanup(fmt.Sprintf("[%s] instance closed the connection", inst))
+				return
 			case sErr != nil:
 				cleanup(fmt.Sprintf("[%s] connection aborted - error writing to instance: %v", inst, cErr))
+				return
 			}
 		}
 	}()
 
 	// copy bytes from server to client
-	buf := make([]byte, 0x2000) // 8kb
+	buf := make([]byte, 8 * 1024) // 8kb
 	for {
 		n, sErr := server.Read(buf)
 		var cErr error
@@ -130,12 +140,16 @@ func proxyConn(inst string, client, server net.Conn) {
 		switch {
 		case sErr == io.EOF:
 			cleanup(fmt.Sprintf("[%s] instance closed the connection", inst))
+			return
 		case sErr != nil:
 			cleanup(fmt.Sprintf("[%s] connection aborted - error reading from instance: %v", inst, sErr))
+			return
 		case cErr == io.EOF:
 			cleanup(fmt.Sprintf("[%s] client closed the connection", inst))
+			return
 		case cErr != nil:
 			cleanup(fmt.Sprintf("[%s] connection aborted - error writing to client: %v", inst, sErr))
+			return
 		}
 	}
 }
