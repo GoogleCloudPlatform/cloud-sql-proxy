@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -71,7 +70,7 @@ func TestClientHandlesSSLReset(t *testing.T) {
 			return err
 		}
 		project, _, instance, _, _ := proxy.ParseInstanceConnectionName(*postgresConnName)
-		t.Log("Reseting SSL config.")
+		t.Log("Resetting SSL config.")
 		op, err := svc.Instances.ResetSslConfig(project, instance).Do()
 		if err != nil {
 			return err
@@ -117,7 +116,7 @@ func TestClientHandlesSSLReset(t *testing.T) {
 	var attempts int
 	for {
 		t.Log("Re-dialing instance")
-		_, err = proxyClient.DialContext(context.Background(), os.Getenv("POSTGRES_CONNECTION_NAME"))
+		_, err = proxyClient.DialContext(context.Background(), *postgresConnName)
 		if err != nil {
 			t.Logf("Dial error: %v", err)
 		}
