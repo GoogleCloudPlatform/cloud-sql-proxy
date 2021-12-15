@@ -494,7 +494,7 @@ to listen on a custom address by providing a host, e.g., '=tcp:0.0.0.0:port'. If
 no value is provided for 'tcp', one socket file per instance is opened in 'dir'.
 For convenience, this flag may be specified multiple times.
 You may use the INSTANCES environment variable for the same effect. Using both will
-use value from flag, Not compatible with -fuse.`,
+use the value from the flag, Not compatible with -fuse.`,
 	)
 
 	flag.Parse()
