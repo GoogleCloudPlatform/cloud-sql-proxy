@@ -493,7 +493,7 @@ on the specified port on localhost to proxy to that instance. It is also possibl
 to listen on a custom address by providing a host, e.g., '=tcp:0.0.0.0:port'. If
 no value is provided for 'tcp', one socket file per instance is opened in 'dir'.
 For convenience, this flag may be specified multiple times.
-You may use INSTANCES environment variable for the same effect. Using both will
+You may use the INSTANCES environment variable for the same effect. Using both will
 use value from flag, Not compatible with -fuse.`,
 	)
 
