@@ -24,10 +24,71 @@ import (
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"github.com/spf13/cobra"
 )
 
+// proxyClient represents the state of the current instantiation of the proxy.
+type proxyClient struct {
+	cmd    *cobra.Command
+	dialer *cloudsqlconn.Dialer
+
+	// mnts is a list of all mounted sockets for this client
+	mnts []*socketMount
+	// serveCtx is used for serving data
+	serveCtx    context.Context
+	serveCancel context.CancelFunc
+}
+
+// newProxyClient completes the initial setup required to get the proxy to a "steady" state.
+func newProxyClient(ctx context.Context, cmd *cobra.Command, args []string) (*proxyClient, error) {
+	dialer, err := cloudsqlconn.NewDialer(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error initializing dialer: %v", err)
+	}
+	pc := &proxyClient{cmd: cmd, dialer: dialer}
+
+	port := 5000 // TODO: figure out better port allocation strategy
+	for i, inst := range args {
+		m := newSocketMount(dialer, inst)
+		addr, err := m.Listen(ctx, "tcp4", net.JoinHostPort("", fmt.Sprint(port+i)))
+		if err != nil {
+			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
+		}
+		cmd.Printf("[%s] Listening on %s\n", inst, addr.String())
+		pc.mnts = append(pc.mnts, m)
+	}
+
+	return pc, nil
+}
+
+// Serve listens on the mounted ports and beging proxying the connections to the instances.
+func (pc *proxyClient) Serve(ctx context.Context) error {
+	pc.serveCtx, pc.serveCancel = context.WithCancel(ctx)
+	defer pc.serveCancel()
+	exitCh := make(chan error)
+	for _, m := range pc.mnts {
+		go func(mnt *socketMount) {
+			err := mnt.Serve(ctx)
+			if err != nil {
+				exitCh <- err
+				return
+			}
+		}(m)
+	}
+	return <-exitCh
+}
+
+// Close triggers the proxyClient to shutdown.
+func (pc *proxyClient) Close() {
+	defer pc.dialer.Close()
+	defer pc.serveCancel()
+	for _, m := range pc.mnts {
+		m.Close()
+	}
+}
+
 // socketMount is a tcp/unix socket that listens for a Cloud SQL instance. It should
-// only be created with newSocketMount. 
+// only be created with newSocketMount.
 type socketMount struct {
 	dialer *cloudsqlconn.Dialer
 	inst   string
@@ -35,7 +96,7 @@ type socketMount struct {
 	listener net.Listener
 }
 
-// newSocketMount creates a new socketMount struct for a specific Cloud SQL instance. 
+// newSocketMount creates a new socketMount struct for a specific Cloud SQL instance.
 func newSocketMount(dialer *cloudsqlconn.Dialer, inst string) *socketMount {
 	return &socketMount{
 		dialer: dialer,
@@ -43,7 +104,7 @@ func newSocketMount(dialer *cloudsqlconn.Dialer, inst string) *socketMount {
 	}
 }
 
-// Listen causes a socketMount to create a Listener at the specified network address. 
+// Listen causes a socketMount to create a Listener at the specified network address.
 func (s *socketMount) Listen(ctx context.Context, network string, host string) (net.Addr, error) {
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
 	l, err := lc.Listen(ctx, network, host)
@@ -105,7 +166,7 @@ func proxyConn(inst string, client, server net.Conn) {
 
 	// copy bytes from client to server
 	go func() {
-		buf := make([]byte, 8 * 1024) // 8kb
+		buf := make([]byte, 8*1024) // 8kb
 		for {
 			n, cErr := client.Read(buf)
 			var sErr error
@@ -130,7 +191,7 @@ func proxyConn(inst string, client, server net.Conn) {
 	}()
 
 	// copy bytes from server to client
-	buf := make([]byte, 8 * 1024) // 8kb
+	buf := make([]byte, 8*1024) // 8kb
 	for {
 		n, sErr := server.Read(buf)
 		var cErr error

@@ -71,9 +71,6 @@ func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
 		defer close(p.done)
 		defer cancel()
 		p.err = cmd.ExecuteContext(ctx)
-		if p.err != nil {
-			fmt.Errorf("%v\n", p.err)
-		}
 	}()
 	return p, nil
 }
@@ -132,7 +129,7 @@ func (p *proxyExec) WaitForServe(ctx context.Context) (output string, err error)
 				return
 			}
 			buf.WriteString(s)
-			if strings.Contains(s, "Ready for new connections") {
+			if strings.Contains(s, "ready for new connections") {
 				errCh <- nil
 				return
 			}
