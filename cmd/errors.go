@@ -14,19 +14,22 @@
 
 package cmd
 
-import "fmt"
+import (
+	"errors"
+)
 
 var errSigInt = &exitError{
-	Err:  fmt.Errorf("SIGINT signal received"),
+	Err:  errors.New("SIGINT signal received"),
 	Code: 130,
 }
 
 var errSigTerm = &exitError{
-	Err:  fmt.Errorf("SIGINT signal received"),
+	Err:  errors.New("SIGINT signal received"),
 	Code: 137,
 }
 
-// exitError is an error with an exit code.
+// exitError is an error with an exit code, that's returned when the cmd exits.
+// When possible, try to match these conventions: https://tldp.org/LDP/abs/html/exitcodes.html
 type exitError struct {
 	Code int
 	Err  error

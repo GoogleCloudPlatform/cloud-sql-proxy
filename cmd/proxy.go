@@ -50,7 +50,7 @@ func newProxyClient(ctx context.Context, cmd *cobra.Command, args []string) (*pr
 	port := 5000 // TODO: figure out better port allocation strategy
 	for i, inst := range args {
 		m := newSocketMount(dialer, inst)
-		addr, err := m.Listen(ctx, "tcp4", net.JoinHostPort("", fmt.Sprint(port+i)))
+		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort("127.0.0.1", fmt.Sprint(port+i)))
 		if err != nil {
 			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
 		}
@@ -61,14 +61,14 @@ func newProxyClient(ctx context.Context, cmd *cobra.Command, args []string) (*pr
 	return pc, nil
 }
 
-// Serve listens on the mounted ports and beging proxying the connections to the instances.
-func (pc *proxyClient) Serve(ctx context.Context) error {
+// serve listens on the mounted ports and beging proxying the connections to the instances.
+func (pc *proxyClient) serve(ctx context.Context) error {
 	pc.serveCtx, pc.serveCancel = context.WithCancel(ctx)
 	defer pc.serveCancel()
 	exitCh := make(chan error)
 	for _, m := range pc.mnts {
 		go func(mnt *socketMount) {
-			err := mnt.Serve(ctx)
+			err := mnt.serve(ctx)
 			if err != nil {
 				exitCh <- err
 				return
@@ -78,12 +78,12 @@ func (pc *proxyClient) Serve(ctx context.Context) error {
 	return <-exitCh
 }
 
-// Close triggers the proxyClient to shutdown.
-func (pc *proxyClient) Close() {
+// close triggers the proxyClient to shutdown.
+func (pc *proxyClient) close() {
 	defer pc.dialer.Close()
 	defer pc.serveCancel()
 	for _, m := range pc.mnts {
-		m.Close()
+		m.close()
 	}
 }
 
@@ -104,8 +104,8 @@ func newSocketMount(dialer *cloudsqlconn.Dialer, inst string) *socketMount {
 	}
 }
 
-// Listen causes a socketMount to create a Listener at the specified network address.
-func (s *socketMount) Listen(ctx context.Context, network string, host string) (net.Addr, error) {
+// listen causes a socketMount to create a Listener at the specified network address.
+func (s *socketMount) listen(ctx context.Context, network string, host string) (net.Addr, error) {
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
 	l, err := lc.Listen(ctx, network, host)
 	if err != nil {
@@ -115,11 +115,11 @@ func (s *socketMount) Listen(ctx context.Context, network string, host string) (
 	return s.listener.Addr(), nil
 }
 
-// Serve persistently listens to the socketMounts listener and proxies connections to a
+// serve persistently listens to the socketMounts listener and proxies connections to a
 // given Cloud SQL instance.
-func (s *socketMount) Serve(ctx context.Context) error {
+func (s *socketMount) serve(ctx context.Context) error {
 	if s.listener == nil {
-		return fmt.Errorf("socket doesn't have a listener set")
+		return fmt.Errorf("[%s] mount doesn't have a listener set", s.inst)
 	}
 	for {
 		cConn, err := s.listener.Accept()
@@ -138,6 +138,7 @@ func (s *socketMount) Serve(ctx context.Context) error {
 			sConn, err := s.dialer.Dial(ctx, s.inst)
 			if err != nil {
 				log.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
+				cConn.Close()
 				return
 			}
 			proxyConn(s.inst, cConn, sConn)
@@ -145,8 +146,8 @@ func (s *socketMount) Serve(ctx context.Context) error {
 	}
 }
 
-// Close stops the mount from listening for any more connections
-func (s *socketMount) Close() error {
+// close stops the mount from listening for any more connections
+func (s *socketMount) close() error {
 	err := s.listener.Close()
 	s.listener = nil
 	return err

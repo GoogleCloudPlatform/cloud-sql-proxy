@@ -96,10 +96,10 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 	case p = <-startCh:
 	}
 	cmd.Println("The proxy has started successfully and is ready for new connections!")
-	defer p.Close()
+	defer p.close()
 
 	go func() {
-		shutdownCh <- p.Serve(ctx)
+		shutdownCh <- p.serve(ctx)
 	}()
 
 	err := <-shutdownCh
