@@ -67,7 +67,6 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 		case <-cmd.Context().Done():
 			// this should only happen when the context supplied in tests in canceled
 			s = syscall.SIGINT
-
 		}
 		switch s {
 		case syscall.SIGINT:
