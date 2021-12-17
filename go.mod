@@ -3,6 +3,7 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy/v2
 go 1.16
 
 require (
+	cloud.google.com/go/cloudsqlconn v0.0.0-20211025210206-86f37d7a784a
 	cloud.google.com/go/compute v1.5.0
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
 	github.com/coreos/go-systemd/v22 v22.3.2
@@ -11,6 +12,7 @@ require (
 	github.com/hanwen/go-fuse/v2 v2.1.0
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/lib/pq v1.10.4
+	github.com/spf13/cobra v1.2.1
 	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.0.0-20220325170049-de3da57026de
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
