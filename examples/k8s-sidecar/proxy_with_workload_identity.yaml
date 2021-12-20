@@ -69,8 +69,8 @@ spec:
           # "nonroot" user and group (uid: 65532) by default.
           runAsNonRoot: true
         # You should use resource requests/limits as a best practice to prevent
-        # pods don't consume too many resources and effect the execution of other 
-        # pods. You should adjust the following values based on what your 
+        # pods from consuming too many resources and affecting the execution of 
+        # other pods. You should adjust the following values based on what your 
         # application needs. For details, see 
         # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         resources:
