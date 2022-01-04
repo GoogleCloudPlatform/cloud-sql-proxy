@@ -417,7 +417,7 @@ func (c *Client) cachedCfg(ctx context.Context, instance string) (string, *tls.C
 		e = c.cfgCache[instance]
 		limiter := c.limiters[instance]
 		if limiter == nil {
-			limiter = rate.NewLimiter(rate.Every(throttle), 1)
+			limiter = rate.NewLimiter(rate.Every(throttle), 2)
 			c.limiters[instance] = limiter
 		}
 		if needsRefresh(e, refreshCfgBuffer) {
