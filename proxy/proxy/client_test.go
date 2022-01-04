@@ -559,25 +559,13 @@ func TestClientHandshakeCanceled(t *testing.T) {
 			validateError(t, err)
 		})
 	})
+}
 
-	// Fail fast when dial attempts trigger a race condition
-	t.Run("dialing in quick succession", func(t *testing.T) {
-		withTestHarness(t, func(port int) {
-			c := newClient(port)
+func TestConnectingWithInvalidConfig(t *testing.T) {
+	c := &Client{}
 
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			var ok bool
-			for i := 0; i < 100; i++ {
-				_, err := c.DialContext(ctx, instance)
-				if err == ErrUnexpectedFailure {
-					ok = true
-				}
-			}
-			if !ok {
-				t.Fatal("wanted ErrUnexpectedFailure, got none")
-			}
-		})
-	})
+	_, err := c.tryConnect(context.Background(), "", "myinstance", &tls.Config{})
+	if err != ErrUnexpectedFailure {
+		t.Fatalf("wanted ErrUnexpectedFailure, got = %v", err)
+	}
 }
