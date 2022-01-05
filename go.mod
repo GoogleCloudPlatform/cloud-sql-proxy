@@ -3,14 +3,14 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy
 go 1.13
 
 require (
-	cloud.google.com/go v0.99.0
+	cloud.google.com/go v0.100.1
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/denisenkom/go-mssqldb v0.11.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/hanwen/go-fuse/v2 v2.1.0
+	github.com/jackc/pgx/v4 v4.14.1
 	github.com/lib/pq v1.10.4
-	go.uber.org/zap v1.19.1
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
+	go.uber.org/zap v1.20.0
 	golang.org/x/net v0.0.0-20211020060615-d418f374d309
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
