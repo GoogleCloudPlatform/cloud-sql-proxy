@@ -38,7 +38,7 @@ func (c *Client) connectTLS(
 	// this file is conditionally compiled on only Go versions >= 1.17.
 	if err := ret.HandshakeContext(ctx); err != nil {
 		_ = ret.Close()
-		c.invalidateCfg(cfg, instance)
+		c.invalidateCfg(cfg, instance, err)
 		return nil, err
 	}
 	return ret, nil

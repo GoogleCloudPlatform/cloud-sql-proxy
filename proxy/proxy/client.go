@@ -526,7 +526,7 @@ func (c *Client) selectDialer() func(context.Context, string, string) (net.Conn,
 	}
 }
 
-func (c *Client) invalidateCfg(cfg *tls.Config, instance string) {
+func (c *Client) invalidateCfg(cfg *tls.Config, instance string, err error) {
 	c.cacheL.RLock()
 	e := c.cfgCache[instance]
 	c.cacheL.RUnlock()
@@ -541,6 +541,7 @@ func (c *Client) invalidateCfg(cfg *tls.Config, instance string) {
 		return
 	}
 	c.cfgCache[instance] = cacheEntry{
+		err:           err,
 		done:          e.done,
 		lastRefreshed: e.lastRefreshed,
 	}
