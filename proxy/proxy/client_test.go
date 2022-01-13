@@ -531,9 +531,9 @@ func TestClientHandshakeCanceled(t *testing.T) {
 			if gotLen := len(invalid); gotLen != 1 {
 				t.Fatalf("invalid instance want = 1, got = %v", gotLen)
 			}
-			i := invalid[0]
-			if want := "deadline exceeded"; !strings.Contains(i.err.Error(), want) {
-				t.Fatalf("invalid instance error want = %v, got = %v", want, i.Error())
+			got := invalid[0]
+			if got.err == nil {
+				t.Fatal("want invalid instance error, got nil")
 			}
 		})
 	})
