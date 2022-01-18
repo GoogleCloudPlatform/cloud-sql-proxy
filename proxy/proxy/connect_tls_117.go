@@ -20,6 +20,7 @@ package proxy
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 )
 
@@ -38,6 +39,7 @@ func (c *Client) connectTLS(
 	// this file is conditionally compiled on only Go versions >= 1.17.
 	if err := ret.HandshakeContext(ctx); err != nil {
 		_ = ret.Close()
+		err = fmt.Errorf("config invalidated after TLS handshake failed, error = %w", err)
 		c.invalidateCfg(cfg, instance, err)
 		return nil, err
 	}
