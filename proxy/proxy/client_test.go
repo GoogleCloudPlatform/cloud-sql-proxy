@@ -591,3 +591,47 @@ func TestConnectingWithInvalidConfig(t *testing.T) {
 		t.Fatalf("wanted ErrUnexpectedFailure, got = %v", err)
 	}
 }
+
+var (
+	errLocal  = errors.New("local failed")
+	errRemote = errors.New("remote failed")
+)
+
+type failingCertSource struct{}
+
+func (cs failingCertSource) Local(instance string) (tls.Certificate, error) {
+	return tls.Certificate{}, errLocal
+}
+
+func (cs failingCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
+	return nil, "", "", "", errRemote
+}
+
+func TestInstanceVersionContext(t *testing.T) {
+	testCases := []struct {
+		certSource  CertSource
+		wantErr     error
+		wantVersion string
+	}{
+		{
+			certSource:  newCertSource(&fakeCerts{}, forever),
+			wantErr:     nil,
+			wantVersion: "fake version",
+		},
+		{
+			certSource:  failingCertSource{},
+			wantErr:     errLocal,
+			wantVersion: "",
+		},
+	}
+	for _, tc := range testCases {
+		c := newClient(tc.certSource)
+		v, err := c.InstanceVersionContext(context.Background(), instance)
+		if v != tc.wantVersion {
+			t.Fatalf("want version = %v, got version = %v", tc.wantVersion, v)
+		}
+		if err != tc.wantErr {
+			t.Fatalf("want = %v, got = %v", tc.wantErr, err)
+		}
+	}
+}
