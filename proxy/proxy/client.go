@@ -575,7 +575,7 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 	return ch
 }
 
-// InstanceVersionContext uses client cache to return instance version string.
+// InstanceVersion uses client cache to return instance version string.
 //
 // Deprecated: Use Client.InstanceVersionContext instead.
 func (c *Client) InstanceVersion(instance string) (string, error) {
@@ -586,7 +586,7 @@ func (c *Client) InstanceVersion(instance string) (string, error) {
 func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (string, error) {
 	_, _, version, err := c.cachedCfg(ctx, instance)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return version, nil
 }
