@@ -513,7 +513,29 @@ func TestClientHandshakeCanceled(t *testing.T) {
 			_, err := c.DialContext(ctx, instance)
 			validateError(t, err)
 		})
+	})
 
+	t.Run("when liveness check is called on invalidated config", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			_, err := c.DialContext(ctx, instance)
+			if err == nil {
+				t.Fatal("expected DialContext to fail, got no error")
+			}
+
+			invalid := c.InvalidInstances()
+			if gotLen := len(invalid); gotLen != 1 {
+				t.Fatalf("invalid instance want = 1, got = %v", gotLen)
+			}
+			got := invalid[0]
+			if got.err == nil {
+				t.Fatal("want invalid instance error, got nil")
+			}
+		})
 	})
 
 	// Makes it to Handshake.
