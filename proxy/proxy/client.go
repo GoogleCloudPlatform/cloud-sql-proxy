@@ -540,6 +540,7 @@ func (c *Client) invalidateCfg(cfg *tls.Config, instance string, err error) {
 	if e.cfg != cfg {
 		return
 	}
+	err = fmt.Errorf("config invalidated after TLS handshake failed, error = %w", err)
 	c.cfgCache[instance] = cacheEntry{
 		err:           err,
 		done:          e.done,

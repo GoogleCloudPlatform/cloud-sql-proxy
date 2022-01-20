@@ -107,7 +107,6 @@ func (c *Client) connectTLS(
 	ret := tls.Client(conn, cfg)
 	if err := ret.Handshake(); err != nil {
 		_ = ret.Close()
-		err = fmt.Errorf("config invalidated after TLS handshake failed, error = %w", err)
 		c.invalidateCfg(cfg, instance, err)
 		return nil, err
 	}
