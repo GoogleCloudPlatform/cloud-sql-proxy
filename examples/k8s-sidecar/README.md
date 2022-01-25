@@ -182,7 +182,7 @@ as a separate service for several reasons:
     - name: cloud-sql-proxy
       # It is recommended to use the latest version of the Cloud SQL proxy
       # Make sure to update on a regular schedule!
-      image: gcr.io/cloudsql-docker/gce-proxy:1.17
+      image: gcr.io/cloudsql-docker/gce-proxy:1.28.0 # make sure the use the latest version
       command:
         - "/cloud_sql_proxy"
 

@@ -171,7 +171,7 @@ For the PgBouncer deployment, we add the proxy as a sidecar, starting it on port
 
 ``` yaml
 - name: cloud-sql-proxy
-  image: gcr.io/cloudsql-docker/gce-proxy:1.22.0 # make sure the use the latest version
+  image: gcr.io/cloudsql-docker/gce-proxy:1.28.0 # make sure the use the latest version
   command:
     - "/cloud_sql_proxy"
     - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:5431"

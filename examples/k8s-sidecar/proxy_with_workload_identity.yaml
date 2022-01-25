@@ -53,7 +53,7 @@ spec:
       - name: cloud-sql-proxy
         # It is recommended to use the latest version of the Cloud SQL proxy
         # Make sure to update on a regular schedule!
-        image: gcr.io/cloudsql-docker/gce-proxy:1.17
+        image: gcr.io/cloudsql-docker/gce-proxy:1.28.0 # make sure the use the latest version
         command:
           - "/cloud_sql_proxy"
 
@@ -69,9 +69,9 @@ spec:
           # "nonroot" user and group (uid: 65532) by default.
           runAsNonRoot: true
         # You should use resource requests/limits as a best practice to prevent
-        # pods from consuming too many resources and affecting the execution of 
-        # other pods. You should adjust the following values based on what your 
-        # application needs. For details, see 
+        # pods from consuming too many resources and affecting the execution of
+        # other pods. You should adjust the following values based on what your
+        # application needs. For details, see
         # https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         resources:
           requests:
