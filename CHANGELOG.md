@@ -1,5 +1,14 @@
 # Changelog
 
+### [1.28.1](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.28.0...v1.28.1) (2022-01-31)
+
+
+### Bug Fixes
+
+* invalidated config should retain error ([#1068](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1068)) ([49d3003](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/49d3003c018afdc0cde54340d5be808f9dcd5c84))
+* remove unnecessary token parsing ([#1074](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1074)) ([e138611](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/e1386118ad239e6c1ff16df6f2be1351a6432bb3))
+* return error from instance version ([#1069](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1069)) ([d9fc819](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/d9fc819a197bd75d0060bd46b8e06da6bdd6630c))
+
 ## [1.28.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.27.1...v1.28.0) (2022-01-04)
 
 
