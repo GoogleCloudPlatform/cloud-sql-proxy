@@ -12,7 +12,8 @@
     "gomodTidy"
   ],
   "ignoreDeps": [
-      "golang.org/x/net"
+    "golang.org/x/net",
+    "google.golang.org/api"
   ],
   "force": {
     "constraints": {
