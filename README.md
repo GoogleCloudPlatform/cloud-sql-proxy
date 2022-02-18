@@ -66,7 +66,7 @@ Then, simply run:
 go install github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy@latest
 ```
 
-The `cloud_sql_proxy` will be placed in `$GOPATH/bin` or $HOME/go/bin.
+The `cloud_sql_proxy` will be placed in `$GOPATH/bin` or `$HOME/go/bin`.
 
 ## Usage
 
