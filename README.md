@@ -58,15 +58,15 @@ rollbacks to revert potential failures.
 ### Install from Source
 
 To install from source, ensure you have the latest version of [Go
-installed](https://golang.org/doc/install).
+installed](https://go.dev/doc/install).
 
 Then, simply run:
 
 ```
-go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
+go install github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy@latest
 ```
 
-The `cloud_sql_proxy` will be placed in `$GOPATH/bin` after `go get` completes.
+The `cloud_sql_proxy` will be placed in `$GOPATH/bin` or $HOME/go/bin.
 
 ## Usage
 
