@@ -55,6 +55,11 @@ images may break specific setups, even on non-major version increments. As such,
 it's a best practice to test changes before deployment, and use automated
 rollbacks to revert potential failures.
 
+**NOTE**: As of v1.16, the default container image uses [distroless][]. If you
+require a shell or similar tools, use the Alpine or Buster images listed above.
+
+[distroless]: https://github.com/GoogleContainerTools/distroless
+
 ### Install from Source
 
 To install from source, ensure you have the latest version of [Go
@@ -346,8 +351,8 @@ considered publicly unsupported.
 
 ### Supported Go Versions
 
-We test and support at least the latest 3 Go versions. Changes in supported Go 
-versions will be considered a minor change, and will be noted in the release notes. 
+We test and support at least the latest 3 Go versions. Changes in supported Go
+versions will be considered a minor change, and will be noted in the release notes.
 
 ### Release cadence
 The Cloud SQL Auth proxy aims for a minimum monthly release cadence. If no new
