@@ -46,12 +46,21 @@ func New() *cobra.Command {
 connecting to Cloud SQL instances. It listens on a local port and forwards connections
 to your instance's IP address, providing a secure connection without having to manage
 any client SSL certificates.`,
-		RunE: runSignalWrapper,
+		// By default Cobra will print usage if RunE returns an error. Since we
+		// don't want to see usage on a normal SIGTERM exit, we'll manually
+		// print usage when no arguments are provided and otherwise disable this
+		// "feature."
+		SilenceUsage: true,
+		RunE:         runSignalWrapper,
 	}
 }
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
 func runSignalWrapper(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		cmd.Help()
+		os.Exit(1)
+	}
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
