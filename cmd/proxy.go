@@ -62,13 +62,20 @@ func (pc *proxyClient) serve(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	exitCh := make(chan error)
-	defer close(exitCh)
 	for _, m := range pc.mnts {
 		go func(mnt *socketMount) {
 			err := pc.serveSocketMount(ctx, mnt)
 			if err != nil {
-				exitCh <- err
-				return
+				select {
+				// Best effort attempt to send error.
+				// If this send fails, it means the reading goroutine has
+				// already pulled a value out of the channel and is no longer
+				// reading any more values. In other words, we report only the
+				// first error.
+				case exitCh <- err:
+				default:
+					return
+				}
 			}
 		}(m)
 	}
