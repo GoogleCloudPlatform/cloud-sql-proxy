@@ -62,13 +62,16 @@ func (pc *proxyClient) serve(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	exitCh := make(chan error)
-	defer close(exitCh)
 	for _, m := range pc.mnts {
 		go func(mnt *socketMount) {
 			err := pc.serveSocketMount(ctx, mnt)
 			if err != nil {
-				exitCh <- err
-				return
+				select {
+				// Best effort attempt to send error
+				case exitCh <- err:
+				default:
+					return
+				}
 			}
 		}(m)
 	}
