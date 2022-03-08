@@ -82,6 +82,7 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 		defer close(startCh)
 		p, err := newProxyClient(ctx, cmd, args)
 		if err != nil {
+			p.close()
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
 		}
