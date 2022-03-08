@@ -37,9 +37,13 @@ func Execute() {
 	}
 }
 
+var (
+	flagPort int
+)
+
 // New returns a *cobra.Command object representing the proxy.
 func New() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "cloud_sql_proxy instance_connection_name...",
 		Short: "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
 		Long: `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
@@ -48,6 +52,10 @@ to your instance's IP address, providing a secure connection without having to m
 any client SSL certificates.`,
 		RunE: runSignalWrapper,
 	}
+	cmd.PersistentFlags().IntVarP(&flagPort, "port", "p", 5000,
+		`First port number to use for listeners. Subsequent instances will listen
+on increments from this value.`)
+	return cmd
 }
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
@@ -80,7 +88,7 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 	startCh := make(chan *proxyClient)
 	go func() {
 		defer close(startCh)
-		p, err := newProxyClient(ctx, cmd, args)
+		p, err := newProxyClient(ctx, cmd, args, flagPort)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return

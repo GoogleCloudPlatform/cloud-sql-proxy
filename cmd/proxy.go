@@ -36,14 +36,13 @@ type proxyClient struct {
 }
 
 // newProxyClient completes the initial setup required to get the proxy to a "steady" state.
-func newProxyClient(ctx context.Context, cmd *cobra.Command, args []string) (*proxyClient, error) {
-	dialer, err := cloudsqlconn.NewDialer(ctx)
+func newProxyClient(ctx context.Context, cmd *cobra.Command, args []string, port int) (*proxyClient, error) {
+	d, err := cloudsqlconn.NewDialer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing dialer: %v", err)
 	}
-	pc := &proxyClient{cmd: cmd, dialer: dialer}
+	pc := &proxyClient{cmd: cmd, dialer: d}
 
-	port := 5000 // TODO: figure out better port allocation strategy
 	for i, inst := range args {
 		m := &socketMount{inst: inst}
 		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort("127.0.0.1", fmt.Sprint(port+i)))
