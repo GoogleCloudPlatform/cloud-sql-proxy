@@ -67,7 +67,11 @@ func (pc *proxyClient) serve(ctx context.Context) error {
 			err := pc.serveSocketMount(ctx, mnt)
 			if err != nil {
 				select {
-				// Best effort attempt to send error
+				// Best effort attempt to send error.
+				// If this send fails, it means the reading goroutine has
+				// already pulled a value out of the channel and is no longer
+				// reading any more values. In other words, we report only the
+				// first error.
 				case exitCh <- err:
 				default:
 					return
