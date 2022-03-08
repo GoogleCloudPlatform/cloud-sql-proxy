@@ -48,7 +48,8 @@ func newProxyClient(ctx context.Context, cmd *cobra.Command, args []string) (*pr
 		m := &socketMount{inst: inst}
 		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort("127.0.0.1", fmt.Sprint(port+i)))
 		if err != nil {
-			return pc, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
+			pc.close()
+			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
 		}
 		cmd.Printf("[%s] Listening on %s\n", inst, addr.String())
 		pc.mnts = append(pc.mnts, m)
