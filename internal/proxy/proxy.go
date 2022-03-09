@@ -36,7 +36,7 @@ type Config struct {
 
 // Client represents the state of the current instantiation of the proxy.
 type Client struct {
-	conf   Config
+	logger *cobra.Command // TODO: replace this with a logger interface.
 	dialer *cloudsqlconn.Dialer
 
 	// mnts is a list of all mounted sockets for this client
@@ -49,7 +49,7 @@ func NewClient(ctx context.Context, conf Config, args []string) (*Client, error)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing dialer: %v", err)
 	}
-	c := &Client{conf: conf, dialer: d}
+	c := &Client{logger: conf.Logger, dialer: d}
 
 	port := 5000 // TODO: figure out better port allocation strategy
 	for i, inst := range args {
@@ -59,7 +59,7 @@ func NewClient(ctx context.Context, conf Config, args []string) (*Client, error)
 			c.Close()
 			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
 		}
-		c.conf.Logger.Printf("[%s] Listening on %s\n", inst, addr.String())
+		c.logger.Printf("[%s] Listening on %s\n", inst, addr.String())
 		c.mnts = append(c.mnts, m)
 	}
 
@@ -109,7 +109,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		cConn, err := s.listener.Accept()
 		if err != nil {
 			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
-				c.conf.Logger.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
+				c.logger.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
 				// For transient errors, wait a small amount of time to see if it resolves itself
 				time.Sleep(10 * time.Millisecond)
 				continue
@@ -118,7 +118,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		}
 		// handle the connection in a separate goroutine
 		go func() {
-			c.conf.Logger.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
+			c.logger.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
 
 			// give a max of 30 seconds to connect to the instance
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -126,7 +126,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 
 			sConn, err := c.dialer.Dial(ctx, s.inst)
 			if err != nil {
-				c.conf.Logger.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
+				c.logger.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
 				cConn.Close()
 				return
 			}
@@ -169,9 +169,9 @@ func (c *Client) proxyConn(inst string, client, server net.Conn) {
 			client.Close()
 			server.Close()
 			if isErr {
-				c.conf.Logger.PrintErrln(errDesc)
+				c.logger.PrintErrln(errDesc)
 			} else {
-				c.conf.Logger.Println(errDesc)
+				c.logger.Println(errDesc)
 			}
 		})
 	}
