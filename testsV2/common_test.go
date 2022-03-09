@@ -29,14 +29,13 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cmd"
-	"github.com/spf13/cobra"
 )
 
 // proxyExec represents an execution of the Cloud SQL proxy.
 type proxyExec struct {
 	Out io.ReadCloser
 
-	cmd     *cobra.Command
+	cmd     *cmd.Command
 	cancel  context.CancelFunc
 	closers []io.Closer
 	done    chan bool // closed once the cmd is completed
@@ -46,7 +45,7 @@ type proxyExec struct {
 // StartProxy returns a proxyExec representing a running instance of the proxy.
 func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	cmd := cmd.New()
+	cmd := cmd.NewCommand()
 	cmd.SetArgs(args)
 
 	// Open a pipe for tracking the output from the cmd
