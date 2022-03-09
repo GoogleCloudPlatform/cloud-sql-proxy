@@ -26,6 +26,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Config contains all the configuration provided by the caller.
+type Config struct {
+	// Addr is the address on which to bind all instances.
+	Addr string
+}
+
 // Client represents the state of the current instantiation of the proxy.
 type Client struct {
 	cmd    *cobra.Command
@@ -36,26 +42,26 @@ type Client struct {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, cmd *cobra.Command, args []string) (*Client, error) {
-	dialer, err := cloudsqlconn.NewDialer(ctx)
+func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config, args []string) (*Client, error) {
+	d, err := cloudsqlconn.NewDialer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing dialer: %v", err)
 	}
-	pc := &Client{cmd: cmd, dialer: dialer}
+	c := &Client{cmd: cmd, dialer: d}
 
 	port := 5000 // TODO: figure out better port allocation strategy
 	for i, inst := range args {
 		m := &socketMount{inst: inst}
-		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort("127.0.0.1", fmt.Sprint(port+i)))
+		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort(conf.Addr, fmt.Sprint(port+i)))
 		if err != nil {
-			pc.Close()
+			c.Close()
 			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
 		}
-		cmd.Printf("[%s] Listening on %s\n", inst, addr.String())
-		pc.mnts = append(pc.mnts, m)
+		c.cmd.Printf("[%s] Listening on %s\n", inst, addr.String())
+		c.mnts = append(c.mnts, m)
 	}
 
-	return pc, nil
+	return c, nil
 }
 
 // Serve listens on the mounted ports and beging proxying the connections to the instances.
