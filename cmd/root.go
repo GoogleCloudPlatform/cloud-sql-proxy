@@ -38,10 +38,6 @@ func Execute() {
 	}
 }
 
-var (
-	flagAddr string
-)
-
 // New returns a *cobra.Command object representing the proxy.
 func New() *cobra.Command {
 	c := &cobra.Command{
@@ -53,16 +49,20 @@ to your instance's IP address, providing a secure connection without having to m
 any client SSL certificates.`,
 		RunE: runSignalWrapper,
 	}
-	c.PersistentFlags().StringVarP(&flagAddr, "address", "a", "127.0.0.1",
+	c.PersistentFlags().StringP("address", "a", "127.0.0.1",
 		"Address on which to bind Cloud SQL instance listeners.")
 	return c
 }
 
 func newCommand(c *cobra.Command) *proxy.Command {
-	return &proxy.Command{
+	res := &proxy.Command{
 		RootCmd: c,
-		Addr:    flagAddr,
 	}
+	fAddr := c.PersistentFlags().Lookup("address")
+	if fAddr != nil {
+		res.Addr = fAddr.Value.String()
+	}
+	return res
 }
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
