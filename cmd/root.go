@@ -22,6 +22,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
@@ -77,10 +78,10 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Start the proxy asynchronously, so we can exit early if a shutdown signal is sent
-	startCh := make(chan *proxyClient)
+	startCh := make(chan *proxy.ProxyClient)
 	go func() {
 		defer close(startCh)
-		p, err := newProxyClient(ctx, cmd, args)
+		p, err := proxy.NewProxyClient(ctx, cmd, args)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
@@ -88,17 +89,17 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 		startCh <- p
 	}()
 	// Wait for either startup to finish or a signal to interupt
-	var p *proxyClient
+	var p *proxy.ProxyClient
 	select {
 	case err := <-shutdownCh:
 		return err
 	case p = <-startCh:
 	}
 	cmd.Println("The proxy has started successfully and is ready for new connections!")
-	defer p.close()
+	defer p.Close()
 
 	go func() {
-		shutdownCh <- p.serve(ctx)
+		shutdownCh <- p.Serve(ctx)
 	}()
 
 	err := <-shutdownCh
