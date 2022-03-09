@@ -40,6 +40,7 @@ func Execute() {
 
 // New returns a *cobra.Command object representing the proxy.
 func New() *cobra.Command {
+	conf := &proxy.Config{}
 	c := &cobra.Command{
 		Use:   "cloud_sql_proxy instance_connection_name...",
 		Short: "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
@@ -47,26 +48,18 @@ func New() *cobra.Command {
 connecting to Cloud SQL instances. It listens on a local port and forwards connections
 to your instance's IP address, providing a secure connection without having to manage
 any client SSL certificates.`,
-		RunE: runSignalWrapper,
+		RunE: func(c *cobra.Command, args []string) error {
+			return runSignalWrapper(c, args, conf)
+		},
 	}
-	c.PersistentFlags().StringP("address", "a", "127.0.0.1",
+	c.PersistentFlags().StringVarP(&conf.Addr, "address", "a", "127.0.0.1",
 		"Address on which to bind Cloud SQL instance listeners.")
+
 	return c
 }
 
-func newCommand(c *cobra.Command) *proxy.Command {
-	res := &proxy.Command{
-		RootCmd: c,
-	}
-	fAddr := c.PersistentFlags().Lookup("address")
-	if fAddr != nil {
-		res.Addr = fAddr.Value.String()
-	}
-	return res
-}
-
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
-func runSignalWrapper(cmd *cobra.Command, args []string) error {
+func runSignalWrapper(cmd *cobra.Command, args []string, conf *proxy.Config) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
@@ -95,7 +88,8 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, newCommand(cmd), args)
+		conf.RootCmd = cmd // TODO: remove this when adding logging
+		p, err := proxy.NewClient(ctx, conf, args)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
