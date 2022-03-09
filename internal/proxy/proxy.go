@@ -26,9 +26,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Config contains all the configuration provided by the caller.
+type Config struct {
+	// Logger is the interace through which the Clients logs messages.
+	Logger *cobra.Command // TODO: replace this with a logger interface
+	// Addr is the address on which to bind all instances.
+	Addr string
+}
+
 // Client represents the state of the current instantiation of the proxy.
 type Client struct {
-	cmd    *cobra.Command
+	conf   Config
 	dialer *cloudsqlconn.Dialer
 
 	// mnts is a list of all mounted sockets for this client
@@ -36,26 +44,26 @@ type Client struct {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, cmd *cobra.Command, args []string) (*Client, error) {
+func NewClient(ctx context.Context, conf Config, args []string) (*Client, error) {
 	d, err := cloudsqlconn.NewDialer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing dialer: %v", err)
 	}
-	pc := &Client{cmd: cmd, dialer: d}
+	c := &Client{conf: conf, dialer: d}
 
 	port := 5000 // TODO: figure out better port allocation strategy
 	for i, inst := range args {
 		m := &socketMount{inst: inst}
-		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort("127.0.0.1", fmt.Sprint(port+i)))
+		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort(conf.Addr, fmt.Sprint(port+i)))
 		if err != nil {
-			pc.Close()
+			c.Close()
 			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
 		}
-		cmd.Printf("[%s] Listening on %s\n", inst, addr.String())
-		pc.mnts = append(pc.mnts, m)
+		c.conf.Logger.Printf("[%s] Listening on %s\n", inst, addr.String())
+		c.mnts = append(c.mnts, m)
 	}
 
-	return pc, nil
+	return c, nil
 }
 
 // Serve listens on the mounted ports and beging proxying the connections to the instances.
@@ -101,7 +109,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		cConn, err := s.listener.Accept()
 		if err != nil {
 			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
-				c.cmd.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
+				c.conf.Logger.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
 				// For transient errors, wait a small amount of time to see if it resolves itself
 				time.Sleep(10 * time.Millisecond)
 				continue
@@ -110,7 +118,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		}
 		// handle the connection in a separate goroutine
 		go func() {
-			c.cmd.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
+			c.conf.Logger.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
 
 			// give a max of 30 seconds to connect to the instance
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -118,7 +126,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 
 			sConn, err := c.dialer.Dial(ctx, s.inst)
 			if err != nil {
-				c.cmd.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
+				c.conf.Logger.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
 				cConn.Close()
 				return
 			}
@@ -161,9 +169,9 @@ func (c *Client) proxyConn(inst string, client, server net.Conn) {
 			client.Close()
 			server.Close()
 			if isErr {
-				c.cmd.PrintErrln(errDesc)
+				c.conf.Logger.PrintErrln(errDesc)
 			} else {
-				c.cmd.Println(errDesc)
+				c.conf.Logger.Println(errDesc)
 			}
 		})
 	}
