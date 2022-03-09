@@ -58,7 +58,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, args []string) (*Client,
 	return pc, nil
 }
 
-// serve listens on the mounted ports and beging proxying the connections to the instances.
+// Serve listens on the mounted ports and beging proxying the connections to the instances.
 func (c *Client) Serve(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
