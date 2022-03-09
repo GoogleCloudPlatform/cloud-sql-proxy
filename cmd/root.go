@@ -58,10 +58,10 @@ any client SSL certificates.`,
 	return c
 }
 
-func configFromCmd(c *cobra.Command) proxy.Config {
-	return proxy.Config{
-		Logger: c,
-		Addr:   flagAddr,
+func newCommand(c *cobra.Command) *proxy.Command {
+	return &proxy.Command{
+		RootCmd: c,
+		Addr:    flagAddr,
 	}
 }
 
@@ -95,7 +95,7 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, configFromCmd(cmd), args)
+		p, err := proxy.NewClient(ctx, newCommand(cmd), args)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
