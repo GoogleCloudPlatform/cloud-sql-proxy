@@ -28,9 +28,6 @@ import (
 
 // Config contains all the configuration provided by the caller.
 type Config struct {
-	// RootCmd is the underlying cobra Command object that initiated the
-	// invocation.
-	RootCmd *cobra.Command
 	// Addr is the address on which to bind all instances.
 	Addr string
 }
@@ -45,12 +42,12 @@ type Client struct {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, conf *Config, args []string) (*Client, error) {
+func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config, args []string) (*Client, error) {
 	d, err := cloudsqlconn.NewDialer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing dialer: %v", err)
 	}
-	c := &Client{cmd: conf.RootCmd, dialer: d}
+	c := &Client{cmd: cmd, dialer: d}
 
 	port := 5000 // TODO: figure out better port allocation strategy
 	for i, inst := range args {

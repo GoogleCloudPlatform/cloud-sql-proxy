@@ -29,7 +29,7 @@ import (
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := New().Execute(); err != nil {
+	if err := NewCommand().Execute(); err != nil {
 		exit := 1
 		if terr, ok := err.(*exitError); ok {
 			exit = terr.Code
@@ -38,28 +38,37 @@ func Execute() {
 	}
 }
 
-// New returns a *cobra.Command object representing the proxy.
-func New() *cobra.Command {
+// Command represents an invocation of the Cloud SQL Auth Proxy.
+type Command struct {
+	*cobra.Command
+	conf *proxy.Config
+}
+
+// NewCommand returns a Command object representing an invocation of the proxy.
+func NewCommand() *Command {
+	c := &Command{}
 	conf := &proxy.Config{}
-	c := &cobra.Command{
+	ccmd := &cobra.Command{
 		Use:   "cloud_sql_proxy instance_connection_name...",
 		Short: "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
 		Long: `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
 connecting to Cloud SQL instances. It listens on a local port and forwards connections
 to your instance's IP address, providing a secure connection without having to manage
 any client SSL certificates.`,
-		RunE: func(c *cobra.Command, args []string) error {
-			return runSignalWrapper(c, args, conf)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runSignalWrapper(c, args)
 		},
 	}
-	c.PersistentFlags().StringVarP(&conf.Addr, "address", "a", "127.0.0.1",
+	ccmd.PersistentFlags().StringVarP(&conf.Addr, "address", "a", "127.0.0.1",
 		"Address on which to bind Cloud SQL instance listeners.")
 
+	c.conf = conf
+	c.Command = ccmd
 	return c
 }
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
-func runSignalWrapper(cmd *cobra.Command, args []string, conf *proxy.Config) error {
+func runSignalWrapper(cmd *Command, args []string) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
@@ -88,8 +97,7 @@ func runSignalWrapper(cmd *cobra.Command, args []string, conf *proxy.Config) err
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		conf.RootCmd = cmd // TODO: remove this when adding logging
-		p, err := proxy.NewClient(ctx, conf, args)
+		p, err := proxy.NewClient(ctx, cmd.Command, cmd.conf, args)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
