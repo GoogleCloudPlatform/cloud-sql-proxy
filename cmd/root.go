@@ -78,10 +78,10 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Start the proxy asynchronously, so we can exit early if a shutdown signal is sent
-	startCh := make(chan *proxy.ProxyClient)
+	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewProxyClient(ctx, cmd, args)
+		p, err := proxy.NewClient(ctx, cmd, args)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
@@ -89,7 +89,7 @@ func runSignalWrapper(cmd *cobra.Command, args []string) error {
 		startCh <- p
 	}()
 	// Wait for either startup to finish or a signal to interupt
-	var p *proxy.ProxyClient
+	var p *proxy.Client
 	select {
 	case err := <-shutdownCh:
 		return err

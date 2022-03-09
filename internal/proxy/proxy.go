@@ -26,8 +26,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ProxyClient represents the state of the current instantiation of the proxy.
-type ProxyClient struct {
+// Client represents the state of the current instantiation of the proxy.
+type Client struct {
 	cmd    *cobra.Command
 	dialer *cloudsqlconn.Dialer
 
@@ -35,13 +35,13 @@ type ProxyClient struct {
 	mnts []*socketMount
 }
 
-// NewProxyClient completes the initial setup required to get the proxy to a "steady" state.
-func NewProxyClient(ctx context.Context, cmd *cobra.Command, args []string) (*ProxyClient, error) {
+// NewClient completes the initial setup required to get the proxy to a "steady" state.
+func NewClient(ctx context.Context, cmd *cobra.Command, args []string) (*Client, error) {
 	dialer, err := cloudsqlconn.NewDialer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing dialer: %v", err)
 	}
-	pc := &ProxyClient{cmd: cmd, dialer: dialer}
+	pc := &Client{cmd: cmd, dialer: dialer}
 
 	port := 5000 // TODO: figure out better port allocation strategy
 	for i, inst := range args {
@@ -59,13 +59,13 @@ func NewProxyClient(ctx context.Context, cmd *cobra.Command, args []string) (*Pr
 }
 
 // serve listens on the mounted ports and beging proxying the connections to the instances.
-func (pc *ProxyClient) Serve(ctx context.Context) error {
+func (c *Client) Serve(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	exitCh := make(chan error)
-	for _, m := range pc.mnts {
+	for _, m := range c.mnts {
 		go func(mnt *socketMount) {
-			err := pc.serveSocketMount(ctx, mnt)
+			err := c.serveSocketMount(ctx, mnt)
 			if err != nil {
 				select {
 				// Best effort attempt to send error.
@@ -84,16 +84,16 @@ func (pc *ProxyClient) Serve(ctx context.Context) error {
 }
 
 // Close triggers the proxyClient to shutdown.
-func (pc *ProxyClient) Close() {
-	defer pc.dialer.Close()
-	for _, m := range pc.mnts {
+func (c *Client) Close() {
+	defer c.dialer.Close()
+	for _, m := range c.mnts {
 		m.close()
 	}
 }
 
 // serveSocketMount persistently listens to the socketMounts listener and proxies connections to a
 // given Cloud SQL instance.
-func (pc *ProxyClient) serveSocketMount(ctx context.Context, s *socketMount) error {
+func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 	if s.listener == nil {
 		return fmt.Errorf("[%s] mount doesn't have a listener set", s.inst)
 	}
@@ -101,7 +101,7 @@ func (pc *ProxyClient) serveSocketMount(ctx context.Context, s *socketMount) err
 		cConn, err := s.listener.Accept()
 		if err != nil {
 			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
-				pc.cmd.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
+				c.cmd.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
 				// For transient errors, wait a small amount of time to see if it resolves itself
 				time.Sleep(10 * time.Millisecond)
 				continue
@@ -110,19 +110,19 @@ func (pc *ProxyClient) serveSocketMount(ctx context.Context, s *socketMount) err
 		}
 		// handle the connection in a separate goroutine
 		go func() {
-			pc.cmd.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
+			c.cmd.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
 
 			// give a max of 30 seconds to connect to the instance
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 
-			sConn, err := pc.dialer.Dial(ctx, s.inst)
+			sConn, err := c.dialer.Dial(ctx, s.inst)
 			if err != nil {
-				pc.cmd.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
+				c.cmd.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
 				cConn.Close()
 				return
 			}
-			pc.proxyConn(s.inst, cConn, sConn)
+			c.proxyConn(s.inst, cConn, sConn)
 		}()
 	}
 }
@@ -153,7 +153,7 @@ func (s *socketMount) close() error {
 }
 
 // proxyConn sets up a bidirectional copy between two open connections
-func (pc *ProxyClient) proxyConn(inst string, client, server net.Conn) {
+func (c *Client) proxyConn(inst string, client, server net.Conn) {
 	// only allow the first side to give an error for terminating a connection
 	var o sync.Once
 	cleanup := func(errDesc string, isErr bool) {
@@ -161,9 +161,9 @@ func (pc *ProxyClient) proxyConn(inst string, client, server net.Conn) {
 			client.Close()
 			server.Close()
 			if isErr {
-				pc.cmd.PrintErrln(errDesc)
+				c.cmd.PrintErrln(errDesc)
 			} else {
-				pc.cmd.Println(errDesc)
+				c.cmd.Println(errDesc)
 			}
 		})
 	}
