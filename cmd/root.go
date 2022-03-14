@@ -105,11 +105,11 @@ func parseConfig(conf *proxy.Config, args []string) error {
 				return newBadCommandError(fmt.Sprintf("could not parse query: %q", res[1]))
 			}
 			if len(q["address"]) != 1 {
-				return newBadCommandError(fmt.Sprintf("address should be only one value, got = %q", q["address"]))
+				return newBadCommandError(fmt.Sprintf("address query param should be only one value, got = %q", q["address"]))
 			}
 			if ip := net.ParseIP(q["address"][0]); ip == nil {
 				return newBadCommandError(
-					fmt.Sprintf("provided address query param is not a valid IP address, got = %q",
+					fmt.Sprintf("address query param %q is not a valid IP address",
 						q["address"][0],
 					))
 			}
