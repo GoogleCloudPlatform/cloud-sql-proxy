@@ -7,6 +7,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/denisenkom/go-mssqldb v0.11.0
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/google/go-cmp v0.5.7
 	github.com/hanwen/go-fuse/v2 v2.1.0
 	github.com/lib/pq v1.10.3
 	github.com/spf13/cobra v1.2.1
@@ -18,10 +19,7 @@ require (
 	google.golang.org/api v0.60.0
 )
 
-require (
-	github.com/google/go-cmp v0.5.7 // indirect
-	github.com/google/uuid v1.3.0 // indirect
-)
+require github.com/google/uuid v1.3.0 // indirect
 
 require (
 	cloud.google.com/go/cloudsqlconn v0.0.0-20211025210206-86f37d7a784a
