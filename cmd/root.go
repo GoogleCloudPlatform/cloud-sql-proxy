@@ -18,8 +18,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
@@ -46,29 +49,78 @@ type Command struct {
 
 // NewCommand returns a Command object representing an invocation of the proxy.
 func NewCommand() *Command {
-	c := &Command{}
-	conf := &proxy.Config{}
-	ccmd := &cobra.Command{
+	c := &Command{
+		conf: &proxy.Config{},
+	}
+
+	cmd := &cobra.Command{
 		Use:   "cloud_sql_proxy instance_connection_name...",
 		Short: "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
 		Long: `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
 connecting to Cloud SQL instances. It listens on a local port and forwards connections
 to your instance's IP address, providing a secure connection without having to manage
 any client SSL certificates.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSignalWrapper(c, args)
+		Args: func(cmd *cobra.Command, args []string) error {
+			err := parseConfig(c.conf, args)
+			if err != nil {
+				return err
+			}
+			// The arguments are parsed. Usage is no longer needed.
+			cmd.SilenceUsage = true
+			return nil
+		},
+		RunE: func(*cobra.Command, []string) error {
+			return runSignalWrapper(c)
 		},
 	}
-	ccmd.PersistentFlags().StringVarP(&conf.Addr, "address", "a", "127.0.0.1",
+
+	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
 		"Address on which to bind Cloud SQL instance listeners.")
 
-	c.conf = conf
-	c.Command = ccmd
+	c.Command = cmd
 	return c
 }
 
+func parseConfig(conf *proxy.Config, args []string) error {
+	// If no instance connection names were provided, error.
+	if len(args) == 0 {
+		return errBadCommand
+	}
+	// First, validate global config.
+	if ip := net.ParseIP(conf.Addr); ip == nil || ip.To4() == nil {
+		return errBadCommand
+	}
+
+	var ics []proxy.InstanceConnConfig
+	for _, a := range args {
+		// Assume no query params initially
+		ic := proxy.InstanceConnConfig{
+			Name: a,
+		}
+		// If there are query params, update instance config.
+		if res := strings.Split(a, "?"); len(res) > 1 {
+			ic.Name = res[0]
+			q, err := url.ParseQuery(res[1])
+			if err != nil {
+				return errBadCommand
+			}
+			if len(q["addr"]) != 1 {
+				return errBadCommand
+			}
+			if ip := net.ParseIP(q["addr"][0]); ip == nil || ip.To4() == nil {
+				return errBadCommand
+			}
+			ic.Addr = q["addr"][0]
+		}
+		ics = append(ics, ic)
+	}
+
+	conf.Instances = ics
+	return nil
+}
+
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
-func runSignalWrapper(cmd *Command, args []string) error {
+func runSignalWrapper(cmd *Command) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
@@ -97,7 +149,7 @@ func runSignalWrapper(cmd *Command, args []string) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, cmd.Command, cmd.conf, args)
+		p, err := proxy.NewClient(ctx, cmd.Command, cmd.conf)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return

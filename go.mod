@@ -18,7 +18,10 @@ require (
 	google.golang.org/api v0.60.0
 )
 
-require github.com/google/uuid v1.3.0 // indirect
+require (
+	github.com/google/go-cmp v0.5.7 // indirect
+	github.com/google/uuid v1.3.0 // indirect
+)
 
 require (
 	cloud.google.com/go/cloudsqlconn v0.0.0-20211025210206-86f37d7a784a

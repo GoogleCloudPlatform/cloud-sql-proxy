@@ -18,15 +18,22 @@ import (
 	"errors"
 )
 
-var errSigInt = &exitError{
-	Err:  errors.New("SIGINT signal received"),
-	Code: 130,
-}
+var (
+	errSigInt = &exitError{
+		Err:  errors.New("SIGINT signal received"),
+		Code: 130,
+	}
 
-var errSigTerm = &exitError{
-	Err:  errors.New("SIGINT signal received"),
-	Code: 137,
-}
+	errSigTerm = &exitError{
+		Err:  errors.New("SIGINT signal received"),
+		Code: 137,
+	}
+
+	errBadCommand = &exitError{
+		Err:  errors.New("Invocation error"),
+		Code: 1,
+	}
+)
 
 // exitError is an error with an exit code, that's returned when the cmd exits.
 // When possible, try to match these conventions: https://tldp.org/LDP/abs/html/exitcodes.html
