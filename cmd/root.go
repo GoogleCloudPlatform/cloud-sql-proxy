@@ -87,7 +87,7 @@ func parseConfig(conf *proxy.Config, args []string) error {
 		return errBadCommand
 	}
 	// First, validate global config.
-	if ip := net.ParseIP(conf.Addr); ip == nil || ip.To4() == nil {
+	if ip := net.ParseIP(conf.Addr); ip == nil {
 		return errBadCommand
 	}
 
@@ -98,7 +98,7 @@ func parseConfig(conf *proxy.Config, args []string) error {
 			Name: a,
 		}
 		// If there are query params, update instance config.
-		if res := strings.Split(a, "?"); len(res) > 1 {
+		if res := strings.SplitN(a, "?", 2); len(res) > 1 {
 			ic.Name = res[0]
 			q, err := url.ParseQuery(res[1])
 			if err != nil {
@@ -107,7 +107,7 @@ func parseConfig(conf *proxy.Config, args []string) error {
 			if len(q["address"]) != 1 {
 				return errBadCommand
 			}
-			if ip := net.ParseIP(q["address"][0]); ip == nil || ip.To4() == nil {
+			if ip := net.ParseIP(q["address"][0]); ip == nil {
 				return errBadCommand
 			}
 			ic.Addr = q["address"][0]

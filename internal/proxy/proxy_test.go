@@ -50,6 +50,16 @@ func TestClientInitialization(t *testing.T) {
 			},
 			wantAddrs: []string{"0.0.0.0:5000"},
 		},
+		{
+			desc: "IPv6 support",
+			in: &proxy.Config{
+				Addr: "::1",
+				Instances: []proxy.InstanceConnConfig{
+					{Name: "proj:region:inst1"},
+				},
+			},
+			wantAddrs: []string{"[::1]:5000"},
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -59,7 +69,7 @@ func TestClientInitialization(t *testing.T) {
 			}
 			defer c.Close()
 			for _, addr := range tc.wantAddrs {
-				conn, err := net.Dial("tcp4", addr)
+				conn, err := net.Dial("tcp", addr)
 				if err != nil {
 					t.Fatalf("want error = nil, got = %v", err)
 				}

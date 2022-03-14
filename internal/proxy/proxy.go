@@ -73,7 +73,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 		if inst.Addr != "" {
 			a = inst.Addr
 		}
-		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort(a, fmt.Sprint(port+i)))
+		addr, err := m.listen(ctx, "tcp", net.JoinHostPort(a, fmt.Sprint(port+i)))
 		if err != nil {
 			c.Close()
 			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)

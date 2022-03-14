@@ -108,10 +108,6 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{"--address", "bogus", "proj:region:inst"},
 		},
 		{
-			desc: "using the address flag with an IPv6 address",
-			args: []string{"--address", "::1", "proj:region:inst"},
-		},
-		{
 			desc: "when the address query param is not an IP address",
 			args: []string{"proj:region:inst?address=世界"},
 		},
@@ -120,8 +116,8 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{"proj:region:inst?address=0.0.0.0&address=1.1.1.1&address=2.2.2.2"},
 		},
 		{
-			desc: "when the address query param is IPv6",
-			args: []string{"proj:region:inst?address=::1"},
+			desc: "when the query string is invalid",
+			args: []string{"proj:region:inst?address=1.1.1.1?foo=2.2.2.2"},
 		},
 	}
 
