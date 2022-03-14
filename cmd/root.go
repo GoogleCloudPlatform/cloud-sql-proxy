@@ -84,11 +84,11 @@ any client SSL certificates.`,
 func parseConfig(conf *proxy.Config, args []string) error {
 	// If no instance connection names were provided, error.
 	if len(args) == 0 {
-		return errBadCommand
+		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
 	}
 	// First, validate global config.
 	if ip := net.ParseIP(conf.Addr); ip == nil {
-		return errBadCommand
+		return newBadCommandError(fmt.Sprintf("provided address %q is not a valid IP address", conf.Addr))
 	}
 
 	var ics []proxy.InstanceConnConfig
@@ -102,13 +102,16 @@ func parseConfig(conf *proxy.Config, args []string) error {
 			ic.Name = res[0]
 			q, err := url.ParseQuery(res[1])
 			if err != nil {
-				return errBadCommand
+				return newBadCommandError(fmt.Sprintf("could not parse query: %q", res[1]))
 			}
 			if len(q["address"]) != 1 {
-				return errBadCommand
+				return newBadCommandError(fmt.Sprintf("address should be only one value, got = %q", q["address"]))
 			}
 			if ip := net.ParseIP(q["address"][0]); ip == nil {
-				return errBadCommand
+				return newBadCommandError(
+					fmt.Sprintf("provided address query param is not a valid IP address, got = %q",
+						q["address"][0],
+					))
 			}
 			ic.Addr = q["address"][0]
 		}

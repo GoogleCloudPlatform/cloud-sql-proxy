@@ -134,8 +134,8 @@ func TestNewCommandWithErrors(t *testing.T) {
 			c.SetArgs(tc.args)
 
 			err := c.Execute()
-			if got := err; errBadCommand != got {
-				t.Fatalf("want error = %v, got = %v", errBadCommand, got)
+			if err == nil {
+				t.Fatal("want error != nil, got = nil")
 			}
 		})
 	}

@@ -28,12 +28,14 @@ var (
 		Err:  errors.New("SIGINT signal received"),
 		Code: 137,
 	}
+)
 
-	errBadCommand = &exitError{
-		Err:  errors.New("Invocation error"),
+func newBadCommandError(msg string) error {
+	return &exitError{
+		Err:  errors.New(msg),
 		Code: 1,
 	}
-)
+}
 
 // exitError is an error with an exit code, that's returned when the cmd exits.
 // When possible, try to match these conventions: https://tldp.org/LDP/abs/html/exitcodes.html
