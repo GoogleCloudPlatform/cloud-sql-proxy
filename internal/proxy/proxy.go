@@ -69,15 +69,11 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 	port := 5000 // TODO: figure out better port allocation strategy
 	for i, inst := range conf.Instances {
 		m := &socketMount{inst: inst.Name}
-		var (
-			addr net.Addr
-			err  error
-		)
+		a := conf.Addr
 		if inst.Addr != "" {
-			addr, err = m.listen(ctx, "tcp4", net.JoinHostPort(inst.Addr, fmt.Sprint(port+i)))
-		} else {
-			addr, err = m.listen(ctx, "tcp4", net.JoinHostPort(conf.Addr, fmt.Sprint(port+i)))
+			a = inst.Addr
 		}
+		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort(a, fmt.Sprint(port+i)))
 		if err != nil {
 			c.Close()
 			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
