@@ -54,7 +54,7 @@ func TestNewCommandArguments(t *testing.T) {
 		},
 		{
 			desc: "using the address query param",
-			args: []string{"proj:region:inst?addr=0.0.0.0"},
+			args: []string{"proj:region:inst?address=0.0.0.0"},
 			want: &proxy.Config{
 				Addr: "127.0.0.1",
 				Instances: []proxy.InstanceConnConfig{{
@@ -101,7 +101,7 @@ func TestNewCommandWithErrors(t *testing.T) {
 		},
 		{
 			desc: "when the address query param is empty",
-			args: []string{"proj:region:inst?addr="},
+			args: []string{"proj:region:inst?address="},
 		},
 		{
 			desc: "using the address flag with a bad IP address",
@@ -113,15 +113,15 @@ func TestNewCommandWithErrors(t *testing.T) {
 		},
 		{
 			desc: "when the address query param is not an IP address",
-			args: []string{"proj:region:inst?addr=世界"},
+			args: []string{"proj:region:inst?address=世界"},
 		},
 		{
 			desc: "when the address query param contains multiple values",
-			args: []string{"proj:region:inst?addr=0.0.0.0&addr=1.1.1.1&addr=2.2.2.2"},
+			args: []string{"proj:region:inst?address=0.0.0.0&address=1.1.1.1&address=2.2.2.2"},
 		},
 		{
 			desc: "when the address query param is IPv6",
-			args: []string{"proj:region:inst?addr=::1"},
+			args: []string{"proj:region:inst?address=::1"},
 		},
 	}
 

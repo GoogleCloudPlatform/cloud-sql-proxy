@@ -104,13 +104,13 @@ func parseConfig(conf *proxy.Config, args []string) error {
 			if err != nil {
 				return errBadCommand
 			}
-			if len(q["addr"]) != 1 {
+			if len(q["address"]) != 1 {
 				return errBadCommand
 			}
-			if ip := net.ParseIP(q["addr"][0]); ip == nil || ip.To4() == nil {
+			if ip := net.ParseIP(q["address"][0]); ip == nil || ip.To4() == nil {
 				return errBadCommand
 			}
-			ic.Addr = q["addr"][0]
+			ic.Addr = q["address"][0]
 		}
 		ics = append(ics, ic)
 	}
