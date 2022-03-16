@@ -35,10 +35,6 @@ type InstanceConnConfig struct {
 	Addr string
 }
 
-func (i InstanceConnConfig) String() string {
-	return i.Name
-}
-
 // Config contains all the configuration provided by the caller.
 type Config struct {
 	// Addr is the address on which to bind all instances.
@@ -78,7 +74,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 			c.Close()
 			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
 		}
-		c.cmd.Printf("[%s] Listening on %s\n", inst.String(), addr.String())
+		c.cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
 		c.mnts = append(c.mnts, m)
 	}
 

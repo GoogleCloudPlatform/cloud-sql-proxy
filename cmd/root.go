@@ -88,7 +88,7 @@ func parseConfig(conf *proxy.Config, args []string) error {
 	}
 	// First, validate global config.
 	if ip := net.ParseIP(conf.Addr); ip == nil {
-		return newBadCommandError(fmt.Sprintf("provided address %q is not a valid IP address", conf.Addr))
+		return newBadCommandError(fmt.Sprintf("not a valid IP address: %q", conf.Addr))
 	}
 
 	var ics []proxy.InstanceConnConfig
@@ -105,11 +105,11 @@ func parseConfig(conf *proxy.Config, args []string) error {
 				return newBadCommandError(fmt.Sprintf("could not parse query: %q", res[1]))
 			}
 			if len(q["address"]) != 1 {
-				return newBadCommandError(fmt.Sprintf("address query param should be only one value, got = %q", q["address"]))
+				return newBadCommandError(fmt.Sprintf("address query param should be only one value: %q", q["address"]))
 			}
 			if ip := net.ParseIP(q["address"][0]); ip == nil {
 				return newBadCommandError(
-					fmt.Sprintf("address query param %q is not a valid IP address",
+					fmt.Sprintf("address query param is not a valid IP address: %q",
 						q["address"][0],
 					))
 			}
