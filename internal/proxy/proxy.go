@@ -26,10 +26,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// InstanceConnConfig holds the configuration for an individual instance
+// connection.
+type InstanceConnConfig struct {
+	// Name is the instance connection name.
+	Name string
+	// Addr is the address on which to bind a listener for the instance.
+	Addr string
+}
+
 // Config contains all the configuration provided by the caller.
 type Config struct {
 	// Addr is the address on which to bind all instances.
 	Addr string
+
+	// Instances are configuration for individual instances. Instance
+	// configuration takes precedence over global configuration.
+	Instances []InstanceConnConfig
 }
 
 // Client represents the state of the current instantiation of the proxy.
@@ -42,7 +55,7 @@ type Client struct {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config, args []string) (*Client, error) {
+func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, error) {
 	d, err := cloudsqlconn.NewDialer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing dialer: %v", err)
@@ -50,14 +63,18 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config, args []str
 	c := &Client{cmd: cmd, dialer: d}
 
 	port := 5000 // TODO: figure out better port allocation strategy
-	for i, inst := range args {
-		m := &socketMount{inst: inst}
-		addr, err := m.listen(ctx, "tcp4", net.JoinHostPort(conf.Addr, fmt.Sprint(port+i)))
+	for i, inst := range conf.Instances {
+		m := &socketMount{inst: inst.Name}
+		a := conf.Addr
+		if inst.Addr != "" {
+			a = inst.Addr
+		}
+		addr, err := m.listen(ctx, "tcp", net.JoinHostPort(a, fmt.Sprint(port+i)))
 		if err != nil {
 			c.Close()
 			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
 		}
-		c.cmd.Printf("[%s] Listening on %s\n", inst, addr.String())
+		c.cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
 		c.mnts = append(c.mnts, m)
 	}
 
@@ -133,8 +150,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 	}
 }
 
-// socketMount is a tcp/unix socket that listens for a Cloud SQL instance. It should
-// only be created with newSocketMount.
+// socketMount is a tcp/unix socket that listens for a Cloud SQL instance.
 type socketMount struct {
 	inst     string
 	listener net.Listener
