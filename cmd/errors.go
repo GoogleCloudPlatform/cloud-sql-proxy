@@ -18,14 +18,23 @@ import (
 	"errors"
 )
 
-var errSigInt = &exitError{
-	Err:  errors.New("SIGINT signal received"),
-	Code: 130,
-}
+var (
+	errSigInt = &exitError{
+		Err:  errors.New("SIGINT signal received"),
+		Code: 130,
+	}
 
-var errSigTerm = &exitError{
-	Err:  errors.New("SIGINT signal received"),
-	Code: 137,
+	errSigTerm = &exitError{
+		Err:  errors.New("SIGINT signal received"),
+		Code: 137,
+	}
+)
+
+func newBadCommandError(msg string) error {
+	return &exitError{
+		Err:  errors.New(msg),
+		Code: 1,
+	}
 }
 
 // exitError is an error with an exit code, that's returned when the cmd exits.
