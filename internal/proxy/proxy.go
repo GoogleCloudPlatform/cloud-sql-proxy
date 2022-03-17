@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -60,38 +61,83 @@ type Client struct {
 	mnts []*socketMount
 }
 
-// NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, error) {
-	d, err := cloudsqlconn.NewDialer(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing dialer: %v", err)
-	}
-	c := &Client{cmd: cmd, dialer: d}
+type portConfig struct {
+	global    int
+	postgres  int
+	mysql     int
+	sqlserver int
+}
 
-	port := conf.Port
-	var inc int
+func newPortConfig(global int) *portConfig {
+	return &portConfig{
+		global:    global,
+		postgres:  5432,
+		mysql:     3306,
+		sqlserver: 1433,
+	}
+}
+
+// nextPort returns the next port based on the initial global value.
+func (c *portConfig) nextPort() int {
+	p := c.global
+	c.global++
+	return p
+}
+
+func (c *portConfig) nextDBPort(version string) int {
+	switch {
+	case strings.HasPrefix(version, "MYSQL"):
+		p := c.mysql
+		c.mysql++
+		return p
+	case strings.HasPrefix(version, "POSTGRES"):
+		p := c.postgres
+		c.postgres++
+		return p
+	case strings.HasPrefix(version, "SQLSERVER"):
+		p := c.sqlserver
+		c.sqlserver++
+		return p
+	default:
+		// Unexpected engine version, use global port setting instead.
+		return c.nextPort()
+	}
+}
+
+// NewClient completes the initial setup required to get the proxy to a "steady" state.
+func NewClient(ctx context.Context, d *cloudsqlconn.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
+	var mnts []*socketMount
+	pc := newPortConfig(conf.Port)
 	for _, inst := range conf.Instances {
 		m := &socketMount{inst: inst.Name}
 		a := conf.Addr
 		if inst.Addr != "" {
 			a = inst.Addr
 		}
-		nextPort := port + inc
-		if inst.Port != 0 {
-			nextPort = inst.Port
-		} else {
-			inc++
-		}
-		addr, err := m.listen(ctx, "tcp", net.JoinHostPort(a, fmt.Sprint(nextPort)))
+		version, err := d.EngineVersion(ctx, inst.Name)
 		if err != nil {
-			c.Close()
+			return nil, err
+		}
+		var np int
+		switch {
+		case inst.Port != 0:
+			np = inst.Port
+		case conf.Port != 0:
+			np = pc.nextPort()
+		default:
+			np = pc.nextDBPort(version)
+		}
+		addr, err := m.listen(ctx, "tcp", net.JoinHostPort(a, fmt.Sprint(np)))
+		if err != nil {
+			for _, m := range mnts {
+				m.close()
+			}
 			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
-		c.cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
-		c.mnts = append(c.mnts, m)
+		cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
+		mnts = append(mnts, m)
 	}
-
-	return c, nil
+	return &Client{mnts: mnts, cmd: cmd, dialer: d}, nil
 }
 
 // Serve listens on the mounted ports and beging proxying the connections to the instances.
