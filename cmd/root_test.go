@@ -23,6 +23,21 @@ import (
 )
 
 func TestNewCommandArguments(t *testing.T) {
+	withDefaults := func(c *proxy.Config) *proxy.Config {
+		if c.Addr == "" {
+			c.Addr = "127.0.0.1"
+		}
+		if c.Port == 0 {
+			c.Port = 5000
+		}
+		if c.Instances == nil {
+			c.Instances = []proxy.InstanceConnConfig{{}}
+		}
+		if i := &c.Instances[0]; i.Name == "" {
+			i.Name = "proj:region:inst"
+		}
+		return c
+	}
 	tcs := []struct {
 		desc string
 		args []string
@@ -31,43 +46,69 @@ func TestNewCommandArguments(t *testing.T) {
 		{
 			desc: "basic invocation with defaults",
 			args: []string{"proj:region:inst"},
-			want: &proxy.Config{
+			want: withDefaults(&proxy.Config{
 				Addr:      "127.0.0.1",
 				Instances: []proxy.InstanceConnConfig{{Name: "proj:region:inst"}},
-			},
+			}),
 		},
 		{
 			desc: "using the address flag",
 			args: []string{"--address", "0.0.0.0", "proj:region:inst"},
-			want: &proxy.Config{
+			want: withDefaults(&proxy.Config{
 				Addr:      "0.0.0.0",
 				Instances: []proxy.InstanceConnConfig{{Name: "proj:region:inst"}},
-			},
+			}),
 		},
 		{
 			desc: "using the address (short) flag",
 			args: []string{"-a", "0.0.0.0", "proj:region:inst"},
-			want: &proxy.Config{
+			want: withDefaults(&proxy.Config{
 				Addr:      "0.0.0.0",
 				Instances: []proxy.InstanceConnConfig{{Name: "proj:region:inst"}},
-			},
+			}),
 		},
 		{
 			desc: "using the address query param",
 			args: []string{"proj:region:inst?address=0.0.0.0"},
-			want: &proxy.Config{
+			want: withDefaults(&proxy.Config{
 				Addr: "127.0.0.1",
 				Instances: []proxy.InstanceConnConfig{{
 					Addr: "0.0.0.0",
 					Name: "proj:region:inst",
 				}},
-			},
+			}),
+		},
+		{
+			desc: "using the port flag",
+			args: []string{"--port", "6000", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				Port: 6000,
+			}),
+		},
+		{
+			desc: "using the port (short) flag",
+			args: []string{"-p", "6000", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				Port: 6000,
+			}),
+		},
+		{
+			desc: "using the port query param",
+			args: []string{"proj:region:inst?port=6000"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					Port: 6000,
+				}},
+			}),
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			c := NewCommand()
+			// Keep the test output quiet
+			c.SilenceUsage = true
+			c.SilenceErrors = true
 			// Disable execute behavior
 			c.RunE = func(*cobra.Command, []string) error {
 				return nil
@@ -118,6 +159,14 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "when the query string is invalid",
 			args: []string{"proj:region:inst?address=1.1.1.1?foo=2.2.2.2"},
+		},
+		{
+			desc: "when the port query param contains multiple values",
+			args: []string{"proj:region:inst?port=1&port=2"},
+		},
+		{
+			desc: "when the port query param is not a number",
+			args: []string{"proj:region:inst?port=hi"},
 		},
 	}
 
