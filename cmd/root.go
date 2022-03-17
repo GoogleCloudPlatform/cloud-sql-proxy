@@ -108,8 +108,7 @@ func parseConfig(conf *proxy.Config, args []string) error {
 				return newBadCommandError(fmt.Sprintf("could not parse query: %q", res[1]))
 			}
 
-			a, ok := q["address"]
-			if ok {
+			if a, ok := q["address"]; ok {
 				if len(a) != 1 {
 					return newBadCommandError(fmt.Sprintf("address query param should be only one value: %q", a))
 				}
@@ -122,8 +121,7 @@ func parseConfig(conf *proxy.Config, args []string) error {
 				ic.Addr = a[0]
 			}
 
-			p, ok := q["port"]
-			if ok {
+			if p, ok := q["port"]; ok {
 				if len(p) != 1 {
 					return newBadCommandError(fmt.Sprintf("port query param should be only one value: %q", a))
 				}
