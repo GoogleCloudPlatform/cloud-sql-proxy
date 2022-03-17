@@ -33,12 +33,18 @@ type InstanceConnConfig struct {
 	Name string
 	// Addr is the address on which to bind a listener for the instance.
 	Addr string
+	// Port is the port on which to bind a listener for the instance.
+	Port int
 }
 
 // Config contains all the configuration provided by the caller.
 type Config struct {
 	// Addr is the address on which to bind all instances.
 	Addr string
+
+	// Port is the first port to bind to. Subsequent ports will increment from
+	// this value.
+	Port int
 
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
@@ -62,17 +68,24 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 	}
 	c := &Client{cmd: cmd, dialer: d}
 
-	port := 5000 // TODO: figure out better port allocation strategy
-	for i, inst := range conf.Instances {
+	port := conf.Port
+	var inc int
+	for _, inst := range conf.Instances {
 		m := &socketMount{inst: inst.Name}
 		a := conf.Addr
 		if inst.Addr != "" {
 			a = inst.Addr
 		}
-		addr, err := m.listen(ctx, "tcp", net.JoinHostPort(a, fmt.Sprint(port+i)))
+		nextPort := port + inc
+		if inst.Port != 0 {
+			nextPort = inst.Port
+		} else {
+			inc++
+		}
+		addr, err := m.listen(ctx, "tcp", net.JoinHostPort(a, fmt.Sprint(nextPort)))
 		if err != nil {
 			c.Close()
-			return nil, fmt.Errorf("[%s] Unable to mount socket: %v", inst, err)
+			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
 		c.cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
 		c.mnts = append(c.mnts, m)
