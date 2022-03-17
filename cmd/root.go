@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -76,6 +77,8 @@ any client SSL certificates.`,
 
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
 		"Address on which to bind Cloud SQL instance listeners.")
+	cmd.PersistentFlags().IntVarP(&c.conf.Port, "port", "p", 5000,
+		"Initial port to use for listeners. Subsequent listeners increment from this value.")
 
 	c.Command = cmd
 	return c
@@ -104,16 +107,35 @@ func parseConfig(conf *proxy.Config, args []string) error {
 			if err != nil {
 				return newBadCommandError(fmt.Sprintf("could not parse query: %q", res[1]))
 			}
-			if len(q["address"]) != 1 {
-				return newBadCommandError(fmt.Sprintf("address query param should be only one value: %q", q["address"]))
+
+			a, ok := q["address"]
+			if ok {
+				if len(a) != 1 {
+					return newBadCommandError(fmt.Sprintf("address query param should be only one value: %q", a))
+				}
+				if ip := net.ParseIP(a[0]); ip == nil {
+					return newBadCommandError(
+						fmt.Sprintf("address query param is not a valid IP address: %q",
+							a[0],
+						))
+				}
+				ic.Addr = a[0]
 			}
-			if ip := net.ParseIP(q["address"][0]); ip == nil {
-				return newBadCommandError(
-					fmt.Sprintf("address query param is not a valid IP address: %q",
-						q["address"][0],
-					))
+
+			p, ok := q["port"]
+			if ok {
+				if len(p) != 1 {
+					return newBadCommandError(fmt.Sprintf("port query param should be only one value: %q", a))
+				}
+				pp, err := strconv.Atoi(p[0])
+				if err != nil {
+					return newBadCommandError(
+						fmt.Sprintf("port query param is not a valid integer: %q",
+							p[0],
+						))
+				}
+				ic.Port = pp
 			}
-			ic.Addr = q["address"][0]
 		}
 		ics = append(ics, ic)
 	}
