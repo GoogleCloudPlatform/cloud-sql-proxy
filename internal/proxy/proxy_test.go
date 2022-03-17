@@ -33,6 +33,7 @@ func TestClientInitialization(t *testing.T) {
 			desc: "multiple instances",
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
+				Port: 5000,
 				Instances: []proxy.InstanceConnConfig{
 					{Name: "proj:region:inst1"},
 					{Name: "proj:region:inst2"},
@@ -44,6 +45,7 @@ func TestClientInitialization(t *testing.T) {
 			desc: "with instance address",
 			in: &proxy.Config{
 				Addr: "1.1.1.1", // bad address, binding shouldn't happen here.
+				Port: 5000,
 				Instances: []proxy.InstanceConnConfig{
 					{Addr: "0.0.0.0", Name: "proj:region:inst1"},
 				},
@@ -54,11 +56,40 @@ func TestClientInitialization(t *testing.T) {
 			desc: "IPv6 support",
 			in: &proxy.Config{
 				Addr: "::1",
+				Port: 5000,
 				Instances: []proxy.InstanceConnConfig{
 					{Name: "proj:region:inst1"},
 				},
 			},
 			wantAddrs: []string{"[::1]:5000"},
+		},
+		{
+			desc: "with instance port",
+			in: &proxy.Config{
+				Addr: "127.0.0.1",
+				Port: 5000,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: "proj:region:inst1", Port: 6000},
+				},
+			},
+			wantAddrs: []string{"127.0.0.1:6000"},
+		},
+		{
+			desc: "with global port and instance port",
+			in: &proxy.Config{
+				Addr: "127.0.0.1",
+				Port: 5000,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: "proj:region:inst1"},
+					{Name: "proj:region:inst2", Port: 6000},
+					{Name: "proj:region:inst3"},
+				},
+			},
+			wantAddrs: []string{
+				"127.0.0.1:5000",
+				"127.0.0.1:6000",
+				"127.0.0.1:5001",
+			},
 		},
 	}
 	for _, tc := range tcs {
