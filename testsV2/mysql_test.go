@@ -55,7 +55,7 @@ func TestMysqlTcp(t *testing.T) {
 		Passwd:               *mysqlPass,
 		DBName:               *mysqlDb,
 		AllowNativePasswords: true,
-		Addr:                 "127.0.0.1:5000",
+		Addr:                 "127.0.0.1:3306",
 		Net:                  "tcp",
 	}
 	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort, "")
