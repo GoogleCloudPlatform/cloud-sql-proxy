@@ -17,22 +17,42 @@ package proxy_test
 import (
 	"context"
 	"net"
+	"strings"
 	"testing"
 
-	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
+type fakeDialer struct {
+	proxy.DBDialer
+}
+
+func (fakeDialer) Close() error {
+	return nil
+}
+
+func (fakeDialer) EngineVersion(_ context.Context, inst string) (string, error) {
+	switch {
+	case strings.Contains(inst, "pg"):
+		return "POSTGRES_14", nil
+	case strings.Contains(inst, "mysql"):
+		return "MYSQL_8_0", nil
+	case strings.Contains(inst, "sqlserver"):
+		return "SQLSERVER_2019_STANDARD", nil
+	default:
+		return "POSTGRES_14", nil
+	}
+}
+
 func TestClientInitialization(t *testing.T) {
 	ctx := context.Background()
-	pg := newFakeCSQLInstance("proj", "region", "pg", "POSTGRES_14")
-	pg2 := newFakeCSQLInstance("proj", "region", "pg2", "POSTGRES_14")
-	mysql := newFakeCSQLInstance("proj", "region", "mysql", "MYSQL_8_0")
-	mysql2 := newFakeCSQLInstance("proj", "region", "mysql2", "MYSQL_8_0")
-	sqlserver := newFakeCSQLInstance("proj", "region", "sqlserver", "SQLSERVER_2019_STANDARD")
-	sqlserver2 := newFakeCSQLInstance("proj", "region", "sqlserver2", "SQLSERVER_2019_STANDARD")
-	allDB := []fakeCSQLInstance{pg, pg2, mysql, mysql2, sqlserver, sqlserver2}
+	pg := "proj:region:pg"
+	pg2 := "proj:region:pg2"
+	mysql := "proj:region:mysql"
+	mysql2 := "proj:region:mysql2"
+	sqlserver := "proj:region:sqlserver"
+	sqlserver2 := "proj:region:sqlserver2"
 
 	tcs := []struct {
 		desc      string
@@ -45,9 +65,9 @@ func TestClientInitialization(t *testing.T) {
 				Addr: "127.0.0.1",
 				Port: 5000,
 				Instances: []proxy.InstanceConnConfig{
-					{Name: pg.String()},
-					{Name: mysql.String()},
-					{Name: sqlserver.String()},
+					{Name: pg},
+					{Name: mysql},
+					{Name: sqlserver},
 				},
 			},
 			wantAddrs: []string{"127.0.0.1:5000", "127.0.0.1:5001", "127.0.0.1:5002"},
@@ -58,7 +78,7 @@ func TestClientInitialization(t *testing.T) {
 				Addr: "1.1.1.1", // bad address, binding shouldn't happen here.
 				Port: 5000,
 				Instances: []proxy.InstanceConnConfig{
-					{Addr: "0.0.0.0", Name: pg.String()},
+					{Addr: "0.0.0.0", Name: pg},
 				},
 			},
 			wantAddrs: []string{"0.0.0.0:5000"},
@@ -69,7 +89,7 @@ func TestClientInitialization(t *testing.T) {
 				Addr: "::1",
 				Port: 5000,
 				Instances: []proxy.InstanceConnConfig{
-					{Name: pg.String()},
+					{Name: pg},
 				},
 			},
 			wantAddrs: []string{"[::1]:5000"},
@@ -80,7 +100,7 @@ func TestClientInitialization(t *testing.T) {
 				Addr: "127.0.0.1",
 				Port: 5000,
 				Instances: []proxy.InstanceConnConfig{
-					{Name: pg.String(), Port: 6000},
+					{Name: pg, Port: 6000},
 				},
 			},
 			wantAddrs: []string{"127.0.0.1:6000"},
@@ -91,9 +111,9 @@ func TestClientInitialization(t *testing.T) {
 				Addr: "127.0.0.1",
 				Port: 5000,
 				Instances: []proxy.InstanceConnConfig{
-					{Name: pg.String()},
-					{Name: mysql.String(), Port: 6000},
-					{Name: sqlserver.String()},
+					{Name: pg},
+					{Name: mysql, Port: 6000},
+					{Name: sqlserver},
 				},
 			},
 			wantAddrs: []string{
@@ -107,9 +127,9 @@ func TestClientInitialization(t *testing.T) {
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
 				Instances: []proxy.InstanceConnConfig{
-					{Name: pg.String()},
-					{Name: mysql.String()},
-					{Name: sqlserver.String()},
+					{Name: pg},
+					{Name: mysql},
+					{Name: sqlserver},
 				},
 			},
 			wantAddrs: []string{
@@ -123,12 +143,12 @@ func TestClientInitialization(t *testing.T) {
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
 				Instances: []proxy.InstanceConnConfig{
-					{Name: pg.String()},
-					{Name: pg2.String()},
-					{Name: mysql.String()},
-					{Name: mysql2.String()},
-					{Name: sqlserver.String()},
-					{Name: sqlserver2.String()},
+					{Name: pg},
+					{Name: pg2},
+					{Name: mysql},
+					{Name: mysql2},
+					{Name: sqlserver},
+					{Name: sqlserver2},
 				},
 			},
 			wantAddrs: []string{
@@ -144,24 +164,7 @@ func TestClientInitialization(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			var reqs []*request
-			for _, db := range allDB {
-				reqs = append(reqs,
-					instanceGetSuccess(db, 1),
-					createEphemeralSuccess(db, 1),
-				)
-			}
-			cl, url, cleanup := httpClient(reqs...)
-			defer cleanup()
-			d, err := cloudsqlconn.NewDialer(ctx,
-				cloudsqlconn.WithHTTPClient(cl),
-				cloudsqlconn.WithAdminAPIEndpoint(url),
-			)
-			if err != nil {
-				t.Fatalf("failed to initialize dialer: %v", err)
-			}
-
-			c, err := proxy.NewClient(ctx, d, &cobra.Command{}, tc.in)
+			c, err := proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}

@@ -175,7 +175,6 @@ func runSignalWrapper(cmd *Command) error {
 		defer close(startCh)
 		d, err := cloudsqlconn.NewDialer(ctx)
 		if err != nil {
-			defer d.Close()
 			shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
 			return
 		}
