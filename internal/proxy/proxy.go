@@ -55,7 +55,7 @@ type Config struct {
 // Client represents the state of the current instantiation of the proxy.
 type Client struct {
 	cmd    *cobra.Command
-	dialer DBDialer
+	dialer Dialer
 
 	// mnts is a list of all mounted sockets for this client
 	mnts []*socketMount
@@ -104,8 +104,8 @@ func (c *portConfig) nextDBPort(version string) int {
 	}
 }
 
-// DBDialer is a dialer for a Cloud SQL instance.
-type DBDialer interface {
+// Dialer dials a Cloud SQL instance and returns its database engine version.
+type Dialer interface {
 	// Dial returns a connection to the specified instance.
 	Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error)
 	// EngineVersion retrieves the provided instance's database version (e.g.,
@@ -116,19 +116,15 @@ type DBDialer interface {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, d DBDialer, cmd *cobra.Command, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, d Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
 	var mnts []*socketMount
 	pc := newPortConfig(conf.Port)
-	var wg sync.WaitGroup
 	for _, inst := range conf.Instances {
-		wg.Add(1)
 		go func(i InstanceConnConfig) {
 			// Initiate refresh operation
 			d.EngineVersion(ctx, inst.Name)
-			wg.Done()
 		}(inst)
 	}
-	wg.Wait()
 	for _, inst := range conf.Instances {
 		m := &socketMount{inst: inst.Name}
 		a := conf.Addr

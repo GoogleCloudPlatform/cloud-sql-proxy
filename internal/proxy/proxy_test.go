@@ -25,7 +25,7 @@ import (
 )
 
 type fakeDialer struct {
-	proxy.DBDialer
+	proxy.Dialer
 }
 
 func (fakeDialer) Close() error {
