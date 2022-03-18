@@ -55,6 +55,6 @@ func TestPostgresTcp(t *testing.T) {
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable port=5000", *postgresUser, *postgresPass, *postgresDb)
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
 	proxyConnTest(t, *postgresConnName, "postgres", dsn, postgresPort, "")
 }

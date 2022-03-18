@@ -27,9 +27,6 @@ func TestNewCommandArguments(t *testing.T) {
 		if c.Addr == "" {
 			c.Addr = "127.0.0.1"
 		}
-		if c.Port == 0 {
-			c.Port = 5000
-		}
 		if c.Instances == nil {
 			c.Instances = []proxy.InstanceConnConfig{{}}
 		}
