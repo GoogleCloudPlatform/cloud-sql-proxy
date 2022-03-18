@@ -3,7 +3,7 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy/v2
 go 1.16
 
 require (
-	cloud.google.com/go/cloudsqlconn v0.0.0-20211025210206-86f37d7a784a
+	cloud.google.com/go/cloudsqlconn v0.2.1-0.20220317212813-c79136972083
 	cloud.google.com/go/compute v1.6.1
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
 	github.com/coreos/go-systemd/v22 v22.3.2
