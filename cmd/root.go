@@ -26,6 +26,7 @@ import (
 	"strings"
 	"syscall"
 
+	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
@@ -77,7 +78,7 @@ any client SSL certificates.`,
 
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
 		"Address on which to bind Cloud SQL instance listeners.")
-	cmd.PersistentFlags().IntVarP(&c.conf.Port, "port", "p", 5000,
+	cmd.PersistentFlags().IntVarP(&c.conf.Port, "port", "p", 0,
 		"Initial port to use for listeners. Subsequent listeners increment from this value.")
 
 	c.Command = cmd
@@ -172,7 +173,12 @@ func runSignalWrapper(cmd *Command) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, cmd.Command, cmd.conf)
+		d, err := cloudsqlconn.NewDialer(ctx)
+		if err != nil {
+			shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
+			return
+		}
+		p, err := proxy.NewClient(ctx, d, cmd.Command, cmd.conf)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
