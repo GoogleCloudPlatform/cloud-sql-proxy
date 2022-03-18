@@ -3,8 +3,8 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy/v2
 go 1.17
 
 require (
-	cloud.google.com/go/cloudsqlconn v0.0.0-20211025210206-86f37d7a784a
-	cloud.google.com/go/compute v1.3.0
+	cloud.google.com/go/cloudsqlconn v0.2.1-0.20220317212813-c79136972083
+	cloud.google.com/go/compute v1.5.0
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/denisenkom/go-mssqldb v0.12.0
@@ -15,11 +15,11 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/spf13/cobra v1.2.1
 	go.uber.org/zap v1.21.0
-	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
 	golang.org/x/sys v0.0.0-20220328115105-d36c6a25d886
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
-	google.golang.org/api v0.68.0
+	google.golang.org/api v0.73.0
 )
 
 require (
@@ -44,7 +44,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220207164111-0872dc986b00 // indirect
-	google.golang.org/grpc v1.44.0 // indirect
+	google.golang.org/genproto v0.0.0-20220310185008-1973136f34c6 // indirect
+	google.golang.org/grpc v1.45.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 )
