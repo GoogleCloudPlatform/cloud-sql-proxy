@@ -183,6 +183,11 @@ General:
   -structured_logs
     When set to true, all log messages are written out as JSON.
 
+  -term_timeout
+	How long to wait for connections to close after receiving a SIGTERM before
+	shutting down the proxy. Defaults to 0. If all connections close before the
+	duration, the proxy will shutdown early.
+
 Connection:
   -instances
     To connect to a specific list of instances, set the instances parameter
