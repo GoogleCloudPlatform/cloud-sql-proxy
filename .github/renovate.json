@@ -14,6 +14,11 @@
   "ignoreDeps": [
       "golang.org/x/net"
   ],
+  "timezone": "America/Los_Angeles",
+  "schedule": [
+    "after 8am on Friday",
+    "before 12pm on Friday"
+  ],
   "force": {
     "constraints": {
       "go": "1.16"
