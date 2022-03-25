@@ -264,8 +264,9 @@ using an instance's associated private IP. Defaults to `PUBLIC,PRIVATE`
 
 #### `-term_timeout=30s`
 
-How long to wait for connections to close before shutting down the proxy.
-Defaults to 0.
+How long to wait for connections to close after receiving a SIGTERM before
+shutting down the proxy. Defaults to 0. If all connections close before the
+duration, the proxy will shutdown early.
 
 #### `-skip_failed_instance_config`
 
