@@ -25,6 +25,10 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   # install fuse project
   brew update > /dev/null
   brew install --cask --quiet osxfuse
+  # install go version
+  brew install go@1.18
+  echo `go version`
+  brew info go
   # source secrets
   source "${KOKORO_GFILE_DIR}/TEST_SECRETS.sh"
   export GOOGLE_APPLICATION_CREDENTIALS="${KOKORO_GFILE_DIR}/testing-service-account.json"
