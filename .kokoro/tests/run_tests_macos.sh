@@ -26,7 +26,9 @@ if [ -n "$KOKORO_GFILE_DIR" ]; then
   brew update > /dev/null
   brew install --cask --quiet osxfuse
   # install go version
+  echo -e "******************** Installing new Go version... ********************\n"
   brew install go@1.18
+  echo -e "******************** Printing Go version... ********************\n"
   echo `go version`
   brew info go
   # source secrets
