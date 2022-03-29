@@ -417,7 +417,7 @@ func (c *Client) cachedCfg(ctx context.Context, instance string) (string, *tls.C
 		e = c.cfgCache[instance]
 		limiter := c.limiters[instance]
 		if limiter == nil {
-			limiter = rate.NewLimiter(rate.Every(throttle), 1)
+			limiter = rate.NewLimiter(rate.Every(throttle), 2)
 			c.limiters[instance] = limiter
 		}
 		if needsRefresh(e, refreshCfgBuffer) {
@@ -526,7 +526,7 @@ func (c *Client) selectDialer() func(context.Context, string, string) (net.Conn,
 	}
 }
 
-func (c *Client) invalidateCfg(cfg *tls.Config, instance string) {
+func (c *Client) invalidateCfg(cfg *tls.Config, instance string, err error) {
 	c.cacheL.RLock()
 	e := c.cfgCache[instance]
 	c.cacheL.RUnlock()
@@ -540,7 +540,9 @@ func (c *Client) invalidateCfg(cfg *tls.Config, instance string) {
 	if e.cfg != cfg {
 		return
 	}
+	err = fmt.Errorf("config invalidated after TLS handshake failed, error = %w", err)
 	c.cfgCache[instance] = cacheEntry{
+		err:           err,
 		done:          e.done,
 		lastRefreshed: e.lastRefreshed,
 	}
@@ -575,7 +577,7 @@ func NewConnSrc(instance string, l net.Listener) <-chan Conn {
 	return ch
 }
 
-// InstanceVersionContext uses client cache to return instance version string.
+// InstanceVersion uses client cache to return instance version string.
 //
 // Deprecated: Use Client.InstanceVersionContext instead.
 func (c *Client) InstanceVersion(instance string) (string, error) {
@@ -586,7 +588,7 @@ func (c *Client) InstanceVersion(instance string) (string, error) {
 func (c *Client) InstanceVersionContext(ctx context.Context, instance string) (string, error) {
 	_, _, version, err := c.cachedCfg(ctx, instance)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return version, nil
 }

@@ -513,7 +513,29 @@ func TestClientHandshakeCanceled(t *testing.T) {
 			_, err := c.DialContext(ctx, instance)
 			validateError(t, err)
 		})
+	})
 
+	t.Run("when liveness check is called on invalidated config", func(t *testing.T) {
+		withTestHarness(t, func(port int) {
+			c := newClient(port)
+
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			_, err := c.DialContext(ctx, instance)
+			if err == nil {
+				t.Fatal("expected DialContext to fail, got no error")
+			}
+
+			invalid := c.InvalidInstances()
+			if gotLen := len(invalid); gotLen != 1 {
+				t.Fatalf("invalid instance want = 1, got = %v", gotLen)
+			}
+			got := invalid[0]
+			if got.err == nil {
+				t.Fatal("want invalid instance error, got nil")
+			}
+		})
 	})
 
 	// Makes it to Handshake.
@@ -559,25 +581,57 @@ func TestClientHandshakeCanceled(t *testing.T) {
 			validateError(t, err)
 		})
 	})
+}
 
-	// Fail fast when dial attempts trigger a race condition
-	t.Run("dialing in quick succession", func(t *testing.T) {
-		withTestHarness(t, func(port int) {
-			c := newClient(port)
+func TestConnectingWithInvalidConfig(t *testing.T) {
+	c := &Client{}
 
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
+	_, err := c.tryConnect(context.Background(), "", "myinstance", &tls.Config{})
+	if err != ErrUnexpectedFailure {
+		t.Fatalf("wanted ErrUnexpectedFailure, got = %v", err)
+	}
+}
 
-			var ok bool
-			for i := 0; i < 100; i++ {
-				_, err := c.DialContext(ctx, instance)
-				if err == ErrUnexpectedFailure {
-					ok = true
-				}
-			}
-			if !ok {
-				t.Fatal("wanted ErrUnexpectedFailure, got none")
-			}
-		})
-	})
+var (
+	errLocal  = errors.New("local failed")
+	errRemote = errors.New("remote failed")
+)
+
+type failingCertSource struct{}
+
+func (cs failingCertSource) Local(instance string) (tls.Certificate, error) {
+	return tls.Certificate{}, errLocal
+}
+
+func (cs failingCertSource) Remote(instance string) (cert *x509.Certificate, addr, name, version string, err error) {
+	return nil, "", "", "", errRemote
+}
+
+func TestInstanceVersionContext(t *testing.T) {
+	testCases := []struct {
+		certSource  CertSource
+		wantErr     error
+		wantVersion string
+	}{
+		{
+			certSource:  newCertSource(&fakeCerts{}, forever),
+			wantErr:     nil,
+			wantVersion: "fake version",
+		},
+		{
+			certSource:  failingCertSource{},
+			wantErr:     errLocal,
+			wantVersion: "",
+		},
+	}
+	for _, tc := range testCases {
+		c := newClient(tc.certSource)
+		v, err := c.InstanceVersionContext(context.Background(), instance)
+		if v != tc.wantVersion {
+			t.Fatalf("want version = %v, got version = %v", tc.wantVersion, v)
+		}
+		if err != tc.wantErr {
+			t.Fatalf("want = %v, got = %v", tc.wantErr, err)
+		}
+	}
 }

@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.29.0](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.28.1...v1.29.0) (2022-03-01)
+
+
+### Features
+
+* add Go version support policy ([#1109](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1109)) ([ae6f4a1](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/ae6f4a1a534df8a273c0ea96880154b90bc65e77))
+
+### [1.28.1](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.28.0...v1.28.1) (2022-01-31)
+
+
+### Bug Fixes
+
+* invalidated config should retain error ([#1068](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1068)) ([49d3003](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/49d3003c018afdc0cde54340d5be808f9dcd5c84))
+* remove unnecessary token parsing ([#1074](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1074)) ([e138611](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/e1386118ad239e6c1ff16df6f2be1351a6432bb3))
+* return error from instance version ([#1069](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1069)) ([d9fc819](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/d9fc819a197bd75d0060bd46b8e06da6bdd6630c))
+
+## [1.28.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.27.1...v1.28.0) (2022-01-04)
+
+
+### Features
+
+* add support for ReadTime in Admin API requests ([#1040](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1040)) ([a7c8b5c](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/a7c8b5cf4d10c17bea405ce67ee642232b43fdec))
+* add support for specifying a quota project ([#1044](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1044)) ([dc66aca](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/dc66aca88190ae3f6d39f191489fdfb280146ed9))
+* allow multiple -instances flags ([#1046](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1046)) ([1972693](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/1972693b8ac65c912bb719dc23d4f578cb6ff9e2)), closes [#1030](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1030)
+
+
+### Bug Fixes
+
+* increase rateLimit burst size to 2 ([#1048](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1048)) ([df6b6f9](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/df6b6f9ed8860d28f5e934db495257d288c42f2b))
+
+### [1.27.1](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.27.0...v1.27.1) (2021-12-07)
+
+
+### Bug Fixes
+
+* update dependencies to latest versions ([#1034](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1034)) ([8954d24](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/commit/8954d241a71b59d9bf82cb47469e6652d3f379e7))
+
 ## [1.27.0](https://www.github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.26.0...v1.27.0) (2021-11-02)
 
 

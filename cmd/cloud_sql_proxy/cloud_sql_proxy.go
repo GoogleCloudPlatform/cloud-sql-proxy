@@ -73,15 +73,7 @@ Unix socket-based connections.`)
 		`Open sockets for each Cloud SQL Instance in the projects specified
 (comma-separated list)`,
 	)
-	instances = flag.String("instances", "",
-		`Comma-separated list of fully qualified instances (project:region:name)
-to connect to. If the name has the suffix '=tcp:port', a TCP server is opened
-on the specified port on localhost to proxy to that instance. It is also possible
-to listen on a custom address by providing a host, e.g., '=tcp:0.0.0.0:port'. If
-no value is provided for 'tcp', one socket file per instance is opened in 'dir'.
-You may use INSTANCES environment variable for the same effect. Using both will
-use value from flag, Not compatible with -fuse.`,
-	)
+	instances   stringListValue // -instances flag is defined in runProxy()
 	instanceSrc = flag.String("instances_metadata", "", `If provided, it is treated as a path to a metadata value which
 is polled for a comma-separated list of instances to connect to. For example,
 to use the instance metadata value named 'cloud-sql-instances' you would
@@ -130,8 +122,10 @@ unavailable.`,
 	// Setting to choose what API to connect to
 	host = flag.String("host", "",
 		`When set, the proxy uses this host as the base API path. Example:
-	https://sqladmin.googleapis.com`,
+https://sqladmin.googleapis.com`,
 	)
+	quotaProject = flag.String("quota_project", "",
+		`Specifies the project to use for Cloud SQL Admin API quota tracking.`)
 
 	// Settings for healthcheck
 	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an HTTP server that checks and communicates the health of the proxy client.")
@@ -189,12 +183,19 @@ General:
   -structured_logs
     When set to true, all log messages are written out as JSON.
 
+  -term_timeout
+	How long to wait for connections to close after receiving a SIGTERM before
+	shutting down the proxy. Defaults to 0. If all connections close before the
+	duration, the proxy will shutdown early.
+
 Connection:
   -instances
     To connect to a specific list of instances, set the instances parameter
     to a comma-separated list of instance connection strings. For example:
 
         -instances=my-project:my-region:my-instance
+
+    For convenience, this flag may be specified multiple times.
 
     For connectivity over TCP, you must specify a tcp port as part of the
     instance string. For example, the following example opens a loopback TCP
@@ -272,7 +273,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
-var versionString = "1.27.1-dev"
+var versionString = "1.29.1-dev"
 
 // metadataString indiciates additional build or distribution metadata.
 var metadataString = ""
@@ -292,6 +293,17 @@ func userAgentFromVersionString() string {
 }
 
 const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
+
+type stringListValue []string
+
+func (i *stringListValue) String() string {
+	return strings.Join(*i, ",")
+}
+
+func (i *stringListValue) Set(s string) error {
+	*i = append(*i, stringList(s)...)
+	return nil
+}
 
 func checkFlags(onGCE bool) error {
 	if !onGCE {
@@ -374,6 +386,42 @@ func authenticatedClient(ctx context.Context) (*http.Client, oauth2.TokenSource,
 	return oauth2.NewClient(ctx, src), src, nil
 }
 
+// quotaProjectTransport is an http.RoundTripper that adds an X-Goog-User-Project
+// header to all requests for quota and billing purposes.
+//
+// For details, see:
+// https://cloud.google.com/apis/docs/system-parameters#definitions
+type quotaProjectTransport struct {
+	base    http.RoundTripper
+	project string
+}
+
+var _ http.RoundTripper = quotaProjectTransport{}
+
+// RoundTrip adds a X-Goog-User-Project header to each request.
+func (t quotaProjectTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
+	req.Header.Add("X-Goog-User-Project", t.project)
+	return t.base.RoundTrip(req)
+}
+
+// configureQuotaProject configures an HTTP client to use the provided project
+// for quota calculations for all requests.
+func configureQuotaProject(c *http.Client, project string) {
+	// Copy the given client's tripper. Note that tripper can be nil, which is equivalent to
+	// http.DefaultTransport. (See https://golang.org/pkg/net/http/#Client)
+	base := c.Transport
+	if base == nil {
+		base = http.DefaultTransport
+	}
+	c.Transport = quotaProjectTransport{
+		base:    base,
+		project: project,
+	}
+}
+
 func stringList(s string) []string {
 	spl := strings.Split(s, ",")
 	if len(spl) == 1 && spl[0] == "" {
@@ -443,6 +491,17 @@ func gcloudProject() ([]string, error) {
 }
 
 func runProxy() int {
+	flag.Var(&instances, "instances",
+		`Comma-separated list of fully qualified instances (project:region:name)
+to connect to. If the name has the suffix '=tcp:port', a TCP server is opened
+on the specified port on localhost to proxy to that instance. It is also possible
+to listen on a custom address by providing a host, e.g., '=tcp:0.0.0.0:port'. If
+no value is provided for 'tcp', one socket file per instance is opened in 'dir'.
+For convenience, this flag may be specified multiple times.
+You may use the INSTANCES environment variable for the same effect. Using both will
+use the value from the flag, Not compatible with -fuse.`,
+	)
+
 	flag.Parse()
 
 	if *version {
@@ -489,14 +548,13 @@ func runProxy() int {
 
 	// TODO: needs a better place for consolidation
 	// if instances is blank and env var INSTANCES is supplied use it
-	if envInstances := os.Getenv("INSTANCES"); *instances == "" && envInstances != "" {
-		*instances = envInstances
+	if envInstances := os.Getenv("INSTANCES"); len(instances) == 0 && envInstances != "" {
+		instances.Set(envInstances)
 	}
 
-	instList := stringList(*instances)
 	projList := stringList(*projects)
 	// TODO: it'd be really great to consolidate flag verification in one place.
-	if len(instList) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
+	if len(instances) == 0 && *instanceSrc == "" && len(projList) == 0 && !*useFuse {
 		var err error
 		projList, err = gcloudProject()
 		if err == nil {
@@ -523,13 +581,18 @@ func runProxy() int {
 		return 1
 	}
 
+	if *quotaProject != "" {
+		logging.Infof("Using the project %q for SQL Admin API quota", *quotaProject)
+		configureQuotaProject(client, *quotaProject)
+	}
+
 	ins, err := listInstances(ctx, client, projList)
 	if err != nil {
 		logging.Errorf(err.Error())
 		return 1
 	}
-	instList = append(instList, ins...)
-	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instList, *instanceSrc, client, *skipInvalidInstanceConfigs)
+	instances = append(instances, ins...)
+	cfgs, err := CreateInstanceConfigs(*dir, *useFuse, instances, *instanceSrc, client, *skipInvalidInstanceConfigs)
 	if err != nil {
 		logging.Errorf(err.Error())
 		return 1

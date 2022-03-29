@@ -55,18 +55,23 @@ images may break specific setups, even on non-major version increments. As such,
 it's a best practice to test changes before deployment, and use automated
 rollbacks to revert potential failures.
 
+**NOTE**: As of v1.16, the default container image uses [distroless][]. If you
+require a shell or similar tools, use the Alpine or Buster images listed above.
+
+[distroless]: https://github.com/GoogleContainerTools/distroless
+
 ### Install from Source
 
 To install from source, ensure you have the latest version of [Go
-installed](https://golang.org/doc/install).
+installed](https://go.dev/doc/install).
 
 Then, simply run:
 
 ```
-go get github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy
+go install github.com/GoogleCloudPlatform/cloudsql-proxy/cmd/cloud_sql_proxy@latest
 ```
 
-The `cloud_sql_proxy` will be placed in `$GOPATH/bin` after `go get` completes.
+The `cloud_sql_proxy` will be placed in `$GOPATH/bin` or `$HOME/go/bin`.
 
 ## Usage
 
@@ -259,8 +264,9 @@ using an instance's associated private IP. Defaults to `PUBLIC,PRIVATE`
 
 #### `-term_timeout=30s`
 
-How long to wait for connections to close before shutting down the proxy.
-Defaults to 0.
+How long to wait for connections to close after receiving a SIGTERM before
+shutting down the proxy. Defaults to 0. If all connections close before the
+duration, the proxy will shutdown early.
 
 #### `-skip_failed_instance_config`
 
@@ -299,13 +305,26 @@ Kubernetes Engine][connect-to-k8s].
 
 ## Running behind a Socks5 proxy
 
-The Cloud SQL Auth Proxy includes support for sending requests through a SOCKs5
-proxy. If a Socks5 proxy is running on `localhost:8000`, the command to start
+The Cloud SQL Auth Proxy includes support for sending requests through a SOCKS5
+proxy. If a SOCKS5 proxy is running on `localhost:8000`, the command to start
 the Cloud SQL Auth Proxy would look like:
 
 ```
-ALL_PROXY=socks5://localhost:8000 cloud_sql_proxy -instances=$INSTANCE_CONNECTION_NAME=tcp:5432
+ALL_PROXY=socks5://localhost:8000 \
+HTTPS_PROXY=socks5://localhost:8000 \
+    cloud_sql_proxy -instances=$INSTANCE_CONNECTION_NAME=tcp:5432
 ```
+
+The `ALL_PROXY` environment variable specifies the proxy for all TCP
+traffic to and from a Cloud SQL instance. The `ALL_PROXY` environment variable
+supports `socks5` and `socks5h` protocols. To route DNS lookups through a proxy,
+use the `socks5h` protocol.
+
+The `HTTPS_PROXY` (or `HTTP_PROXY`) specifies the proxy for all HTTP(S) traffic
+to the SQL Admin API. Specifying `HTTPS_PROXY` or `HTTP_PROXY` is only necessary
+when you want to proxy this traffic. Otherwise, it is optional. See
+[`http.ProxyFromEnvironment`](https://pkg.go.dev/net/http@go1.17.3#ProxyFromEnvironment)
+for possible values.
 
 ## Reference Documentation
 
@@ -330,6 +349,11 @@ bug fixes, but do not receive new features. Deprecated versions will be publicly
 supported for 1 year.
 **Unsupported** - Any major version that has been deprecated for >=1 year is
 considered publicly unsupported.
+
+### Supported Go Versions
+
+We test and support at least the latest 3 Go versions. Changes in supported Go
+versions will be considered a minor change, and will be noted in the release notes.
 
 ### Release cadence
 The Cloud SQL Auth proxy aims for a minimum monthly release cadence. If no new

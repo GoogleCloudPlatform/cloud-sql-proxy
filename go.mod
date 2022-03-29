@@ -4,14 +4,16 @@ go 1.17
 
 require (
 	cloud.google.com/go/cloudsqlconn v0.2.1-0.20220317212813-c79136972083
+	cloud.google.com/go/compute v1.5.0
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.5.7
 	github.com/hanwen/go-fuse/v2 v2.1.0
-	github.com/lib/pq v1.10.3
+	github.com/lib/pq v1.10.4
 	github.com/spf13/cobra v1.2.1
-	go.uber.org/zap v1.19.1
+	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
 	golang.org/x/sys v0.0.0-20220317061510-51cd9980dadf
@@ -20,7 +22,16 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.5.0
+	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	github.com/jackc/pgconn v1.11.0 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.2.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/jackc/pgtype v1.10.0 // indirect
+)
+
+require (
 	github.com/golang-sql/sqlexp v0.0.0-20170517235910-f1bb20e5a188 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 )
@@ -31,6 +42,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jackc/pgx/v4 v4.15.0
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
