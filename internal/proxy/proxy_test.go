@@ -179,3 +179,30 @@ func TestClientInitialization(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigDialerOpts(t *testing.T) {
+	tcs := []struct {
+		desc    string
+		config  proxy.Config
+		wantLen int
+	}{
+		{
+			desc:    "when there are no options",
+			config:  proxy.Config{},
+			wantLen: 0,
+		},
+		{
+			desc:    "when a token is present",
+			config:  proxy.Config{Token: "my-token"},
+			wantLen: 1,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			if got := tc.config.DialerOpts(); tc.wantLen != len(got) {
+				t.Errorf("want len = %v, got = %v", tc.wantLen, len(got))
+			}
+		})
+	}
+}
