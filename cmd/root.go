@@ -76,6 +76,11 @@ any client SSL certificates.`,
 		},
 	}
 
+	// Global-only flags
+	cmd.PersistentFlags().StringVarP(&c.conf.Token, "token", "t", "",
+		"Bearer token used for authorization.")
+
+	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
 		"Address on which to bind Cloud SQL instance listeners.")
 	cmd.PersistentFlags().IntVarP(&c.conf.Port, "port", "p", 0,
@@ -173,7 +178,7 @@ func runSignalWrapper(cmd *Command) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		d, err := cloudsqlconn.NewDialer(ctx)
+		d, err := cloudsqlconn.NewDialer(ctx, cmd.conf.DialerOpts()...)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
 			return
