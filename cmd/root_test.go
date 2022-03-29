@@ -98,6 +98,20 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "using the token flag",
+			args: []string{"--token", "MYCOOLTOKEN", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				Token: "MYCOOLTOKEN",
+			}),
+		},
+		{
+			desc: "using the token (short) flag",
+			args: []string{"-t", "MYCOOLTOKEN", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				Token: "MYCOOLTOKEN",
+			}),
+		},
 	}
 
 	for _, tc := range tcs {

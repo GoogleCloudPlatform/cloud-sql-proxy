@@ -25,6 +25,7 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 // InstanceConnConfig holds the configuration for an individual instance
@@ -40,6 +41,9 @@ type InstanceConnConfig struct {
 
 // Config contains all the configuration provided by the caller.
 type Config struct {
+	// Token is the Bearer token used for authorization.
+	Token string
+
 	// Addr is the address on which to bind all instances.
 	Addr string
 
@@ -50,6 +54,16 @@ type Config struct {
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
+}
+
+func (c Config) DialerOpts() []cloudsqlconn.Option {
+	var opts []cloudsqlconn.Option
+	if c.Token != "" {
+		opts = append(opts, cloudsqlconn.WithTokenSource(
+			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+		))
+	}
+	return opts
 }
 
 // Client represents the state of the current instantiation of the proxy.
