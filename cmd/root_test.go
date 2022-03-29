@@ -133,6 +133,20 @@ func TestNewCommandArguments(t *testing.T) {
 				CredentialsFile: "/path/to/file",
 			}),
 		},
+		{
+			desc: "using the gcloud auth flag",
+			args: []string{"--gcloud-auth", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				GcloudAuth: true,
+			}),
+		},
+		{
+			desc: "using the (short) gcloud auth flag",
+			args: []string{"-g", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				GcloudAuth: true,
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -201,10 +215,22 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{"proj:region:inst?port=hi"},
 		},
 		{
-			desc: "when both token and credentials file is set",
+			desc: "when both token and credentials file are set",
 			args: []string{
 				"--token", "my-token",
 				"--credentials-file", "/path/to/file", "proj:region:inst"},
+		},
+		{
+			desc: "when both token and gcloud auth are set",
+			args: []string{
+				"--token", "my-token",
+				"--gcloud-auth", "proj:region:inst"},
+		},
+		{
+			desc: "when both gcloud auth and credentials file are set",
+			args: []string{
+				"--gcloud-auth",
+				"--credential-file", "/path/to/file", "proj:region:inst"},
 		},
 	}
 
