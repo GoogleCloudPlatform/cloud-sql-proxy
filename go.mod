@@ -3,7 +3,7 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy/v2
 go 1.17
 
 require (
-	cloud.google.com/go/cloudsqlconn v0.2.1-0.20220317212813-c79136972083
+	cloud.google.com/go/cloudsqlconn v0.2.1-0.20220401153611-87e713b37755
 	cloud.google.com/go/compute v1.5.0
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
 	github.com/coreos/go-systemd/v22 v22.3.2
@@ -15,11 +15,11 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/spf13/cobra v1.2.1
 	go.uber.org/zap v1.21.0
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
+	golang.org/x/net v0.0.0-20220325170049-de3da57026de
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
 	golang.org/x/sys v0.0.0-20220328115105-d36c6a25d886
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
-	google.golang.org/api v0.73.0
+	google.golang.org/api v0.74.0
 )
 
 require (
@@ -28,7 +28,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
+	github.com/googleapis/gax-go/v2 v2.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.11.0 // indirect
@@ -44,7 +44,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220310185008-1973136f34c6 // indirect
+	google.golang.org/genproto v0.0.0-20220329172620-7be39ac1afc7 // indirect
 	google.golang.org/grpc v1.45.0 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 )
