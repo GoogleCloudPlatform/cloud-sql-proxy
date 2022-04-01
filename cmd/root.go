@@ -28,6 +28,7 @@ import (
 	"syscall"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
@@ -62,10 +63,24 @@ type Command struct {
 	conf *proxy.Config
 }
 
+// Option is a function that configures a Command.
+type Option func(*Command)
+
+// WithDialer configures the Command to use the provided dialer to connect to
+// Cloud SQL instances.
+func WithDialer(d cloudsql.Dialer) Option {
+	return func(c *Command) {
+		c.conf.Dialer = d
+	}
+}
+
 // NewCommand returns a Command object representing an invocation of the proxy.
-func NewCommand() *Command {
+func NewCommand(opts ...Option) *Command {
 	c := &Command{
 		conf: &proxy.Config{},
+	}
+	for _, o := range opts {
+		o(c)
 	}
 
 	cmd := &cobra.Command{
@@ -192,11 +207,17 @@ func runSignalWrapper(cmd *Command) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		opts := append(cmd.conf.DialerOpts(), cloudsqlconn.WithUserAgent(userAgent))
-		d, err := cloudsqlconn.NewDialer(ctx, opts...)
-		if err != nil {
-			shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
-			return
+		// Check if the caller has configured a dialer.
+		// Otherwise, initialize a new one.
+		d := cmd.conf.Dialer
+		if d == nil {
+			var err error
+			opts := append(cmd.conf.DialerOpts(), cloudsqlconn.WithUserAgent(userAgent))
+			d, err = cloudsqlconn.NewDialer(ctx, opts...)
+			if err != nil {
+				shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
+				return
+			}
 		}
 		p, err := proxy.NewClient(ctx, d, cmd.Command, cmd.conf)
 		if err != nil {

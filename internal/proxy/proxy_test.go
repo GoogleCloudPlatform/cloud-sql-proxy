@@ -20,12 +20,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
 type fakeDialer struct {
-	proxy.Dialer
+	cloudsql.Dialer
 }
 
 func (fakeDialer) Close() error {
