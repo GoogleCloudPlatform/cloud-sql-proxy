@@ -36,8 +36,13 @@ var (
 	// versionString indicates the version of this library.
 	//go:embed version.txt
 	versionString string
-	userAgent     = "cloud-sql-auth-proxy/" + strings.TrimSpace(versionString)
+	userAgent     string
 )
+
+func init() {
+	versionString = strings.TrimSpace(versionString)
+	userAgent = "cloud-sql-auth-proxy/" + versionString
+}
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -65,7 +70,7 @@ func NewCommand() *Command {
 
 	cmd := &cobra.Command{
 		Use:     "cloud_sql_proxy instance_connection_name...",
-		Version: strings.TrimSpace(versionString),
+		Version: versionString,
 		Short:   "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
 		Long: `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
 connecting to Cloud SQL instances. It listens on a local port and forwards connections
