@@ -27,7 +27,7 @@ import (
 func TestVersion(t *testing.T) {
 	ctx := context.Background()
 
-	data, err := os.ReadFile("../version.txt")
+	data, err := os.ReadFile("../cmd/version.txt")
 	if err != nil {
 		t.Fatalf("failed to read version.txt: %v", err)
 	}

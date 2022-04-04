@@ -33,7 +33,9 @@ import (
 )
 
 var (
-	versionString = "2.0.0-dev"
+	// versionString indicates the version of this library.
+	//go:embed version.txt
+	versionString string
 	userAgent     = "cloud-sql-auth-proxy/" + strings.TrimSpace(versionString)
 )
 
