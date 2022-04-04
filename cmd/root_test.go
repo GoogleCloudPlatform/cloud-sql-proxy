@@ -149,7 +149,7 @@ func TestNewCommandWithErrors(t *testing.T) {
 		},
 		{
 			desc: "when the query string is bogus",
-			args: []string{"proj:region:inst?ke;y=b;ad"},
+			args: []string{"proj:region:inst?%=foo"},
 		},
 		{
 			desc: "when the address query param is empty",
