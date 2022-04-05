@@ -13,5 +13,6 @@
 # limitations under the License.
 
 handleGHRelease: true
-releaseType: simple
 packageName: cloud-sql-proxy
+releaseType: simple
+versionFile: 'cmd/cloud_sql_proxy/version.txt'
