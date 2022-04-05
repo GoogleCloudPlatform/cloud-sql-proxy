@@ -15,4 +15,4 @@
 handleGHRelease: true
 packageName: cloud-sql-proxy
 releaseType: simple
-versionFile: 'cmd/cloud_sql_proxy/version.txt'
+versionFile: 'cmd/version.txt'
