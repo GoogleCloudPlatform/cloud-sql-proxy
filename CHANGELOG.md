@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.30.0](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.29.0...v1.30.0) (2022-04-04)
+
+
+### Features
+
+* drop support and testing for Go 1.13, 1.14, 1.15 ([#1148](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1148)) ([158b0d5](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/158b0d57d46054be6a0d1600d5030b23be69dc9b))
+
 ## [1.29.0](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.28.1...v1.29.0) (2022-03-01)
 
 
