@@ -20,6 +20,7 @@
 package main
 
 import (
+	_ "embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -273,14 +274,15 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
-var versionString = "1.30.1-dev"
+//go:embed version.txt
+var versionString string
 
 // metadataString indiciates additional build or distribution metadata.
 var metadataString = ""
 
 // semanticVersion returns the version of the proxy in a semver format.
 func semanticVersion() string {
-	v := versionString
+	v := strings.TrimSpace(versionString)
 	if metadataString != "" {
 		v += "+" + metadataString
 	}
