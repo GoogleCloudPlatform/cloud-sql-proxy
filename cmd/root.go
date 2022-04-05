@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"net"
@@ -30,6 +31,18 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
+
+var (
+	// versionString indicates the version of this library.
+	//go:embed version.txt
+	versionString string
+	userAgent     string
+)
+
+func init() {
+	versionString = strings.TrimSpace(versionString)
+	userAgent = "cloud-sql-auth-proxy/" + versionString
+}
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -56,8 +69,9 @@ func NewCommand() *Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:   "cloud_sql_proxy instance_connection_name...",
-		Short: "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
+		Use:     "cloud_sql_proxy instance_connection_name...",
+		Version: versionString,
+		Short:   "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
 		Long: `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
 connecting to Cloud SQL instances. It listens on a local port and forwards connections
 to your instance's IP address, providing a secure connection without having to manage
@@ -178,7 +192,8 @@ func runSignalWrapper(cmd *Command) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		d, err := cloudsqlconn.NewDialer(ctx, cmd.conf.DialerOpts()...)
+		opts := append(cmd.conf.DialerOpts(), cloudsqlconn.WithUserAgent(userAgent))
+		d, err := cloudsqlconn.NewDialer(ctx, opts...)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
 			return
