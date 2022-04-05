@@ -89,7 +89,7 @@ func (p *proxyExec) Wait(ctx context.Context) error {
 	}
 }
 
-// Stop sends the pskill signal to the proxy and returns.
+// Done returns true if the proxy has exited.
 func (p *proxyExec) Done() bool {
 	select {
 	case <-p.done:
