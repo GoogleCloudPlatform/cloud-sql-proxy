@@ -228,7 +228,7 @@ func (s *spyDialer) EngineVersion(ctx context.Context, inst string) (string, err
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.got = inst
-	return "POSTGRES_14", nil
+	return "", nil
 }
 
 func (*spyDialer) Close() error {
