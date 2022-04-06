@@ -8,3 +8,5 @@
 # Compiled binary
 /cmd/cloud_sql_proxy/cloud_sql_proxy
 /cloud_sql_proxy
+
+/key.json

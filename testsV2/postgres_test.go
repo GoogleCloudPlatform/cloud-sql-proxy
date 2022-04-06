@@ -16,6 +16,7 @@
 package tests
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -23,6 +24,9 @@ import (
 
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/sqladmin/v1"
 )
 
 var (
@@ -56,5 +60,69 @@ func TestPostgresTcp(t *testing.T) {
 	requirePostgresVars(t)
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
-	proxyConnTest(t, *postgresConnName, "postgres", dsn, postgresPort, "")
+	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
+	defer cancel()
+	proxyConnTest(t,
+		ctx,
+		[]string{*postgresConnName}, "postgres", dsn, postgresPort, "")
+}
+
+// removeAuthEnvVar retrieves an OAuth2 token and a path to a service account key
+// and then unsets GOOGLE_APPLICATION_CREDENTIALS. It returns a cleanup function
+// that restores the original setup.
+func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
+	ts, err := google.DefaultTokenSource(context.Background(), sqladmin.SqlserviceAdminScope)
+	if err != nil {
+		t.Errorf("failed to resolve token source: %v", err)
+	}
+	tok, err := ts.Token()
+	if err != nil {
+		t.Errorf("failed to get token: %v", err)
+	}
+	path, ok := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS")
+	if !ok {
+		t.Fatalf("GOOGLE_APPLICATION_CREDENTIALS was not set in the environment")
+	}
+	if err := os.Unsetenv("GOOGLE_APPLICATION_CREDENTIALS"); err != nil {
+		t.Fatalf("failed to unset GOOGLE_APPLICATION_CREDENTIALS")
+	}
+	return tok, path, func() {
+		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", path)
+	}
+}
+
+func TestAuthWithToken(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	tok, _, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDb)
+	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
+	defer cancel()
+	proxyConnTest(t,
+		ctx,
+		[]string{"--token", tok.AccessToken, *postgresConnName},
+		"postgres", dsn, postgresPort, "")
+}
+
+func TestAuthWithCredentialsFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	_, path, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	ctx, _ := context.WithTimeout(context.Background(), connTestTimeout)
+
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDb)
+	proxyConnTest(t,
+		ctx,
+		[]string{"--credentials-file", path, *postgresConnName},
+		"postgres", dsn, postgresPort, "")
 }

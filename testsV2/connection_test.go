@@ -18,14 +18,13 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 )
 
+const connTestTimeout = time.Minute
+
 // proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
-func proxyConnTest(t *testing.T, connName, driver, dsn string, port int, dir string) {
-	ctx := context.Background()
-
-	args := []string{connName}
-
+func proxyConnTest(t *testing.T, ctx context.Context, args []string, driver, dsn string, port int, dir string) {
 	// Start the proxy
 	p, err := StartProxy(ctx, args...)
 	if err != nil {

@@ -108,6 +108,8 @@ any client SSL certificates.`,
 	// Global-only flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Token, "token", "t", "",
 		"Bearer token used for authorization.")
+	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
+		"Path to a service account key to use for authentication.")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",

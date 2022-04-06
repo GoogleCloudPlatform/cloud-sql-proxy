@@ -45,6 +45,9 @@ type Config struct {
 	// Token is the Bearer token used for authorization.
 	Token string
 
+	// CredentialsFile is the path to a service account key.
+	CredentialsFile string
+
 	// Addr is the address on which to bind all instances.
 	Addr string
 
@@ -69,9 +72,19 @@ func NewConfig() *Config {
 
 func (c *Config) DialerOpts() []cloudsqlconn.Option {
 	var opts []cloudsqlconn.Option
-	if c.Token != "" {
+	// The ordering in the switch statement is deliberate. When multiple auth
+	// values are configured, the precedence is:
+	// 1. token
+	// 2. credentials file
+	// 3. gcloud auth
+	switch {
+	case c.Token != "":
 		opts = append(opts, cloudsqlconn.WithTokenSource(
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+		))
+	case c.CredentialsFile != "":
+		opts = append(opts, cloudsqlconn.WithCredentialsFile(
+			c.CredentialsFile,
 		))
 	}
 	return opts
