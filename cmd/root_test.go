@@ -25,6 +25,7 @@ import (
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/spf13/cobra"
 )
 
@@ -137,7 +138,7 @@ func TestNewCommandArguments(t *testing.T) {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
 
-			if got := c.conf; !cmp.Equal(tc.want, got) {
+			if got := c.conf; !cmp.Equal(tc.want, got, cmpopts.IgnoreUnexported(proxy.Config{})) {
 				t.Fatalf("want = %#v\ngot = %#v\ndiff = %v", tc.want, got, cmp.Diff(tc.want, got))
 			}
 		})
