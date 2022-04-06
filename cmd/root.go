@@ -77,7 +77,7 @@ func WithDialer(d cloudsql.Dialer) Option {
 // NewCommand returns a Command object representing an invocation of the proxy.
 func NewCommand(opts ...Option) *Command {
 	c := &Command{
-		conf: &proxy.Config{},
+		conf: proxy.NewConfig(),
 	}
 	for _, o := range opts {
 		o(c.conf)
