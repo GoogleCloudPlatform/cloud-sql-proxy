@@ -124,22 +124,6 @@ func TestClientInitialization(t *testing.T) {
 			},
 		},
 		{
-			desc: "with automatic port selection",
-			in: &proxy.Config{
-				Addr: "127.0.0.1",
-				Instances: []proxy.InstanceConnConfig{
-					{Name: pg},
-					{Name: mysql},
-					{Name: sqlserver},
-				},
-			},
-			wantAddrs: []string{
-				"127.0.0.1:5432",
-				"127.0.0.1:3306",
-				"127.0.0.1:1433",
-			},
-		},
-		{
 			desc: "with incrementing automatic port selection",
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
