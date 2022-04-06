@@ -20,12 +20,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
 type fakeDialer struct {
-	proxy.Dialer
+	cloudsql.Dialer
 }
 
 func (fakeDialer) Close() error {
@@ -123,22 +124,6 @@ func TestClientInitialization(t *testing.T) {
 			},
 		},
 		{
-			desc: "with automatic port selection",
-			in: &proxy.Config{
-				Addr: "127.0.0.1",
-				Instances: []proxy.InstanceConnConfig{
-					{Name: pg},
-					{Name: mysql},
-					{Name: sqlserver},
-				},
-			},
-			wantAddrs: []string{
-				"127.0.0.1:5432",
-				"127.0.0.1:3306",
-				"127.0.0.1:1433",
-			},
-		},
-		{
 			desc: "with incrementing automatic port selection",
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
@@ -174,7 +159,10 @@ func TestClientInitialization(t *testing.T) {
 				if err != nil {
 					t.Fatalf("want error = nil, got = %v", err)
 				}
-				defer conn.Close()
+				err = conn.Close()
+				if err != nil {
+					t.Logf("failed to close connection: %v", err)
+				}
 			}
 		})
 	}
