@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -47,16 +48,26 @@ type Config struct {
 	// Addr is the address on which to bind all instances.
 	Addr string
 
-	// Port is the first port to bind to. Subsequent ports will increment from
-	// this value.
+	// Port is the initial port to bind to. Subsequent instances bind to
+	// increments from this value.
 	Port int
 
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
+
+	// Dialer specifies the dialer to use when connecting to Cloud SQL
+	// instances.
+	Dialer cloudsql.Dialer
 }
 
-func (c Config) DialerOpts() []cloudsqlconn.Option {
+// NewConfig initializes a Config struct using the default database engine
+// ports.
+func NewConfig() *Config {
+	return &Config{}
+}
+
+func (c *Config) DialerOpts() []cloudsqlconn.Option {
 	var opts []cloudsqlconn.Option
 	if c.Token != "" {
 		opts = append(opts, cloudsqlconn.WithTokenSource(
@@ -64,15 +75,6 @@ func (c Config) DialerOpts() []cloudsqlconn.Option {
 		))
 	}
 	return opts
-}
-
-// Client represents the state of the current instantiation of the proxy.
-type Client struct {
-	cmd    *cobra.Command
-	dialer Dialer
-
-	// mnts is a list of all mounted sockets for this client
-	mnts []*socketMount
 }
 
 type portConfig struct {
@@ -118,27 +120,25 @@ func (c *portConfig) nextDBPort(version string) int {
 	}
 }
 
-// Dialer dials a Cloud SQL instance and returns its database engine version.
-type Dialer interface {
-	// Dial returns a connection to the specified instance.
-	Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error)
-	// EngineVersion retrieves the provided instance's database version (e.g.,
-	// POSTGRES_14)
-	EngineVersion(ctx context.Context, inst string) (string, error)
-	// Close terminates all background operations and stops the dialer.
-	Close() error
+// Client represents the state of the current instantiation of the proxy.
+type Client struct {
+	cmd    *cobra.Command
+	dialer cloudsql.Dialer
+
+	// mnts is a list of all mounted sockets for this client
+	mnts []*socketMount
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, d Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
 	var mnts []*socketMount
-	pc := newPortConfig(conf.Port)
 	for _, inst := range conf.Instances {
 		go func(name string) {
 			// Initiate refresh operation
 			d.EngineVersion(ctx, name)
 		}(inst.Name)
 	}
+	pc := newPortConfig(conf.Port)
 	for _, inst := range conf.Instances {
 		m := &socketMount{inst: inst.Name}
 		a := conf.Addr
