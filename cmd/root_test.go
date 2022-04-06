@@ -15,10 +15,17 @@
 package cmd
 
 import (
+	"context"
+	"errors"
+	"net"
+	"sync"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/spf13/cobra"
 )
 
@@ -131,7 +138,7 @@ func TestNewCommandArguments(t *testing.T) {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
 
-			if got := c.conf; !cmp.Equal(tc.want, got) {
+			if got := c.conf; !cmp.Equal(tc.want, got, cmpopts.IgnoreUnexported(proxy.Config{})) {
 				t.Fatalf("want = %#v\ngot = %#v\ndiff = %v", tc.want, got, cmp.Diff(tc.want, got))
 			}
 		})
@@ -198,5 +205,53 @@ func TestNewCommandWithErrors(t *testing.T) {
 				t.Fatal("want error != nil, got = nil")
 			}
 		})
+	}
+}
+
+type spyDialer struct {
+	mu  sync.Mutex
+	got string
+}
+
+func (s *spyDialer) instance() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	i := s.got
+	return i
+}
+
+func (*spyDialer) Dial(_ context.Context, inst string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
+	return nil, errors.New("spy dialer does not dial")
+}
+
+func (s *spyDialer) EngineVersion(ctx context.Context, inst string) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.got = inst
+	return "", nil
+}
+
+func (*spyDialer) Close() error {
+	return nil
+}
+
+func TestCommandWithCustomDialer(t *testing.T) {
+	want := "my-project:my-region:my-instance"
+	s := &spyDialer{}
+	c := NewCommand(WithDialer(s))
+	// Keep the test output quiet
+	c.SilenceUsage = true
+	c.SilenceErrors = true
+	c.SetArgs([]string{want})
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	if err := c.ExecuteContext(ctx); !errors.As(err, &errSigInt) {
+		t.Fatalf("want errSigInt, got = %v", err)
+	}
+
+	if got := s.instance(); got != want {
+		t.Fatalf("want = %v, got = %v", want, got)
 	}
 }
