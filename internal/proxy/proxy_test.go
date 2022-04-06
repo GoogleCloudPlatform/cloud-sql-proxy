@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proxy_test
+package proxy
 
 import (
 	"context"
@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
@@ -57,15 +56,15 @@ func TestClientInitialization(t *testing.T) {
 
 	tcs := []struct {
 		desc      string
-		in        *proxy.Config
+		in        *Config
 		wantAddrs []string
 	}{
 		{
 			desc: "multiple instances",
-			in: &proxy.Config{
+			in: &Config{
 				Addr: "127.0.0.1",
 				Port: 5000,
-				Instances: []proxy.InstanceConnConfig{
+				Instances: []InstanceConnConfig{
 					{Name: pg},
 					{Name: mysql},
 					{Name: sqlserver},
@@ -75,10 +74,10 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "with instance address",
-			in: &proxy.Config{
+			in: &Config{
 				Addr: "1.1.1.1", // bad address, binding shouldn't happen here.
 				Port: 5000,
-				Instances: []proxy.InstanceConnConfig{
+				Instances: []InstanceConnConfig{
 					{Addr: "0.0.0.0", Name: pg},
 				},
 			},
@@ -86,10 +85,10 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "IPv6 support",
-			in: &proxy.Config{
+			in: &Config{
 				Addr: "::1",
 				Port: 5000,
-				Instances: []proxy.InstanceConnConfig{
+				Instances: []InstanceConnConfig{
 					{Name: pg},
 				},
 			},
@@ -97,10 +96,10 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "with instance port",
-			in: &proxy.Config{
+			in: &Config{
 				Addr: "127.0.0.1",
 				Port: 5000,
-				Instances: []proxy.InstanceConnConfig{
+				Instances: []InstanceConnConfig{
 					{Name: pg, Port: 6000},
 				},
 			},
@@ -108,10 +107,10 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "with global port and instance port",
-			in: &proxy.Config{
+			in: &Config{
 				Addr: "127.0.0.1",
 				Port: 5000,
-				Instances: []proxy.InstanceConnConfig{
+				Instances: []InstanceConnConfig{
 					{Name: pg},
 					{Name: mysql, Port: 6000},
 					{Name: sqlserver},
@@ -125,9 +124,9 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "with incrementing automatic port selection",
-			in: &proxy.Config{
+			in: &Config{
 				Addr: "127.0.0.1",
-				Instances: []proxy.InstanceConnConfig{
+				Instances: []InstanceConnConfig{
 					{Name: pg},
 					{Name: pg2},
 					{Name: mysql},
@@ -135,21 +134,24 @@ func TestClientInitialization(t *testing.T) {
 					{Name: sqlserver},
 					{Name: sqlserver2},
 				},
+				postgres:  10000, // override defaults to avoid port in-use errors
+				mysql:     11000,
+				sqlserver: 12000,
 			},
 			wantAddrs: []string{
-				"127.0.0.1:5432",
-				"127.0.0.1:5433",
-				"127.0.0.1:3306",
-				"127.0.0.1:3307",
-				"127.0.0.1:1433",
-				"127.0.0.1:1434",
+				"127.0.0.1:10000",
+				"127.0.0.1:10001",
+				"127.0.0.1:11000",
+				"127.0.0.1:11001",
+				"127.0.0.1:12000",
+				"127.0.0.1:12001",
 			},
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c, err := proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, tc.in)
+			c, err := NewClient(ctx, fakeDialer{}, &cobra.Command{}, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -168,17 +170,17 @@ func TestClientInitialization(t *testing.T) {
 func TestConfigDialerOpts(t *testing.T) {
 	tcs := []struct {
 		desc    string
-		config  proxy.Config
+		config  Config
 		wantLen int
 	}{
 		{
 			desc:    "when there are no options",
-			config:  proxy.Config{},
+			config:  Config{},
 			wantLen: 0,
 		},
 		{
 			desc:    "when a token is present",
-			config:  proxy.Config{Token: "my-token"},
+			config:  Config{Token: "my-token"},
 			wantLen: 1,
 		},
 	}

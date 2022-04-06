@@ -64,23 +64,23 @@ type Command struct {
 }
 
 // Option is a function that configures a Command.
-type Option func(*Command)
+type Option func(*proxy.Config)
 
 // WithDialer configures the Command to use the provided dialer to connect to
 // Cloud SQL instances.
 func WithDialer(d cloudsql.Dialer) Option {
-	return func(c *Command) {
-		c.conf.Dialer = d
+	return func(c *proxy.Config) {
+		c.Dialer = d
 	}
 }
 
 // NewCommand returns a Command object representing an invocation of the proxy.
 func NewCommand(opts ...Option) *Command {
 	c := &Command{
-		conf: &proxy.Config{},
+		conf: proxy.NewConfig(),
 	}
 	for _, o := range opts {
-		o(c)
+		o(c.conf)
 	}
 
 	cmd := &cobra.Command{

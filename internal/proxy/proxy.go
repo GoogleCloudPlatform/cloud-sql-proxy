@@ -40,7 +40,8 @@ type InstanceConnConfig struct {
 	Port int
 }
 
-// Config contains all the configuration provided by the caller.
+// Config contains all the configuration provided by the caller in addition to
+// dynamic port configuration.
 type Config struct {
 	// Token is the Bearer token used for authorization.
 	Token string
@@ -48,8 +49,8 @@ type Config struct {
 	// Addr is the address on which to bind all instances.
 	Addr string
 
-	// Port is the first port to bind to. Subsequent ports will increment from
-	// this value.
+	// Port is the port to bind to. This value is incremented for each instance
+	// that does not define a custom port.
 	Port int
 
 	// Instances are configuration for individual instances. Instance
@@ -59,9 +60,26 @@ type Config struct {
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
 	// instances.
 	Dialer cloudsql.Dialer
+
+	// postgres is the next available postgres port
+	postgres int
+	// mysql is the next available mysql port
+	mysql int
+	// sqlserver is the next available sqlserver port
+	sqlserver int
 }
 
-func (c Config) DialerOpts() []cloudsqlconn.Option {
+// NewConfig initializes a Config struct using the default database engine
+// ports.
+func NewConfig() *Config {
+	return &Config{
+		postgres:  5432,
+		mysql:     3306,
+		sqlserver: 1433,
+	}
+}
+
+func (c *Config) DialerOpts() []cloudsqlconn.Option {
 	var opts []cloudsqlconn.Option
 	if c.Token != "" {
 		opts = append(opts, cloudsqlconn.WithTokenSource(
@@ -71,39 +89,14 @@ func (c Config) DialerOpts() []cloudsqlconn.Option {
 	return opts
 }
 
-// Client represents the state of the current instantiation of the proxy.
-type Client struct {
-	cmd    *cobra.Command
-	dialer cloudsql.Dialer
-
-	// mnts is a list of all mounted sockets for this client
-	mnts []*socketMount
-}
-
-type portConfig struct {
-	global    int
-	postgres  int
-	mysql     int
-	sqlserver int
-}
-
-func newPortConfig(global int) *portConfig {
-	return &portConfig{
-		global:    global,
-		postgres:  5432,
-		mysql:     3306,
-		sqlserver: 1433,
-	}
-}
-
 // nextPort returns the next port based on the initial global value.
-func (c *portConfig) nextPort() int {
-	p := c.global
-	c.global++
+func (c *Config) nextPort() int {
+	p := c.Port
+	c.Port++
 	return p
 }
 
-func (c *portConfig) nextDBPort(version string) int {
+func (c *Config) nextDBPort(version string) int {
 	switch {
 	case strings.HasPrefix(version, "MYSQL"):
 		p := c.mysql
@@ -123,10 +116,18 @@ func (c *portConfig) nextDBPort(version string) int {
 	}
 }
 
+// Client represents the state of the current instantiation of the proxy.
+type Client struct {
+	cmd    *cobra.Command
+	dialer cloudsql.Dialer
+
+	// mnts is a list of all mounted sockets for this client
+	mnts []*socketMount
+}
+
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
 func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
 	var mnts []*socketMount
-	pc := newPortConfig(conf.Port)
 	for _, inst := range conf.Instances {
 		go func(name string) {
 			// Initiate refresh operation
@@ -148,9 +149,9 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 		case inst.Port != 0:
 			np = inst.Port
 		case conf.Port != 0:
-			np = pc.nextPort()
+			np = conf.nextPort()
 		default:
-			np = pc.nextDBPort(version)
+			np = conf.nextDBPort(version)
 		}
 		addr, err := m.listen(ctx, "tcp", net.JoinHostPort(a, fmt.Sprint(np)))
 		if err != nil {
