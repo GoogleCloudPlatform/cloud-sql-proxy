@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proxy
+package proxy_test
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 )
 
@@ -56,15 +57,15 @@ func TestClientInitialization(t *testing.T) {
 
 	tcs := []struct {
 		desc      string
-		in        *Config
+		in        *proxy.Config
 		wantAddrs []string
 	}{
 		{
 			desc: "multiple instances",
-			in: &Config{
+			in: &proxy.Config{
 				Addr: "127.0.0.1",
 				Port: 5000,
-				Instances: []InstanceConnConfig{
+				Instances: []proxy.InstanceConnConfig{
 					{Name: pg},
 					{Name: mysql},
 					{Name: sqlserver},
@@ -74,10 +75,10 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "with instance address",
-			in: &Config{
+			in: &proxy.Config{
 				Addr: "1.1.1.1", // bad address, binding shouldn't happen here.
 				Port: 5000,
-				Instances: []InstanceConnConfig{
+				Instances: []proxy.InstanceConnConfig{
 					{Addr: "0.0.0.0", Name: pg},
 				},
 			},
@@ -85,10 +86,10 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "IPv6 support",
-			in: &Config{
+			in: &proxy.Config{
 				Addr: "::1",
 				Port: 5000,
-				Instances: []InstanceConnConfig{
+				Instances: []proxy.InstanceConnConfig{
 					{Name: pg},
 				},
 			},
@@ -96,10 +97,10 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "with instance port",
-			in: &Config{
+			in: &proxy.Config{
 				Addr: "127.0.0.1",
 				Port: 5000,
-				Instances: []InstanceConnConfig{
+				Instances: []proxy.InstanceConnConfig{
 					{Name: pg, Port: 6000},
 				},
 			},
@@ -107,10 +108,10 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "with global port and instance port",
-			in: &Config{
+			in: &proxy.Config{
 				Addr: "127.0.0.1",
 				Port: 5000,
-				Instances: []InstanceConnConfig{
+				Instances: []proxy.InstanceConnConfig{
 					{Name: pg},
 					{Name: mysql, Port: 6000},
 					{Name: sqlserver},
@@ -124,9 +125,9 @@ func TestClientInitialization(t *testing.T) {
 		},
 		{
 			desc: "with incrementing automatic port selection",
-			in: &Config{
+			in: &proxy.Config{
 				Addr: "127.0.0.1",
-				Instances: []InstanceConnConfig{
+				Instances: []proxy.InstanceConnConfig{
 					{Name: pg},
 					{Name: pg2},
 					{Name: mysql},
@@ -134,24 +135,21 @@ func TestClientInitialization(t *testing.T) {
 					{Name: sqlserver},
 					{Name: sqlserver2},
 				},
-				postgres:  10000, // override defaults to avoid port in-use errors
-				mysql:     11000,
-				sqlserver: 12000,
 			},
 			wantAddrs: []string{
-				"127.0.0.1:10000",
-				"127.0.0.1:10001",
-				"127.0.0.1:11000",
-				"127.0.0.1:11001",
-				"127.0.0.1:12000",
-				"127.0.0.1:12001",
+				"127.0.0.1:5432",
+				"127.0.0.1:5433",
+				"127.0.0.1:3306",
+				"127.0.0.1:3307",
+				"127.0.0.1:1433",
+				"127.0.0.1:1434",
 			},
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c, err := NewClient(ctx, fakeDialer{}, &cobra.Command{}, tc.in)
+			c, err := proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -161,7 +159,10 @@ func TestClientInitialization(t *testing.T) {
 				if err != nil {
 					t.Fatalf("want error = nil, got = %v", err)
 				}
-				defer conn.Close()
+				err = conn.Close()
+				if err != nil {
+					t.Logf("failed to close connection: %v", err)
+				}
 			}
 		})
 	}
@@ -170,17 +171,17 @@ func TestClientInitialization(t *testing.T) {
 func TestConfigDialerOpts(t *testing.T) {
 	tcs := []struct {
 		desc    string
-		config  Config
+		config  proxy.Config
 		wantLen int
 	}{
 		{
 			desc:    "when there are no options",
-			config:  Config{},
+			config:  proxy.Config{},
 			wantLen: 0,
 		},
 		{
 			desc:    "when a token is present",
-			config:  Config{Token: "my-token"},
+			config:  proxy.Config{Token: "my-token"},
 			wantLen: 1,
 		},
 	}
