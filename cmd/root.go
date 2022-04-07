@@ -131,6 +131,11 @@ func parseConfig(conf *proxy.Config, args []string) error {
 		return newBadCommandError(fmt.Sprintf("not a valid IP address: %q", conf.Addr))
 	}
 
+	// If both token and credentials file were set, error.
+	if conf.Token != "" && conf.CredentialsFile != "" {
+		return newBadCommandError("ambiguous auth configuration: both token and credentials file were set")
+	}
+
 	var ics []proxy.InstanceConnConfig
 	for _, a := range args {
 		// Assume no query params initially
@@ -179,6 +184,18 @@ func parseConfig(conf *proxy.Config, args []string) error {
 	return nil
 }
 
+type cmdLogger struct {
+	*cobra.Command
+}
+
+func (c cmdLogger) Log(msg string, data ...interface{}) {
+	c.Printf(msg, data...)
+}
+
+func (c cmdLogger) Error(msg string, data ...interface{}) {
+	c.PrintErrf(msg, data...)
+}
+
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
 func runSignalWrapper(cmd *Command) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
@@ -213,8 +230,9 @@ func runSignalWrapper(cmd *Command) error {
 		// Otherwise, initialize a new one.
 		d := cmd.conf.Dialer
 		if d == nil {
+			opts := append(cmd.conf.DialerOpts(cmdLogger{cmd.Command}),
+				cloudsqlconn.WithUserAgent(userAgent))
 			var err error
-			opts := append(cmd.conf.DialerOpts(), cloudsqlconn.WithUserAgent(userAgent))
 			d, err = cloudsqlconn.NewDialer(ctx, opts...)
 			if err != nil {
 				shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)

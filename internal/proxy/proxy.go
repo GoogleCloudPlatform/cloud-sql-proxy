@@ -64,25 +64,25 @@ type Config struct {
 	Dialer cloudsql.Dialer
 }
 
-// NewConfig initializes a Config struct using the default database engine
-// ports.
-func NewConfig() *Config {
-	return &Config{}
+// Logger defines a minimal interface for logging informational or error
+// messages.
+type Logger interface {
+	// Log reports an informational message.
+	Log(msg string, data ...interface{})
+	// Error reports an error message.
+	Error(msg string, data ...interface{})
 }
 
-func (c *Config) DialerOpts() []cloudsqlconn.Option {
+func (c *Config) DialerOpts(l Logger) []cloudsqlconn.Option {
 	var opts []cloudsqlconn.Option
-	// The ordering in the switch statement is deliberate. When multiple auth
-	// values are configured, the precedence is:
-	// 1. token
-	// 2. credentials file
-	// 3. gcloud auth
 	switch {
 	case c.Token != "":
+		l.Log("Using provided token for authentication\n")
 		opts = append(opts, cloudsqlconn.WithTokenSource(
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
 		))
 	case c.CredentialsFile != "":
+		l.Log("Using credentials file for authentication: %v\n", c.CredentialsFile)
 		opts = append(opts, cloudsqlconn.WithCredentialsFile(
 			c.CredentialsFile,
 		))
