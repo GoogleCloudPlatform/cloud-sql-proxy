@@ -59,7 +59,7 @@ spec:
           # environments, anything printed to stderr is consider an error. To
           # disable this behavior and write all logs to stdout (except errors
           # which will still go to stderr), use:
-          # - "-log_debug_stdout"
+          - "-log_debug_stdout"
 
           # Replace DB_PORT with the port the proxy should listen on
           # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
