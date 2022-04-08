@@ -9,7 +9,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/hanwen/go-fuse/v2 v2.1.0
 	github.com/jackc/pgx/v4 v4.15.0
-	github.com/lib/pq v1.10.4
+	github.com/lib/pq v1.10.5
 	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.0.0-20220325170049-de3da57026de
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
