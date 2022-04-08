@@ -16,7 +16,6 @@
 package tests
 
 import (
-	"context"
 	"flag"
 	"os"
 	"testing"
@@ -59,9 +58,5 @@ func TestMysqlTcp(t *testing.T) {
 		Addr:                 "127.0.0.1:3306",
 		Net:                  "tcp",
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
-	defer cancel()
-	proxyConnTest(t,
-		ctx,
-		[]string{*mysqlConnName}, "mysql", cfg.FormatDSN(), mysqlPort, "")
+	proxyConnTest(t, []string{*mysqlConnName}, "mysql", cfg.FormatDSN(), mysqlPort, "")
 }

@@ -60,11 +60,7 @@ func TestPostgresTcp(t *testing.T) {
 	requirePostgresVars(t)
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
-	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
-	defer cancel()
-	proxyConnTest(t,
-		ctx,
-		[]string{*postgresConnName}, "postgres", dsn, postgresPort, "")
+	proxyConnTest(t, []string{*postgresConnName}, "postgres", dsn, postgresPort, "")
 }
 
 // removeAuthEnvVar retrieves an OAuth2 token and a path to a service account key
@@ -101,10 +97,7 @@ func TestAuthWithToken(t *testing.T) {
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDb)
-	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
-	defer cancel()
 	proxyConnTest(t,
-		ctx,
 		[]string{"--token", tok.AccessToken, *postgresConnName},
 		"postgres", dsn, postgresPort, "")
 }
@@ -117,12 +110,9 @@ func TestAuthWithCredentialsFile(t *testing.T) {
 	_, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
-	ctx, _ := context.WithTimeout(context.Background(), connTestTimeout)
-
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDb)
 	proxyConnTest(t,
-		ctx,
 		[]string{"--credentials-file", path, *postgresConnName},
 		"postgres", dsn, postgresPort, "")
 }

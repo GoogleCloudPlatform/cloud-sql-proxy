@@ -24,7 +24,9 @@ import (
 const connTestTimeout = time.Minute
 
 // proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
-func proxyConnTest(t *testing.T, ctx context.Context, args []string, driver, dsn string, port int, dir string) {
+func proxyConnTest(t *testing.T, args []string, driver, dsn string, port int, dir string) {
+	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
+	defer cancel()
 	// Start the proxy
 	p, err := StartProxy(ctx, args...)
 	if err != nil {

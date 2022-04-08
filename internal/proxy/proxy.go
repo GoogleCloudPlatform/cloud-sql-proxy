@@ -64,25 +64,14 @@ type Config struct {
 	Dialer cloudsql.Dialer
 }
 
-// Logger defines a minimal interface for logging informational or error
-// messages.
-type Logger interface {
-	// Log reports an informational message.
-	Log(msg string, data ...interface{})
-	// Error reports an error message.
-	Error(msg string, data ...interface{})
-}
-
-func (c *Config) DialerOpts(l Logger) []cloudsqlconn.Option {
+func (c *Config) DialerOpts() []cloudsqlconn.Option {
 	var opts []cloudsqlconn.Option
 	switch {
 	case c.Token != "":
-		l.Log("Using provided token for authentication\n")
 		opts = append(opts, cloudsqlconn.WithTokenSource(
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
 		))
 	case c.CredentialsFile != "":
-		l.Log("Using credentials file for authentication: %v\n", c.CredentialsFile)
 		opts = append(opts, cloudsqlconn.WithCredentialsFile(
 			c.CredentialsFile,
 		))
