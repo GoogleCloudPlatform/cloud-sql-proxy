@@ -137,6 +137,12 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	if conf.Token != "" && conf.CredentialsFile != "" {
 		return newBadCommandError("Cannot specify --token and --credentials-file flags at the same time")
 	}
+	if conf.Token != "" && conf.GcloudAuth {
+		return newBadCommandError("ambiguous auth configuration: both token and gcloud auth were set")
+	}
+	if conf.CredentialsFile != "" && conf.GcloudAuth {
+		return newBadCommandError("ambiguous auth configuration: both credentials file and gcloud auth were set")
+	}
 
 	switch {
 	case conf.Token != "":
@@ -147,12 +153,6 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		cmd.Println("Authorizing with gcloud config")
 	default:
 		cmd.Printf("Authorizing with Application Default Credentials")
-	}
-	if conf.Token != "" && conf.GcloudAuth {
-		return newBadCommandError("ambiguous auth configuration: both token and gcloud auth were set")
-	}
-	if conf.CredentialsFile != "" && conf.GcloudAuth {
-		return newBadCommandError("ambiguous auth configuration: both credentials file and gcloud auth were set")
 	}
 
 	var ics []proxy.InstanceConnConfig
