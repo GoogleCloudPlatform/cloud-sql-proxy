@@ -15,3 +15,5 @@ export SQLSERVER_CONNECTION_NAME="project:region:instance"
 export SQLSERVER_USER="sqlserver-user"
 export SQLSERVER_PASS="sqlserver-password"
 export SQLSERVER_DB="sqlserver-db-name"
+
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
