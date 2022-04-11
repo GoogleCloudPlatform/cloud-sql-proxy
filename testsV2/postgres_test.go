@@ -16,7 +16,6 @@
 package tests
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -24,20 +23,15 @@ import (
 
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/sqladmin/v1"
 )
 
 var (
 	postgresConnName = flag.String("postgres_conn_name", os.Getenv("POSTGRES_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name, in the form of 'project:region:instance'.")
 	postgresUser     = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
 	postgresPass     = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	postgresDb       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
+	postgresDB       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
 
 	postgresIAMUser = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
-
-	postgresPort = 5432
 )
 
 func requirePostgresVars(t *testing.T) {
@@ -48,46 +42,22 @@ func requirePostgresVars(t *testing.T) {
 		t.Fatal("'postgres_user' not set")
 	case *postgresPass:
 		t.Fatal("'postgres_pass' not set")
-	case *postgresDb:
+	case *postgresDB:
 		t.Fatal("'postgres_db' not set")
 	}
 }
 
-func TestPostgresTcp(t *testing.T) {
+func TestPostgresTCP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
-	proxyConnTest(t, []string{*postgresConnName}, "postgres", dsn, postgresPort, "")
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t, []string{*postgresConnName}, "postgres", dsn)
 }
 
-// removeAuthEnvVar retrieves an OAuth2 token and a path to a service account key
-// and then unsets GOOGLE_APPLICATION_CREDENTIALS. It returns a cleanup function
-// that restores the original setup.
-func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
-	ts, err := google.DefaultTokenSource(context.Background(), sqladmin.SqlserviceAdminScope)
-	if err != nil {
-		t.Errorf("failed to resolve token source: %v", err)
-	}
-	tok, err := ts.Token()
-	if err != nil {
-		t.Errorf("failed to get token: %v", err)
-	}
-	path, ok := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS")
-	if !ok {
-		t.Fatalf("GOOGLE_APPLICATION_CREDENTIALS was not set in the environment")
-	}
-	if err := os.Unsetenv("GOOGLE_APPLICATION_CREDENTIALS"); err != nil {
-		t.Fatalf("failed to unset GOOGLE_APPLICATION_CREDENTIALS")
-	}
-	return tok, path, func() {
-		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", path)
-	}
-}
-
-func TestAuthWithToken(t *testing.T) {
+func TestPostgresAuthWithToken(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
@@ -96,13 +66,13 @@ func TestAuthWithToken(t *testing.T) {
 	defer cleanup()
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
-		*postgresUser, *postgresPass, *postgresDb)
+		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t,
 		[]string{"--token", tok.AccessToken, *postgresConnName},
-		"postgres", dsn, postgresPort, "")
+		"postgres", dsn)
 }
 
-func TestAuthWithCredentialsFile(t *testing.T) {
+func TestPostgresAuthWithCredentialsFile(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
@@ -111,8 +81,8 @@ func TestAuthWithCredentialsFile(t *testing.T) {
 	defer cleanup()
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
-		*postgresUser, *postgresPass, *postgresDb)
+		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t,
 		[]string{"--credentials-file", path, *postgresConnName},
-		"postgres", dsn, postgresPort, "")
+		"postgres", dsn)
 }
