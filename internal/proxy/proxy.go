@@ -45,6 +45,9 @@ type Config struct {
 	// Token is the Bearer token used for authorization.
 	Token string
 
+	// CredentialsFile is the path to a service account key.
+	CredentialsFile string
+
 	// Addr is the address on which to bind all instances.
 	Addr string
 
@@ -61,17 +64,16 @@ type Config struct {
 	Dialer cloudsql.Dialer
 }
 
-// NewConfig initializes a Config struct using the default database engine
-// ports.
-func NewConfig() *Config {
-	return &Config{}
-}
-
 func (c *Config) DialerOpts() []cloudsqlconn.Option {
 	var opts []cloudsqlconn.Option
-	if c.Token != "" {
+	switch {
+	case c.Token != "":
 		opts = append(opts, cloudsqlconn.WithTokenSource(
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+		))
+	case c.CredentialsFile != "":
+		opts = append(opts, cloudsqlconn.WithCredentialsFile(
+			c.CredentialsFile,
 		))
 	}
 	return opts

@@ -119,6 +119,20 @@ func TestNewCommandArguments(t *testing.T) {
 				Token: "MYCOOLTOKEN",
 			}),
 		},
+		{
+			desc: "using the credentiale file flag",
+			args: []string{"--credentials-file", "/path/to/file", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				CredentialsFile: "/path/to/file",
+			}),
+		},
+		{
+			desc: "using the (short) credentiale file flag",
+			args: []string{"-c", "/path/to/file", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				CredentialsFile: "/path/to/file",
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -185,6 +199,12 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "when the port query param is not a number",
 			args: []string{"proj:region:inst?port=hi"},
+		},
+		{
+			desc: "when both token and credentials file is set",
+			args: []string{
+				"--token", "my-token",
+				"--credentials-file", "/path/to/file", "proj:region:inst"},
 		},
 	}
 
