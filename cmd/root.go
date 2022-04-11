@@ -92,7 +92,7 @@ connecting to Cloud SQL instances. It listens on a local port and forwards conne
 to your instance's IP address, providing a secure connection without having to manage
 any client SSL certificates.`,
 		Args: func(cmd *cobra.Command, args []string) error {
-			err := parseConfig(c.conf, args)
+			err := parseConfig(cmd, c.conf, args)
 			if err != nil {
 				return err
 			}
@@ -108,6 +108,8 @@ any client SSL certificates.`,
 	// Global-only flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Token, "token", "t", "",
 		"Bearer token used for authorization.")
+	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
+		"Path to a service account key to use for authentication.")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -119,7 +121,7 @@ any client SSL certificates.`,
 	return c
 }
 
-func parseConfig(conf *proxy.Config, args []string) error {
+func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	// If no instance connection names were provided, error.
 	if len(args) == 0 {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
@@ -127,6 +129,20 @@ func parseConfig(conf *proxy.Config, args []string) error {
 	// First, validate global config.
 	if ip := net.ParseIP(conf.Addr); ip == nil {
 		return newBadCommandError(fmt.Sprintf("not a valid IP address: %q", conf.Addr))
+	}
+
+	// If both token and credentials file were set, error.
+	if conf.Token != "" && conf.CredentialsFile != "" {
+		return newBadCommandError("Cannot specify --token and --credentials-file flags at the same time")
+	}
+
+	switch {
+	case conf.Token != "":
+		cmd.Printf("Authorizing with the -token flag\n")
+	case conf.CredentialsFile != "":
+		cmd.Printf("Authorizing with the credentials file at %q\n", conf.CredentialsFile)
+	default:
+		cmd.Printf("Authorizing with Application Default Credentials")
 	}
 
 	var ics []proxy.InstanceConnConfig
@@ -211,8 +227,8 @@ func runSignalWrapper(cmd *Command) error {
 		// Otherwise, initialize a new one.
 		d := cmd.conf.Dialer
 		if d == nil {
-			var err error
 			opts := append(cmd.conf.DialerOpts(), cloudsqlconn.WithUserAgent(userAgent))
+			var err error
 			d, err = cloudsqlconn.NewDialer(ctx, opts...)
 			if err != nil {
 				shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
