@@ -29,11 +29,9 @@ var (
 	postgresConnName = flag.String("postgres_conn_name", os.Getenv("POSTGRES_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name, in the form of 'project:region:instance'.")
 	postgresUser     = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
 	postgresPass     = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	postgresDb       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
+	postgresDB       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
 
 	postgresIAMUser = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
-
-	postgresPort = 5432
 )
 
 func requirePostgresVars(t *testing.T) {
@@ -44,17 +42,47 @@ func requirePostgresVars(t *testing.T) {
 		t.Fatal("'postgres_user' not set")
 	case *postgresPass:
 		t.Fatal("'postgres_pass' not set")
-	case *postgresDb:
+	case *postgresDB:
 		t.Fatal("'postgres_db' not set")
 	}
 }
 
-func TestPostgresTcp(t *testing.T) {
+func TestPostgresTCP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
-	proxyConnTest(t, *postgresConnName, "postgres", dsn, postgresPort, "")
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t, []string{*postgresConnName}, "postgres", dsn)
+}
+
+func TestPostgresAuthWithToken(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	tok, _, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t,
+		[]string{"--token", tok.AccessToken, *postgresConnName},
+		"postgres", dsn)
+}
+
+func TestPostgresAuthWithCredentialsFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	_, path, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t,
+		[]string{"--credentials-file", path, *postgresConnName},
+		"postgres", dsn)
 }
