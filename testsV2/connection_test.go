@@ -17,15 +17,45 @@ package tests
 import (
 	"context"
 	"database/sql"
+	"os"
 	"testing"
+	"time"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/sqladmin/v1"
 )
 
+const connTestTimeout = time.Minute
+
+// removeAuthEnvVar retrieves an OAuth2 token and a path to a service account key
+// and then unsets GOOGLE_APPLICATION_CREDENTIALS. It returns a cleanup function
+// that restores the original setup.
+func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
+	ts, err := google.DefaultTokenSource(context.Background(), sqladmin.SqlserviceAdminScope)
+	if err != nil {
+		t.Errorf("failed to resolve token source: %v", err)
+	}
+	tok, err := ts.Token()
+	if err != nil {
+		t.Errorf("failed to get token: %v", err)
+	}
+	path, ok := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS")
+	if !ok {
+		t.Fatalf("GOOGLE_APPLICATION_CREDENTIALS was not set in the environment")
+	}
+	if err := os.Unsetenv("GOOGLE_APPLICATION_CREDENTIALS"); err != nil {
+		t.Fatalf("failed to unset GOOGLE_APPLICATION_CREDENTIALS")
+	}
+	return tok, path, func() {
+		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", path)
+	}
+}
+
 // proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
-func proxyConnTest(t *testing.T, connName, driver, dsn string, port int, dir string) {
-	ctx := context.Background()
-
-	args := []string{connName}
-
+func proxyConnTest(t *testing.T, args []string, driver, dsn string) {
+	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
+	defer cancel()
 	// Start the proxy
 	p, err := StartProxy(ctx, args...)
 	if err != nil {
