@@ -28,12 +28,10 @@ var (
 	sqlserverConnName = flag.String("sqlserver_conn_name", os.Getenv("SQLSERVER_CONNECTION_NAME"), "Cloud SQL SqlServer instance connection name, in the form of 'project:region:instance'.")
 	sqlserverUser     = flag.String("sqlserver_user", os.Getenv("SQLSERVER_USER"), "Name of database user.")
 	sqlserverPass     = flag.String("sqlserver_pass", os.Getenv("SQLSERVER_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	sqlserverDb       = flag.String("sqlserver_db", os.Getenv("SQLSERVER_DB"), "Name of the database to connect to.")
-
-	sqlserverPort = 1433
+	sqlserverDB       = flag.String("sqlserver_db", os.Getenv("SQLSERVER_DB"), "Name of the database to connect to.")
 )
 
-func requireSqlserverVars(t *testing.T) {
+func requireSQLServerVars(t *testing.T) {
 	switch "" {
 	case *sqlserverConnName:
 		t.Fatal("'sqlserver_conn_name' not set")
@@ -41,17 +39,48 @@ func requireSqlserverVars(t *testing.T) {
 		t.Fatal("'sqlserver_user' not set")
 	case *sqlserverPass:
 		t.Fatal("'sqlserver_pass' not set")
-	case *sqlserverDb:
+	case *sqlserverDB:
 		t.Fatal("'sqlserver_db' not set")
 	}
 }
 
-func TestSqlServerTcp(t *testing.T) {
+func TestSQLServerTCP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SQL Server integration tests")
 	}
-	requireSqlserverVars(t)
+	requireSQLServerVars(t)
 
-	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s", *sqlserverUser, *sqlserverPass, *sqlserverDb)
-	proxyConnTest(t, *sqlserverConnName, "sqlserver", dsn, sqlserverPort, "")
+	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
+		*sqlserverUser, *sqlserverPass, *sqlserverDB)
+	proxyConnTest(t, []string{*sqlserverConnName}, "sqlserver", dsn)
+}
+
+func TestSQLServerAuthWithToken(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping SQL Server integration tests")
+	}
+	requireSQLServerVars(t)
+	tok, _, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
+		*sqlserverUser, *sqlserverPass, *sqlserverDB)
+	proxyConnTest(t,
+		[]string{"--token", tok.AccessToken, *sqlserverConnName},
+		"sqlserver", dsn)
+}
+
+func TestSQLServerAuthWithCredentialsFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping SQL Server integration tests")
+	}
+	requireSQLServerVars(t)
+	_, path, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
+		*sqlserverUser, *sqlserverPass, *sqlserverDB)
+	proxyConnTest(t,
+		[]string{"--credentials-file", path, *sqlserverConnName},
+		"sqlserver", dsn)
 }
