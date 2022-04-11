@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // requireAllVars skips the given test if at least one environment variable is undefined.
@@ -43,13 +44,17 @@ func TestMultiInstanceDial(t *testing.T) {
 		t.Skip("skipping Health Check integration tests")
 	}
 	requireAllVars(t)
-	ctx := context.Background()
-
-	var args []string
-	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d,%s=tcp:%d,%s=tcp:%d", *mysqlConnName, mysqlPort, *postgresConnName, postgresPort, *sqlserverConnName, sqlserverPort))
-	args = append(args, "-use_http_health_check")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
 
 	// Start the proxy.
+	args := []string{
+		// This test doesn't care what the instance port is, so use "0" which
+		// means, let the runtime pick a random port.
+		fmt.Sprintf("-instances=%s=tcp:0,%s=tcp:0,%s=tcp:0",
+			*mysqlConnName, *postgresConnName, *sqlserverConnName),
+		"-use_http_health_check",
+	}
 	p, err := StartProxy(ctx, args...)
 	if err != nil {
 		t.Fatalf("unable to start proxy: %v", err)
