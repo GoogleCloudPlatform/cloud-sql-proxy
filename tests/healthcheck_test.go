@@ -29,12 +29,14 @@ const (
 
 // singleInstanceDial verifies that when a proxy client serves the given instance, the readiness
 // endpoint serves http.StatusOK.
-func singleInstanceDial(t *testing.T, connName string, port int) {
+func singleInstanceDial(t *testing.T, connName string) {
 	ctx := context.Background()
 
-	var args []string
-	args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", connName, port), "-use_http_health_check")
-
+	// Start a listener on a random port. This test doesn't require a specific
+	// port otherwise.
+	args := []string{
+		fmt.Sprintf("-instances=%s=tcp:0", connName), "-use_http_health_check",
+	}
 	// Start the proxy.
 	p, err := StartProxy(ctx, args...)
 	if err != nil {

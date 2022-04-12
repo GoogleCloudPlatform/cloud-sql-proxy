@@ -161,5 +161,5 @@ func TestPostgresDial(t *testing.T) {
 		t.Fatal("'postgres_conn_name' not set")
 	}
 
-	singleInstanceDial(t, *postgresConnName, postgresPort)
+	singleInstanceDial(t, *postgresConnName)
 }
