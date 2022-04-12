@@ -24,12 +24,16 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/spf13/cobra"
 )
 
 func TestNewCommandArguments(t *testing.T) {
+	cleanup := testutil.ConfigureGcloud(t)
+	defer cleanup()
+
 	withDefaults := func(c *proxy.Config) *proxy.Config {
 		if c.Addr == "" {
 			c.Addr = "127.0.0.1"

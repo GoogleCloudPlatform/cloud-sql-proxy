@@ -16,15 +16,12 @@
 package tests
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"os/exec"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
 )
@@ -97,41 +94,7 @@ func TestAuthWithGcloudAuth(t *testing.T) {
 	}
 	requirePostgresVars(t)
 
-	// The following configures gcloud using only GOOGLE_APPLICATION_CREDENTIALS
-	// and stores the resulting configuration in a temporary directory as set by
-	// CLOUDSDK_CONFIG, which changes the gcloud config directory from the
-	// default. We use a temporary directory to avoid trampling on any existing
-	// gcloud config.
-	configureGcloud := func(t *testing.T) func() {
-		dir, err := ioutil.TempDir("", "cloudsdk*")
-		if err != nil {
-			t.Fatalf("failed to create temp dir: %v", err)
-		}
-		os.Setenv("CLOUDSDK_CONFIG", dir)
-
-		gcloudCmd, err := gcloud.Path()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		_, path, cleanup := removeAuthEnvVar(t)
-
-		cmd := exec.Command(gcloudCmd, "auth", "activate-service-account",
-			"--key-file", path)
-		buf := &bytes.Buffer{}
-		cmd.Stdout = buf
-
-		if err := cmd.Run(); err != nil {
-			t.Fatalf("failed to active service account. err = %v, message = %v",
-				err, buf.String())
-		}
-		return func() {
-			os.Unsetenv("CLOUDSDK_CONFIG")
-			cleanup()
-		}
-
-	}
-	cleanup := configureGcloud(t)
+	cleanup := testutil.ConfigureGcloud(t)
 	defer cleanup()
 
 	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
