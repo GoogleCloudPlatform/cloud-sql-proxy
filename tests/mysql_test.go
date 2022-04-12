@@ -114,5 +114,5 @@ func TestMysqlDial(t *testing.T) {
 		t.Fatal("'mysql_conn_name' not set")
 	}
 
-	singleInstanceDial(t, *mysqlConnName, mysqlPort)
+	singleInstanceDial(t, *mysqlConnName)
 }

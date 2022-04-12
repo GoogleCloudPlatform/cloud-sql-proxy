@@ -77,5 +77,5 @@ func TestSqlserverDial(t *testing.T) {
 		t.Fatal("'sqlserver_conn_name' not set")
 	}
 
-	singleInstanceDial(t, *sqlserverConnName, sqlserverPort)
+	singleInstanceDial(t, *sqlserverConnName)
 }
