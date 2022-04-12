@@ -25,9 +25,7 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 )
 
 // InstanceConnConfig holds the configuration for an individual instance
@@ -67,27 +65,10 @@ type Config struct {
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
 	// instances.
 	Dialer cloudsql.Dialer
-}
 
-func (c Config) DialerOpts() ([]cloudsqlconn.Option, error) {
-	var opts []cloudsqlconn.Option
-	switch {
-	case c.Token != "":
-		opts = append(opts, cloudsqlconn.WithTokenSource(
-			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
-		))
-	case c.CredentialsFile != "":
-		opts = append(opts, cloudsqlconn.WithCredentialsFile(
-			c.CredentialsFile,
-		))
-	case c.GcloudAuth:
-		ts, err := gcloud.GcloudTokenSource(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
-	}
-	return opts, nil
+	// DialerOpts specifies the opts to use when creating a new dialer. This
+	// value is ignored when a Dialer has been set.
+	DialerOpts []cloudsqlconn.Option
 }
 
 type portConfig struct {

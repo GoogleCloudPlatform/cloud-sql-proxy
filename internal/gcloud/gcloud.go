@@ -16,76 +16,46 @@ package gcloud
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"runtime"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/logging"
 	"golang.org/x/oauth2"
 	exec "golang.org/x/sys/execabs"
 )
 
-// gcloudConfigData represents the data returned by `gcloud config config-helper`.
-type gcloudConfigData struct {
-	Configuration struct {
-		Properties struct {
-			Core struct {
-				Project string
-				Account string
-			}
-		}
-	}
+// config represents the credentials returned by `gcloud config config-helper`.
+type config struct {
 	Credential struct {
 		AccessToken string    `json:"access_token"`
 		TokenExpiry time.Time `json:"token_expiry"`
 	}
 }
 
-func (cfg *gcloudConfigData) oauthToken() *oauth2.Token {
+func (c *config) Token() *oauth2.Token {
 	return &oauth2.Token{
-		AccessToken: cfg.Credential.AccessToken,
-		Expiry:      cfg.Credential.TokenExpiry,
+		AccessToken: c.Credential.AccessToken,
+		Expiry:      c.Credential.TokenExpiry,
 	}
 }
 
-type GcloudStatusCode int
-
-const (
-	GcloudOk GcloudStatusCode = iota
-	GcloudNotFound
-	// generic execution failure error not specified above.
-	GcloudExecErr
-)
-
-type GcloudError struct {
-	GcloudError error
-	Status      GcloudStatusCode
-}
-
-func (e *GcloudError) Error() string {
-	return e.GcloudError.Error()
-}
-
-// Cmd returns the gcloud command. If the command is not found it returns an
-// error.
-func Cmd() (string, error) {
-	gcloud := "gcloud"
+// Path returns the absolute path to the gcloud command. If the command is not
+// found it returns an error.
+func Path() (string, error) {
+	g := "gcloud"
 	if runtime.GOOS == "windows" {
-		gcloud = gcloud + ".cmd"
+		g = g + ".cmd"
 	}
-
-	if _, err := exec.LookPath(gcloud); err != nil {
-		return "", &GcloudError{GcloudError: err, Status: GcloudNotFound}
-	}
-	return gcloud, nil
-
+	return exec.LookPath(g)
 }
 
-// gcloudConfig returns a gcloudConfigData object or an error of type *GcloudError.
-func gcloudConfig() (*gcloudConfigData, error) {
-	gcloudCmd, err := Cmd()
+// configHelper implements oauth2.TokenSource via the `gcloud config config-helper` command.
+type configHelper struct{}
+
+// Token helps gcloudTokenSource implement oauth2.TokenSource.
+func (configHelper) Token() (*oauth2.Token, error) {
+	gcloudCmd, err := Path()
 	if err != nil {
 		return nil, err
 	}
@@ -96,38 +66,22 @@ func gcloudConfig() (*gcloudConfigData, error) {
 
 	if err := cmd.Run(); err != nil {
 		err = fmt.Errorf("error reading config: %v; stderr was:\n%v", err, errbuf)
-		logging.Errorf("GcloudConfig: %v", err)
-		return nil, &GcloudError{err, GcloudExecErr}
+		return nil, err
 	}
 
-	data := &gcloudConfigData{}
-	if err := json.Unmarshal(buf.Bytes(), data); err != nil {
-		logging.Errorf("Failed to unmarshal bytes from gcloud: %v", err)
-		logging.Errorf("   gcloud returned:\n%s", buf)
-		return nil, &GcloudError{err, GcloudExecErr}
+	c := &config{}
+	if err := json.Unmarshal(buf.Bytes(), c); err != nil {
+		return nil, err
 	}
-
-	return data, nil
+	return c.Token(), nil
 }
 
-// gcloudTokenSource implements oauth2.TokenSource via the `gcloud config config-helper` command.
-type gcloudTokenSource struct {
-}
-
-// Token helps gcloudTokenSource implement oauth2.TokenSource.
-func (src *gcloudTokenSource) Token() (*oauth2.Token, error) {
-	cfg, err := gcloudConfig()
+// TokenSource returns an oauth2.TokenSource backed by the gcloud CLI.
+func TokenSource() (oauth2.TokenSource, error) {
+	h := configHelper{}
+	tok, err := h.Token()
 	if err != nil {
 		return nil, err
 	}
-	return cfg.oauthToken(), nil
-}
-
-func GcloudTokenSource(ctx context.Context) (oauth2.TokenSource, error) {
-	src := &gcloudTokenSource{}
-	tok, err := src.Token()
-	if err != nil {
-		return nil, err
-	}
-	return oauth2.ReuseTokenSource(tok, src), nil
+	return oauth2.ReuseTokenSource(tok, h), nil
 }

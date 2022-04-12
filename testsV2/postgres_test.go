@@ -97,7 +97,11 @@ func TestAuthWithGcloudAuth(t *testing.T) {
 	}
 	requirePostgresVars(t)
 
-	// The following configures gcloud using only GOOGLE_APPLICATION_CREDENTIALS.
+	// The following configures gcloud using only GOOGLE_APPLICATION_CREDENTIALS
+	// and stores the resulting configuration in a temporary directory as set by
+	// CLOUDSDK_CONFIG, which changes the gcloud config directory from the
+	// default. We use a temporary directory to avoid trampling on any existing
+	// gcloud config.
 	configureGcloud := func(t *testing.T) func() {
 		dir, err := ioutil.TempDir("", "cloudsdk*")
 		if err != nil {
@@ -105,7 +109,7 @@ func TestAuthWithGcloudAuth(t *testing.T) {
 		}
 		os.Setenv("CLOUDSDK_CONFIG", dir)
 
-		gcloudCmd, err := gcloud.Cmd()
+		gcloudCmd, err := gcloud.Path()
 		if err != nil {
 			t.Fatal(err)
 		}

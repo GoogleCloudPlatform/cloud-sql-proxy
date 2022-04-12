@@ -16,7 +16,6 @@ package gcloud_test
 
 import (
 	"bytes"
-	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -30,15 +29,19 @@ func TestGcloud(t *testing.T) {
 		t.Skip("skipping gcloud integration tests")
 	}
 
+	// The following configures gcloud using only GOOGLE_APPLICATION_CREDENTIALS
+	// and stores the resulting configuration in a temporary directory as set by
+	// CLOUDSDK_CONFIG, which changes the gcloud config directory from the
+	// default. We use a temporary directory to avoid trampling on any existing
+	// gcloud config.
 	configureGcloud := func(t *testing.T) func() {
-		// The following configures gcloud using only GOOGLE_APPLICATION_CREDENTIALS.
 		dir, err := ioutil.TempDir("", "cloudsdk*")
 		if err != nil {
 			t.Fatalf("failed to create temp dir: %v", err)
 		}
 		os.Setenv("CLOUDSDK_CONFIG", dir)
 
-		gcloudCmd, err := gcloud.Cmd()
+		gcloudCmd, err := gcloud.Path()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,7 +71,7 @@ func TestGcloud(t *testing.T) {
 
 	// gcloud is now configured. Try to obtain a token from gcloud config
 	// helper.
-	ts, err := gcloud.GcloudTokenSource(context.Background())
+	ts, err := gcloud.TokenSource()
 	if err != nil {
 		t.Fatalf("failed to get token source: %v", err)
 	}
