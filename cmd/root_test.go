@@ -83,6 +83,16 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "query params are case insensitive",
+			args: []string{"proj:region:inst?ADDRESS=0.0.0.0&PORT=6000"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					Addr: "0.0.0.0",
+					Port: 6000,
+				}},
+			}),
+		},
+		{
 			desc: "using the port flag",
 			args: []string{"--port", "6000", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -205,6 +215,10 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{
 				"--token", "my-token",
 				"--credentials-file", "/path/to/file", "proj:region:inst"},
+		},
+		{
+			desc: "when unknown query params are set",
+			args: []string{"proj:region:inst?bad=query"},
 		},
 	}
 

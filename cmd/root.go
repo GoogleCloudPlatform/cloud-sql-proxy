@@ -121,6 +121,32 @@ any client SSL certificates.`,
 	return c
 }
 
+// parseQuery extracts key value query params from the provided string. In
+// addition, parseQuery normalizes all query params keys to lowercase.
+func parseQuery(q string) (url.Values, error) {
+	vals, err := url.ParseQuery(q)
+	if err != nil {
+		return url.Values{}, err
+	}
+	lower := url.Values{}
+	for k, v := range vals {
+		lower[strings.ToLower(k)] = v
+	}
+	return lower, nil
+}
+
+// allowlistParams checks that all provided url values are in the allowlist and
+// otherwise returns an error.
+func allowlistParams(allowed map[string]bool, got url.Values) error {
+	for g := range got {
+		if allowed[g] {
+			continue
+		}
+		return fmt.Errorf("invalid query param %q", g)
+	}
+	return nil
+}
+
 func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	// If no instance connection names were provided, error.
 	if len(args) == 0 {
@@ -154,9 +180,18 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		// If there are query params, update instance config.
 		if res := strings.SplitN(a, "?", 2); len(res) > 1 {
 			ic.Name = res[0]
-			q, err := url.ParseQuery(res[1])
+			q, err := parseQuery(res[1])
 			if err != nil {
 				return newBadCommandError(fmt.Sprintf("could not parse query: %q", res[1]))
+			}
+			err = allowlistParams(map[string]bool{"address": true, "port": true}, q)
+			if err != nil {
+				return newBadCommandError(
+					fmt.Sprintf(
+						"invalid instance connection string %q: %v",
+						a, err,
+					),
+				)
 			}
 
 			if a, ok := q["address"]; ok {
