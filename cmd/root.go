@@ -29,8 +29,10 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -110,6 +112,8 @@ any client SSL certificates.`,
 		"Bearer token used for authorization.")
 	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
 		"Path to a service account key to use for authentication.")
+	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
+		"Use gcloud's user configuration to retrieve a token for authentication.")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -131,19 +135,41 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError(fmt.Sprintf("not a valid IP address: %q", conf.Addr))
 	}
 
-	// If both token and credentials file were set, error.
+	// If more than one auth method is set, error.
 	if conf.Token != "" && conf.CredentialsFile != "" {
 		return newBadCommandError("Cannot specify --token and --credentials-file flags at the same time")
 	}
-
+	if conf.Token != "" && conf.GcloudAuth {
+		return newBadCommandError("Cannot specify --token and --gcloud-auth flags at the same time")
+	}
+	if conf.CredentialsFile != "" && conf.GcloudAuth {
+		return newBadCommandError("Cannot specify --credentials-file and --gcloud-auth flags at the same time")
+	}
+	opts := []cloudsqlconn.Option{
+		cloudsqlconn.WithUserAgent(userAgent),
+	}
 	switch {
 	case conf.Token != "":
 		cmd.Printf("Authorizing with the -token flag\n")
+		opts = append(opts, cloudsqlconn.WithTokenSource(
+			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: conf.Token}),
+		))
 	case conf.CredentialsFile != "":
 		cmd.Printf("Authorizing with the credentials file at %q\n", conf.CredentialsFile)
+		opts = append(opts, cloudsqlconn.WithCredentialsFile(
+			conf.CredentialsFile,
+		))
+	case conf.GcloudAuth:
+		cmd.Println("Authorizing with gcloud user credentials")
+		ts, err := gcloud.TokenSource()
+		if err != nil {
+			return err
+		}
+		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
 	default:
-		cmd.Printf("Authorizing with Application Default Credentials")
+		cmd.Println("Authorizing with Application Default Credentials")
 	}
+	conf.DialerOpts = opts
 
 	var ics []proxy.InstanceConnConfig
 	for _, a := range args {
@@ -227,9 +253,8 @@ func runSignalWrapper(cmd *Command) error {
 		// Otherwise, initialize a new one.
 		d := cmd.conf.Dialer
 		if d == nil {
-			opts := append(cmd.conf.DialerOpts(), cloudsqlconn.WithUserAgent(userAgent))
 			var err error
-			d, err = cloudsqlconn.NewDialer(ctx, opts...)
+			d, err = cloudsqlconn.NewDialer(ctx, cmd.conf.DialerOpts...)
 			if err != nil {
 				shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
 				return
