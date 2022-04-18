@@ -21,6 +21,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
 )
@@ -84,5 +85,21 @@ func TestPostgresAuthWithCredentialsFile(t *testing.T) {
 		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t,
 		[]string{"--credentials-file", path, *postgresConnName},
+		"postgres", dsn)
+}
+
+func TestAuthWithGcloudAuth(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+
+	cleanup := testutil.ConfigureGcloud(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t,
+		[]string{"--gcloud-auth", *postgresConnName},
 		"postgres", dsn)
 }
