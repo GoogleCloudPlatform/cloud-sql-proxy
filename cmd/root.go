@@ -120,6 +120,9 @@ any client SSL certificates.`,
 		"Address on which to bind Cloud SQL instance listeners.")
 	cmd.PersistentFlags().IntVarP(&c.conf.Port, "port", "p", 0,
 		"Initial port to use for listeners. Subsequent listeners increment from this value.")
+	cmd.PersistentFlags().StringVarP(&c.conf.UnixSocket, "unix-socket", "u", "",
+		`Enables Unix sockets for all listeners using the provided directory.
+Overrides Addr and Port.`)
 
 	c.Command = cmd
 	return c
@@ -130,20 +133,29 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	if len(args) == 0 {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
 	}
-	// First, validate global config.
+
+	userSet := func(f string) bool {
+		return cmd.PersistentFlags().Lookup(f).Changed
+	}
+	if userSet("address") && userSet("unix-socket") {
+		return newBadCommandError("cannot specify --unix-sock and --address together")
+	}
+	if userSet("port") && userSet("unix-socket") {
+		return newBadCommandError("cannot specify --unix-sock and --port together")
+	}
 	if ip := net.ParseIP(conf.Addr); ip == nil {
 		return newBadCommandError(fmt.Sprintf("not a valid IP address: %q", conf.Addr))
 	}
 
 	// If more than one auth method is set, error.
 	if conf.Token != "" && conf.CredentialsFile != "" {
-		return newBadCommandError("Cannot specify --token and --credentials-file flags at the same time")
+		return newBadCommandError("cannot specify --token and --credentials-file flags at the same time")
 	}
 	if conf.Token != "" && conf.GcloudAuth {
-		return newBadCommandError("Cannot specify --token and --gcloud-auth flags at the same time")
+		return newBadCommandError("cannot specify --token and --gcloud-auth flags at the same time")
 	}
 	if conf.CredentialsFile != "" && conf.GcloudAuth {
-		return newBadCommandError("Cannot specify --credentials-file and --gcloud-auth flags at the same time")
+		return newBadCommandError("cannot specify --credentials-file and --gcloud-auth flags at the same time")
 	}
 	opts := []cloudsqlconn.Option{
 		cloudsqlconn.WithUserAgent(userAgent),
@@ -185,7 +197,18 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 				return newBadCommandError(fmt.Sprintf("could not parse query: %q", res[1]))
 			}
 
-			if a, ok := q["address"]; ok {
+			a, aok := q["address"]
+			p, pok := q["port"]
+			u, uok := q["unix-socket"]
+
+			if aok && uok {
+				return newBadCommandError("cannot specify both address and unix-socket query params")
+			}
+			if pok && uok {
+				return newBadCommandError("cannot specify both port and unix-socket query params")
+			}
+
+			if aok {
 				if len(a) != 1 {
 					return newBadCommandError(fmt.Sprintf("address query param should be only one value: %q", a))
 				}
@@ -198,7 +221,7 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 				ic.Addr = a[0]
 			}
 
-			if p, ok := q["port"]; ok {
+			if pok {
 				if len(p) != 1 {
 					return newBadCommandError(fmt.Sprintf("port query param should be only one value: %q", a))
 				}
@@ -210,6 +233,14 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 						))
 				}
 				ic.Port = pp
+			}
+
+			if uok {
+				if len(u) != 1 {
+					return newBadCommandError(fmt.Sprintf("unix query param should be only one value: %q", a))
+				}
+				ic.UnixSocket = u[0]
+
 			}
 		}
 		ics = append(ics, ic)

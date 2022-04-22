@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -37,6 +39,10 @@ type InstanceConnConfig struct {
 	Addr string
 	// Port is the port on which to bind a listener for the instance.
 	Port int
+	// UnixSocket is the directory where a Unix socket will be created,
+	// connected to the Cloud SQL instance. If set, takes precedence over Addr
+	// and Port.
+	UnixSocket string
 }
 
 // Config contains all the configuration provided by the caller.
@@ -57,6 +63,10 @@ type Config struct {
 	// Port is the initial port to bind to. Subsequent instances bind to
 	// increments from this value.
 	Port int
+
+	// UnixSocket is the directory where Unix sockets will be created,
+	// connected to any Instances. If set, takes precedence over Addr and Port.
+	UnixSocket string
 
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
@@ -133,32 +143,76 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 		}(inst.Name)
 	}
 	pc := newPortConfig(conf.Port)
+
 	for _, inst := range conf.Instances {
-		m := &socketMount{inst: inst.Name}
-		a := conf.Addr
-		if inst.Addr != "" {
-			a = inst.Addr
-		}
 		version, err := d.EngineVersion(ctx, inst.Name)
 		if err != nil {
 			return nil, err
 		}
-		var np int
-		switch {
-		case inst.Port != 0:
-			np = inst.Port
-		case conf.Port != 0:
-			np = pc.nextPort()
-		default:
-			np = pc.nextDBPort(version)
+
+		var (
+			// network is one of "tcp" or "unix"
+			network string
+			// address is either a TCP host port, or a Unix socket
+			address string
+		)
+		if (conf.UnixSocket != "" || inst.UnixSocket != "") &&
+			(inst.Addr == "" && inst.Port == 0) {
+			network = "unix"
+
+			dir := conf.UnixSocket
+			if dir == "" {
+				dir = inst.UnixSocket
+			}
+			// Attempt to make the directory if it does not already exist.
+			if _, err := os.Stat(dir); err != nil {
+				if err = os.Mkdir(dir, 0750); err != nil {
+					return nil, err
+				}
+			}
+			address = filepath.Join(dir, inst.Name)
+			// When setting up a listener for Postgres, create address as a
+			// directory, and use the Postgres-specific socket name
+			// .s.PGSQL.5432.
+			if strings.HasPrefix(version, "POSTGRES") {
+				// Make the directory only if it hasn't already been created.
+				if _, err := os.Stat(address); err != nil {
+					if err = os.Mkdir(address, 0750); err != nil {
+						return nil, err
+					}
+				}
+				address = filepath.Join(address, ".s.PGSQL.5432")
+			}
+		} else {
+			network = "tcp"
+
+			a := conf.Addr
+			if inst.Addr != "" {
+				a = inst.Addr
+			}
+
+			var np int
+			switch {
+			case inst.Port != 0:
+				np = inst.Port
+			case conf.Port != 0:
+				np = pc.nextPort()
+			default:
+				np = pc.nextDBPort(version)
+			}
+
+			address = net.JoinHostPort(a, fmt.Sprint(np))
 		}
-		addr, err := m.listen(ctx, "tcp", net.JoinHostPort(a, fmt.Sprint(np)))
+
+		m := &socketMount{inst: inst.Name}
+		addr, err := m.listen(ctx, network, address)
 		if err != nil {
 			for _, m := range mnts {
 				m.close()
 			}
 			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
+
 		cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
 		mnts = append(mnts, m)
 	}
@@ -241,9 +295,9 @@ type socketMount struct {
 }
 
 // listen causes a socketMount to create a Listener at the specified network address.
-func (s *socketMount) listen(ctx context.Context, network string, host string) (net.Addr, error) {
+func (s *socketMount) listen(ctx context.Context, network string, address string) (net.Addr, error) {
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
-	l, err := lc.Listen(ctx, network, host)
+	l, err := lc.Listen(ctx, network, address)
 	if err != nil {
 		return nil, err
 	}

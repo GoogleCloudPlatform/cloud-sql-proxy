@@ -18,7 +18,9 @@ package tests
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
@@ -54,8 +56,36 @@ func TestPostgresTCP(t *testing.T) {
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDB)
+	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t, []string{*postgresConnName}, "postgres", dsn)
+}
+
+func createTempDir(t *testing.T) (string, func()) {
+	testDir, err := ioutil.TempDir("", "*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	return testDir, func() {
+		if err := os.RemoveAll(testDir); err != nil {
+			t.Logf("failed to cleanup temp dir: %v", err)
+		}
+	}
+}
+
+func TestPostgresUnix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	tmpDir, cleanup := createTempDir(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
+		filepath.Join(tmpDir, *postgresConnName), *postgresUser, *postgresPass, *postgresDB)
+
+	proxyConnTest(t,
+		[]string{"--unix-socket", tmpDir, *postgresConnName}, "postgres", dsn)
 }
 
 func TestPostgresAuthWithToken(t *testing.T) {

@@ -18,6 +18,7 @@ package tests
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"testing"
 
 	mysql "github.com/go-sql-driver/mysql"
@@ -57,6 +58,26 @@ func TestMySQLTCP(t *testing.T) {
 		Net:                  "tcp",
 	}
 	proxyConnTest(t, []string{*mysqlConnName}, "mysql", cfg.FormatDSN())
+}
+
+func TestMySQLUnix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
+	requireMySQLVars(t)
+	tmpDir, cleanup := createTempDir(t)
+	defer cleanup()
+
+	cfg := mysql.Config{
+		User:                 *mysqlUser,
+		Passwd:               *mysqlPass,
+		DBName:               *mysqlDB,
+		AllowNativePasswords: true,
+		Addr:                 filepath.Join(tmpDir, *mysqlConnName),
+		Net:                  "unix",
+	}
+	proxyConnTest(t,
+		[]string{"--unix-socket", tmpDir, *mysqlConnName}, "mysql", cfg.FormatDSN())
 }
 
 func TestMySQLAuthWithToken(t *testing.T) {
