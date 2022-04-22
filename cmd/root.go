@@ -137,10 +137,10 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		return cmd.PersistentFlags().Lookup(f).Changed
 	}
 	if userSet("address") && userSet("unix-socket") {
-		return newBadCommandError("cannot specify --unix-sock and --address together")
+		return newBadCommandError("cannot specify --unix-socket and --address together")
 	}
 	if userSet("port") && userSet("unix-socket") {
-		return newBadCommandError("cannot specify --unix-sock and --port together")
+		return newBadCommandError("cannot specify --unix-socket and --port together")
 	}
 	if ip := net.ParseIP(conf.Addr); ip == nil {
 		return newBadCommandError(fmt.Sprintf("not a valid IP address: %q", conf.Addr))
