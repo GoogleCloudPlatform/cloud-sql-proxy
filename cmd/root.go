@@ -121,8 +121,7 @@ any client SSL certificates.`,
 	cmd.PersistentFlags().IntVarP(&c.conf.Port, "port", "p", 0,
 		"Initial port to use for listeners. Subsequent listeners increment from this value.")
 	cmd.PersistentFlags().StringVarP(&c.conf.UnixSocket, "unix-socket", "u", "",
-		`Enables Unix sockets for all listeners using the provided directory.
-Overrides Addr and Port.`)
+		`Enables Unix sockets for all listeners using the provided directory.`)
 
 	c.Command = cmd
 	return c
