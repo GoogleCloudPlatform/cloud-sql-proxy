@@ -133,13 +133,6 @@ type Client struct {
 	mnts []*socketMount
 }
 
-// unixAddress is defined as a function to distinguish between Linux-based
-// implementations where the dir and inst and simply joins, and Windows-based
-// implementations where the inst must be further altered.
-func unixAddress(dir, inst string) string {
-	return filepath.Join(dir, inst)
-}
-
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
 func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
 	var mnts []*socketMount
