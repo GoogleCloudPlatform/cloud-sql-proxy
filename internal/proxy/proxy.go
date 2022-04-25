@@ -133,6 +133,13 @@ type Client struct {
 	mnts []*socketMount
 }
 
+// unixAddress is defined as a function to distinguish between Linux-based
+// implementations where the dir and inst and simply joins, and Windows-based
+// implementations where the inst must be further altered.
+func unixAddress(dir, inst string) string {
+	return filepath.Join(dir, inst)
+}
+
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
 func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
 	var mnts []*socketMount
@@ -197,7 +204,8 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 					return nil, err
 				}
 			}
-			address = filepath.Join(dir, inst.Name)
+			strings.ReplaceAll(inst.Name, ":", ".")
+			address = unixAddress(dir, inst.Name)
 			// When setting up a listener for Postgres, create address as a
 			// directory, and use the Postgres-specific socket name
 			// .s.PGSQL.5432.

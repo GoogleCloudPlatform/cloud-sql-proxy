@@ -133,13 +133,13 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
 	}
 
-	userSet := func(f string) bool {
+	userHasSet := func(f string) bool {
 		return cmd.PersistentFlags().Lookup(f).Changed
 	}
-	if userSet("address") && userSet("unix-socket") {
+	if userHasSet("address") && userHasSet("unix-socket") {
 		return newBadCommandError("cannot specify --unix-socket and --address together")
 	}
-	if userSet("port") && userSet("unix-socket") {
+	if userHasSet("port") && userHasSet("unix-socket") {
 		return newBadCommandError("cannot specify --unix-socket and --port together")
 	}
 	if ip := net.ParseIP(conf.Addr); ip == nil {
