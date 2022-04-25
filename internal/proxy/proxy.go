@@ -156,8 +156,35 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			// address is either a TCP host port, or a Unix socket
 			address string
 		)
-		if (conf.UnixSocket != "" || inst.UnixSocket != "") &&
-			(inst.Addr == "" && inst.Port == 0) {
+		// If
+		//   a global Unix socket directory is NOT set AND
+		//   an instance-level Unix socket is NOT set
+		// OR
+		//   a global Unix socket directory IS set, AND
+		//   an instance-level TCP address or port IS set
+		// use a TCP listener.
+		// Otherwise, use a Unix socket.
+		if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
+			conf.UnixSocket != "" && (inst.Addr != "" || inst.Port != 0) {
+			network = "tcp"
+
+			a := conf.Addr
+			if inst.Addr != "" {
+				a = inst.Addr
+			}
+
+			var np int
+			switch {
+			case inst.Port != 0:
+				np = inst.Port
+			case conf.Port != 0:
+				np = pc.nextPort()
+			default:
+				np = pc.nextDBPort(version)
+			}
+
+			address = net.JoinHostPort(a, fmt.Sprint(np))
+		} else {
 			network = "unix"
 
 			dir := conf.UnixSocket
@@ -183,25 +210,6 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 				}
 				address = filepath.Join(address, ".s.PGSQL.5432")
 			}
-		} else {
-			network = "tcp"
-
-			a := conf.Addr
-			if inst.Addr != "" {
-				a = inst.Addr
-			}
-
-			var np int
-			switch {
-			case inst.Port != 0:
-				np = inst.Port
-			case conf.Port != 0:
-				np = pc.nextPort()
-			default:
-				np = pc.nextDBPort(version)
-			}
-
-			address = net.JoinHostPort(a, fmt.Sprint(np))
 		}
 
 		m := &socketMount{inst: inst.Name}
