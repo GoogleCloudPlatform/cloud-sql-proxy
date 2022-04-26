@@ -156,12 +156,14 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			// address is either a TCP host port, or a Unix socket
 			address string
 		)
-		// If
+		// IF
 		//   a global Unix socket directory is NOT set AND
 		//   an instance-level Unix socket is NOT set
+		//   (e.g.,  I didn't set a Unix socket globally or for this instance)
 		// OR
 		//   a global Unix socket directory IS set, AND
 		//   an instance-level TCP address or port IS set
+		//   (e.g., I want Unix sockets globally, but I'm overriding it for this instance)
 		// use a TCP listener.
 		// Otherwise, use a Unix socket.
 		if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
@@ -197,7 +199,6 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 					return nil, err
 				}
 			}
-			strings.ReplaceAll(inst.Name, ":", ".")
 			address = unixAddress(dir, inst.Name)
 			// When setting up a listener for Postgres, create address as a
 			// directory, and use the Postgres-specific socket name
