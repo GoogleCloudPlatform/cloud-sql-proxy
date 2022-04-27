@@ -285,3 +285,14 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 	}
 	c.Close()
 }
+
+func TestListenOnUnix(t *testing.T) {
+	testDir, cleanup := createTempDir(t)
+	defer cleanup()
+
+	ln, err := net.Listen("unix", filepath.Join(testDir, "my.sock"))
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+	_ = ln.Close()
+}
