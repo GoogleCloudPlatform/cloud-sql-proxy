@@ -14,6 +14,8 @@
 
 package proxy_test
 
+import "string"
+
 var (
 	pg         = strings.Replace("proj:region:pg", ":", ".")
 	pg2        = strings.Replace("proj:region:pg2", ":", ".")
