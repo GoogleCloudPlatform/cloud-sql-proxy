@@ -20,7 +20,6 @@ import (
 	"io"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -210,7 +209,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 						return nil, err
 					}
 				}
-				address = filepath.Join(address, ".s.PGSQL.5432")
+				address = unixAddress(address, ".s.PGSQL.5432")
 			}
 		}
 

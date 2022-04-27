@@ -63,12 +63,6 @@ func createTempDir(t *testing.T) (string, func()) {
 
 func TestClientInitialization(t *testing.T) {
 	ctx := context.Background()
-	pg := "proj:region:pg"
-	pg2 := "proj:region:pg2"
-	mysql := "proj:region:mysql"
-	mysql2 := "proj:region:mysql2"
-	sqlserver := "proj:region:sqlserver"
-	sqlserver2 := "proj:region:sqlserver2"
 	testDir, cleanup := createTempDir(t)
 	defer cleanup()
 
