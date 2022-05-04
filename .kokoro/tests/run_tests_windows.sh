@@ -16,8 +16,6 @@
 # `-e` enables the script to automatically fail when a command fails
 set -e
 
-export GO111MODULE=on
-
 # Kokoro setup
 if [ -n "$KOKORO_GFILE_DIR" ]; then
   # Move into project directory
