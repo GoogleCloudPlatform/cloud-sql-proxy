@@ -142,7 +142,6 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 		}(inst.Name)
 	}
 	pc := newPortConfig(conf.Port)
-
 	for _, inst := range conf.Instances {
 		version, err := d.EngineVersion(ctx, inst.Name)
 		if err != nil {

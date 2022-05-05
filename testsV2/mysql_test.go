@@ -68,17 +68,16 @@ func TestMySQLUnix(t *testing.T) {
 	tmpDir, cleanup := createTempDir(t)
 	defer cleanup()
 
-	// re-use utility function to determine the Unix address in a
-	// Windows-friendly way.
-	addr := proxy.UnixAddress(tmpDir, *mysqlConnName)
 	t.Logf("addr is %v", addr)
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
 		Passwd:               *mysqlPass,
 		DBName:               *mysqlDB,
 		AllowNativePasswords: true,
-		Addr:                 addr,
-		Net:                  "unix",
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		Addr: proxy.UnixAddress(tmpDir, *mysqlConnName),
+		Net:  "unix",
 	}
 	proxyConnTest(t,
 		[]string{"--unix-socket", tmpDir, *mysqlConnName}, "mysql", cfg.FormatDSN())
