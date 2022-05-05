@@ -68,7 +68,6 @@ func TestMySQLUnix(t *testing.T) {
 	tmpDir, cleanup := createTempDir(t)
 	defer cleanup()
 
-	t.Logf("addr is %v", addr)
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
 		Passwd:               *mysqlPass,
