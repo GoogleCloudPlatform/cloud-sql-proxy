@@ -36,6 +36,9 @@ import (
 //
 // See https://www.postgresql.org/docs/current/libpq-connect.html under "34.1.2.
 // Parameter Key Words" for "host".
+//
+// If pgx were to add support for Unix sockets, this test could be built on
+// Windows again. See https://github.com/jackc/pgx/issues/1199.
 func TestPostgresUnix(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
