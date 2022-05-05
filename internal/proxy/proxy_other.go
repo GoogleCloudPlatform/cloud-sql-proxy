@@ -19,9 +19,9 @@ package proxy
 
 import "path/filepath"
 
-// unixAddress is defined as a function to distinguish between Linux-based
+// UnixAddress is defined as a function to distinguish between Linux-based
 // implementations where the dir and inst and simply joins, and Windows-based
 // implementations where the inst must be further altered.
-func unixAddress(dir, inst string) string {
+func UnixAddress(dir, inst string) string {
 	return filepath.Join(dir, inst)
 }

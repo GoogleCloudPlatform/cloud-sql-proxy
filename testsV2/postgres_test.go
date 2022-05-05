@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
@@ -82,7 +82,10 @@ func TestPostgresUnix(t *testing.T) {
 	defer cleanup()
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
-		filepath.Join(tmpDir, *postgresConnName), *postgresUser, *postgresPass, *postgresDB)
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		proxy.UnixAddress(tmpDir, *postgresConnName),
+		*postgresUser, *postgresPass, *postgresDB)
 
 	proxyConnTest(t,
 		[]string{"--unix-socket", tmpDir, *postgresConnName}, "postgres", dsn)

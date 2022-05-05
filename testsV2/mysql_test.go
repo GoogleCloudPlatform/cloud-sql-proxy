@@ -18,9 +18,9 @@ package tests
 import (
 	"flag"
 	"os"
-	"path/filepath"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	mysql "github.com/go-sql-driver/mysql"
 )
 
@@ -73,8 +73,10 @@ func TestMySQLUnix(t *testing.T) {
 		Passwd:               *mysqlPass,
 		DBName:               *mysqlDB,
 		AllowNativePasswords: true,
-		Addr:                 filepath.Join(tmpDir, *mysqlConnName),
-		Net:                  "unix",
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		Addr: proxy.UnixAddress(tmpDir, *mysqlConnName),
+		Net:  "unix",
 	}
 	proxyConnTest(t,
 		[]string{"--unix-socket", tmpDir, *mysqlConnName}, "mysql", cfg.FormatDSN())

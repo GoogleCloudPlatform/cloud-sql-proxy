@@ -198,7 +198,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 					return nil, err
 				}
 			}
-			address = unixAddress(dir, inst.Name)
+			address = UnixAddress(dir, inst.Name)
 			// When setting up a listener for Postgres, create address as a
 			// directory, and use the Postgres-specific socket name
 			// .s.PGSQL.5432.
@@ -209,7 +209,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 						return nil, err
 					}
 				}
-				address = unixAddress(address, ".s.PGSQL.5432")
+				address = UnixAddress(address, ".s.PGSQL.5432")
 			}
 		}
 
