@@ -11,7 +11,6 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.5.7
 	github.com/hanwen/go-fuse/v2 v2.1.0
-	github.com/jackc/pgconn v1.12.0 // indirect
 	github.com/jackc/pgx/v4 v4.16.0
 	github.com/lib/pq v1.10.5
 	github.com/spf13/cobra v1.2.1
