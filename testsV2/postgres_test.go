@@ -81,10 +81,12 @@ func TestPostgresUnix(t *testing.T) {
 	tmpDir, cleanup := createTempDir(t)
 	defer cleanup()
 
+	// re-use utility function to determine the Unix address in a
+	// Windows-friendly way.
+	addr := proxy.UnixAddress(tmpDir, *postgresConnName)
+	t.Logf("addr is %v", addr)
 	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
-		// re-use utility function to determine the Unix address in a
-		// Windows-friendly way.
-		proxy.UnixAddress(tmpDir, *postgresConnName),
+		addr,
 		*postgresUser, *postgresPass, *postgresDB)
 
 	proxyConnTest(t,
