@@ -11,6 +11,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.5.7
 	github.com/hanwen/go-fuse/v2 v2.1.0
+	github.com/jackc/pgconn v1.12.0 // indirect
 	github.com/jackc/pgx/v4 v4.16.0
 	github.com/lib/pq v1.10.5
 	github.com/spf13/cobra v1.2.1
@@ -21,3 +22,5 @@ require (
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	google.golang.org/api v0.77.0
 )
+
+replace github.com/jackc/pgconn => ./pgconn
