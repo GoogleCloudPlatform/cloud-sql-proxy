@@ -21,3 +21,5 @@ require (
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	google.golang.org/api v0.77.0
 )
+
+replace github.com/jackc/pgconn => github.com/enocom/pgconn v1.12.1-0.20220506201503-b0779b7e3f67
