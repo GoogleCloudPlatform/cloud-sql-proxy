@@ -13,17 +13,47 @@
 # limitations under the License.
 
 steps:
+- name: gcr.io/cloud-builders/docker
+  args:
+    - run
+    - '--privileged'
+    - 'linuxkit/binfmt:v0.7'
+  id: 'initialize-qemu'
+- name: gcr.io/cloud-builders/docker
+  args:
+    - buildx
+    - create
+    - '--name'
+    - multiarch-builder
+  id: 'create-builder'
+- name: gcr.io/cloud-builders/docker
+  args:
+    - buildx
+    - use
+    - multiarch-builder
+  id: 'select-builder'
+- name: gcr.io/cloud-builders/docker
+  args:
+    - buildx
+    - inspect
+    - '--bootstrap'
+  id: 'show-target-build-platforms'
 - name: 'gcr.io/cloud-builders/docker'
   args: 
+    - 'buildx'
     - 'build'
+    - '--platform'
+    - $_DOCKER_BUILDX_PLATFORMS
     - '--tag=gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-alpine'
     - '--tag=us.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-alpine'
     - '--tag=eu.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-alpine'
     - '--tag=asia.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-alpine'
     - '-f=Dockerfile.alpine'
+    - '--push'
     - '.' 
-images: 
-  - 'gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-alpine'
-  - 'us.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-alpine'
-  - 'eu.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-alpine'
-  - 'asia.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-alpine'
+  id: 'build-multi-architecture-container-image'
+options:
+  env:
+    - DOCKER_CLI_EXPERIMENTAL=enabled
+substitutions:
+  _DOCKER_BUILDX_PLATFORMS: 'linux/amd64,linux/arm64'
