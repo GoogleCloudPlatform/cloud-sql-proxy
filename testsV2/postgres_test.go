@@ -22,6 +22,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
@@ -57,6 +58,24 @@ func TestPostgresTCP(t *testing.T) {
 	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t, []string{*postgresConnName}, "pgx", dsn)
+}
+
+func TestPostgresUnix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	tmpDir, cleanup := createTempDir(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		proxy.UnixAddress(tmpDir, *postgresConnName),
+		*postgresUser, *postgresPass, *postgresDB)
+
+	proxyConnTest(t,
+		[]string{"--unix-socket", tmpDir, *postgresConnName}, "pgx", dsn)
 }
 
 func createTempDir(t *testing.T) (string, func()) {
