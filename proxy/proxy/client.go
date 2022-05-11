@@ -317,7 +317,7 @@ func (c *Client) startRefresh(instance string, refreshCfgBuffer time.Duration) c
 			timeToRefresh = certExpiration.Sub(now) - (5 * time.Second)
 			logging.Errorf("new ephemeral certificate expires sooner than expected (adjusting refresh time to compensate): current time: %v, certificate expires: %v", now, certExpiration)
 		}
-		logging.Infof("Scheduling refresh of ephemeral certificate in %s", timeToRefresh)
+		logging.Infof("Scheduling refresh of ephemeral certificate in %s", timeToRefresh.Round(time.Second))
 		go c.refreshCertAfter(instance, timeToRefresh)
 	}()
 	return done
