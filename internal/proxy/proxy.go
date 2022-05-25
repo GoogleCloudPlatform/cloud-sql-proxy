@@ -191,11 +191,8 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			if dir == "" {
 				dir = inst.UnixSocket
 			}
-			// Attempt to make the directory if it does not already exist.
 			if _, err := os.Stat(dir); err != nil {
-				if err = os.Mkdir(dir, 0770); err != nil {
-					return nil, err
-				}
+				return nil, err
 			}
 			address = UnixAddress(dir, inst.Name)
 			// When setting up a listener for Postgres, create address as a
@@ -204,7 +201,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			if strings.HasPrefix(version, "POSTGRES") {
 				// Make the directory only if it hasn't already been created.
 				if _, err := os.Stat(address); err != nil {
-					if err = os.Mkdir(address, 0770); err != nil {
+					if err = os.Mkdir(address, 0777); err != nil {
 						return nil, err
 					}
 				}
