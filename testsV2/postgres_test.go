@@ -18,12 +18,13 @@ package tests
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
-	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/dialers/postgres"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 var (
@@ -54,8 +55,39 @@ func TestPostgresTCP(t *testing.T) {
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDB)
-	proxyConnTest(t, []string{*postgresConnName}, "postgres", dsn)
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t, []string{*postgresConnName}, "pgx", dsn)
+}
+
+func TestPostgresUnix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	tmpDir, cleanup := createTempDir(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		proxy.UnixAddress(tmpDir, *postgresConnName),
+		*postgresUser, *postgresPass, *postgresDB)
+
+	proxyConnTest(t,
+		[]string{"--unix-socket", tmpDir, *postgresConnName}, "pgx", dsn)
+}
+
+func createTempDir(t *testing.T) (string, func()) {
+	testDir, err := ioutil.TempDir("", "*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	return testDir, func() {
+		if err := os.RemoveAll(testDir); err != nil {
+			t.Logf("failed to cleanup temp dir: %v", err)
+		}
+	}
 }
 
 func TestPostgresAuthWithToken(t *testing.T) {
@@ -66,11 +98,11 @@ func TestPostgresAuthWithToken(t *testing.T) {
 	tok, _, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t,
 		[]string{"--token", tok.AccessToken, *postgresConnName},
-		"postgres", dsn)
+		"pgx", dsn)
 }
 
 func TestPostgresAuthWithCredentialsFile(t *testing.T) {
@@ -81,11 +113,11 @@ func TestPostgresAuthWithCredentialsFile(t *testing.T) {
 	_, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t,
 		[]string{"--credentials-file", path, *postgresConnName},
-		"postgres", dsn)
+		"pgx", dsn)
 }
 
 func TestAuthWithGcloudAuth(t *testing.T) {
@@ -97,9 +129,9 @@ func TestAuthWithGcloudAuth(t *testing.T) {
 	cleanup := testutil.ConfigureGcloud(t)
 	defer cleanup()
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t,
 		[]string{"--gcloud-auth", *postgresConnName},
-		"postgres", dsn)
+		"pgx", dsn)
 }
