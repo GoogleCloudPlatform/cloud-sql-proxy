@@ -159,13 +159,13 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 		//   an instance-level Unix socket is NOT set
 		//   (e.g.,  I didn't set a Unix socket globally or for this instance)
 		// OR
-		//   a global Unix socket directory IS set, AND
 		//   an instance-level TCP address or port IS set
-		//   (e.g., I want Unix sockets globally, but I'm overriding it for this instance)
+		//   (e.g., I'm overriding any global settings to use TCP for this
+		//   instance)
 		// use a TCP listener.
 		// Otherwise, use a Unix socket.
 		if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
-			conf.UnixSocket != "" && (inst.Addr != "" || inst.Port != 0) {
+			(inst.Addr != "" || inst.Port != 0) {
 			network = "tcp"
 
 			a := conf.Addr
