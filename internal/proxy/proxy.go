@@ -193,7 +193,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			}
 			// Attempt to make the directory if it does not already exist.
 			if _, err := os.Stat(dir); err != nil {
-				if err = os.Mkdir(dir, 0750); err != nil {
+				if err = os.Mkdir(dir, 0770); err != nil {
 					return nil, err
 				}
 			}
@@ -204,7 +204,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			if strings.HasPrefix(version, "POSTGRES") {
 				// Make the directory only if it hasn't already been created.
 				if _, err := os.Stat(address); err != nil {
-					if err = os.Mkdir(address, 0750); err != nil {
+					if err = os.Mkdir(address, 0770); err != nil {
 						return nil, err
 					}
 				}
