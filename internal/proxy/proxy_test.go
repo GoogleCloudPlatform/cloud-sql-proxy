@@ -16,7 +16,10 @@ package proxy_test
 
 import (
 	"context"
+	"io/ioutil"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -46,19 +49,28 @@ func (fakeDialer) EngineVersion(_ context.Context, inst string) (string, error) 
 	}
 }
 
+func createTempDir(t *testing.T) (string, func()) {
+	testDir, err := ioutil.TempDir("", "*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	return testDir, func() {
+		if err := os.RemoveAll(testDir); err != nil {
+			t.Logf("failed to cleanup temp dir: %v", err)
+		}
+	}
+}
+
 func TestClientInitialization(t *testing.T) {
 	ctx := context.Background()
-	pg := "proj:region:pg"
-	pg2 := "proj:region:pg2"
-	mysql := "proj:region:mysql"
-	mysql2 := "proj:region:mysql2"
-	sqlserver := "proj:region:sqlserver"
-	sqlserver2 := "proj:region:sqlserver2"
+	testDir, cleanup := createTempDir(t)
+	defer cleanup()
 
 	tcs := []struct {
-		desc      string
-		in        *proxy.Config
-		wantAddrs []string
+		desc          string
+		in            *proxy.Config
+		wantTCPAddrs  []string
+		wantUnixAddrs []string
 	}{
 		{
 			desc: "multiple instances",
@@ -71,7 +83,7 @@ func TestClientInitialization(t *testing.T) {
 					{Name: sqlserver},
 				},
 			},
-			wantAddrs: []string{"127.0.0.1:5000", "127.0.0.1:5001", "127.0.0.1:5002"},
+			wantTCPAddrs: []string{"127.0.0.1:5000", "127.0.0.1:5001", "127.0.0.1:5002"},
 		},
 		{
 			desc: "with instance address",
@@ -82,7 +94,7 @@ func TestClientInitialization(t *testing.T) {
 					{Addr: "0.0.0.0", Name: pg},
 				},
 			},
-			wantAddrs: []string{"0.0.0.0:5000"},
+			wantTCPAddrs: []string{"0.0.0.0:5000"},
 		},
 		{
 			desc: "IPv6 support",
@@ -93,7 +105,7 @@ func TestClientInitialization(t *testing.T) {
 					{Name: pg},
 				},
 			},
-			wantAddrs: []string{"[::1]:5000"},
+			wantTCPAddrs: []string{"[::1]:5000"},
 		},
 		{
 			desc: "with instance port",
@@ -104,7 +116,7 @@ func TestClientInitialization(t *testing.T) {
 					{Name: pg, Port: 6000},
 				},
 			},
-			wantAddrs: []string{"127.0.0.1:6000"},
+			wantTCPAddrs: []string{"127.0.0.1:6000"},
 		},
 		{
 			desc: "with global port and instance port",
@@ -117,7 +129,7 @@ func TestClientInitialization(t *testing.T) {
 					{Name: sqlserver},
 				},
 			},
-			wantAddrs: []string{
+			wantTCPAddrs: []string{
 				"127.0.0.1:5000",
 				"127.0.0.1:6000",
 				"127.0.0.1:5001",
@@ -136,13 +148,75 @@ func TestClientInitialization(t *testing.T) {
 					{Name: sqlserver2},
 				},
 			},
-			wantAddrs: []string{
+			wantTCPAddrs: []string{
 				"127.0.0.1:5432",
 				"127.0.0.1:5433",
 				"127.0.0.1:3306",
 				"127.0.0.1:3307",
 				"127.0.0.1:1433",
 				"127.0.0.1:1434",
+			},
+		},
+		{
+			desc: "with a Unix socket",
+			in: &proxy.Config{
+				UnixSocket: testDir,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: mysql},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testDir, mysql),
+			},
+		},
+		{
+			desc: "with a global TCP host port and an instance Unix socket",
+			in: &proxy.Config{
+				Addr: "127.0.0.1",
+				Port: 5000,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: mysql, UnixSocket: testDir},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testDir, mysql),
+			},
+		},
+		{
+			desc: "with a global Unix socket and an instance TCP port",
+			in: &proxy.Config{
+				Addr:       "127.0.0.1",
+				UnixSocket: testDir,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: pg, Port: 5000},
+				},
+			},
+			wantTCPAddrs: []string{
+				"127.0.0.1:5000",
+			},
+		},
+		{
+			desc: "with a Unix socket for Postgres",
+			in: &proxy.Config{
+				UnixSocket: testDir,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: pg},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testDir, pg, ".s.PGSQL.5432"),
+			},
+		},
+		{
+			desc: "creates the directory if it does not exist",
+			in: &proxy.Config{
+				UnixSocket: filepath.Join(testDir, "doesnotexist"),
+				Instances: []proxy.InstanceConnConfig{
+					{Name: mysql2},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testDir, "doesnotexist", mysql2),
 			},
 		},
 	}
@@ -154,8 +228,19 @@ func TestClientInitialization(t *testing.T) {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
 			defer c.Close()
-			for _, addr := range tc.wantAddrs {
+			for _, addr := range tc.wantTCPAddrs {
 				conn, err := net.Dial("tcp", addr)
+				if err != nil {
+					t.Fatalf("want error = nil, got = %v", err)
+				}
+				err = conn.Close()
+				if err != nil {
+					t.Logf("failed to close connection: %v", err)
+				}
+			}
+
+			for _, addr := range tc.wantUnixAddrs {
+				conn, err := net.Dial("unix", addr)
 				if err != nil {
 					t.Fatalf("want error = nil, got = %v", err)
 				}
@@ -166,4 +251,31 @@ func TestClientInitialization(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClientInitializationWorksRepeatedly(t *testing.T) {
+	// The client creates a Unix socket on initial startup and does not remove
+	// it on shutdown. This test ensures the existing socket does not cause
+	// problems for a second invocation.
+	ctx := context.Background()
+	testDir, cleanup := createTempDir(t)
+	defer cleanup()
+
+	in := &proxy.Config{
+		UnixSocket: testDir,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:region:pg"},
+		},
+	}
+	c, err := proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("want error = nil, got = %v", err)
+	}
+	c.Close()
+
+	c, err = proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("want error = nil, got = %v", err)
+	}
+	c.Close()
 }

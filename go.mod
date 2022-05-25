@@ -15,6 +15,7 @@ require (
 	github.com/lib/pq v1.10.6
 	github.com/spf13/cobra v1.2.1
 	go.uber.org/zap v1.21.0
+	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
 	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
 	golang.org/x/sys v0.0.0-20220624220833-87e55d714810
