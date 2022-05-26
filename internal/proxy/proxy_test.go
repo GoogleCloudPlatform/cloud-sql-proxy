@@ -207,18 +207,6 @@ func TestClientInitialization(t *testing.T) {
 				filepath.Join(testDir, pg, ".s.PGSQL.5432"),
 			},
 		},
-		{
-			desc: "creates the directory if it does not exist",
-			in: &proxy.Config{
-				UnixSocket: filepath.Join(testDir, "doesnotexist"),
-				Instances: []proxy.InstanceConnConfig{
-					{Name: mysql2},
-				},
-			},
-			wantUnixAddrs: []string{
-				filepath.Join(testDir, "doesnotexist", mysql2),
-			},
-		},
 	}
 
 	for _, tc := range tcs {
