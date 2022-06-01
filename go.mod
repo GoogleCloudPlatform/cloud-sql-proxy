@@ -5,6 +5,7 @@ go 1.16
 require (
 	cloud.google.com/go/cloudsqlconn v0.2.1-0.20220401153611-87e713b37755
 	cloud.google.com/go/compute v1.6.1
+	contrib.go.opencensus.io/exporter/stackdriver v0.13.11
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/denisenkom/go-mssqldb v0.12.0
@@ -13,7 +14,9 @@ require (
 	github.com/hanwen/go-fuse/v2 v2.1.0
 	github.com/jackc/pgx/v4 v4.16.1
 	github.com/lib/pq v1.10.5
+	github.com/prometheus/prometheus v0.35.0 // indirect
 	github.com/spf13/cobra v1.2.1
+	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5

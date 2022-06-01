@@ -28,10 +28,12 @@ import (
 	"syscall"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
+	"go.opencensus.io/trace"
 	"golang.org/x/oauth2"
 )
 
@@ -63,6 +65,9 @@ func Execute() {
 type Command struct {
 	*cobra.Command
 	conf *proxy.Config
+
+	telemetryProject string
+	metricPrefix     string
 }
 
 // Option is a function that configures a Command.
@@ -114,6 +119,10 @@ any client SSL certificates.`,
 		"Path to a service account key to use for authentication.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
+	cmd.PersistentFlags().StringVarP(&c.telemetryProject, "telemetry-project", "j", "",
+		"Enable telemetry with the provided project ID to use for metrics and traces.")
+	cmd.PersistentFlags().StringVarP(&c.metricPrefix, "telemetry-prefix", "x", "",
+		"Prefix to use for metrics.")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -249,10 +258,34 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	return nil
 }
 
+func configureTelemetry(projectID, metricPrefix string) (func(), error) {
+	sd, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID:    projectID,
+		MetricPrefix: metricPrefix,
+	})
+	if err != nil {
+		return func() {}, err
+	}
+	trace.RegisterExporter(sd)
+	sd.StartMetricsExporter()
+	return func() {
+		sd.StopMetricsExporter()
+		sd.Flush()
+	}, nil
+}
+
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
 func runSignalWrapper(cmd *Command) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
+
+	if cmd.telemetryProject != "" {
+		cleanup, err := configureTelemetry(cmd.telemetryProject, cmd.metricPrefix)
+		if err != nil {
+			return err
+		}
+		defer cleanup()
+	}
 
 	shutdownCh := make(chan error)
 
