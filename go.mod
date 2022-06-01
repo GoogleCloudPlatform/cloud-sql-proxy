@@ -7,16 +7,22 @@ require (
 	cloud.google.com/go/compute v1.6.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.11
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
+	github.com/aws/aws-sdk-go v1.43.31 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/gofrs/uuid v4.2.0+incompatible // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.5.7
 	github.com/hanwen/go-fuse/v2 v2.1.0
 	github.com/jackc/pgx/v4 v4.16.1
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lib/pq v1.10.5
-	github.com/prometheus/prometheus v0.35.0 // indirect
 	github.com/spf13/cobra v1.2.1
+	github.com/stretchr/testify v1.7.1 // indirect
 	go.opencensus.io v0.23.0
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/goleak v1.1.12 // indirect
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
