@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.0](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.30.1...v1.31.0) (2022-06-02)
+
+
+### Features
+
+* make Docker images ARM-friendly ([#1193](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1193)) ([6a98a04](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/6a98a0407785db7085532ea242b7079ceba756e3))
+
 ### [1.30.1](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.30.0...v1.30.1) (2022-05-03)
 
 
