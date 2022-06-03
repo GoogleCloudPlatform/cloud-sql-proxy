@@ -135,3 +135,24 @@ func TestAuthWithGcloudAuth(t *testing.T) {
 		[]string{"--gcloud-auth", *postgresConnName},
 		"pgx", dsn)
 }
+
+func TestPostgresIAMDBAuthn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	if *postgresIAMUser == "" {
+		t.Fatal("'postgres_user_iam' not set")
+	}
+
+	dsn := fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
+		*postgresIAMUser, *postgresDB)
+	// using the global flag
+	proxyConnTest(t,
+		[]string{"--iam-authn-login", *postgresConnName},
+		"pgx", dsn)
+	// using the instance-level query param
+	proxyConnTest(t,
+		[]string{fmt.Sprintf("%s?iam-authn-login", *postgresConnName)},
+		"pgx", dsn)
+}

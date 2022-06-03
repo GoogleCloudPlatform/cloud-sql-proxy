@@ -42,6 +42,9 @@ type InstanceConnConfig struct {
 	// connected to the Cloud SQL instance. If set, takes precedence over Addr
 	// and Port.
 	UnixSocket string
+	// IAMAuthN enables Automatic IAM Authentication for the instance.
+	// Postgres-only.
+	IAMAuthN bool
 }
 
 // Config contains all the configuration provided by the caller.
@@ -66,6 +69,10 @@ type Config struct {
 	// UnixSocket is the directory where Unix sockets will be created,
 	// connected to any Instances. If set, takes precedence over Addr and Port.
 	UnixSocket string
+
+	// IAMAuthN enables Automatic IAM Authentication for all instances.
+	// Postgres-only.
+	IAMAuthN bool
 
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
@@ -209,7 +216,11 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			}
 		}
 
-		m := &socketMount{inst: inst.Name}
+		var opts []cloudsqlconn.DialOption
+		if inst.IAMAuthN {
+			opts = append(opts, cloudsqlconn.WithDialIAMAuthN(true))
+		}
+		m := &socketMount{inst: inst.Name, dialOpts: opts}
 		addr, err := m.listen(ctx, network, address)
 		if err != nil {
 			for _, m := range mnts {
@@ -282,7 +293,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 
-			sConn, err := c.dialer.Dial(ctx, s.inst)
+			sConn, err := c.dialer.Dial(ctx, s.inst, s.dialOpts...)
 			if err != nil {
 				c.cmd.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
 				cConn.Close()
@@ -296,6 +307,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 // socketMount is a tcp/unix socket that listens for a Cloud SQL instance.
 type socketMount struct {
 	inst     string
+	dialOpts []cloudsqlconn.DialOption
 	listener net.Listener
 }
 

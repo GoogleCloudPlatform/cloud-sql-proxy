@@ -174,6 +174,30 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "using the iam authn login flag",
+			args: []string{"--iam-authn-login", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				IAMAuthN: true,
+			}),
+		},
+		{
+			desc: "using the (short) iam authn login flag",
+			args: []string{"-i", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				IAMAuthN: true,
+			}),
+		},
+		{
+			desc: "using the iam authn login query param",
+			// the query param's presence equates to true
+			args: []string{"proj:region:inst?iam-authn-login"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					IAMAuthN: true,
+				}},
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -279,6 +303,10 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "using the unix socket and port query params",
 			args: []string{"proj:region:inst?unix-socket=/path&port=5000"},
+		},
+		{
+			desc: "when the iam authn login query param contains multiple values",
+			args: []string{"proj:region:inst?iam-authn-login=true&iam-authn-login=false"},
 		},
 	}
 
