@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
@@ -280,6 +281,10 @@ func TestNewCommandWithErrors(t *testing.T) {
 			desc: "using the unix socket and port query params",
 			args: []string{"proj:region:inst?unix-socket=/path&port=5000"},
 		},
+		{
+			desc: "enabling a Prometheus port without a namespace",
+			args: []string{"--prometheus-port", "1111", "proj:region:inst"},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -347,5 +352,50 @@ func TestCommandWithCustomDialer(t *testing.T) {
 
 	if got := s.instance(); got != want {
 		t.Fatalf("want = %v, got = %v", want, got)
+	}
+}
+
+func TestPrometheusMetricsEndpoint(t *testing.T) {
+	c := NewCommand(WithDialer(&spyDialer{}))
+	// Keep the test output quiet
+	c.SilenceUsage = true
+	c.SilenceErrors = true
+	c.SetArgs([]string{
+		"--prometheus-namespace", "prometheus",
+		"--prometheus-port", "9999",
+		"my-project:my-region:my-instance"})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	go c.ExecuteContext(ctx)
+
+	// try to dial metrics server for a max of ~10s to give the proxy time to
+	// start up.
+	tryDial := func(addr string) (*http.Response, error) {
+		var (
+			resp     *http.Response
+			attempts int
+			err      error
+		)
+		for {
+			if attempts > 10 {
+				return resp, err
+			}
+			resp, err = http.Get(addr)
+			if err != nil {
+				attempts++
+				time.Sleep(time.Second)
+				continue
+			}
+			return resp, err
+		}
+	}
+	resp, err := tryDial("http://localhost:9999/metrics")
+	if err != nil {
+		t.Fatalf("failed to dial metrics endpoint: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
 	}
 }

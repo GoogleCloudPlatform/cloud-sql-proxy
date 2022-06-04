@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -28,6 +29,7 @@ import (
 	"syscall"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"contrib.go.opencensus.io/exporter/prometheus"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
@@ -63,6 +65,9 @@ func Execute() {
 type Command struct {
 	*cobra.Command
 	conf *proxy.Config
+
+	prometheusNamespace string
+	prometheusPort      string
 }
 
 // Option is a function that configures a Command.
@@ -114,6 +119,10 @@ any client SSL certificates.`,
 		"Path to a service account key to use for authentication.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
+	cmd.PersistentFlags().StringVarP(&c.prometheusNamespace, "prometheus-namespace", "n", "",
+		"Enable Prometheus for metric collection using the provided namespace")
+	cmd.PersistentFlags().StringVarP(&c.prometheusPort, "prometheus-port", "s", "9090",
+		"Port for the Prometheus server to use")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -181,6 +190,10 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		cmd.Println("Authorizing with Application Default Credentials")
 	}
 	conf.DialerOpts = opts
+
+	if userHasSet("prometheus-port") && !userHasSet("prometheus-namespace") {
+		return newBadCommandError("cannot specify --prometheus-port without --prometheus-namespace")
+	}
 
 	var ics []proxy.InstanceConnConfig
 	for _, a := range args {
@@ -255,6 +268,32 @@ func runSignalWrapper(cmd *Command) error {
 	defer cancel()
 
 	shutdownCh := make(chan error)
+
+	if cmd.prometheusNamespace != "" {
+		e, err := prometheus.NewExporter(prometheus.Options{
+			Namespace: cmd.prometheusNamespace,
+		})
+		if err != nil {
+			return err
+		}
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", e)
+		addr := fmt.Sprintf("localhost:%s", cmd.prometheusPort)
+		server := &http.Server{Addr: addr, Handler: mux}
+		go func() {
+			select {
+			case <-ctx.Done():
+				if err := server.Shutdown(context.Background()); err != nil {
+					shutdownCh <- fmt.Errorf("failed to stop prometheus HTTP server: %v", err)
+				}
+			}
+		}()
+		go func() {
+			if err := server.ListenAndServe(); err != nil {
+				shutdownCh <- fmt.Errorf("failed to start prometheus HTTP server: %v", err)
+			}
+		}()
+	}
 
 	// watch for sigterm / sigint signals
 	signals := make(chan os.Signal, 1)
