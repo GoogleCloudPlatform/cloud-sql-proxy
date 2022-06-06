@@ -122,7 +122,7 @@ any client SSL certificates.`,
 		"Initial port to use for listeners. Subsequent listeners increment from this value.")
 	cmd.PersistentFlags().StringVarP(&c.conf.UnixSocket, "unix-socket", "u", "",
 		`Enables Unix sockets for all listeners using the provided directory.`)
-	cmd.PersistentFlags().BoolVarP(&c.conf.IAMAuthN, "iam-authn-login", "i", false,
+	cmd.PersistentFlags().BoolVarP(&c.conf.IAMAuthN, "auto-iam-authn", "i", false,
 		"Enables Automatic IAM Authentication for all instances")
 
 	c.Command = cmd
@@ -246,11 +246,23 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 				ic.UnixSocket = u[0]
 			}
 
-			if iam, ok := q["iam-authn-login"]; ok {
+			if iam, ok := q["auto-iam-authn"]; ok {
 				if len(iam) != 1 {
-					return newBadCommandError(fmt.Sprintf("iam authn login param should be only one value: %q", iam))
+					return newBadCommandError(fmt.Sprintf("auto iam authn param should be only one value: %q", iam))
 				}
-				ic.IAMAuthN = true
+				enableIAMAuthN := true
+				disableIAMAuthn := false
+				switch iam[0] {
+				case "true", "t":
+					ic.IAMAuthN = &enableIAMAuthN
+				case "false", "f":
+					ic.IAMAuthN = &disableIAMAuthn
+				default:
+					return newBadCommandError(
+						fmt.Sprintf("auto iam authn query param should be true or false, got: %q",
+							iam[0],
+						))
+				}
 			}
 
 		}

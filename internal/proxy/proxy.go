@@ -43,8 +43,8 @@ type InstanceConnConfig struct {
 	// and Port.
 	UnixSocket string
 	// IAMAuthN enables Automatic IAM Authentication for the instance.
-	// Postgres-only.
-	IAMAuthN bool
+	// Postgres-only. If it is nil, the value was not specified.
+	IAMAuthN *bool
 }
 
 // Config contains all the configuration provided by the caller.
@@ -217,8 +217,8 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 		}
 
 		var opts []cloudsqlconn.DialOption
-		if inst.IAMAuthN {
-			opts = append(opts, cloudsqlconn.WithDialIAMAuthN(true))
+		if inst.IAMAuthN != nil {
+			opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*inst.IAMAuthN))
 		}
 		m := &socketMount{inst: inst.Name, dialOpts: opts}
 		addr, err := m.listen(ctx, network, address)
