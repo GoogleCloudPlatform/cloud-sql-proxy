@@ -5,7 +5,7 @@ go 1.16
 require (
 	cloud.google.com/go/cloudsqlconn v0.2.1-0.20220401153611-87e713b37755
 	cloud.google.com/go/compute v1.6.1
-	contrib.go.opencensus.io/exporter/prometheus v0.4.1 // indirect
+	contrib.go.opencensus.io/exporter/prometheus v0.4.1
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/denisenkom/go-mssqldb v0.12.0
