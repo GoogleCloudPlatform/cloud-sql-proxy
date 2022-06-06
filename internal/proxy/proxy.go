@@ -42,7 +42,7 @@ type InstanceConnConfig struct {
 	// connected to the Cloud SQL instance. If set, takes precedence over Addr
 	// and Port.
 	UnixSocket string
-	// IAMAuthN enables Automatic IAM Authentication for the instance.
+	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
 	IAMAuthN *bool
 }
