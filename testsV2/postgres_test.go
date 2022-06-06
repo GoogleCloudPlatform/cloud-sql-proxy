@@ -149,10 +149,10 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 		*postgresIAMUser, *postgresDB)
 	// using the global flag
 	proxyConnTest(t,
-		[]string{"--iam-authn-login", *postgresConnName},
+		[]string{"--auto-iam-authn", *postgresConnName},
 		"pgx", dsn)
 	// using the instance-level query param
 	proxyConnTest(t,
-		[]string{fmt.Sprintf("%s?iam-authn-login", *postgresConnName)},
+		[]string{fmt.Sprintf("%s?auto-iam-authn", *postgresConnName)},
 		"pgx", dsn)
 }
