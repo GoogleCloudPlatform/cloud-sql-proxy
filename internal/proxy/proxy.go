@@ -70,7 +70,7 @@ type Config struct {
 	// connected to any Instances. If set, takes precedence over Addr and Port.
 	UnixSocket string
 
-	// IAMAuthN enables Automatic IAM Authentication for all instances.
+	// IAMAuthN enables automatic IAM DB Authentication for all instances.
 	// Postgres-only.
 	IAMAuthN bool
 
