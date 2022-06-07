@@ -280,6 +280,22 @@ func TestNewCommandWithErrors(t *testing.T) {
 			desc: "using the unix socket and port query params",
 			args: []string{"proj:region:inst?unix-socket=/path&port=5000"},
 		},
+		{
+			desc: "when telemetry-project is set without metrics or tracing",
+			args: []string{"--telemetry-project", "proj", "proj:region:inst"},
+		},
+		{
+			desc: "when metrics are enabled without a telemetry project",
+			args: []string{"--telemetry-metrics", "proj:region:inst"},
+		},
+		{
+			desc: "when traces are enabled without a telemetry project",
+			args: []string{"--telemetry-traces", "proj:region:inst"},
+		},
+		{
+			desc: "when telemetry prefix is set without a telemetry project",
+			args: []string{"--telemetry-prefix", "myprefix", "--telemetry-traces", "proj:region:inst"},
+		},
 	}
 
 	for _, tc := range tcs {

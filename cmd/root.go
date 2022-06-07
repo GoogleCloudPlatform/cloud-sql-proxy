@@ -66,8 +66,11 @@ type Command struct {
 	*cobra.Command
 	conf *proxy.Config
 
-	telemetryProject string
-	metricPrefix     string
+	telemetryTracing           bool
+	telemetryTracingSampleRate int
+	telemetryMetrics           bool
+	telemetryProject           string
+	telemetryPrefix            string
 }
 
 // Option is a function that configures a Command.
@@ -120,9 +123,15 @@ any client SSL certificates.`,
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
 	cmd.PersistentFlags().StringVarP(&c.telemetryProject, "telemetry-project", "j", "",
-		"Enable telemetry with the provided project ID to use for metrics and traces.")
-	cmd.PersistentFlags().StringVarP(&c.metricPrefix, "telemetry-prefix", "x", "",
-		"Prefix to use for metrics.")
+		"Use the provided project ID for Cloud Monitoring and/or Cloud Trace integration.")
+	cmd.PersistentFlags().BoolVarP(&c.telemetryTracing, "telemetry-traces", "e", false,
+		"Enable Cloud Trace integration")
+	cmd.PersistentFlags().IntVarP(&c.telemetryTracingSampleRate, "telemetry-sample-rate", "r", 10_000,
+		"Configure the denominator of the probabilistic sample rate of traces sent to Cloud Trace\n(e.g., 10,000 traces 1/10,000 calls).")
+	cmd.PersistentFlags().BoolVarP(&c.telemetryMetrics, "telemetry-metrics", "m", false,
+		"Enable Cloud Monitoring integration")
+	cmd.PersistentFlags().StringVarP(&c.telemetryPrefix, "telemetry-prefix", "x", "",
+		"Prefix to use for Cloud Monitoring metrics.")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -191,6 +200,19 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 	conf.DialerOpts = opts
 
+	// If a user has set telemetry-project, but hasn't enabled one of metrics or
+	// traces, fail.
+	if userHasSet("telemetry-project") &&
+		(!userHasSet("telemetry-metrics") || !userHasSet("telemetry-traces")) {
+		return newBadCommandError("cannot specify --telemetry-project without also setting --telemetry-metrics or --telemetry-traces")
+	}
+	// If a user has enabled metrics or traces, but has not set the telemetry
+	// project, fail.
+	if (userHasSet("telemetry-metrics") || userHasSet("telemetry-traces")) &&
+		!userHasSet("telemetry-project") {
+		return newBadCommandError("must specify --telemetry-project when using --telemetry-metrics or --telemetry-traces")
+	}
+
 	var ics []proxy.InstanceConnConfig
 	for _, a := range args {
 		// Assume no query params initially
@@ -258,18 +280,35 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	return nil
 }
 
-func configureTelemetry(projectID, metricPrefix string) (func(), error) {
+// configureTelemetry configures Cloud Trace and Cloud Monitoring based on user
+// selection of each feature. If neither have been enabled, this function is a
+// no-op.
+func configureTelemetry(cmd *Command) (func(), error) {
+	if !cmd.telemetryTracing && !cmd.telemetryMetrics {
+		return func() {}, nil
+	}
 	sd, err := stackdriver.NewExporter(stackdriver.Options{
-		ProjectID:    projectID,
-		MetricPrefix: metricPrefix,
+		ProjectID:    cmd.telemetryProject,
+		MetricPrefix: cmd.telemetryPrefix,
 	})
 	if err != nil {
 		return func() {}, err
 	}
-	trace.RegisterExporter(sd)
-	sd.StartMetricsExporter()
+	if cmd.telemetryTracing {
+		s := trace.ProbabilitySampler(1 / float64(cmd.telemetryTracingSampleRate))
+		trace.ApplyConfig(trace.Config{DefaultSampler: s})
+		trace.RegisterExporter(sd)
+	}
+	if cmd.telemetryMetrics {
+		err = sd.StartMetricsExporter()
+		if err != nil {
+			return func() {}, err
+		}
+	}
 	return func() {
-		sd.StopMetricsExporter()
+		if cmd.telemetryMetrics {
+			sd.StopMetricsExporter()
+		}
 		sd.Flush()
 	}, nil
 }
@@ -280,7 +319,7 @@ func runSignalWrapper(cmd *Command) error {
 	defer cancel()
 
 	if cmd.telemetryProject != "" {
-		cleanup, err := configureTelemetry(cmd.telemetryProject, cmd.metricPrefix)
+		cleanup, err := configureTelemetry(cmd)
 		if err != nil {
 			return err
 		}
