@@ -362,7 +362,6 @@ func TestPrometheusMetricsEndpoint(t *testing.T) {
 	c.SilenceErrors = true
 	c.SetArgs([]string{
 		"--prometheus-namespace", "prometheus",
-		"--prometheus-port", "9999",
 		"my-project:my-region:my-instance"})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -391,7 +390,7 @@ func TestPrometheusMetricsEndpoint(t *testing.T) {
 			return resp, err
 		}
 	}
-	resp, err := tryDial("http://localhost:9999/metrics")
+	resp, err := tryDial("http://localhost:9090/metrics") // default port set by prometheus-port flag
 	if err != nil {
 		t.Fatalf("failed to dial metrics endpoint: %v", err)
 	}

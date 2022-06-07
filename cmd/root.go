@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
 	"contrib.go.opencensus.io/exporter/prometheus"
@@ -119,9 +120,9 @@ any client SSL certificates.`,
 		"Path to a service account key to use for authentication.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
-	cmd.PersistentFlags().StringVarP(&c.prometheusNamespace, "prometheus-namespace", "n", "",
+	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
 		"Enable Prometheus for metric collection using the provided namespace")
-	cmd.PersistentFlags().StringVarP(&c.prometheusPort, "prometheus-port", "s", "9090",
+	cmd.PersistentFlags().StringVar(&c.prometheusPort, "prometheus-port", "9090",
 		"Port for the Prometheus server to use")
 
 	// Global and per instance flags
@@ -283,13 +284,19 @@ func runSignalWrapper(cmd *Command) error {
 		go func() {
 			select {
 			case <-ctx.Done():
-				if err := server.Shutdown(context.Background()); err != nil {
-					shutdownCh <- fmt.Errorf("failed to stop prometheus HTTP server: %v", err)
+				// Give the HTTP server a second to shutdown cleanly.
+				ctx2, _ := context.WithTimeout(context.Background(), time.Second)
+				if err := server.Shutdown(ctx2); err != nil {
+					cmd.Printf("failed to shutdown Prometheus HTTP server: %v\n", err)
 				}
 			}
 		}()
 		go func() {
-			if err := server.ListenAndServe(); err != nil {
+			err := server.ListenAndServe()
+			if err == http.ErrServerClosed {
+				return
+			}
+			if err != nil {
 				shutdownCh <- fmt.Errorf("failed to start prometheus HTTP server: %v", err)
 			}
 		}()
@@ -302,7 +309,7 @@ func runSignalWrapper(cmd *Command) error {
 		var s os.Signal
 		select {
 		case s = <-signals:
-		case <-cmd.Context().Done():
+		case <-ctx.Done():
 			// this should only happen when the context supplied in tests in canceled
 			s = syscall.SIGINT
 		}
