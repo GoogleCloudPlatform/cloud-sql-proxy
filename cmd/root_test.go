@@ -174,6 +174,18 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "enabling telemetry traces works",
+			args: []string{"--telemetry-project", "proj",
+				"--telemetry-traces", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{}),
+		},
+		{
+			desc: "enabling telemetry metrics works",
+			args: []string{"--telemetry-project", "proj",
+				"--telemetry-metrics", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{}),
+		},
 	}
 
 	for _, tc := range tcs {

@@ -122,15 +122,15 @@ any client SSL certificates.`,
 		"Path to a service account key to use for authentication.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
-	cmd.PersistentFlags().StringVarP(&c.telemetryProject, "telemetry-project", "j", "",
+	cmd.PersistentFlags().StringVar(&c.telemetryProject, "telemetry-project", "",
 		"Use the provided project ID for Cloud Monitoring and/or Cloud Trace integration.")
-	cmd.PersistentFlags().BoolVarP(&c.telemetryTracing, "telemetry-traces", "e", false,
+	cmd.PersistentFlags().BoolVar(&c.telemetryTracing, "telemetry-traces", false,
 		"Enable Cloud Trace integration")
-	cmd.PersistentFlags().IntVarP(&c.telemetryTracingSampleRate, "telemetry-sample-rate", "r", 10_000,
+	cmd.PersistentFlags().IntVar(&c.telemetryTracingSampleRate, "telemetry-sample-rate", 10_000,
 		"Configure the denominator of the probabilistic sample rate of traces sent to Cloud Trace\n(e.g., 10,000 traces 1/10,000 calls).")
-	cmd.PersistentFlags().BoolVarP(&c.telemetryMetrics, "telemetry-metrics", "m", false,
+	cmd.PersistentFlags().BoolVar(&c.telemetryMetrics, "telemetry-metrics", false,
 		"Enable Cloud Monitoring integration")
-	cmd.PersistentFlags().StringVarP(&c.telemetryPrefix, "telemetry-prefix", "x", "",
+	cmd.PersistentFlags().StringVar(&c.telemetryPrefix, "telemetry-prefix", "",
 		"Prefix to use for Cloud Monitoring metrics.")
 
 	// Global and per instance flags
@@ -203,7 +203,8 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	// If a user has set telemetry-project, but hasn't enabled one of metrics or
 	// traces, fail.
 	if userHasSet("telemetry-project") &&
-		(!userHasSet("telemetry-metrics") || !userHasSet("telemetry-traces")) {
+		!userHasSet("telemetry-metrics") &&
+		!userHasSet("telemetry-traces") {
 		return newBadCommandError("cannot specify --telemetry-project without also setting --telemetry-metrics or --telemetry-traces")
 	}
 	// If a user has enabled metrics or traces, but has not set the telemetry
@@ -280,50 +281,37 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	return nil
 }
 
-// configureTelemetry configures Cloud Trace and Cloud Monitoring based on user
-// selection of each feature. If neither have been enabled, this function is a
-// no-op.
-func configureTelemetry(cmd *Command) (func(), error) {
-	if !cmd.telemetryTracing && !cmd.telemetryMetrics {
-		return func() {}, nil
-	}
-	sd, err := stackdriver.NewExporter(stackdriver.Options{
-		ProjectID:    cmd.telemetryProject,
-		MetricPrefix: cmd.telemetryPrefix,
-	})
-	if err != nil {
-		return func() {}, err
-	}
-	if cmd.telemetryTracing {
-		s := trace.ProbabilitySampler(1 / float64(cmd.telemetryTracingSampleRate))
-		trace.ApplyConfig(trace.Config{DefaultSampler: s})
-		trace.RegisterExporter(sd)
-	}
-	if cmd.telemetryMetrics {
-		err = sd.StartMetricsExporter()
-		if err != nil {
-			return func() {}, err
-		}
-	}
-	return func() {
-		if cmd.telemetryMetrics {
-			sd.StopMetricsExporter()
-		}
-		sd.Flush()
-	}, nil
-}
-
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
 func runSignalWrapper(cmd *Command) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
-	if cmd.telemetryProject != "" {
-		cleanup, err := configureTelemetry(cmd)
+	// Configure Cloud Trace and/or Cloud Monitoring based on command
+	// invocation. If a project has not been enabled, no traces or metrics are
+	// enabled.
+	if cmd.telemetryProject != "" && (cmd.telemetryTracing || cmd.telemetryMetrics) {
+		sd, err := stackdriver.NewExporter(stackdriver.Options{
+			ProjectID:    cmd.telemetryProject,
+			MetricPrefix: cmd.telemetryPrefix,
+		})
 		if err != nil {
 			return err
 		}
-		defer cleanup()
+		if cmd.telemetryMetrics {
+			err = sd.StartMetricsExporter()
+			if err != nil {
+				return err
+			}
+		}
+		if cmd.telemetryTracing {
+			s := trace.ProbabilitySampler(1 / float64(cmd.telemetryTracingSampleRate))
+			trace.ApplyConfig(trace.Config{DefaultSampler: s})
+			trace.RegisterExporter(sd)
+		}
+		defer func() {
+			sd.Flush()
+			sd.StopMetricsExporter()
+		}()
 	}
 
 	shutdownCh := make(chan error)
