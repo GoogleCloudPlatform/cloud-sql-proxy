@@ -283,7 +283,7 @@ func TestNewCommandWithErrors(t *testing.T) {
 		},
 		{
 			desc: "enabling a Prometheus port without a namespace",
-			args: []string{"--prometheus-port", "1111", "proj:region:inst"},
+			args: []string{"--htto-port", "1111", "proj:region:inst"},
 		},
 	}
 
@@ -390,7 +390,7 @@ func TestPrometheusMetricsEndpoint(t *testing.T) {
 			return resp, err
 		}
 	}
-	resp, err := tryDial("http://localhost:9090/metrics") // default port set by prometheus-port flag
+	resp, err := tryDial("http://localhost:9090/metrics") // default port set by http-port flag
 	if err != nil {
 		t.Fatalf("failed to dial metrics endpoint: %v", err)
 	}

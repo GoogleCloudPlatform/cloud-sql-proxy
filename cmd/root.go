@@ -68,7 +68,7 @@ type Command struct {
 	conf *proxy.Config
 
 	prometheusNamespace string
-	prometheusPort      string
+	httpPort            string
 }
 
 // Option is a function that configures a Command.
@@ -122,7 +122,7 @@ any client SSL certificates.`,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
 	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
 		"Enable Prometheus for metric collection using the provided namespace")
-	cmd.PersistentFlags().StringVar(&c.prometheusPort, "prometheus-port", "9090",
+	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for the Prometheus server to use")
 
 	// Global and per instance flags
@@ -192,8 +192,8 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 	conf.DialerOpts = opts
 
-	if userHasSet("prometheus-port") && !userHasSet("prometheus-namespace") {
-		return newBadCommandError("cannot specify --prometheus-port without --prometheus-namespace")
+	if userHasSet("http-port") && !userHasSet("prometheus-namespace") {
+		return newBadCommandError("cannot specify --http-port without --prometheus-namespace")
 	}
 
 	var ics []proxy.InstanceConnConfig
@@ -279,7 +279,7 @@ func runSignalWrapper(cmd *Command) error {
 		}
 		mux := http.NewServeMux()
 		mux.Handle("/metrics", e)
-		addr := fmt.Sprintf("localhost:%s", cmd.prometheusPort)
+		addr := fmt.Sprintf("localhost:%s", cmd.httpPort)
 		server := &http.Server{Addr: addr, Handler: mux}
 		go func() {
 			select {
