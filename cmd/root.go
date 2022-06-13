@@ -69,9 +69,9 @@ type Command struct {
 	*cobra.Command
 	conf *proxy.Config
 
-	telemetryTracing           bool
+	disableTraces              bool
 	telemetryTracingSampleRate int
-	telemetryMetrics           bool
+	disableMetrics             bool
 	telemetryProject           string
 	telemetryPrefix            string
 	prometheusNamespace        string
@@ -128,13 +128,13 @@ any client SSL certificates.`,
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
 	cmd.PersistentFlags().StringVar(&c.telemetryProject, "telemetry-project", "",
-		"Use the provided project ID for Cloud Monitoring and/or Cloud Trace integration.")
-	cmd.PersistentFlags().BoolVar(&c.telemetryTracing, "telemetry-traces", false,
-		"Enable Cloud Trace integration")
+		"Enable Cloud Monitoring and Cloud Trace integration with the provided project ID.")
+	cmd.PersistentFlags().BoolVar(&c.disableTraces, "disable-traces", false,
+		"Disable Cloud Trace integration (used with telemetry-project)")
 	cmd.PersistentFlags().IntVar(&c.telemetryTracingSampleRate, "telemetry-sample-rate", 10_000,
 		"Configure the denominator of the probabilistic sample rate of traces sent to Cloud Trace\n(e.g., 10,000 traces 1/10,000 calls).")
-	cmd.PersistentFlags().BoolVar(&c.telemetryMetrics, "telemetry-metrics", false,
-		"Enable Cloud Monitoring integration")
+	cmd.PersistentFlags().BoolVar(&c.disableMetrics, "disable-metrics", false,
+		"Disable Cloud Monitoring integration (used with telemetry-project)")
 	cmd.PersistentFlags().StringVar(&c.telemetryPrefix, "telemetry-prefix", "",
 		"Prefix to use for Cloud Monitoring metrics.")
 	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
@@ -209,21 +209,18 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 	conf.DialerOpts = opts
 
-	// If a user has set telemetry-project, but hasn't enabled one of metrics or
-	// traces, fail.
-	if userHasSet("telemetry-project") &&
-		!userHasSet("telemetry-metrics") &&
-		!userHasSet("telemetry-traces") {
-		return newBadCommandError("cannot specify --telemetry-project without also setting --telemetry-metrics or --telemetry-traces")
-	}
-	// If a user has enabled metrics or traces, but has not set the telemetry
-	// project, fail.
-	if (userHasSet("telemetry-metrics") || userHasSet("telemetry-traces")) &&
-		!userHasSet("telemetry-project") {
-		return newBadCommandError("must specify --telemetry-project when using --telemetry-metrics or --telemetry-traces")
-	}
 	if userHasSet("http-port") && !userHasSet("prometheus-namespace") {
 		return newBadCommandError("cannot specify --http-port without --prometheus-namespace")
+	}
+
+	if !userHasSet("telemetry-project") && userHasSet("telemetry-prefix") {
+		cmd.Println("Ignoring telementry-prefix as telemetry-project was not set")
+	}
+	if !userHasSet("telemetry-project") && userHasSet("disable-metrics") {
+		cmd.Println("Ignoring disable-metrics as telemetry-project was not set")
+	}
+	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
+		cmd.Println("Ignoring disable-traces as telemetry-project was not set")
 	}
 
 	var ics []proxy.InstanceConnConfig
@@ -301,7 +298,9 @@ func runSignalWrapper(cmd *Command) error {
 	// Configure Cloud Trace and/or Cloud Monitoring based on command
 	// invocation. If a project has not been enabled, no traces or metrics are
 	// enabled.
-	if cmd.telemetryProject != "" && (cmd.telemetryTracing || cmd.telemetryMetrics) {
+	enableMetrics := !cmd.disableMetrics
+	enableTraces := !cmd.disableTraces
+	if cmd.telemetryProject != "" && (enableMetrics || enableTraces) {
 		sd, err := stackdriver.NewExporter(stackdriver.Options{
 			ProjectID:    cmd.telemetryProject,
 			MetricPrefix: cmd.telemetryPrefix,
@@ -309,13 +308,13 @@ func runSignalWrapper(cmd *Command) error {
 		if err != nil {
 			return err
 		}
-		if cmd.telemetryMetrics {
+		if enableMetrics {
 			err = sd.StartMetricsExporter()
 			if err != nil {
 				return err
 			}
 		}
-		if cmd.telemetryTracing {
+		if enableTraces {
 			s := trace.ProbabilitySampler(1 / float64(cmd.telemetryTracingSampleRate))
 			trace.ApplyConfig(trace.Config{DefaultSampler: s})
 			trace.RegisterExporter(sd)

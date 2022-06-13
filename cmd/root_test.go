@@ -175,18 +175,6 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
-		{
-			desc: "enabling telemetry traces works",
-			args: []string{"--telemetry-project", "proj",
-				"--telemetry-traces", "proj:region:inst"},
-			want: withDefaults(&proxy.Config{}),
-		},
-		{
-			desc: "enabling telemetry metrics works",
-			args: []string{"--telemetry-project", "proj",
-				"--telemetry-metrics", "proj:region:inst"},
-			want: withDefaults(&proxy.Config{}),
-		},
 	}
 
 	for _, tc := range tcs {
@@ -294,21 +282,6 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{"proj:region:inst?unix-socket=/path&port=5000"},
 		},
 		{
-			desc: "when telemetry-project is set without metrics or tracing",
-			args: []string{"--telemetry-project", "proj", "proj:region:inst"},
-		},
-		{
-			desc: "when metrics are enabled without a telemetry project",
-			args: []string{"--telemetry-metrics", "proj:region:inst"},
-		},
-		{
-			desc: "when traces are enabled without a telemetry project",
-			args: []string{"--telemetry-traces", "proj:region:inst"},
-		},
-		{
-			desc: "when telemetry prefix is set without a telemetry project",
-			args: []string{"--telemetry-prefix", "myprefix", "--telemetry-traces", "proj:region:inst"},
-		},
 			desc: "enabling a Prometheus port without a namespace",
 			args: []string{"--htto-port", "1111", "proj:region:inst"},
 		},
