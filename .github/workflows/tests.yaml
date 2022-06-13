@@ -77,19 +77,19 @@ jobs:
         uses: 'google-github-actions/get-secretmanager-secrets@v0.5.0'
         with:
           secrets: |-
-            MYSQL_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_CONNECTION_NAME
-            MYSQL_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_USER
-            MYSQL_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_PASS
-            MYSQL_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_DB
-            POSTGRES_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_CONNECTION_NAME
-            POSTGRES_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_USER
-            POSTGRES_USER_IAM:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_USER_IAM
-            POSTGRES_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_PASS
-            POSTGRES_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_DB
-            SQLSERVER_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_CONNECTION_NAME
-            SQLSERVER_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_USER
-            SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
-            SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
+            MYSQL_CONNECTION_NAME:cloud-sql-connector-testing/MYSQL_CONNECTION_NAME
+            MYSQL_USER:cloud-sql-connector-testing/MYSQL_USER
+            MYSQL_PASS:cloud-sql-connector-testing/MYSQL_PASS
+            MYSQL_DB:cloud-sql-connector-testing/MYSQL_DB
+            POSTGRES_CONNECTION_NAME:cloud-sql-connector-testing/POSTGRES_CONNECTION_NAME
+            POSTGRES_USER:cloud-sql-connector-testing/POSTGRES_USER
+            POSTGRES_USER_IAM:cloud-sql-connector-testing/POSTGRES_USER_IAM
+            POSTGRES_PASS:cloud-sql-connector-testing/POSTGRES_PASS
+            POSTGRES_DB:cloud-sql-connector-testing/POSTGRES_DB
+            SQLSERVER_CONNECTION_NAME:cloud-sql-connector-testing/SQLSERVER_CONNECTION_NAME
+            SQLSERVER_USER:cloud-sql-connector-testing/SQLSERVER_USER
+            SQLSERVER_PASS:cloud-sql-connector-testing/SQLSERVER_PASS
+            SQLSERVER_DB:cloud-sql-connector-testing/SQLSERVER_DB
 
       - name: Run echo
         run: echo "Testing secret manager access!"
