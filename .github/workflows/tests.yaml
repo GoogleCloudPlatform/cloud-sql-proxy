@@ -50,9 +50,7 @@ jobs:
                 issue_number: context.payload.pull_request.number
               });
             } catch (e) {
-              if (!e.message.includes('Label does not exist')) {
-                throw e;
-              }
+              console.log('Failed to remove label. Another job may have already removed it!');
             }
 
       - name: Checkout code
