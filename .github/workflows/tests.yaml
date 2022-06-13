@@ -92,4 +92,4 @@ jobs:
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
 
       - name: Run echo
-        run: echo "MADE IT TO END OF WORKFLOW!"
+        run: echo "Testing secret manager access!"
