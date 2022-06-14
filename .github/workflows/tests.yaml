@@ -149,6 +149,12 @@ jobs:
         run: |
           sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 
+      - name: Enable fuse config (Windows)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update > /dev/null
+          brew install --cask --quiet osxfuse
+
       - name: Run tests
         env:
           GOOGLE_CLOUD_PROJECT: '${{ secrets.GOOGLE_CLOUD_PROJECT }}'
