@@ -75,7 +75,7 @@ jobs:
       - name: JWT
         run: |
           echo "$ACTIONS_ID_TOKEN_REQUEST_URL"
-          curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq .value | base64
+          curl -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq .value
 
       - id: 'secrets'
         name: Get secrets
