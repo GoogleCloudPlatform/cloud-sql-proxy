@@ -158,7 +158,9 @@ jobs:
       - name: Update TMPDIR (MacOS)
         # On macOS, the default $TMPDIR is too long for suitable use due to the unix socket length limits
         if: matrix.os == 'macos-10.15'
-        run: export TMPDIR="/tmp"
+        run: |
+         export TMPDIR="/tmp"
+         echo $TMPDIR
 
       - name: Run tests
         env:
