@@ -94,7 +94,7 @@ jobs:
       
       - name: Enable fuse config
         run: |
-          sudo echo "user_allow_other" >> sudo /etc/fuse.conf
+          sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf`
           sudo cat /etc/fuse.conf
 
       - name: Run tests
