@@ -91,5 +91,20 @@ jobs:
             SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
 
-      - name: Run echo
-        run: echo "Testing secret manager access!"
+      - name: Run tests
+        env:
+          GOOGLE_CLOUD_PROJECT: '${{ secrets.GOOGLE_CLOUD_PROJECT }}'
+          MYSQL_CONNECTION_NAME: '${{ steps.secrets.outputs.MYSQL_CONNECTION_NAME }}'
+          MYSQL_USER: '${{ steps.secrets.outputs.MYSQL_USER }}'
+          MYSQL_PASS: '${{ steps.secrets.outputs.MYSQL_PASS }}'
+          MYSQL_DB: '${{ steps.secrets.outputs.MYSQL_DB }}'
+          POSTGRES_CONNECTION_NAME: '${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}'
+          POSTGRES_USER: '${{ steps.secrets.outputs.POSTGRES_USER }}'
+          POSTGRES_USER_IAM: '${{ steps.secrets.outputs.POSTGRES_USER_IAM }}'
+          POSTGRES_PASS: '${{ steps.secrets.outputs.POSTGRES_PASS }}'
+          POSTGRES_DB: '${{ steps.secrets.outputs.POSTGRES_DB }}'
+          SQLSERVER_CONNECTION_NAME: '${{ steps.secrets.outputs.SQLSERVER_CONNECTION_NAME }}'
+          SQLSERVER_USER: '${{ steps.secrets.outputs.SQLSERVER_USER }}'
+          SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
+          SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
+        run: go test -race -v ./...
