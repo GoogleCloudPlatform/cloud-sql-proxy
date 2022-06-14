@@ -377,7 +377,7 @@ func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 	if e.done == nil { // no refresh started
 		return true
 	}
-	if !isValid(e) || e.cfg.Certificates[0].Leaf.NotAfter.Round(0).Sub(time.Now().Round(0)) <= refreshCfgBuffer {
+	if !isValid(e) || e.cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now().Round(0)) <= refreshCfgBuffer {
 		// if the entry is invalid or close enough to expiring check
 		// use the entry's done channel to determine if a refresh has started yet
 		select {
