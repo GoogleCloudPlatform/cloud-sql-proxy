@@ -20,18 +20,23 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"contrib.go.opencensus.io/exporter/prometheus"
+	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
+	"go.opencensus.io/trace"
 	"golang.org/x/oauth2"
 )
 
@@ -63,6 +68,14 @@ func Execute() {
 type Command struct {
 	*cobra.Command
 	conf *proxy.Config
+
+	disableTraces              bool
+	telemetryTracingSampleRate int
+	disableMetrics             bool
+	telemetryProject           string
+	telemetryPrefix            string
+	prometheusNamespace        string
+	httpPort                   string
 }
 
 // Option is a function that configures a Command.
@@ -114,6 +127,20 @@ any client SSL certificates.`,
 		"Path to a service account key to use for authentication.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
+	cmd.PersistentFlags().StringVar(&c.telemetryProject, "telemetry-project", "",
+		"Enable Cloud Monitoring and Cloud Trace integration with the provided project ID.")
+	cmd.PersistentFlags().BoolVar(&c.disableTraces, "disable-traces", false,
+		"Disable Cloud Trace integration (used with telemetry-project)")
+	cmd.PersistentFlags().IntVar(&c.telemetryTracingSampleRate, "telemetry-sample-rate", 10_000,
+		"Configure the denominator of the probabilistic sample rate of traces sent to Cloud Trace\n(e.g., 10,000 traces 1/10,000 calls).")
+	cmd.PersistentFlags().BoolVar(&c.disableMetrics, "disable-metrics", false,
+		"Disable Cloud Monitoring integration (used with telemetry-project)")
+	cmd.PersistentFlags().StringVar(&c.telemetryPrefix, "telemetry-prefix", "",
+		"Prefix to use for Cloud Monitoring metrics.")
+	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
+		"Enable Prometheus for metric collection using the provided namespace")
+	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
+		"Port for the Prometheus server to use")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -185,6 +212,20 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 
 	if conf.IAMAuthN {
 		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithIAMAuthN())
+	}
+
+	if userHasSet("http-port") && !userHasSet("prometheus-namespace") {
+		return newBadCommandError("cannot specify --http-port without --prometheus-namespace")
+	}
+
+	if !userHasSet("telemetry-project") && userHasSet("telemetry-prefix") {
+		cmd.Println("Ignoring telementry-prefix as telemetry-project was not set")
+	}
+	if !userHasSet("telemetry-project") && userHasSet("disable-metrics") {
+		cmd.Println("Ignoring disable-metrics as telemetry-project was not set")
+	}
+	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
+		cmd.Println("Ignoring disable-traces as telemetry-project was not set")
 	}
 
 	var ics []proxy.InstanceConnConfig
@@ -278,7 +319,69 @@ func runSignalWrapper(cmd *Command) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
+	// Configure Cloud Trace and/or Cloud Monitoring based on command
+	// invocation. If a project has not been enabled, no traces or metrics are
+	// enabled.
+	enableMetrics := !cmd.disableMetrics
+	enableTraces := !cmd.disableTraces
+	if cmd.telemetryProject != "" && (enableMetrics || enableTraces) {
+		sd, err := stackdriver.NewExporter(stackdriver.Options{
+			ProjectID:    cmd.telemetryProject,
+			MetricPrefix: cmd.telemetryPrefix,
+		})
+		if err != nil {
+			return err
+		}
+		if enableMetrics {
+			err = sd.StartMetricsExporter()
+			if err != nil {
+				return err
+			}
+		}
+		if enableTraces {
+			s := trace.ProbabilitySampler(1 / float64(cmd.telemetryTracingSampleRate))
+			trace.ApplyConfig(trace.Config{DefaultSampler: s})
+			trace.RegisterExporter(sd)
+		}
+		defer func() {
+			sd.Flush()
+			sd.StopMetricsExporter()
+		}()
+	}
+
 	shutdownCh := make(chan error)
+
+	if cmd.prometheusNamespace != "" {
+		e, err := prometheus.NewExporter(prometheus.Options{
+			Namespace: cmd.prometheusNamespace,
+		})
+		if err != nil {
+			return err
+		}
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", e)
+		addr := fmt.Sprintf("localhost:%s", cmd.httpPort)
+		server := &http.Server{Addr: addr, Handler: mux}
+		go func() {
+			select {
+			case <-ctx.Done():
+				// Give the HTTP server a second to shutdown cleanly.
+				ctx2, _ := context.WithTimeout(context.Background(), time.Second)
+				if err := server.Shutdown(ctx2); err != nil {
+					cmd.Printf("failed to shutdown Prometheus HTTP server: %v\n", err)
+				}
+			}
+		}()
+		go func() {
+			err := server.ListenAndServe()
+			if err == http.ErrServerClosed {
+				return
+			}
+			if err != nil {
+				shutdownCh <- fmt.Errorf("failed to start prometheus HTTP server: %v", err)
+			}
+		}()
+	}
 
 	// watch for sigterm / sigint signals
 	signals := make(chan os.Signal, 1)
@@ -287,7 +390,7 @@ func runSignalWrapper(cmd *Command) error {
 		var s os.Signal
 		select {
 		case s = <-signals:
-		case <-cmd.Context().Done():
+		case <-ctx.Done():
 			// this should only happen when the context supplied in tests in canceled
 			s = syscall.SIGINT
 		}
