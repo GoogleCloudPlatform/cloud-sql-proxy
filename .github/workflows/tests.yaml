@@ -68,9 +68,13 @@ jobs:
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0.8.0'
         with:
+          token_format: 'access_token'
           workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
+
+      - name: token
+        run: echo ${{ steps.auth.outputs.access_token }}
 
       - id: 'secrets'
         name: Get secrets
