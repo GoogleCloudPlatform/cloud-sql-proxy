@@ -93,7 +93,7 @@ jobs:
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
       
       - name: Install fuse
-        run: apt-get -qq update && apt-get -qq install fuse -y
+        run: sudo apt-get -qq update && sudo apt-get -qq install fuse -y
 
       - name: Run tests
         env:
