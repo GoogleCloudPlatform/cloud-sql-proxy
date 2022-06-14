@@ -93,7 +93,9 @@ jobs:
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
       
       - name: Add fuse user
-        run: sudo addgroup $(whoami) fuse
+        run: |
+          sudo cat /etc/fuse.conf
+          echo "user_allow_other" >> /etc/fuse.conf
 
       - name: Run tests
         env:
