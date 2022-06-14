@@ -92,9 +92,10 @@ jobs:
             SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
       
-      - name: Add fuse user
+      - name: Enable fuse config
         run: |
           sudo echo "user_allow_other" >> sudo /etc/fuse.conf
+          sudo cat /etc/fuse.conf
 
       - name: Run tests
         env:
