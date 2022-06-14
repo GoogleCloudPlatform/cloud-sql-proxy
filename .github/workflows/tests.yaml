@@ -93,7 +93,7 @@ jobs:
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
       
       - name: Add fuse user
-        run: addgroup $(whoami) fuse
+        run: sudo addgroup $(whoami) fuse
 
       - name: Run tests
         env:
