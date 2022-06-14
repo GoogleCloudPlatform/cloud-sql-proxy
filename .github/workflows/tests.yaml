@@ -94,7 +94,7 @@ jobs:
       
       - name: Add fuse user
         run: |
-          sudo echo "user_allow_other" >> /etc/fuse.conf
+          sudo echo "user_allow_other" >> sudo /etc/fuse.conf
 
       - name: Run tests
         env:
