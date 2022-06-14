@@ -92,8 +92,8 @@ jobs:
             SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
       
-      - name: Install fuse
-        run: sudo apt-get -qq update && sudo apt-get -qq install fuse -y
+      - name: Add fuse user
+        run: addgroup $(whoami) fuse
 
       - name: Run tests
         env:
