@@ -250,13 +250,13 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 				if len(iam) != 1 {
 					return newBadCommandError(fmt.Sprintf("auto iam authn param should be only one value: %q", iam))
 				}
-				enableIAMAuthN := true
-				disableIAMAuthn := false
 				switch iam[0] {
 				case "true", "t":
-					ic.IAMAuthN = &enableIAMAuthN
+					enable := true
+					ic.IAMAuthN = &enable
 				case "false", "f":
-					ic.IAMAuthN = &disableIAMAuthn
+					disable := false
+					ic.IAMAuthN = &disable
 				default:
 					return newBadCommandError(
 						fmt.Sprintf("auto iam authn query param should be true or false, got: %q",
