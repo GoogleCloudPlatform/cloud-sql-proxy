@@ -35,6 +35,9 @@ func TestNewCommandArguments(t *testing.T) {
 	cleanup := testutil.ConfigureGcloud(t)
 	defer cleanup()
 
+	// saving true in a variable so we can take its address.
+	trueValue := true
+
 	withDefaults := func(c *proxy.Config) *proxy.Config {
 		if c.Addr == "" {
 			c.Addr = "127.0.0.1"
@@ -175,6 +178,30 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "using the iam authn login flag",
+			args: []string{"--auto-iam-authn", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				IAMAuthN: true,
+			}),
+		},
+		{
+			desc: "using the (short) iam authn login flag",
+			args: []string{"-i", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				IAMAuthN: true,
+			}),
+		},
+		{
+			desc: "using the iam authn login query param",
+			// the query param's presence equates to true
+			args: []string{"proj:region:inst?auto-iam-authn=true"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					IAMAuthN: &trueValue,
+				}},
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -197,6 +224,66 @@ func TestNewCommandArguments(t *testing.T) {
 			opts := cmpopts.IgnoreFields(proxy.Config{}, "DialerOpts")
 			if got := c.conf; !cmp.Equal(tc.want, got, opts) {
 				t.Fatalf("want = %#v\ngot = %#v\ndiff = %v", tc.want, got, cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestAutoIAMAuthNQueryParams(t *testing.T) {
+	// saving true and false in a variable so we can take its address
+	trueValue := true
+	falseValue := false
+
+	tcs := []struct {
+		desc string
+		args []string
+		want *bool
+	}{
+		{
+			desc: "when the query string is absent",
+			args: []string{"proj:region:inst"},
+			want: nil,
+		},
+		{
+			desc: "when the query string is true",
+			args: []string{"proj:region:inst?auto-iam-authn=true"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is (short) t",
+			args: []string{"proj:region:inst?auto-iam-authn=t"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is false",
+			args: []string{"proj:region:inst?auto-iam-authn=false"},
+			want: &falseValue,
+		},
+		{
+			desc: "when the query string is (short) f",
+			args: []string{"proj:region:inst?auto-iam-authn=f"},
+			want: &falseValue,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			c := NewCommand()
+			// Keep the test output quiet
+			c.SilenceUsage = true
+			c.SilenceErrors = true
+			// Disable execute behavior
+			c.RunE = func(*cobra.Command, []string) error { return nil }
+			c.SetArgs(tc.args)
+
+			err := c.Execute()
+			if err != nil {
+				t.Fatalf("command.Execute: %v", err)
+			}
+			if tc.want == nil && c.conf.Instances[0].IAMAuthN == nil {
+				return
+			}
+			if got := c.conf.Instances[0].IAMAuthN; *got != *tc.want {
+				t.Errorf("args = %v, want = %v, got = %v", tc.args, *tc.want, *got)
 			}
 		})
 	}
@@ -280,6 +367,14 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "using the unix socket and port query params",
 			args: []string{"proj:region:inst?unix-socket=/path&port=5000"},
+		},
+		{
+			desc: "when the iam authn login query param contains multiple values",
+			args: []string{"proj:region:inst?auto-iam-authn=true&auto-iam-authn=false"},
+		},
+		{
+			desc: "when the iam authn login query param is bogus",
+			args: []string{"proj:region:inst?auto-iam-authn=nope"},
 		},
 		{
 			desc: "enabling a Prometheus port without a namespace",
