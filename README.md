@@ -4,7 +4,7 @@
 [![Go Reference][pkg-badge]][pkg-docs]
 
 The [Cloud SQL Auth proxy][proxy-page] is a binary that provides IAM-based
-authorization and encryption when connecting to a Cloud SQL instance.
+authorization and encryption when connecting to a Cloud SQL instance. This is random commit!
 
 See the [Connecting Overview][connection-overview] page for more information on
 connecting to a Cloud SQL instance, or the [About the proxy][about-proxy] page
