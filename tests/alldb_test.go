@@ -39,6 +39,8 @@ func requireAllVars(t *testing.T) {
 // Test to verify that when a proxy client serves multiple instances that can all be successfully dialed,
 // the health check readiness endpoint serves http.StatusOK.
 func TestMultiInstanceDial(t *testing.T) {
+	// Skipping flaky Github Action test
+	// https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1228
 	t.Skip("Unblocking WIF Builds!")
 	if testing.Short() {
 		t.Skip("skipping Health Check integration tests")
