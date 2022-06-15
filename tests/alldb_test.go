@@ -40,6 +40,9 @@ func requireAllVars(t *testing.T) {
 // the health check readiness endpoint serves http.StatusOK.
 func TestMultiInstanceDial(t *testing.T) {
 	t.Skip("Unblocking WIF Builds!")
+	if testing.Short() {
+		t.Skip("skipping Health Check integration tests")
+	}
 	requireAllVars(t)
 	ctx := context.Background()
 
