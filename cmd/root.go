@@ -149,6 +149,8 @@ any client SSL certificates.`,
 		"Initial port to use for listeners. Subsequent listeners increment from this value.")
 	cmd.PersistentFlags().StringVarP(&c.conf.UnixSocket, "unix-socket", "u", "",
 		`Enables Unix sockets for all listeners using the provided directory.`)
+	cmd.PersistentFlags().BoolVarP(&c.conf.IAMAuthN, "auto-iam-authn", "i", false,
+		"Enables Automatic IAM Authentication for all instances")
 
 	c.Command = cmd
 	return c
@@ -183,18 +185,18 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	if conf.CredentialsFile != "" && conf.GcloudAuth {
 		return newBadCommandError("cannot specify --credentials-file and --gcloud-auth flags at the same time")
 	}
-	opts := []cloudsqlconn.Option{
+	conf.DialerOpts = []cloudsqlconn.Option{
 		cloudsqlconn.WithUserAgent(userAgent),
 	}
 	switch {
 	case conf.Token != "":
 		cmd.Printf("Authorizing with the -token flag\n")
-		opts = append(opts, cloudsqlconn.WithTokenSource(
+		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithTokenSource(
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: conf.Token}),
 		))
 	case conf.CredentialsFile != "":
 		cmd.Printf("Authorizing with the credentials file at %q\n", conf.CredentialsFile)
-		opts = append(opts, cloudsqlconn.WithCredentialsFile(
+		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithCredentialsFile(
 			conf.CredentialsFile,
 		))
 	case conf.GcloudAuth:
@@ -203,11 +205,14 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		if err != nil {
 			return err
 		}
-		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
+		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithTokenSource(ts))
 	default:
 		cmd.Println("Authorizing with Application Default Credentials")
 	}
-	conf.DialerOpts = opts
+
+	if conf.IAMAuthN {
+		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithIAMAuthN())
+	}
 
 	if userHasSet("http-port") && !userHasSet("prometheus-namespace") {
 		return newBadCommandError("cannot specify --http-port without --prometheus-namespace")
@@ -280,8 +285,27 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 					return newBadCommandError(fmt.Sprintf("unix query param should be only one value: %q", a))
 				}
 				ic.UnixSocket = u[0]
-
 			}
+
+			if iam, ok := q["auto-iam-authn"]; ok {
+				if len(iam) != 1 {
+					return newBadCommandError(fmt.Sprintf("auto iam authn param should be only one value: %q", iam))
+				}
+				switch iam[0] {
+				case "true", "t":
+					enable := true
+					ic.IAMAuthN = &enable
+				case "false", "f":
+					disable := false
+					ic.IAMAuthN = &disable
+				default:
+					return newBadCommandError(
+						fmt.Sprintf("auto iam authn query param should be true or false, got: %q",
+							iam[0],
+						))
+				}
+			}
+
 		}
 		ics = append(ics, ic)
 	}
