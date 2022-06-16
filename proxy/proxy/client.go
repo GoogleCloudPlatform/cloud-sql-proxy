@@ -235,7 +235,7 @@ func (c *Client) refreshCfg(instance string) (addr string, cfg *tls.Config, vers
 
 // refreshCertAfter refreshes the epehemeral certificate of the instance after timeToRefresh.
 func (c *Client) refreshCertAfter(instance string, timeToRefresh time.Duration) {
-	<-time.After(timeToRefresh)
+	<-time.After(timeToRefresh.Round(0))
 	logging.Verbosef("ephemeral certificate for instance %s will expire soon, refreshing now.", instance)
 	if _, _, _, err := c.cachedCfg(context.Background(), instance); err != nil {
 		logging.Errorf("failed to refresh the ephemeral certificate for %s before expiring: %v", instance, err)
@@ -377,7 +377,7 @@ func needsRefresh(e cacheEntry, refreshCfgBuffer time.Duration) bool {
 	if e.done == nil { // no refresh started
 		return true
 	}
-	if !isValid(e) || e.cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now()) <= refreshCfgBuffer {
+	if !isValid(e) || e.cfg.Certificates[0].Leaf.NotAfter.Sub(time.Now().Round(0)) <= refreshCfgBuffer {
 		// if the entry is invalid or close enough to expiring check
 		// use the entry's done channel to determine if a refresh has started yet
 		select {
