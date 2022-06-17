@@ -25,7 +25,6 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/spf13/cobra"
