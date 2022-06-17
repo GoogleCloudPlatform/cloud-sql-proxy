@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
@@ -125,9 +124,6 @@ func TestAuthWithGcloudAuth(t *testing.T) {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
-
-	cleanup := testutil.ConfigureGcloud(t)
-	defer cleanup()
 
 	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDB)

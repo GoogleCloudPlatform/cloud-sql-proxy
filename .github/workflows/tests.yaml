@@ -25,68 +25,6 @@ on:
   - cron:  '0 2 * * *'
 
 jobs:
-  unit:
-   # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
-    if: "${{ (github.event.action != 'labeled' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) || github.event.label.name == 'tests: run' }}"
-    name: unit tests
-    runs-on: "ubuntu-latest"
-    strategy:
-      matrix:
-        go-version: [1.16, 1.17]
-      fail-fast: false
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-    steps:
-      - name: Remove PR label
-        if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            try {
-              await github.rest.issues.removeLabel({
-                name: 'tests: run',
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.payload.pull_request.number
-              });
-            } catch (e) {
-              console.log('Failed to remove label. Another job may have already removed it!');
-            }
-
-      - name: Checkout code
-        uses: 'actions/checkout@v3'
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-
-      - name: Setup Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0.8.0'
-        with:
-          workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
-          service_account: ${{ secrets.SERVICE_ACCOUNT }}
-          access_token_lifetime: 600s
-
-      - name: Run tests
-        run: |
-          go install github.com/jstemmer/go-junit-report/v2@latest
-          go test -short -race -v ./... | tee test_results.txt
-          go-junit-report -in test_results.txt -set-exit-code -out unit_sponge_log.xml
-
-      - name: FlakyBot
-        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push')  && always() }}
-        run: |
-          curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
-          chmod +x ./flakybot
-          ./flakybot --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
-
   integration:
    # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
     if: "${{ (github.event.action != 'labeled' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) || github.event.label.name == 'tests: run' }}"
@@ -136,6 +74,9 @@ jobs:
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
 
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0.6.0'
+
       - id: 'secrets'
         name: Get secrets
         uses: 'google-github-actions/get-secretmanager-secrets@v0.5.0'
@@ -177,6 +118,7 @@ jobs:
           SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
+          TMP: '${{ runner.temp }}'
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
           go test -race -v ./... | tee test_results.txt
