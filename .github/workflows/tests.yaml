@@ -124,6 +124,5 @@ jobs:
           SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
-          TEMP: '${{ runner.temp }}'
           TMP: '${{ runner.temp }}'
         run: go test -race -v ./...
