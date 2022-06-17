@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/testutil"
 )
 
 func TestGcloud(t *testing.T) {
@@ -26,8 +25,8 @@ func TestGcloud(t *testing.T) {
 		t.Skip("skipping gcloud integration tests")
 	}
 
-	cleanup := testutil.ConfigureGcloud(t)
-	defer cleanup()
+	//cleanup := testutil.ConfigureGcloud(t)
+	//defer cleanup()
 
 	// gcloud is now configured. Try to obtain a token from gcloud config
 	// helper.
