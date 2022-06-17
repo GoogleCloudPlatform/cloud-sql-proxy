@@ -125,6 +125,5 @@ jobs:
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
           TEMP: '${{ runner.temp }}'
-        run: |
-          echo $TEMP
-          go test -race -v ./...
+          TMP: '${{ runner.temp }}'
+        run: go test -race -v ./...
