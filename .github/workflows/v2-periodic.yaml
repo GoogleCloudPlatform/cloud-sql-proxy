@@ -47,6 +47,9 @@ jobs:
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
 
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0.6.0'
+
       - name: Run tests
         run: go test -short -race -v ./...
 
@@ -78,6 +81,9 @@ jobs:
           workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0.6.0'
 
       - id: 'secrets'
         name: Get secrets
