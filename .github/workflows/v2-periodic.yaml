@@ -18,38 +18,6 @@ on:
     - cron:  '0 2 * * *'
 
 jobs:
-  unit:
-    name: unit tests
-    runs-on: "ubuntu-latest"
-    strategy:
-      matrix:
-        go-version: [1.16, 1.17]
-      fail-fast: false
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-    steps:
-      - name: Checkout code
-        uses: 'actions/checkout@v3'
-        with:
-          ref: v2
-
-      - name: Setup Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-          
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0.8.0'
-        with:
-          workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
-          service_account: ${{ secrets.SERVICE_ACCOUNT }}
-          access_token_lifetime: 600s
-
-      - name: Run tests
-        run: go test -short -race -v ./...
-
   integration:
     name: integration tests
     runs-on: ${{ matrix.os }}
@@ -78,6 +46,9 @@ jobs:
           workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0.6.0'
 
       - id: 'secrets'
         name: Get secrets
@@ -126,4 +97,5 @@ jobs:
           SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
+          TMP: '${{ runner.temp }}'
         run: go test -race -v ./...
