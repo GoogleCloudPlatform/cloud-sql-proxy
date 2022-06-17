@@ -31,8 +31,6 @@ import (
 )
 
 func TestNewCommandArguments(t *testing.T) {
-	//cleanup := testutil.ConfigureGcloud(t)
-	//defer cleanup()
 
 	// saving true in a variable so we can take its address.
 	trueValue := true

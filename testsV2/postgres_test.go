@@ -125,9 +125,6 @@ func TestAuthWithGcloudAuth(t *testing.T) {
 	}
 	requirePostgresVars(t)
 
-	//cleanup := testutil.ConfigureGcloud(t)
-	//defer cleanup()
-
 	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t,
