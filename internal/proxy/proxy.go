@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
@@ -73,6 +74,11 @@ type Config struct {
 	// IAMAuthN enables automatic IAM DB Authentication for all instances.
 	// Postgres-only.
 	IAMAuthN bool
+
+	// MaxConnections are the maximum number of connections the Client may
+	// establish to the Cloud SQL server side proxy before refusing additional
+	// connections. A zero-value indicates no limit.
+	MaxConnections uint32
 
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
@@ -130,13 +136,22 @@ func (c *portConfig) nextDBPort(version string) int {
 	}
 }
 
-// Client represents the state of the current instantiation of the proxy.
+// Client proxies connections from a local client to the remote server side
+// proxy for multiple Cloud SQL instances.
 type Client struct {
 	cmd    *cobra.Command
 	dialer cloudsql.Dialer
 
 	// mnts is a list of all mounted sockets for this client
 	mnts []*socketMount
+
+	// connCount tracks the number of all open connections from the Client to
+	// all Cloud SQL instances.
+	connCount uint32
+
+	// maxConns is the maximum number of allowed connections tracked by
+	// connCount. If not set, there is no limit.
+	maxConns uint32
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
@@ -232,10 +247,17 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 		cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
 		mnts = append(mnts, m)
 	}
-	return &Client{mnts: mnts, cmd: cmd, dialer: d}, nil
+	c := &Client{
+		mnts:     mnts,
+		cmd:      cmd,
+		dialer:   d,
+		maxConns: conf.MaxConnections,
+	}
+	return c, nil
 }
 
-// Serve listens on the mounted ports and beging proxying the connections to the instances.
+// Serve starts proxying connections for all configured instances using the
+// associated socket.
 func (c *Client) Serve(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -288,6 +310,15 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		// handle the connection in a separate goroutine
 		go func() {
 			c.cmd.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
+
+			count := atomic.AddUint32(&c.connCount, 1)
+			defer atomic.AddUint32(&c.connCount, ^uint32(0))
+
+			if c.maxConns > 0 && count > c.maxConns {
+				c.cmd.Printf("max connections (%v) exceeded, refusing new connection\n", c.maxConns)
+				cConn.Close()
+				return
+			}
 
 			// give a max of 30 seconds to connect to the instance
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
