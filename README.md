@@ -391,7 +391,7 @@ Install via Nuget, follow these
 
 
 [about-proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
-[ci-badge]: https://storage.googleapis.com/cloud-devrel-public/cloud-sql-connectors/proxy/go1.17_linux.svg
+[ci-badge]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/actions/workflows/tests.yaml/badge.svg?event=push
 [cloud-sql]: https://cloud.google.com/sql
 [code-samples]: https://cloud.google.com/sql/docs/mysql/samples
 [code-of-conduct]: CONTRIBUTING.md#contributor-code-of-conduct
