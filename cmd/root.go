@@ -130,6 +130,10 @@ any client SSL certificates.`,
 	cmd.PersistentFlags().Uint32Var(&c.conf.MaxConnections, "max-connections", 0,
 		`Limits the number of connections by refusing any additional connections.
 When this flag is not set, there is no limit.`)
+	cmd.PersistentFlags().DurationVar(&c.conf.WaitOnClose, "wait-after-sigterm", 0,
+		`Amount of time to wait for any open connections to close before
+shutting down the proxy. When this flag is not set, the proxy
+will shutdown immediately after receiving a SIGTERM.`)
 	cmd.PersistentFlags().StringVar(&c.telemetryProject, "telemetry-project", "",
 		"Enable Cloud Monitoring and Cloud Trace integration with the provided project ID.")
 	cmd.PersistentFlags().BoolVar(&c.disableTraces, "disable-traces", false,
@@ -435,7 +439,11 @@ func runSignalWrapper(cmd *Command) error {
 	case p = <-startCh:
 	}
 	cmd.Println("The proxy has started successfully and is ready for new connections!")
-	defer p.Close()
+	defer func() {
+		if cErr := p.Close(); cErr != nil {
+			cmd.PrintErrf("The proxy failed to close cleanly: %v", cErr)
+		}
+	}()
 
 	go func() {
 		shutdownCh <- p.Serve(ctx)
@@ -444,9 +452,9 @@ func runSignalWrapper(cmd *Command) error {
 	err := <-shutdownCh
 	switch {
 	case errors.Is(err, errSigInt):
-		cmd.PrintErrln("SIGINT signal received. Shuting down...")
+		cmd.PrintErrln("SIGINT signal received. Shutting down...")
 	case errors.Is(err, errSigTerm):
-		cmd.PrintErrln("SIGTERM signal received. Shuting down...")
+		cmd.PrintErrln("SIGTERM signal received. Shutting down...")
 	default:
 		cmd.PrintErrf("The proxy has encountered a terminal error: %v\n", err)
 	}

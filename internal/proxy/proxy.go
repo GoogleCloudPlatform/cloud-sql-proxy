@@ -80,6 +80,11 @@ type Config struct {
 	// connections. A zero-value indicates no limit.
 	MaxConnections uint32
 
+	// WaitOnClose sets the duration to wait for connections to close before
+	// shutting down. Not setting this field means to close immediately
+	// regardless of any open connections.
+	WaitOnClose time.Duration
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
@@ -152,16 +157,18 @@ type Client struct {
 	// maxConns is the maximum number of allowed connections tracked by
 	// connCount. If not set, there is no limit.
 	maxConns uint32
+
+	// waitOnClose is the maximum duration to wait for open connections to close
+	// when shutting down.
+	waitOnClose time.Duration
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
 func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
 	var mnts []*socketMount
 	for _, inst := range conf.Instances {
-		go func(name string) {
-			// Initiate refresh operation
-			d.EngineVersion(ctx, name)
-		}(inst.Name)
+		// Initiate refresh operation
+		go func(name string) { d.EngineVersion(ctx, name) }(inst.Name)
 	}
 	pc := newPortConfig(conf.Port)
 	for _, inst := range conf.Instances {
@@ -248,10 +255,11 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 		mnts = append(mnts, m)
 	}
 	c := &Client{
-		mnts:     mnts,
-		cmd:      cmd,
-		dialer:   d,
-		maxConns: conf.MaxConnections,
+		mnts:        mnts,
+		cmd:         cmd,
+		dialer:      d,
+		maxConns:    conf.MaxConnections,
+		waitOnClose: conf.WaitOnClose,
 	}
 	return c, nil
 }
@@ -283,21 +291,40 @@ func (c *Client) Serve(ctx context.Context) error {
 }
 
 // Close triggers the proxyClient to shutdown.
-func (c *Client) Close() {
-	defer c.dialer.Close()
+func (c *Client) Close() error {
+	// First, close all open socket listeners to prevent additional connections.
 	for _, m := range c.mnts {
-		m.close()
+		_ = m.close() // TODO this returns an error (if the listener doesn't close)
 	}
+	// Next, close the dialer to prevent any future refreshes.
+	_ = c.dialer.Close() // TODO this returns an error (which is always nil right now)
+	if c.waitOnClose == 0 {
+		return nil
+	}
+	timeout := time.After(c.waitOnClose)
+	tick := time.Tick(100 * time.Millisecond)
+	for {
+		select {
+		case <-tick:
+			if atomic.LoadUint32(&c.connCount) > 0 {
+				continue
+			}
+		case <-timeout:
+		}
+		break
+	}
+	open := atomic.LoadUint32(&c.connCount)
+	if open > 0 {
+		return fmt.Errorf("%d connection(s) still open after waiting %v", open, c.waitOnClose)
+	}
+	return nil
 }
 
 // serveSocketMount persistently listens to the socketMounts listener and proxies connections to a
 // given Cloud SQL instance.
 func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
-	if s.listener == nil {
-		return fmt.Errorf("[%s] mount doesn't have a listener set", s.inst)
-	}
 	for {
-		cConn, err := s.listener.Accept()
+		cConn, err := s.Accept()
 		if err != nil {
 			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
 				c.cmd.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
@@ -339,7 +366,17 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 type socketMount struct {
 	inst     string
 	dialOpts []cloudsqlconn.DialOption
+	mu       sync.Mutex
 	listener net.Listener
+}
+
+func (s *socketMount) Accept() (net.Conn, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.listener == nil {
+		return nil, fmt.Errorf("[%s] mount doesn't have a listener set", s.inst)
+	}
+	return s.listener.Accept()
 }
 
 // listen causes a socketMount to create a Listener at the specified network address.
@@ -349,14 +386,18 @@ func (s *socketMount) listen(ctx context.Context, network string, address string
 	if err != nil {
 		return nil, err
 	}
+	s.mu.Lock()
 	s.listener = l
+	s.mu.Unlock()
 	return s.listener.Addr(), nil
 }
 
 // close stops the mount from listening for any more connections
 func (s *socketMount) close() error {
 	err := s.listener.Close()
+	s.mu.Lock()
 	s.listener = nil
+	s.mu.Unlock()
 	return err
 }
 

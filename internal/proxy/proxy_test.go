@@ -303,6 +303,48 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	}
 }
 
+func TestClientCloseWaitsForActiveConnections(t *testing.T) {
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 5000,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:region:pg"},
+		},
+	}
+	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error: %v", err)
+	}
+	go c.Serve(context.Background())
+	time.Sleep(time.Millisecond)
+
+	conn, dErr := net.Dial("tcp", "127.0.0.1:5000")
+	if dErr != nil {
+		t.Fatalf("net.Dial error: %v", err)
+	}
+	_ = conn.Close()
+	if err := c.Close(); err != nil {
+		t.Fatalf("c.Close error: %v", err)
+	}
+
+	in.WaitOnClose = time.Second
+	c, err = proxy.NewClient(context.Background(), &fakeDialer{}, &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error: %v", err)
+	}
+	go c.Serve(context.Background())
+	time.Sleep(time.Millisecond)
+
+	conn, dErr = net.Dial("tcp", "127.0.0.1:5000")
+	if dErr != nil {
+		t.Fatalf("net.Dial error: %v", err)
+	}
+	defer conn.Close() // close the connection only after trying to close the proxy
+	if err := c.Close(); err == nil {
+		t.Fatal("c.Close should error, got = nil")
+	}
+}
+
 func TestClientInitializationWorksRepeatedly(t *testing.T) {
 	// The client creates a Unix socket on initial startup and does not remove
 	// it on shutdown. This test ensures the existing socket does not cause
