@@ -1,6 +1,6 @@
 # Cloud SQL Auth proxy
 
-![CI][ci-badge]
+[![CI][ci-badge]][ci-build]
 [![Go Reference][pkg-badge]][pkg-docs]
 
 The [Cloud SQL Auth proxy][proxy-page] is a binary that provides IAM-based
@@ -391,7 +391,8 @@ Install via Nuget, follow these
 
 
 [about-proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
-[ci-badge]: https://storage.googleapis.com/cloud-devrel-public/cloud-sql-connectors/proxy/go1.17_linux.svg
+[ci-badge]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/actions/workflows/tests.yaml/badge.svg?event=push
+[ci-build]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/actions/workflows/tests.yaml?query=event%3Apush+branch%3Amain
 [cloud-sql]: https://cloud.google.com/sql
 [code-samples]: https://cloud.google.com/sql/docs/mysql/samples
 [code-of-conduct]: CONTRIBUTING.md#contributor-code-of-conduct
