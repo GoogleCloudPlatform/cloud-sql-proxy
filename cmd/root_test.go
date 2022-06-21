@@ -19,6 +19,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/url"
 	"sync"
 	"testing"
 	"time"
@@ -201,6 +202,23 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "using the private-ip flag",
+			args: []string{"--private-ip", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				PrivateIP: true,
+			}),
+		},
+		{
+			desc: "using the private-ip flag query param",
+			// the query param's presence equates to true
+			args: []string{"proj:region:inst?private-ip=true"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					PrivateIP: &trueValue,
+				}},
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -281,6 +299,66 @@ func TestAutoIAMAuthNQueryParams(t *testing.T) {
 				return
 			}
 			if got := c.conf.Instances[0].IAMAuthN; *got != *tc.want {
+				t.Errorf("args = %v, want = %v, got = %v", tc.args, *tc.want, *got)
+			}
+		})
+	}
+}
+
+func TestPrivateIPQueryParams(t *testing.T) {
+	// saving true and false in a variable so we can take its address
+	trueValue := true
+	falseValue := false
+
+	tcs := []struct {
+		desc string
+		args []string
+		want *bool
+	}{
+		{
+			desc: "when the query string is absent",
+			args: []string{"proj:region:inst"},
+			want: nil,
+		},
+		{
+			desc: "when the query string is true",
+			args: []string{"proj:region:inst?private-ip=true"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is (short) t",
+			args: []string{"proj:region:inst?private-ip=T"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is false",
+			args: []string{"proj:region:inst?private-ip=false"},
+			want: &falseValue,
+		},
+		{
+			desc: "when the query string is (short) f",
+			args: []string{"proj:region:inst?private-ip=F"},
+			want: &falseValue,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			c := NewCommand()
+			// Keep the test output quiet
+			c.SilenceUsage = true
+			c.SilenceErrors = true
+			// Disable execute behavior
+			c.RunE = func(*cobra.Command, []string) error { return nil }
+			c.SetArgs(tc.args)
+
+			err := c.Execute()
+			if err != nil {
+				t.Fatalf("command.Execute: %v", err)
+			}
+			if tc.want == nil && c.conf.Instances[0].PrivateIP == nil {
+				return
+			}
+			if got := c.conf.Instances[0].PrivateIP; *got != *tc.want {
 				t.Errorf("args = %v, want = %v, got = %v", tc.args, *tc.want, *got)
 			}
 		})
@@ -378,6 +456,7 @@ func TestNewCommandWithErrors(t *testing.T) {
 			desc: "enabling a Prometheus port without a namespace",
 			args: []string{"--htto-port", "1111", "proj:region:inst"},
 		},
+		//TODO error when privateip=bad-string
 	}
 
 	for _, tc := range tcs {
@@ -489,5 +568,126 @@ func TestPrometheusMetricsEndpoint(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
+	}
+}
+
+func TestParseBoolOpt(t *testing.T) {
+	var fls *bool = new(bool)
+	var tru *bool = new(bool)
+	var n *bool = nil
+	*fls = false
+	*tru = true
+
+	tcs := []struct {
+		desc        string
+		queryString string
+		wantsValue  *bool
+		wantsError  bool
+	}{
+		// nil
+		{
+			desc:        "no value",
+			queryString: "",
+			wantsValue:  n,
+			wantsError:  false,
+		},
+		// error cases
+		{
+			desc:        "error blank",
+			queryString: "private-ip=",
+			wantsValue:  n,
+			wantsError:  true,
+		},
+		{
+			desc:        "error not a ",
+			queryString: "private-ip=",
+			wantsValue:  n,
+			wantsError:  true,
+		},
+		// false value
+		{
+			desc:        "false plain",
+			queryString: "private-ip=false",
+			wantsValue:  fls,
+			wantsError:  false,
+		},
+		{
+			desc:        "false f",
+			queryString: "private-ip=f",
+			wantsValue:  fls,
+			wantsError:  false,
+		},
+		{
+			desc:        "false False",
+			queryString: "private-ip=False",
+			wantsValue:  fls,
+			wantsError:  false,
+		},
+		{
+			desc:        "false F",
+			queryString: "private-ip=F",
+			wantsValue:  fls,
+			wantsError:  false,
+		},
+		// true value
+		{
+			desc:        "true plain",
+			queryString: "private-ip=true",
+			wantsValue:  tru,
+			wantsError:  false,
+		},
+		{
+			desc:        "true t",
+			queryString: "private-ip=t",
+			wantsValue:  tru,
+			wantsError:  false,
+		},
+		{
+			desc:        "true True",
+			queryString: "private-ip=True",
+			wantsValue:  tru,
+			wantsError:  false,
+		},
+		{
+			desc:        "true T",
+			queryString: "private-ip=T",
+			wantsValue:  tru,
+			wantsError:  false,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			q, err := url.ParseQuery(tc.queryString)
+			if err != nil {
+				t.Fatalf("could not parse query: %q", tc.queryString)
+			}
+
+			v, err := parseBoolOpt("private-ip", q)
+
+			// test value
+			if tc.wantsValue == nil {
+				if v != nil {
+					t.Errorf("got %v, wants nil. value ", v)
+				}
+			} else {
+				if v == nil {
+					t.Errorf("got nil, wants %v. value ", *tc.wantsValue)
+				} else if *tc.wantsValue != *v {
+					t.Errorf("got %v, wants %v. value ", *v, *tc.wantsValue)
+				}
+			}
+
+			// test error
+			if tc.wantsError {
+				if err == nil {
+					t.Errorf("got nil, wants non-nil error. error ")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("got %v, wants nil. error ", err)
+				}
+			}
+
+		})
 	}
 }

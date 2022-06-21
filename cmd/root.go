@@ -148,6 +148,8 @@ any client SSL certificates.`,
 		`Enables Unix sockets for all listeners using the provided directory.`)
 	cmd.PersistentFlags().BoolVarP(&c.conf.IAMAuthN, "auto-iam-authn", "i", false,
 		"Enables Automatic IAM Authentication for all instances")
+	cmd.PersistentFlags().BoolVarP(&c.conf.PrivateIP, "private-ip", "", false,
+		"Enables Automatic IAM Authentication for all instances")
 
 	c.Command = cmd
 	return c
@@ -258,24 +260,17 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 				ic.UnixSocket = u[0]
 			}
 
-			if iam, ok := q["auto-iam-authn"]; ok {
-				if len(iam) != 1 {
-					return newBadCommandError(fmt.Sprintf("auto iam authn param should be only one value: %q", iam))
-				}
-				switch iam[0] {
-				case "true", "t":
-					enable := true
-					ic.IAMAuthN = &enable
-				case "false", "f":
-					disable := false
-					ic.IAMAuthN = &disable
-				default:
-					return newBadCommandError(
-						fmt.Sprintf("auto iam authn query param should be true or false, got: %q",
-							iam[0],
-						))
-				}
+			iam, err := parseBoolOpt("auto-iam-authn", q)
+			if err != nil {
+				return err
 			}
+			ic.IAMAuthN = iam
+
+			privateIP, err := parseBoolOpt("private-ip", q)
+			if err != nil {
+				return err
+			}
+			ic.PrivateIP = privateIP
 
 		}
 		ics = append(ics, ic)
@@ -283,6 +278,38 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 
 	conf.Instances = ics
 	return nil
+}
+
+// parseBoolOpt parses a boolean option from the query string
+//  name the name of the option in the query string
+//  q the map of the parsed query string parameters from url.ParseQuery()
+// returns
+//   nil if no value was found
+//   true if the value is 't' or 'true' case insensitive
+//   false if the value is 'f' or 'false' case insensitive
+func parseBoolOpt(name string, q map[string][]string) (*bool, error) {
+	if iam, ok := q[name]; ok {
+		if len(iam) != 1 {
+			return nil, newBadCommandError(fmt.Sprintf("auto iam authn param should be only one value: %q", iam))
+		}
+		v := strings.ToLower(iam[0])
+		switch v {
+		case "true", "t":
+			enable := true
+			return &enable, nil
+		case "false", "f":
+			disable := false
+			return &disable, nil
+		default:
+			return nil, newBadCommandError(
+				fmt.Sprintf("auto iam authn query param should be true or false, got: %q",
+					iam[0],
+				))
+		}
+	}
+
+	return nil, nil
+
 }
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
@@ -393,11 +420,11 @@ func runSignalWrapper(cmd *Command) error {
 	}
 	cmd.Println("The proxy has started successfully and is ready for new connections!")
 	defer p.Close()
-
+	// run proxy in separate goroutine
 	go func() {
 		shutdownCh <- p.Serve(ctx)
 	}()
-
+	// wait for proxy to exit
 	err := <-shutdownCh
 	switch {
 	case errors.Is(err, errSigInt):

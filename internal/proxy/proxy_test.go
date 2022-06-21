@@ -17,12 +17,15 @@ package proxy_test
 import (
 	"context"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
@@ -240,6 +243,79 @@ func TestClientInitialization(t *testing.T) {
 			}
 		})
 	}
+}
+
+type spyDialer struct {
+	LastOpts []cloudsqlconn.DialOption
+	LastInst string
+	Engine   string
+}
+
+func (d *spyDialer) Close() error {
+	log.Printf("spyDialer.Close() called")
+	// do nothing
+	return nil
+}
+
+func (d *spyDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
+	log.Printf("spyDialer.Dial() called")
+	d.LastOpts = opts
+	d.LastInst = inst
+	conn, _ := net.Pipe()
+	return conn, nil
+}
+
+func (d *spyDialer) EngineVersion(ctx context.Context, inst string) (string, error) {
+	log.Printf("spyDialer.EngineVersion() called")
+	return d.Engine, nil
+}
+
+func TestClientInitializationWithPrivateIp(t *testing.T) {
+	// The client creates a Unix socket on initial startup and does not remove
+	// it on shutdown. This test ensures the existing socket does not cause
+	// problems for a second invocation.
+	ctx := context.Background()
+
+	dialer := spyDialer{Engine: "POSTGRES_14"}
+	tru := true
+	in := &proxy.Config{
+		Addr:      "127.0.0.1",
+		Port:      5000,
+		PrivateIP: true,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:region:pg",
+				PrivateIP: &tru},
+		},
+	}
+
+	// start the client
+	c, err := proxy.NewClient(ctx, &dialer, &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("want error = nil, got = %v", err)
+	}
+	t.Logf("Serving...")
+	go c.Serve(ctx)
+	defer func() {
+		c.Close()
+	}()
+
+	// pause for client startup
+	time.Sleep(1 * time.Second)
+	t.Logf("Serving started")
+
+	// attempt to connect
+	addr := "127.0.0.1:5000"
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		t.Fatalf("want error = nil, got = %v", err)
+	}
+	err = conn.Close()
+	if err != nil {
+		t.Logf("failed to close connection: %v", err)
+	}
+
+	t.Errorf("lastOpts wants expected values, got %v", dialer.LastOpts)
+
 }
 
 func TestClientInitializationWorksRepeatedly(t *testing.T) {

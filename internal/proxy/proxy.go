@@ -47,6 +47,10 @@ type InstanceConnConfig struct {
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
 	IAMAuthN *bool
+
+	// PrivateIP tells the proxy to attempt to connect to the db instance's
+	// private ip address instead of the public IP address
+	PrivateIP *bool
 }
 
 // Config contains all the configuration provided by the caller.
@@ -79,12 +83,16 @@ type Config struct {
 	// Postgres-only.
 	IAMAuthN bool
 
+	// PrivateIP enables connections via the database server's private IP address
+	// for all instances.
+	PrivateIP bool
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
 
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
-	// instances.
+	// instances. Used by serverless.
 	Dialer cloudsql.Dialer
 }
 
@@ -263,10 +271,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 			}
 		}
 
-		var opts []cloudsqlconn.DialOption
-		if inst.IAMAuthN != nil {
-			opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*inst.IAMAuthN))
-		}
+		opts := dialOptions(conf, &inst)
 		m := &socketMount{inst: inst.Name, dialOpts: opts}
 		addr, err := m.listen(ctx, network, address)
 		if err != nil {
@@ -280,6 +285,29 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 		mnts = append(mnts, m)
 	}
 	return &Client{mnts: mnts, cmd: cmd, dialer: d}, nil
+}
+
+// dialOptions interprets appropriate dial options for a particular instance
+// configuration
+func dialOptions(conf *Config, inst *InstanceConnConfig) []cloudsqlconn.DialOption {
+	var opts []cloudsqlconn.DialOption
+
+	// related to --auto-iam-authn=(bool)
+	if inst.IAMAuthN != nil {
+		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*inst.IAMAuthN))
+	} else {
+		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(conf.IAMAuthN))
+	}
+
+	// related to --private-ip=(bool) option
+	if inst.PrivateIP != nil && *inst.PrivateIP ||
+		inst.PrivateIP == nil && conf.PrivateIP {
+		opts = append(opts, cloudsqlconn.WithPrivateIP())
+	} else {
+		opts = append(opts, cloudsqlconn.WithPublicIP())
+	}
+
+	return opts
 }
 
 // Serve listens on the mounted ports and beging proxying the connections to the instances.
