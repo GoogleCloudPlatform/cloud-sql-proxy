@@ -199,6 +199,13 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "enabling structured logging",
+			args: []string{"--structured-logs", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				StructuredLogs: true,
+			}),
+		},
 	}
 
 	for _, tc := range tcs {

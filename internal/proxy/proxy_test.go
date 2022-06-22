@@ -211,7 +211,7 @@ func TestClientInitialization(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			tc.in.Logger = log.NewStdLogger()
+			tc.in.Logger = log.NewStdLogger(os.Stdout, os.Stdout)
 			c, err := proxy.NewClient(ctx, fakeDialer{}, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
@@ -255,7 +255,7 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
-		Logger: log.NewStdLogger(),
+		Logger: log.NewStdLogger(os.Stdout, os.Stdout),
 	}
 	c, err := proxy.NewClient(ctx, fakeDialer{}, in)
 	if err != nil {

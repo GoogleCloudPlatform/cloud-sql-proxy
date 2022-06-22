@@ -17,6 +17,10 @@ package log
 import (
 	"io"
 	llog "log"
+	"os"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Logger is the interface used throughout the project for logging.
@@ -27,7 +31,8 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
-// StdLogger logs informational messages and errors.
+// StdLogger is the standard logger that distinguishes between info and error
+// logs.
 type StdLogger struct {
 	infoLog *llog.Logger
 	errLog  *llog.Logger
@@ -48,4 +53,45 @@ func (l *StdLogger) Infof(format string, v ...interface{}) {
 
 func (l *StdLogger) Errorf(format string, v ...interface{}) {
 	l.errLog.Printf(format, v...)
+}
+
+// StructuredLogger writes log messages in JSON.
+type StructuredLogger struct {
+	logger *zap.SugaredLogger
+}
+
+func (l *StructuredLogger) Infof(format string, v ...interface{}) {
+	l.logger.Infof(format, v...)
+}
+
+func (l *StructuredLogger) Errorf(format string, v ...interface{}) {
+	l.logger.Errorf(format, v...)
+}
+
+// NewStructuredLogger creates a Logger that logs messages using JSON.
+func NewStructuredLogger() (Logger, func() error) {
+	// Configure structured logs to adhere to LogEntry format
+	// https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
+	c := zap.NewProductionEncoderConfig()
+	c.LevelKey = "severity"
+	c.MessageKey = "message"
+	c.TimeKey = "timestamp"
+	c.EncodeLevel = zapcore.CapitalLevelEncoder
+	c.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	enc := zapcore.NewJSONEncoder(c)
+	core := zapcore.NewTee(
+		zapcore.NewCore(enc, zapcore.Lock(os.Stdout), zap.LevelEnablerFunc(func(l zapcore.Level) bool {
+			// Anything below error, goes to the info log.
+			return l < zapcore.ErrorLevel
+		})),
+		zapcore.NewCore(enc, zapcore.Lock(os.Stderr), zap.LevelEnablerFunc(func(l zapcore.Level) bool {
+			// Anything at error or higher goes to the error log.
+			return l >= zapcore.ErrorLevel
+		})),
+	)
+	l := &StructuredLogger{
+		logger: zap.New(core).Sugar(),
+	}
+	return l, l.logger.Sync
 }

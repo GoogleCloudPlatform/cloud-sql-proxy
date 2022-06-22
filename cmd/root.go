@@ -70,6 +70,7 @@ type Command struct {
 	*cobra.Command
 	conf *proxy.Config
 
+	cleanup                    func() error
 	disableTraces              bool
 	telemetryTracingSampleRate int
 	disableMetrics             bool
@@ -101,6 +102,7 @@ func NewCommand(opts ...Option) *Command {
 
 	c := &Command{
 		Command: cmd,
+		cleanup: func() error { return nil },
 		conf: &proxy.Config{
 			Logger: log.NewStdLogger(os.Stdout, os.Stderr),
 		},
@@ -119,6 +121,12 @@ to your instance's IP address, providing a secure connection without having to m
 any client SSL certificates.`
 
 	cmd.Args = func(cmd *cobra.Command, args []string) error {
+		// Handle logger separately from config
+		if c.conf.StructuredLogs {
+			var cleanup func() error
+			c.conf.Logger, cleanup = log.NewStructuredLogger()
+			c.cleanup = cleanup
+		}
 		err := parseConfig(cmd, c.conf, args)
 		if err != nil {
 			return err
@@ -139,6 +147,8 @@ any client SSL certificates.`
 		"Path to a service account key to use for authentication.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
+	cmd.PersistentFlags().BoolVarP(&c.conf.StructuredLogs, "structured-logs", "l", false,
+		"Enable structured logs using the LogEntry format")
 	cmd.PersistentFlags().StringVar(&c.telemetryProject, "telemetry-project", "",
 		"Enable Cloud Monitoring and Cloud Trace integration with the provided project ID.")
 	cmd.PersistentFlags().BoolVar(&c.disableTraces, "disable-traces", false,
@@ -201,24 +211,24 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 	switch {
 	case conf.Token != "":
-		conf.Logger.Infof("Authorizing with the -token flag\n")
+		conf.Logger.Infof("Authorizing with the -token flag")
 		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithTokenSource(
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: conf.Token}),
 		))
 	case conf.CredentialsFile != "":
-		conf.Logger.Infof("Authorizing with the credentials file at %q\n", conf.CredentialsFile)
+		conf.Logger.Infof("Authorizing with the credentials file at %q", conf.CredentialsFile)
 		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithCredentialsFile(
 			conf.CredentialsFile,
 		))
 	case conf.GcloudAuth:
-		conf.Logger.Infof("Authorizing with gcloud user credentials\n")
+		conf.Logger.Infof("Authorizing with gcloud user credentials")
 		ts, err := gcloud.TokenSource()
 		if err != nil {
 			return err
 		}
 		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithTokenSource(ts))
 	default:
-		conf.Logger.Infof("Authorizing with Application Default Credentials\n")
+		conf.Logger.Infof("Authorizing with Application Default Credentials")
 	}
 
 	if conf.IAMAuthN {
@@ -230,13 +240,13 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 
 	if !userHasSet("telemetry-project") && userHasSet("telemetry-prefix") {
-		conf.Logger.Infof("Ignoring telementry-prefix as telemetry-project was not set\n")
+		conf.Logger.Infof("Ignoring telementry-prefix as telemetry-project was not set")
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-metrics") {
-		conf.Logger.Infof("Ignoring disable-metrics as telemetry-project was not set\n")
+		conf.Logger.Infof("Ignoring disable-metrics as telemetry-project was not set")
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
-		conf.Logger.Infof("Ignoring disable-traces as telemetry-project was not set\n")
+		conf.Logger.Infof("Ignoring disable-traces as telemetry-project was not set")
 	}
 
 	var ics []proxy.InstanceConnConfig
@@ -327,6 +337,7 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
 func runSignalWrapper(cmd *Command) error {
+	defer cmd.cleanup()
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
@@ -441,10 +452,11 @@ func runSignalWrapper(cmd *Command) error {
 	var p *proxy.Client
 	select {
 	case err := <-shutdownCh:
+		logger.Errorf("The proxy has encountered a terminal error: %v", err)
 		return err
 	case p = <-startCh:
 	}
-	logger.Infof("The proxy has started successfully and is ready for new connections!\n")
+	logger.Infof("The proxy has started successfully and is ready for new connections!")
 	defer p.Close()
 
 	go func() {
@@ -454,11 +466,11 @@ func runSignalWrapper(cmd *Command) error {
 	err := <-shutdownCh
 	switch {
 	case errors.Is(err, errSigInt):
-		logger.Errorf("SIGINT signal received. Shutting down...\n")
+		logger.Errorf("SIGINT signal received. Shutting down...")
 	case errors.Is(err, errSigTerm):
-		logger.Errorf("SIGTERM signal received. Shutting down...\n")
+		logger.Errorf("SIGTERM signal received. Shutting down...")
 	default:
-		logger.Errorf("The proxy has encountered a terminal error: %v\n", err)
+		logger.Errorf("The proxy has encountered a terminal error: %v", err)
 	}
 	return err
 }
