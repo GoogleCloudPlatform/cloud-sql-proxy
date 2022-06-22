@@ -375,7 +375,7 @@ func TestNewCommandWithErrors(t *testing.T) {
 		},
 		{
 			desc: "enabling a Prometheus port without a namespace",
-			args: []string{"--htto-port", "1111", "proj:region:inst"},
+			args: []string{"--http-port", "1111", "proj:region:inst"},
 		},
 	}
 

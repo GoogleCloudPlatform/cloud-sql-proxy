@@ -22,7 +22,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
@@ -34,6 +36,11 @@ type fakeDialer struct {
 
 func (fakeDialer) Close() error {
 	return nil
+}
+
+func (fakeDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
+	conn, _ := net.Pipe()
+	return conn, nil
 }
 
 func (fakeDialer) EngineVersion(_ context.Context, inst string) (string, error) {
@@ -239,6 +246,33 @@ func TestClientInitialization(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClientClosesCleanly(t *testing.T) {
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 5000,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:reg:inst"},
+		},
+	}
+	c, err := proxy.NewClient(context.Background(), fakeDialer{}, &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
+	}
+	go c.Serve(context.Background())
+	time.Sleep(time.Second) // allow the socket to start listening
+
+	conn, dErr := net.Dial("tcp", "127.0.0.1:5000")
+	if dErr != nil {
+		t.Fatalf("net.Dial error = %v", dErr)
+	}
+	_ = conn.Close()
+
+	if err := c.Close(); err != nil {
+		t.Fatalf("c.Close() error = %v", err)
+	}
+
 }
 
 func TestClientInitializationWorksRepeatedly(t *testing.T) {
