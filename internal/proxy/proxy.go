@@ -26,7 +26,7 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
-	"github.com/spf13/cobra"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
 )
 
 // InstanceConnConfig holds the configuration for an individual instance
@@ -85,6 +85,9 @@ type Config struct {
 	// DialerOpts specifies the opts to use when creating a new dialer. This
 	// value is ignored when a Dialer has been set.
 	DialerOpts []cloudsqlconn.Option
+
+	// Logger is logger for reporting informational or error messages.
+	Logger log.Logger
 }
 
 type portConfig struct {
@@ -132,15 +135,16 @@ func (c *portConfig) nextDBPort(version string) int {
 
 // Client represents the state of the current instantiation of the proxy.
 type Client struct {
-	cmd    *cobra.Command
 	dialer cloudsql.Dialer
 
 	// mnts is a list of all mounted sockets for this client
 	mnts []*socketMount
+
+	logger log.Logger
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, d cloudsql.Dialer, conf *Config) (*Client, error) {
 	var mnts []*socketMount
 	for _, inst := range conf.Instances {
 		go func(name string) {
@@ -229,10 +233,10 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
 
-		cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
+		conf.Logger.Infof("[%s] Listening on %s\n", inst.Name, addr.String())
 		mnts = append(mnts, m)
 	}
-	return &Client{mnts: mnts, cmd: cmd, dialer: d}, nil
+	return &Client{mnts: mnts, logger: conf.Logger, dialer: d}, nil
 }
 
 // Serve listens on the mounted ports and beging proxying the connections to the instances.
@@ -278,7 +282,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		cConn, err := s.listener.Accept()
 		if err != nil {
 			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
-				c.cmd.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
+				c.logger.Errorf("[%s] Error accepting connection: %v\n", s.inst, err)
 				// For transient errors, wait a small amount of time to see if it resolves itself
 				time.Sleep(10 * time.Millisecond)
 				continue
@@ -287,7 +291,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		}
 		// handle the connection in a separate goroutine
 		go func() {
-			c.cmd.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
+			c.logger.Errorf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
 
 			// give a max of 30 seconds to connect to the instance
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -295,7 +299,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 
 			sConn, err := c.dialer.Dial(ctx, s.inst, s.dialOpts...)
 			if err != nil {
-				c.cmd.Printf("[%s] failed to connect to instance: %v\n", s.inst, err)
+				c.logger.Infof("[%s] failed to connect to instance: %v\n", s.inst, err)
 				cConn.Close()
 				return
 			}
@@ -338,9 +342,9 @@ func (c *Client) proxyConn(inst string, client, server net.Conn) {
 			client.Close()
 			server.Close()
 			if isErr {
-				c.cmd.PrintErrln(errDesc)
+				c.logger.Errorf(errDesc)
 			} else {
-				c.cmd.Println(errDesc)
+				c.logger.Infof(errDesc)
 			}
 		})
 	}
@@ -356,16 +360,16 @@ func (c *Client) proxyConn(inst string, client, server net.Conn) {
 			}
 			switch {
 			case cErr == io.EOF:
-				cleanup(fmt.Sprintf("[%s] client closed the connection", inst), false)
+				cleanup(fmt.Sprintf("[%s] client closed the connection\n", inst), false)
 				return
 			case cErr != nil:
-				cleanup(fmt.Sprintf("[%s] connection aborted - error reading from client: %v", inst, cErr), true)
+				cleanup(fmt.Sprintf("[%s] connection aborted - error reading from client: %v\n", inst, cErr), true)
 				return
 			case sErr == io.EOF:
-				cleanup(fmt.Sprintf("[%s] instance closed the connection", inst), false)
+				cleanup(fmt.Sprintf("[%s] instance closed the connection\n", inst), false)
 				return
 			case sErr != nil:
-				cleanup(fmt.Sprintf("[%s] connection aborted - error writing to instance: %v", inst, cErr), true)
+				cleanup(fmt.Sprintf("[%s] connection aborted - error writing to instance: %v\n", inst, cErr), true)
 				return
 			}
 		}
@@ -381,16 +385,16 @@ func (c *Client) proxyConn(inst string, client, server net.Conn) {
 		}
 		switch {
 		case sErr == io.EOF:
-			cleanup(fmt.Sprintf("[%s] instance closed the connection", inst), false)
+			cleanup(fmt.Sprintf("[%s] instance closed the connection\n", inst), false)
 			return
 		case sErr != nil:
-			cleanup(fmt.Sprintf("[%s] connection aborted - error reading from instance: %v", inst, sErr), true)
+			cleanup(fmt.Sprintf("[%s] connection aborted - error reading from instance: %v\n", inst, sErr), true)
 			return
 		case cErr == io.EOF:
-			cleanup(fmt.Sprintf("[%s] client closed the connection", inst), false)
+			cleanup(fmt.Sprintf("[%s] client closed the connection\n", inst), false)
 			return
 		case cErr != nil:
-			cleanup(fmt.Sprintf("[%s] connection aborted - error writing to client: %v", inst, sErr), true)
+			cleanup(fmt.Sprintf("[%s] connection aborted - error writing to client: %v\n", inst, sErr), true)
 			return
 		}
 	}

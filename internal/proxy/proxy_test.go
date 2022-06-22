@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
-	"github.com/spf13/cobra"
 )
 
 type fakeDialer struct {
@@ -211,7 +211,8 @@ func TestClientInitialization(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c, err := proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, tc.in)
+			tc.in.Logger = log.NewStdLogger()
+			c, err := proxy.NewClient(ctx, fakeDialer{}, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -254,14 +255,15 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
+		Logger: log.NewStdLogger(),
 	}
-	c, err := proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, in)
+	c, err := proxy.NewClient(ctx, fakeDialer{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	c.Close()
 
-	c, err = proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, in)
+	c, err = proxy.NewClient(ctx, fakeDialer{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}

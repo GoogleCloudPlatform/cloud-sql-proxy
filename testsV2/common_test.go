@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cmd"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
 )
 
 // proxyExec represents an execution of the Cloud SQL proxy.
@@ -57,6 +58,7 @@ func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
 	// defer pw.Close()
 	cmd.SetOut(pw)
 	cmd.SetErr(pw)
+	cmd.SetLogger(log.NewStdLogger(pw, pw))
 
 	p := &proxyExec{
 		Out:     pr,

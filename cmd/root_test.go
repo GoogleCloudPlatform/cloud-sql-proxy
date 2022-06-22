@@ -218,7 +218,7 @@ func TestNewCommandArguments(t *testing.T) {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
 
-			opts := cmpopts.IgnoreFields(proxy.Config{}, "DialerOpts")
+			opts := cmpopts.IgnoreFields(proxy.Config{}, "DialerOpts", "Logger")
 			if got := c.conf; !cmp.Equal(tc.want, got, opts) {
 				t.Fatalf("want = %#v\ngot = %#v\ndiff = %v", tc.want, got, cmp.Diff(tc.want, got))
 			}
