@@ -26,7 +26,9 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 // InstanceConnConfig holds the configuration for an individual instance
@@ -49,6 +51,9 @@ type InstanceConnConfig struct {
 
 // Config contains all the configuration provided by the caller.
 type Config struct {
+	// UserAgent is the user agent to use when connecting to the cloudsql instance
+	UserAgent string
+
 	// Token is the Bearer token used for authorization.
 	Token string
 
@@ -81,10 +86,37 @@ type Config struct {
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
 	// instances.
 	Dialer cloudsql.Dialer
+}
 
-	// DialerOpts specifies the opts to use when creating a new dialer. This
-	// value is ignored when a Dialer has been set.
-	DialerOpts []cloudsqlconn.Option
+// MakeDialerOptions builds appropriate list of options from the Config
+// values for use by cloudsqlconn.NewClient()
+func (c *Config) MakeDialerOptions() ([]cloudsqlconn.Option, error) {
+	opts := []cloudsqlconn.Option{
+		cloudsqlconn.WithUserAgent(c.UserAgent),
+	}
+	switch {
+	case c.Token != "":
+		opts = append(opts, cloudsqlconn.WithTokenSource(
+			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+		))
+	case c.CredentialsFile != "":
+		opts = append(opts, cloudsqlconn.WithCredentialsFile(
+			c.CredentialsFile,
+		))
+	case c.GcloudAuth:
+		ts, err := gcloud.TokenSource()
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
+	default:
+	}
+
+	if c.IAMAuthN {
+		opts = append(opts, cloudsqlconn.WithIAMAuthN())
+	}
+
+	return opts, nil
 }
 
 type portConfig struct {
@@ -140,7 +172,22 @@ type Client struct {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, error) {
+	// Check if the caller has configured a dialer.
+	// Otherwise, initialize a new one.
+	d := conf.Dialer
+	if d == nil {
+		var err error
+		dialerOpts, err := conf.MakeDialerOptions()
+		if err != nil {
+			return nil, fmt.Errorf("error initializing dialer: %v", err)
+		}
+		d, err = cloudsqlconn.NewDialer(ctx, dialerOpts...)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing dialer: %v", err)
+		}
+	}
+
 	var mnts []*socketMount
 	for _, inst := range conf.Instances {
 		go func(name string) {
