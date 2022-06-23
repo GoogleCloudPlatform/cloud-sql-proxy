@@ -16,6 +16,7 @@ package proxy_test
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"net"
 	"os"
@@ -54,6 +55,14 @@ func (fakeDialer) EngineVersion(_ context.Context, inst string) (string, error) 
 	default:
 		return "POSTGRES_14", nil
 	}
+}
+
+type errorDialer struct {
+	fakeDialer
+}
+
+func (errorDialer) Close() error {
+	return errors.New("errorDialer returns error on Close")
 }
 
 func createTempDir(t *testing.T) (string, func()) {
@@ -272,7 +281,53 @@ func TestClientClosesCleanly(t *testing.T) {
 	if err := c.Close(); err != nil {
 		t.Fatalf("c.Close() error = %v", err)
 	}
+}
 
+func TestClosesWithError(t *testing.T) {
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 5000,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:reg:inst"},
+		},
+	}
+	c, err := proxy.NewClient(context.Background(), errorDialer{}, &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
+	}
+	go c.Serve(context.Background())
+	time.Sleep(time.Second) // allow the socket to start listening
+
+	if err = c.Close(); err == nil {
+		t.Fatal("c.Close() should error, got nil")
+	}
+}
+
+func TestMultiErrorFormatting(t *testing.T) {
+	tcs := []struct {
+		desc string
+		in   proxy.MultiErr
+		want string
+	}{
+		{
+			desc: "with one error",
+			in:   proxy.MultiErr{errors.New("woops")},
+			want: "woops",
+		},
+		{
+			desc: "with many errors",
+			in:   proxy.MultiErr{errors.New("woops"), errors.New("another error")},
+			want: "woops, another error",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			if got := tc.in.Error(); got != tc.want {
+				t.Errorf("want = %v, got = %v", tc.want, got)
+			}
+		})
+	}
 }
 
 func TestClientInitializationWorksRepeatedly(t *testing.T) {

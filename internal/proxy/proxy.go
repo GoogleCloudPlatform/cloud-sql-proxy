@@ -193,11 +193,41 @@ func (c *Client) Serve(ctx context.Context) error {
 	return <-exitCh
 }
 
+// MultiErr is a group of errors wrapped into one.
+type MultiErr []error
+
+// Error returns a single string representing one or more errors.
+func (m MultiErr) Error() string {
+	l := len(m)
+	if l == 1 {
+		return m[0].Error()
+	}
+	var errStr string
+	for i, err := range m {
+		if i == l-1 {
+			errStr += err.Error()
+			continue
+		}
+		errStr += err.Error() + ", "
+	}
+	return errStr
+}
+
 // Close triggers the proxyClient to shutdown.
 func (c *Client) Close() error {
-	defer c.dialer.Close()
+	var mErr MultiErr
 	for _, m := range c.mnts {
-		_ = m.Close() // TODO: log this error?
+		err := m.Close()
+		if err != nil {
+			mErr = append(mErr, err)
+		}
+	}
+	cErr := c.dialer.Close()
+	if cErr != nil {
+		mErr = append(mErr, cErr)
+	}
+	if len(mErr) > 0 {
+		return mErr
 	}
 	return nil
 }
