@@ -88,9 +88,9 @@ type Config struct {
 	Dialer cloudsql.Dialer
 }
 
-// MakeDialerOptions builds appropriate list of options from the Config
+// DialerOptions builds appropriate list of options from the Config
 // values for use by cloudsqlconn.NewClient()
-func (c *Config) MakeDialerOptions() ([]cloudsqlconn.Option, error) {
+func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
 	opts := []cloudsqlconn.Option{
 		cloudsqlconn.WithUserAgent(c.UserAgent),
 	}
@@ -178,7 +178,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 	d := conf.Dialer
 	if d == nil {
 		var err error
-		dialerOpts, err := conf.MakeDialerOptions()
+		dialerOpts, err := conf.DialerOptions()
 		if err != nil {
 			return nil, fmt.Errorf("error initializing dialer: %v", err)
 		}
