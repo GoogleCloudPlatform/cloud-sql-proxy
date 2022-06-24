@@ -260,17 +260,15 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 				ic.UnixSocket = u[0]
 			}
 
-			iam, err := parseBoolOpt("auto-iam-authn", q)
+			ic.IAMAuthN, err = parseBoolOpt("auto-iam-authn", q)
 			if err != nil {
 				return err
 			}
-			ic.IAMAuthN = iam
 
-			privateIP, err := parseBoolOpt("private-ip", q)
+			ic.PrivateIP, err = parseBoolOpt("private-ip", q)
 			if err != nil {
 				return err
 			}
-			ic.PrivateIP = privateIP
 
 		}
 		ics = append(ics, ic)

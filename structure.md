@@ -2,29 +2,25 @@
 
 Configuration defined in cmd/root.go
 
-| cli option            | per instance | global config field            | instance override config field      | cloudsqlconn in cmd/root.go |
-|-----------------------|--------------|--------------------------------|-------------------------------------|-----------------------------|
-| telemetry-project     |              | cmd.telemetryProject           |                                     |                             |
-| disable-traces        |              | cmd.disableTraces              |                                     |                             |
-| telemetry-sample-rate |              | cmd.telemetryTracingSampleRate |                                     |                             |
-| disable-metrics       |              | cmd.disableMetrics             |                                     |                             |
-| telemetry-project     |              | cmd.telemetryProject           |                                     |                             |
-| telemetry-prefix      |              | cmd.telemetryPrefix            |                                     |                             |
-| prometheus-namespace  |              | cmd.prometheusNamespace        |                                     |                             |
-| http-port             |              | cmd.httpPort                   |                                     |                             |
-| token (t)             |              | proxy.Config.Token             |                                     | proxy/Config.DialerOpts     |
-| credentials-file (c)  |              | proxy.Config.CredentialsFile   |                                     | proxy/Config.DialerOpts     |
-| gcloud-auth(g)        |              | proxy.Config.GcloudAuth        |                                     | proxy/Config.DialerOpts     |
-| address (a)           | ✅            | proxy.Config.Addr              | proxy.InstanceConnConfig.Addr       |                             |
-| port (p)              | ✅            | proxy.Config.Port              | proxy.InstanceConnConfig.Port       |                             |
-| unix-socket (u)       | ✅            | proxy.Config.UnixSocket        | proxy.InstanceConnConfig.UnixSocket |                             |
-| auto-iam-authn (i)    | ✅            | proxy.Config.IAMAuthN          | proxy.InstanceConnConfig.IAMAuthN   | proxy/Config.DialerOpts     |
-| private-ip            | ✅            | proxy.Config.PrivateIP         | proxy.InstanceConnConfig.PrivateIP  | ????                        |
+| cli option            | per instance | global config field            | instance override config field      |
+|-----------------------|--------------|--------------------------------|-------------------------------------|
+| telemetry-project     |              | cmd.telemetryProject           |                                     |
+| disable-traces        |              | cmd.disableTraces              |                                     |
+| telemetry-sample-rate |              | cmd.telemetryTracingSampleRate |                                     |
+| disable-metrics       |              | cmd.disableMetrics             |                                     |
+| telemetry-project     |              | cmd.telemetryProject           |                                     |
+| telemetry-prefix      |              | cmd.telemetryPrefix            |                                     |
+| prometheus-namespace  |              | cmd.prometheusNamespace        |                                     |
+| http-port             |              | cmd.httpPort                   |                                     |
+| token (t)             |              | proxy.Config.Token             |                                     |
+| credentials-file (c)  |              | proxy.Config.CredentialsFile   |                                     |
+| gcloud-auth(g)        |              | proxy.Config.GcloudAuth        |                                     |
+| address (a)           | ✅            | proxy.Config.Addr              | proxy.InstanceConnConfig.Addr       |
+| port (p)              | ✅            | proxy.Config.Port              | proxy.InstanceConnConfig.Port       |
+| unix-socket (u)       | ✅            | proxy.Config.UnixSocket        | proxy.InstanceConnConfig.UnixSocket |
+| auto-iam-authn (i)    | ✅            | proxy.Config.IAMAuthN          | proxy.InstanceConnConfig.IAMAuthN   |
+| private-ip            | ✅            | proxy.Config.PrivateIP         | proxy.InstanceConnConfig.PrivateIP  |
 
-Configuring conf.DialerOpts in cmd.ParseConfig() is a mistake.
-proxy.CreateClient should be doing ALL configuration of things in
-the `cloud.google.com/go/cloudsqlconn`
-package. To configure this in main violates the separation fo concerns.
 
 `proxy.NewClient()` in proxy.go:151 should be refactored to separate concerns:
 
