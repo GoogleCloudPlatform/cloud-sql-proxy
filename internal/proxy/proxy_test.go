@@ -211,7 +211,8 @@ func TestClientInitialization(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c, err := proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, tc.in)
+			tc.in.Dialer = fakeDialer{}
+			c, err := proxy.NewClient(ctx, &cobra.Command{}, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -254,14 +255,16 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
+		Dialer: fakeDialer{},
 	}
-	c, err := proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, in)
+
+	c, err := proxy.NewClient(ctx, &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	c.Close()
 
-	c, err = proxy.NewClient(ctx, fakeDialer{}, &cobra.Command{}, in)
+	c, err = proxy.NewClient(ctx, &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
