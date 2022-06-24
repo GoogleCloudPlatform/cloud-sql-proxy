@@ -29,15 +29,12 @@ import (
 	"syscall"
 	"time"
 
-	"cloud.google.com/go/cloudsqlconn"
 	"contrib.go.opencensus.io/exporter/prometheus"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 	"go.opencensus.io/trace"
-	"golang.org/x/oauth2"
 )
 
 var (
@@ -162,6 +159,8 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
 	}
 
+	conf.UserAgent = userAgent
+
 	userHasSet := func(f string) bool {
 		return cmd.PersistentFlags().Lookup(f).Changed
 	}
@@ -184,34 +183,6 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 	if conf.CredentialsFile != "" && conf.GcloudAuth {
 		return newBadCommandError("cannot specify --credentials-file and --gcloud-auth flags at the same time")
-	}
-	conf.DialerOpts = []cloudsqlconn.Option{
-		cloudsqlconn.WithUserAgent(userAgent),
-	}
-	switch {
-	case conf.Token != "":
-		cmd.Printf("Authorizing with the -token flag\n")
-		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithTokenSource(
-			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: conf.Token}),
-		))
-	case conf.CredentialsFile != "":
-		cmd.Printf("Authorizing with the credentials file at %q\n", conf.CredentialsFile)
-		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithCredentialsFile(
-			conf.CredentialsFile,
-		))
-	case conf.GcloudAuth:
-		cmd.Println("Authorizing with gcloud user credentials")
-		ts, err := gcloud.TokenSource()
-		if err != nil {
-			return err
-		}
-		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithTokenSource(ts))
-	default:
-		cmd.Println("Authorizing with Application Default Credentials")
-	}
-
-	if conf.IAMAuthN {
-		conf.DialerOpts = append(conf.DialerOpts, cloudsqlconn.WithIAMAuthN())
 	}
 
 	if userHasSet("http-port") && !userHasSet("prometheus-namespace") {
@@ -406,18 +377,7 @@ func runSignalWrapper(cmd *Command) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		// Check if the caller has configured a dialer.
-		// Otherwise, initialize a new one.
-		d := cmd.conf.Dialer
-		if d == nil {
-			var err error
-			d, err = cloudsqlconn.NewDialer(ctx, cmd.conf.DialerOpts...)
-			if err != nil {
-				shutdownCh <- fmt.Errorf("error initializing dialer: %v", err)
-				return
-			}
-		}
-		p, err := proxy.NewClient(ctx, d, cmd.Command, cmd.conf)
+		p, err := proxy.NewClient(ctx, cmd.Command, cmd.conf)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
