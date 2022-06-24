@@ -17,14 +17,12 @@ package proxy_test
 import (
 	"context"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
@@ -242,31 +240,6 @@ func TestClientInitialization(t *testing.T) {
 			}
 		})
 	}
-}
-
-type spyDialer struct {
-	LastOpts []cloudsqlconn.DialOption
-	LastInst string
-	Engine   string
-}
-
-func (d *spyDialer) Close() error {
-	log.Printf("spyDialer.Close() called")
-	// do nothing
-	return nil
-}
-
-func (d *spyDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
-	log.Printf("spyDialer.Dial() called")
-	d.LastOpts = opts
-	d.LastInst = inst
-	conn, _ := net.Pipe()
-	return conn, nil
-}
-
-func (d *spyDialer) EngineVersion(ctx context.Context, inst string) (string, error) {
-	log.Printf("spyDialer.EngineVersion() called")
-	return d.Engine, nil
 }
 
 func TestClientInitializationWorksRepeatedly(t *testing.T) {
