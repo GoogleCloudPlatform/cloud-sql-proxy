@@ -288,7 +288,7 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 func parseBoolOpt(name string, q map[string][]string) (*bool, error) {
 	if iam, ok := q[name]; ok {
 		if len(iam) != 1 {
-			return nil, newBadCommandError(fmt.Sprintf("auto iam authn param should be only one value: %q", iam))
+			return nil, newBadCommandError(fmt.Sprintf("%v param should be only one value: %q", name, iam))
 		}
 		v := strings.ToLower(iam[0])
 		switch v {
@@ -300,8 +300,8 @@ func parseBoolOpt(name string, q map[string][]string) (*bool, error) {
 			return &disable, nil
 		default:
 			return nil, newBadCommandError(
-				fmt.Sprintf("auto iam authn query param should be true or false, got: %q",
-					iam[0],
+				fmt.Sprintf("%v query param should be true or false, got: %q",
+					name, iam[0],
 				))
 		}
 	}
