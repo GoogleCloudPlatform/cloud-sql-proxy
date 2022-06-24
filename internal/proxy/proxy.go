@@ -78,7 +78,7 @@ type Config struct {
 	// MaxConnections are the maximum number of connections the Client may
 	// establish to the Cloud SQL server side proxy before refusing additional
 	// connections. A zero-value indicates no limit.
-	MaxConnections uint32
+	MaxConnections uint64
 
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
@@ -147,11 +147,11 @@ type Client struct {
 
 	// connCount tracks the number of all open connections from the Client to
 	// all Cloud SQL instances.
-	connCount uint32
+	connCount uint64
 
 	// maxConns is the maximum number of allowed connections tracked by
 	// connCount. If not set, there is no limit.
-	maxConns uint32
+	maxConns uint64
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
@@ -311,12 +311,16 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		go func() {
 			c.cmd.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
 
-			count := atomic.AddUint32(&c.connCount, 1)
-			defer atomic.AddUint32(&c.connCount, ^uint32(0))
+			// A client has established a connection to the local socket. Before
+			// we initiate a connection to the Cloud SQL backend, increment the
+			// connection counter. If the total number of connections exceeds
+			// the maximum, refuse to connect and close the client connection.
+			count := atomic.AddUint64(&c.connCount, 1)
+			defer atomic.AddUint64(&c.connCount, ^uint64(0))
 
 			if c.maxConns > 0 && count > c.maxConns {
 				c.cmd.Printf("max connections (%v) exceeded, refusing new connection\n", c.maxConns)
-				cConn.Close()
+				_ = cConn.Close()
 				return
 			}
 
