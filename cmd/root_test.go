@@ -211,7 +211,6 @@ func TestNewCommandArguments(t *testing.T) {
 		},
 		{
 			desc: "using the private-ip flag query param",
-			// the query param's presence equates to true
 			args: []string{"proj:region:inst?private-ip=true"},
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
@@ -662,7 +661,7 @@ func TestParseBoolOpt(t *testing.T) {
 				t.Fatalf("could not parse query: %q", tc.queryString)
 			}
 
-			v, err := parseBoolOpt("private-ip", q)
+			v, err := parseBoolOpt(q, "private-ip")
 
 			// test value
 			if tc.wantsValue == nil {

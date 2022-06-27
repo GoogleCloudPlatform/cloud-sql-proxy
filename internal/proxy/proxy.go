@@ -96,37 +96,6 @@ type Config struct {
 	Dialer cloudsql.Dialer
 }
 
-// DialerOptions builds appropriate list of options from the Config
-// values for use by cloudsqlconn.NewClient()
-func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
-	opts := []cloudsqlconn.Option{
-		cloudsqlconn.WithUserAgent(c.UserAgent),
-	}
-	switch {
-	case c.Token != "":
-		opts = append(opts, cloudsqlconn.WithTokenSource(
-			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
-		))
-	case c.CredentialsFile != "":
-		opts = append(opts, cloudsqlconn.WithCredentialsFile(
-			c.CredentialsFile,
-		))
-	case c.GcloudAuth:
-		ts, err := gcloud.TokenSource()
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
-	default:
-	}
-
-	if c.IAMAuthN {
-		opts = append(opts, cloudsqlconn.WithIAMAuthN())
-	}
-
-	return opts, nil
-}
-
 type portConfig struct {
 	global    int
 	postgres  int
@@ -186,7 +155,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 	d := conf.Dialer
 	if d == nil {
 		var err error
-		dialerOpts, err := conf.DialerOptions()
+		dialerOpts, err := dialerOptions(conf)
 		if err != nil {
 			return nil, fmt.Errorf("error initializing dialer: %v", err)
 		}
@@ -227,7 +196,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 		// use a TCP listener.
 		// Otherwise, use a Unix socket.
 		if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
-			(inst.Addr != "" || inst.Port != 0) {
+				(inst.Addr != "" || inst.Port != 0) {
 			network = "tcp"
 
 			a := conf.Addr
@@ -287,6 +256,37 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 	return &Client{mnts: mnts, cmd: cmd, dialer: d}, nil
 }
 
+// dialerOptions builds appropriate list of options from the Config
+// values for use by cloudsqlconn.NewClient()
+func dialerOptions(c *Config) ([]cloudsqlconn.Option, error) {
+	opts := []cloudsqlconn.Option{
+		cloudsqlconn.WithUserAgent(c.UserAgent),
+	}
+	switch {
+	case c.Token != "":
+		opts = append(opts, cloudsqlconn.WithTokenSource(
+			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+		))
+	case c.CredentialsFile != "":
+		opts = append(opts, cloudsqlconn.WithCredentialsFile(
+			c.CredentialsFile,
+		))
+	case c.GcloudAuth:
+		ts, err := gcloud.TokenSource()
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
+	default:
+	}
+
+	if c.IAMAuthN {
+		opts = append(opts, cloudsqlconn.WithIAMAuthN())
+	}
+
+	return opts, nil
+}
+
 // dialOptions interprets appropriate dial options for a particular instance
 // configuration
 func dialOptions(conf *Config, inst *InstanceConnConfig) []cloudsqlconn.DialOption {
@@ -295,13 +295,11 @@ func dialOptions(conf *Config, inst *InstanceConnConfig) []cloudsqlconn.DialOpti
 	// related to --auto-iam-authn=(bool)
 	if inst.IAMAuthN != nil {
 		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*inst.IAMAuthN))
-	} else {
-		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(conf.IAMAuthN))
 	}
 
 	// related to --private-ip=(bool) option
 	if inst.PrivateIP != nil && *inst.PrivateIP ||
-		inst.PrivateIP == nil && conf.PrivateIP {
+			inst.PrivateIP == nil && conf.PrivateIP {
 		opts = append(opts, cloudsqlconn.WithPrivateIP())
 	} else {
 		opts = append(opts, cloudsqlconn.WithPublicIP())
