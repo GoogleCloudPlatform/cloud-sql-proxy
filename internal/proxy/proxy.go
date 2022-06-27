@@ -196,7 +196,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 		// use a TCP listener.
 		// Otherwise, use a Unix socket.
 		if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
-				(inst.Addr != "" || inst.Port != 0) {
+			(inst.Addr != "" || inst.Port != 0) {
 			network = "tcp"
 
 			a := conf.Addr
@@ -299,7 +299,7 @@ func dialOptions(conf *Config, inst *InstanceConnConfig) []cloudsqlconn.DialOpti
 
 	// related to --private-ip=(bool) option
 	if inst.PrivateIP != nil && *inst.PrivateIP ||
-			inst.PrivateIP == nil && conf.PrivateIP {
+		inst.PrivateIP == nil && conf.PrivateIP {
 		opts = append(opts, cloudsqlconn.WithPrivateIP())
 	} else {
 		opts = append(opts, cloudsqlconn.WithPublicIP())
