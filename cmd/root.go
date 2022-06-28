@@ -418,11 +418,11 @@ func runSignalWrapper(cmd *Command) error {
 	}
 	cmd.Println("The proxy has started successfully and is ready for new connections!")
 	defer p.Close()
-	// run proxy in separate goroutine
+
 	go func() {
 		shutdownCh <- p.Serve(ctx)
 	}()
-	// wait for proxy to exit
+
 	err := <-shutdownCh
 	switch {
 	case errors.Is(err, errSigInt):

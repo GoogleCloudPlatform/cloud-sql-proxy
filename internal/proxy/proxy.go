@@ -49,7 +49,7 @@ type InstanceConnConfig struct {
 	IAMAuthN *bool
 
 	// PrivateIP tells the proxy to attempt to connect to the db instance's
-	// private ip address instead of the public IP address
+	// private IP address instead of the public IP address
 	PrivateIP *bool
 }
 
@@ -92,7 +92,7 @@ type Config struct {
 	Instances []InstanceConnConfig
 
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
-	// instances. Used by serverless.
+	// instances.
 	Dialer cloudsql.Dialer
 }
 
