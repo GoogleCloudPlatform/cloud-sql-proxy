@@ -292,12 +292,10 @@ func dialerOptions(c *Config) ([]cloudsqlconn.Option, error) {
 func dialOptions(conf *Config, inst *InstanceConnConfig) []cloudsqlconn.DialOption {
 	var opts []cloudsqlconn.DialOption
 
-	// related to --auto-iam-authn=(bool)
 	if inst.IAMAuthN != nil {
 		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*inst.IAMAuthN))
 	}
 
-	// related to --private-ip=(bool) option
 	if inst.PrivateIP != nil && *inst.PrivateIP ||
 		inst.PrivateIP == nil && conf.PrivateIP {
 		opts = append(opts, cloudsqlconn.WithPrivateIP())

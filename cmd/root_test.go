@@ -479,7 +479,6 @@ func TestNewCommandWithErrors(t *testing.T) {
 			desc: "enabling a Prometheus port without a namespace",
 			args: []string{"--htto-port", "1111", "proj:region:inst"},
 		},
-		//TODO error when privateip=bad-string
 	}
 
 	for _, tc := range tcs {
