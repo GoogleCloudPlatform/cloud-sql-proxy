@@ -138,6 +138,8 @@ any client SSL certificates.`,
 		"Enable Prometheus for metric collection using the provided namespace")
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for the Prometheus server to use")
+	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
+		"Specifies the project to use for Cloud SQL Admin API quota tracking.")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",

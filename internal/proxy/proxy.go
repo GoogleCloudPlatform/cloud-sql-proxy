@@ -83,6 +83,10 @@ type Config struct {
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
 
+	// QuotaProject is the id of the Google Cloud project to use to track
+	// api request quotas.
+	QuotaProject string
+
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
 	// instances.
 	Dialer cloudsql.Dialer
@@ -114,6 +118,11 @@ func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
 
 	if c.IAMAuthN {
 		opts = append(opts, cloudsqlconn.WithIAMAuthN())
+	}
+
+	if c.QuotaProject != "" {
+		// TODO: waiting for implementation of cloudsqlconn.WithQuotaProject()
+		// opts = append(opts, cloudsqlconn.WithQuotaProject(c.QuotaProject))
 	}
 
 	return opts, nil

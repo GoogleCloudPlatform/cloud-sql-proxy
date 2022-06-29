@@ -201,6 +201,13 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "using the (short) iam authn login flag",
+			args: []string{"--quota-project", "proj", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				QuotaProject: "proj",
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
