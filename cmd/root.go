@@ -283,18 +283,16 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 //   false if the value is "f" or "false" case-insensitive
 func parseBoolOpt(q url.Values, name string) (*bool, error) {
 	iam, ok := q[name]
-	// no value
 	if !ok {
 		return nil, nil
 	}
-	// too many values
+
 	if len(iam) != 1 {
 		return nil, newBadCommandError(fmt.Sprintf("%v param should be only one value: %q", name, iam))
 	}
 
-	v := strings.ToLower(iam[0])
-	switch v {
-	case "true", "t":
+	switch strings.ToLower(iam[0]) {
+	case "true", "t", "":
 		enable := true
 		return &enable, nil
 	case "false", "f":

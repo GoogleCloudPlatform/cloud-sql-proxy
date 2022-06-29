@@ -319,6 +319,11 @@ func TestPrivateIPQueryParams(t *testing.T) {
 			want: nil,
 		},
 		{
+			desc: "when the query string has no value",
+			args: []string{"proj:region:inst?private-ip"},
+			want: &trueValue,
+		},
+		{
 			desc: "when the query string is true",
 			args: []string{"proj:region:inst?private-ip=true"},
 			want: &trueValue,
