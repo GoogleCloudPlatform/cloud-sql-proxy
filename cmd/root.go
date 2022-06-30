@@ -139,7 +139,7 @@ any client SSL certificates.`,
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for the Prometheus server to use")
 	cmd.PersistentFlags().StringVar(&c.conf.ApiEndpointUrl, "api-endpoint-url", "",
-		"When set, the proxy uses this url as the base API path. Example: https://sqladmin.googleapis.com")
+		"When set, the proxy uses this url as the base path when making API calls. Example: https://sqladmin.googleapis.com")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
