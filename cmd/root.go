@@ -201,12 +201,12 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 		cmd.Println("Ignoring disable-traces as telemetry-project was not set")
 	}
 
+	var ics []proxy.InstanceConnConfig
 	for _, a := range args {
 		// Assume no query params initially
 		ic := proxy.InstanceConnConfig{
 			Name: a,
 		}
-
 		// If there are query params, update instance config.
 		if res := strings.SplitN(a, "?", 2); len(res) > 1 {
 			ic.Name = res[0]
@@ -271,9 +271,10 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 			}
 
 		}
-		conf.AddInstance(ic)
+		ics = append(ics, ic)
 	}
 
+	conf.Instances = ics
 	return nil
 }
 

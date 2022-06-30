@@ -51,10 +51,6 @@ type InstanceConnConfig struct {
 	// PrivateIP tells the proxy to attempt to connect to the db instance's
 	// private IP address instead of the public IP address
 	PrivateIP *bool
-
-	// conf the parent configuration that owns this InstanceConnConfig
-	// set by Config.AddInstance()
-	conf *Config
 }
 
 // Config contains all the configuration provided by the caller.
@@ -102,7 +98,7 @@ type Config struct {
 
 // DialOptions interprets appropriate dial options for a particular instance
 // configuration
-func (i *InstanceConnConfig) DialOptions() []cloudsqlconn.DialOption {
+func (c *Config) DialOptions(i *InstanceConnConfig) []cloudsqlconn.DialOption {
 	var opts []cloudsqlconn.DialOption
 
 	if i.IAMAuthN != nil {
@@ -110,7 +106,7 @@ func (i *InstanceConnConfig) DialOptions() []cloudsqlconn.DialOption {
 	}
 
 	if i.PrivateIP != nil && *i.PrivateIP ||
-			i.PrivateIP == nil && i.conf != nil && i.conf.PrivateIP {
+		i.PrivateIP == nil && c.PrivateIP {
 		opts = append(opts, cloudsqlconn.WithPrivateIP())
 	} else {
 		opts = append(opts, cloudsqlconn.WithPublicIP())
@@ -148,14 +144,6 @@ func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
 	}
 
 	return opts, nil
-}
-
-// AddInstance puts an instance in the config's slice of Instances
-// and sets the ic.conf field to itself so that DialOptions() works
-// correctly
-func (c *Config) AddInstance(ic InstanceConnConfig) {
-	c.Instances = append(c.Instances, ic)
-	c.Instances[len(c.Instances)-1].conf = c
 }
 
 type portConfig struct {
@@ -258,7 +246,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 		// use a TCP listener.
 		// Otherwise, use a Unix socket.
 		if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
-				(inst.Addr != "" || inst.Port != 0) {
+			(inst.Addr != "" || inst.Port != 0) {
 			network = "tcp"
 
 			a := conf.Addr
@@ -302,7 +290,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 			}
 		}
 
-		opts := dialOptions(conf, &inst)
+		opts := conf.DialOptions(&inst)
 		m := &socketMount{inst: inst.Name, dialOpts: opts}
 		addr, err := m.listen(ctx, network, address)
 		if err != nil {
