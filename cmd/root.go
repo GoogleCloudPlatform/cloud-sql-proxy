@@ -140,6 +140,8 @@ any client SSL certificates.`,
 		"Port for the Prometheus server to use")
 	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
 		"Specifies the project to use for Cloud SQL Admin API quota tracking.")
+	cmd.PersistentFlags().StringVar(&c.conf.ApiEndpointUrl, "sqladmin-api-endpoint", "",
+		"When set, the proxy uses this url as the API endpoint for all sqladmin API requests. Example: https://sqladmin.googleapis.com")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -150,6 +152,8 @@ any client SSL certificates.`,
 		`Enables Unix sockets for all listeners using the provided directory.`)
 	cmd.PersistentFlags().BoolVarP(&c.conf.IAMAuthN, "auto-iam-authn", "i", false,
 		"Enables Automatic IAM Authentication for all instances")
+	cmd.PersistentFlags().BoolVar(&c.conf.PrivateIP, "private-ip", false,
+		"Connect to the private ip address for all instances")
 
 	c.Command = cmd
 	return c
@@ -199,6 +203,18 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
 		cmd.Println("Ignoring disable-traces as telemetry-project was not set")
+	}
+
+	if userHasSet("sqladmin-api-endpoint") && conf.ApiEndpointUrl != "" {
+		_, err := url.Parse(conf.ApiEndpointUrl)
+		if err != nil {
+			return newBadCommandError(fmt.Sprintf("the value provided for --api-endpoint is not a valid url, %v", conf.ApiEndpointUrl))
+		}
+
+		// add a trailing '/' if omitted
+		if !strings.HasSuffix(conf.ApiEndpointUrl, "/") {
+			conf.ApiEndpointUrl = conf.ApiEndpointUrl + "/"
+		}
 	}
 
 	var ics []proxy.InstanceConnConfig
@@ -260,23 +276,14 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 				ic.UnixSocket = u[0]
 			}
 
-			if iam, ok := q["auto-iam-authn"]; ok {
-				if len(iam) != 1 {
-					return newBadCommandError(fmt.Sprintf("auto iam authn param should be only one value: %q", iam))
-				}
-				switch iam[0] {
-				case "true", "t":
-					enable := true
-					ic.IAMAuthN = &enable
-				case "false", "f":
-					disable := false
-					ic.IAMAuthN = &disable
-				default:
-					return newBadCommandError(
-						fmt.Sprintf("auto iam authn query param should be true or false, got: %q",
-							iam[0],
-						))
-				}
+			ic.IAMAuthN, err = parseBoolOpt(q, "auto-iam-authn")
+			if err != nil {
+				return err
+			}
+
+			ic.PrivateIP, err = parseBoolOpt(q, "private-ip")
+			if err != nil {
+				return err
 			}
 
 		}
@@ -285,6 +292,36 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 
 	conf.Instances = ics
 	return nil
+}
+
+// parseBoolOpt parses a boolean option from the query string, returning
+//   true if the value is "t" or "true" case-insensitive
+//   false if the value is "f" or "false" case-insensitive
+func parseBoolOpt(q url.Values, name string) (*bool, error) {
+	iam, ok := q[name]
+	if !ok {
+		return nil, nil
+	}
+
+	if len(iam) != 1 {
+		return nil, newBadCommandError(fmt.Sprintf("%v param should be only one value: %q", name, iam))
+	}
+
+	switch strings.ToLower(iam[0]) {
+	case "true", "t", "":
+		enable := true
+		return &enable, nil
+	case "false", "f":
+		disable := false
+		return &disable, nil
+	default:
+		// value is not recognized
+		return nil, newBadCommandError(
+			fmt.Sprintf("%v query param should be true or false, got: %q",
+				name, iam[0],
+			))
+	}
+
 }
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
