@@ -139,7 +139,7 @@ any client SSL certificates.`,
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for the Prometheus server to use")
 	cmd.PersistentFlags().StringVar(&c.conf.ApiEndpointUrl, "sqladmin-api-endpoint", "",
-		"When set, the proxy uses this url as the API endpoint for all sqladmin API requests. Example: https://sqladmin.googleapis.com")
+		"When set, the proxy uses this url as the API endpoint for all SQL Admin API requests. Example: https://sqladmin.googleapis.com")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -204,7 +204,7 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	if userHasSet("sqladmin-api-endpoint") && conf.ApiEndpointUrl != "" {
 		_, err := url.Parse(conf.ApiEndpointUrl)
 		if err != nil {
-			return newBadCommandError(fmt.Sprintf("the value provided for --api-endpoint is not a valid url, %v", conf.ApiEndpointUrl))
+			return newBadCommandError(fmt.Sprintf("the value provided for --sqladmin-api-endpoint is not a valid URL, %v", conf.ApiEndpointUrl))
 		}
 
 		// add a trailing '/' if omitted
