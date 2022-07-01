@@ -237,13 +237,12 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 		}
 	}
 
-	var mnts []*socketMount
 	for _, inst := range conf.Instances {
-		go func(name string) {
-			// Initiate refresh operation
-			d.EngineVersion(ctx, name)
-		}(inst.Name)
+		// Initiate refresh operation and warm the cache.
+		go func(name string) { d.EngineVersion(ctx, name) }(inst.Name)
 	}
+
+	var mnts []*socketMount
 	pc := newPortConfig(conf.Port)
 	for _, inst := range conf.Instances {
 		version, err := d.EngineVersion(ctx, inst.Name)
@@ -251,78 +250,18 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 			return nil, err
 		}
 
-		var (
-			// network is one of "tcp" or "unix"
-			network string
-			// address is either a TCP host port, or a Unix socket
-			address string
-		)
-		// IF
-		//   a global Unix socket directory is NOT set AND
-		//   an instance-level Unix socket is NOT set
-		//   (e.g.,  I didn't set a Unix socket globally or for this instance)
-		// OR
-		//   an instance-level TCP address or port IS set
-		//   (e.g., I'm overriding any global settings to use TCP for this
-		//   instance)
-		// use a TCP listener.
-		// Otherwise, use a Unix socket.
-		if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
-			(inst.Addr != "" || inst.Port != 0) {
-			network = "tcp"
-
-			a := conf.Addr
-			if inst.Addr != "" {
-				a = inst.Addr
-			}
-
-			var np int
-			switch {
-			case inst.Port != 0:
-				np = inst.Port
-			case conf.Port != 0:
-				np = pc.nextPort()
-			default:
-				np = pc.nextDBPort(version)
-			}
-
-			address = net.JoinHostPort(a, fmt.Sprint(np))
-		} else {
-			network = "unix"
-
-			dir := conf.UnixSocket
-			if dir == "" {
-				dir = inst.UnixSocket
-			}
-			if _, err := os.Stat(dir); err != nil {
-				return nil, err
-			}
-			address = UnixAddress(dir, inst.Name)
-			// When setting up a listener for Postgres, create address as a
-			// directory, and use the Postgres-specific socket name
-			// .s.PGSQL.5432.
-			if strings.HasPrefix(version, "POSTGRES") {
-				// Make the directory only if it hasn't already been created.
-				if _, err := os.Stat(address); err != nil {
-					if err = os.Mkdir(address, 0777); err != nil {
-						return nil, err
-					}
-				}
-				address = UnixAddress(address, ".s.PGSQL.5432")
-			}
-		}
-
-		opts := conf.DialOptions(inst)
-		m := &socketMount{inst: inst.Name, dialOpts: opts}
-		addr, err := m.listen(ctx, network, address)
+		m, err := newSocketMount(ctx, conf, pc, inst, version)
 		if err != nil {
 			for _, m := range mnts {
-				m.close()
+				mErr := m.Close()
+				if mErr != nil {
+					cmd.PrintErrf("failed to close mount: %v", mErr)
+				}
 			}
 			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
 
-		cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
+		cmd.Printf("[%s] Listening on %s\n", inst.Name, m.Addr())
 		mnts = append(mnts, m)
 	}
 	c := &Client{
@@ -360,22 +299,46 @@ func (c *Client) Serve(ctx context.Context) error {
 	return <-exitCh
 }
 
-// Close triggers the proxyClient to shutdown.
-func (c *Client) Close() {
-	defer c.dialer.Close()
-	for _, m := range c.mnts {
-		m.close()
+// MultiErr is a group of errors wrapped into one.
+type MultiErr []error
+
+// Error returns a single string representing one or more errors.
+func (m MultiErr) Error() string {
+	l := len(m)
+	if l == 1 {
+		return m[0].Error()
 	}
+	var errs []string
+	for _, e := range m {
+		errs = append(errs, e.Error())
+	}
+	return strings.Join(errs, ", ")
+}
+
+// Close triggers the proxyClient to shutdown.
+func (c *Client) Close() error {
+	var mErr MultiErr
+	for _, m := range c.mnts {
+		err := m.Close()
+		if err != nil {
+			mErr = append(mErr, err)
+		}
+	}
+	cErr := c.dialer.Close()
+	if cErr != nil {
+		mErr = append(mErr, cErr)
+	}
+	if len(mErr) > 0 {
+		return mErr
+	}
+	return nil
 }
 
 // serveSocketMount persistently listens to the socketMounts listener and proxies connections to a
 // given Cloud SQL instance.
 func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
-	if s.listener == nil {
-		return fmt.Errorf("[%s] mount doesn't have a listener set", s.inst)
-	}
 	for {
-		cConn, err := s.listener.Accept()
+		cConn, err := s.Accept()
 		if err != nil {
 			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
 				c.cmd.PrintErrf("[%s] Error accepting connection: %v\n", s.inst, err)
@@ -424,22 +387,89 @@ type socketMount struct {
 	listener net.Listener
 }
 
-// listen causes a socketMount to create a Listener at the specified network address.
-func (s *socketMount) listen(ctx context.Context, network string, address string) (net.Addr, error) {
+func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst InstanceConnConfig, version string) (*socketMount, error) {
+	var (
+		// network is one of "tcp" or "unix"
+		network string
+		// address is either a TCP host port, or a Unix socket
+		address string
+	)
+	// IF
+	//   a global Unix socket directory is NOT set AND
+	//   an instance-level Unix socket is NOT set
+	//   (e.g.,  I didn't set a Unix socket globally or for this instance)
+	// OR
+	//   an instance-level TCP address or port IS set
+	//   (e.g., I'm overriding any global settings to use TCP for this
+	//   instance)
+	// use a TCP listener.
+	// Otherwise, use a Unix socket.
+	if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
+		(inst.Addr != "" || inst.Port != 0) {
+		network = "tcp"
+
+		a := conf.Addr
+		if inst.Addr != "" {
+			a = inst.Addr
+		}
+
+		var np int
+		switch {
+		case inst.Port != 0:
+			np = inst.Port
+		case conf.Port != 0:
+			np = pc.nextPort()
+		default:
+			np = pc.nextDBPort(version)
+		}
+
+		address = net.JoinHostPort(a, fmt.Sprint(np))
+	} else {
+		network = "unix"
+
+		dir := conf.UnixSocket
+		if dir == "" {
+			dir = inst.UnixSocket
+		}
+		if _, err := os.Stat(dir); err != nil {
+			return nil, err
+		}
+		address = UnixAddress(dir, inst.Name)
+		// When setting up a listener for Postgres, create address as a
+		// directory, and use the Postgres-specific socket name
+		// .s.PGSQL.5432.
+		if strings.HasPrefix(version, "POSTGRES") {
+			// Make the directory only if it hasn't already been created.
+			if _, err := os.Stat(address); err != nil {
+				if err = os.Mkdir(address, 0777); err != nil {
+					return nil, err
+				}
+			}
+			address = UnixAddress(address, ".s.PGSQL.5432")
+		}
+	}
+
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
-	l, err := lc.Listen(ctx, network, address)
+	ln, err := lc.Listen(ctx, network, address)
 	if err != nil {
 		return nil, err
 	}
-	s.listener = l
-	return s.listener.Addr(), nil
+	opts := conf.DialOptions(inst)
+	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
+	return m, nil
+}
+
+func (s *socketMount) Addr() net.Addr {
+	return s.listener.Addr()
+}
+
+func (s *socketMount) Accept() (net.Conn, error) {
+	return s.listener.Accept()
 }
 
 // close stops the mount from listening for any more connections
-func (s *socketMount) close() error {
-	err := s.listener.Close()
-	s.listener = nil
-	return err
+func (s *socketMount) Close() error {
+	return s.listener.Close()
 }
 
 // proxyConn sets up a bidirectional copy between two open connections
