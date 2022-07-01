@@ -47,6 +47,10 @@ type InstanceConnConfig struct {
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
 	IAMAuthN *bool
+
+	// PrivateIP tells the proxy to attempt to connect to the db instance's
+	// private IP address instead of the public IP address
+	PrivateIP *bool
 }
 
 // Config contains all the configuration provided by the caller.
@@ -71,6 +75,10 @@ type Config struct {
 	// increments from this value.
 	Port int
 
+	// ApiEndpointUrl is the URL of the google cloud sql api. When left blank,
+	// the proxy will use the main public api: https://sqladmin.googleapis.com/
+	ApiEndpointUrl string
+
 	// UnixSocket is the directory where Unix sockets will be created,
 	// connected to any Instances. If set, takes precedence over Addr and Port.
 	UnixSocket string
@@ -79,6 +87,10 @@ type Config struct {
 	// Postgres-only.
 	IAMAuthN bool
 
+	// PrivateIP enables connections via the database server's private IP address
+	// for all instances.
+	PrivateIP bool
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
@@ -86,6 +98,24 @@ type Config struct {
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
 	// instances.
 	Dialer cloudsql.Dialer
+}
+
+// DialOptions interprets appropriate dial options for a particular instance
+// configuration
+func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
+	var opts []cloudsqlconn.DialOption
+
+	if i.IAMAuthN != nil {
+		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*i.IAMAuthN))
+	}
+
+	if i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP {
+		opts = append(opts, cloudsqlconn.WithPrivateIP())
+	} else {
+		opts = append(opts, cloudsqlconn.WithPublicIP())
+	}
+
+	return opts
 }
 
 // DialerOptions builds appropriate list of options from the Config
@@ -110,6 +140,10 @@ func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
 		}
 		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
 	default:
+	}
+
+	if c.ApiEndpointUrl != "" {
+		opts = append(opts, cloudsqlconn.WithAdminAPIEndpoint(c.ApiEndpointUrl))
 	}
 
 	if c.IAMAuthN {
@@ -385,10 +419,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	if err != nil {
 		return nil, err
 	}
-	var opts []cloudsqlconn.DialOption
-	if inst.IAMAuthN != nil {
-		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*inst.IAMAuthN))
-	}
+	opts := conf.DialOptions(inst)
 	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
 	return m, nil
 }

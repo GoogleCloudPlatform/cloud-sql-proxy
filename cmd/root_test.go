@@ -155,6 +155,20 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the api-endpoint flag without trailing slash",
+			args: []string{"--sqladmin-api-endpoint", "https://test.googleapis.com", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ApiEndpointUrl: "https://test.googleapis.com/",
+			}),
+		},
+		{
+			desc: "using the api-endpoint flag with trailing slash",
+			args: []string{"--sqladmin-api-endpoint", "https://test.googleapis.com/", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ApiEndpointUrl: "https://test.googleapis.com/",
+			}),
+		},
+		{
 			desc: "using the unix socket flag",
 			args: []string{"--unix-socket", "/path/to/dir/", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -198,6 +212,22 @@ func TestNewCommandArguments(t *testing.T) {
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
 					IAMAuthN: &trueValue,
+				}},
+			}),
+		},
+		{
+			desc: "using the private-ip flag",
+			args: []string{"--private-ip", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				PrivateIP: true,
+			}),
+		},
+		{
+			desc: "using the private-ip flag query param",
+			args: []string{"proj:region:inst?private-ip=true"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					PrivateIP: &trueValue,
 				}},
 			}),
 		},
@@ -281,6 +311,91 @@ func TestAutoIAMAuthNQueryParams(t *testing.T) {
 				return
 			}
 			if got := c.conf.Instances[0].IAMAuthN; *got != *tc.want {
+				t.Errorf("args = %v, want = %v, got = %v", tc.args, *tc.want, *got)
+			}
+		})
+	}
+}
+
+func TestPrivateIPQueryParams(t *testing.T) {
+	// saving true and false in a variable so we can take its address
+	trueValue := true
+	falseValue := false
+
+	tcs := []struct {
+		desc string
+		args []string
+		want *bool
+	}{
+		{
+			desc: "when the query string is absent",
+			args: []string{"proj:region:inst"},
+			want: nil,
+		},
+		{
+			desc: "when the query string has no value",
+			args: []string{"proj:region:inst?private-ip"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is true",
+			args: []string{"proj:region:inst?private-ip=true"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is True",
+			args: []string{"proj:region:inst?private-ip=True"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is (short) T",
+			args: []string{"proj:region:inst?private-ip=T"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is (short) t",
+			args: []string{"proj:region:inst?private-ip=t"},
+			want: &trueValue,
+		},
+		{
+			desc: "when the query string is false",
+			args: []string{"proj:region:inst?private-ip=false"},
+			want: &falseValue,
+		},
+		{
+			desc: "when the query string is (short) f",
+			args: []string{"proj:region:inst?private-ip=f"},
+			want: &falseValue,
+		},
+		{
+			desc: "when the query string is False",
+			args: []string{"proj:region:inst?private-ip=False"},
+			want: &falseValue,
+		},
+		{
+			desc: "when the query string is (short) F",
+			args: []string{"proj:region:inst?private-ip=F"},
+			want: &falseValue,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			c := NewCommand()
+			// Keep the test output quiet
+			c.SilenceUsage = true
+			c.SilenceErrors = true
+			// Disable execute behavior
+			c.RunE = func(*cobra.Command, []string) error { return nil }
+			c.SetArgs(tc.args)
+
+			err := c.Execute()
+			if err != nil {
+				t.Fatalf("command.Execute: %v", err)
+			}
+			if tc.want == nil && c.conf.Instances[0].PrivateIP == nil {
+				return
+			}
+			if got := c.conf.Instances[0].PrivateIP; *got != *tc.want {
 				t.Errorf("args = %v, want = %v, got = %v", tc.args, *tc.want, *got)
 			}
 		})
@@ -377,6 +492,10 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "enabling a Prometheus port without a namespace",
 			args: []string{"--http-port", "1111", "proj:region:inst"},
+		},
+		{
+			desc: "using an invalid url for sqladmin-api-endpoint",
+			args: []string{"--sqladmin-api-endpoint", "https://user:abc{DEf1=ghi@example.com:5432/db?sslmode=require", "proj:region:inst"},
 		},
 	}
 
