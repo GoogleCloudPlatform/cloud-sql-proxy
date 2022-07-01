@@ -290,7 +290,7 @@ func (m MultiErr) Error() string {
 	for _, e := range m {
 		errs = append(errs, e.Error())
 	}
-	return strings.Join(errs, ",")
+	return strings.Join(errs, ", ")
 }
 
 // Close triggers the proxyClient to shutdown.
