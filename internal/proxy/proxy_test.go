@@ -55,7 +55,7 @@ func (f *fakeDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn
 	return c1, nil
 }
 
-func (fakeDialer) EngineVersion(_ context.Context, inst string) (string, error) {
+func (*fakeDialer) EngineVersion(_ context.Context, inst string) (string, error) {
 	switch {
 	case strings.Contains(inst, "pg"):
 		return "POSTGRES_14", nil
