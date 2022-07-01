@@ -27,7 +27,9 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 // InstanceConnConfig holds the configuration for an individual instance
@@ -46,10 +48,17 @@ type InstanceConnConfig struct {
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
 	IAMAuthN *bool
+
+	// PrivateIP tells the proxy to attempt to connect to the db instance's
+	// private IP address instead of the public IP address
+	PrivateIP *bool
 }
 
 // Config contains all the configuration provided by the caller.
 type Config struct {
+	// UserAgent is the user agent to use when connecting to the cloudsql instance
+	UserAgent string
+
 	// Token is the Bearer token used for authorization.
 	Token string
 
@@ -66,6 +75,10 @@ type Config struct {
 	// Port is the initial port to bind to. Subsequent instances bind to
 	// increments from this value.
 	Port int
+
+	// ApiEndpointUrl is the URL of the google cloud sql api. When left blank,
+	// the proxy will use the main public api: https://sqladmin.googleapis.com/
+	ApiEndpointUrl string
 
 	// UnixSocket is the directory where Unix sockets will be created,
 	// connected to any Instances. If set, takes precedence over Addr and Port.
@@ -85,6 +98,10 @@ type Config struct {
 	// regardless of any open connections.
 	WaitOnClose time.Duration
 
+	// PrivateIP enables connections via the database server's private IP address
+	// for all instances.
+	PrivateIP bool
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
@@ -92,10 +109,59 @@ type Config struct {
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
 	// instances.
 	Dialer cloudsql.Dialer
+}
 
-	// DialerOpts specifies the opts to use when creating a new dialer. This
-	// value is ignored when a Dialer has been set.
-	DialerOpts []cloudsqlconn.Option
+// DialOptions interprets appropriate dial options for a particular instance
+// configuration
+func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
+	var opts []cloudsqlconn.DialOption
+
+	if i.IAMAuthN != nil {
+		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*i.IAMAuthN))
+	}
+
+	if i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP {
+		opts = append(opts, cloudsqlconn.WithPrivateIP())
+	} else {
+		opts = append(opts, cloudsqlconn.WithPublicIP())
+	}
+
+	return opts
+}
+
+// DialerOptions builds appropriate list of options from the Config
+// values for use by cloudsqlconn.NewClient()
+func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
+	opts := []cloudsqlconn.Option{
+		cloudsqlconn.WithUserAgent(c.UserAgent),
+	}
+	switch {
+	case c.Token != "":
+		opts = append(opts, cloudsqlconn.WithTokenSource(
+			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+		))
+	case c.CredentialsFile != "":
+		opts = append(opts, cloudsqlconn.WithCredentialsFile(
+			c.CredentialsFile,
+		))
+	case c.GcloudAuth:
+		ts, err := gcloud.TokenSource()
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
+	default:
+	}
+
+	if c.ApiEndpointUrl != "" {
+		opts = append(opts, cloudsqlconn.WithAdminAPIEndpoint(c.ApiEndpointUrl))
+	}
+
+	if c.IAMAuthN {
+		opts = append(opts, cloudsqlconn.WithIAMAuthN())
+	}
+
+	return opts, nil
 }
 
 type portConfig struct {
@@ -164,12 +230,28 @@ type Client struct {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
-	var mnts []*socketMount
+func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, error) {
+	// Check if the caller has configured a dialer.
+	// Otherwise, initialize a new one.
+	d := conf.Dialer
+	if d == nil {
+		var err error
+		dialerOpts, err := conf.DialerOptions()
+		if err != nil {
+			return nil, fmt.Errorf("error initializing dialer: %v", err)
+		}
+		d, err = cloudsqlconn.NewDialer(ctx, dialerOpts...)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing dialer: %v", err)
+		}
+	}
+
 	for _, inst := range conf.Instances {
-		// Initiate refresh operation
+		// Initiate refresh operation and warm the cache.
 		go func(name string) { d.EngineVersion(ctx, name) }(inst.Name)
 	}
+
+	var mnts []*socketMount
 	pc := newPortConfig(conf.Port)
 	for _, inst := range conf.Instances {
 		version, err := d.EngineVersion(ctx, inst.Name)
@@ -177,81 +259,18 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			return nil, err
 		}
 
-		var (
-			// network is one of "tcp" or "unix"
-			network string
-			// address is either a TCP host port, or a Unix socket
-			address string
-		)
-		// IF
-		//   a global Unix socket directory is NOT set AND
-		//   an instance-level Unix socket is NOT set
-		//   (e.g.,  I didn't set a Unix socket globally or for this instance)
-		// OR
-		//   an instance-level TCP address or port IS set
-		//   (e.g., I'm overriding any global settings to use TCP for this
-		//   instance)
-		// use a TCP listener.
-		// Otherwise, use a Unix socket.
-		if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
-			(inst.Addr != "" || inst.Port != 0) {
-			network = "tcp"
-
-			a := conf.Addr
-			if inst.Addr != "" {
-				a = inst.Addr
-			}
-
-			var np int
-			switch {
-			case inst.Port != 0:
-				np = inst.Port
-			case conf.Port != 0:
-				np = pc.nextPort()
-			default:
-				np = pc.nextDBPort(version)
-			}
-
-			address = net.JoinHostPort(a, fmt.Sprint(np))
-		} else {
-			network = "unix"
-
-			dir := conf.UnixSocket
-			if dir == "" {
-				dir = inst.UnixSocket
-			}
-			if _, err := os.Stat(dir); err != nil {
-				return nil, err
-			}
-			address = UnixAddress(dir, inst.Name)
-			// When setting up a listener for Postgres, create address as a
-			// directory, and use the Postgres-specific socket name
-			// .s.PGSQL.5432.
-			if strings.HasPrefix(version, "POSTGRES") {
-				// Make the directory only if it hasn't already been created.
-				if _, err := os.Stat(address); err != nil {
-					if err = os.Mkdir(address, 0777); err != nil {
-						return nil, err
-					}
-				}
-				address = UnixAddress(address, ".s.PGSQL.5432")
-			}
-		}
-
-		var opts []cloudsqlconn.DialOption
-		if inst.IAMAuthN != nil {
-			opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*inst.IAMAuthN))
-		}
-		m := &socketMount{inst: inst.Name, dialOpts: opts}
-		addr, err := m.listen(ctx, network, address)
+		m, err := newSocketMount(ctx, conf, pc, inst, version)
 		if err != nil {
 			for _, m := range mnts {
-				m.close()
+				mErr := m.Close()
+				if mErr != nil {
+					cmd.PrintErrf("failed to close mount: %v", mErr)
+				}
 			}
 			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
 
-		cmd.Printf("[%s] Listening on %s\n", inst.Name, addr.String())
+		cmd.Printf("[%s] Listening on %s\n", inst.Name, m.Addr())
 		mnts = append(mnts, m)
 	}
 	c := &Client{
@@ -290,15 +309,41 @@ func (c *Client) Serve(ctx context.Context) error {
 	return <-exitCh
 }
 
+// MultiErr is a group of errors wrapped into one.
+type MultiErr []error
+
+// Error returns a single string representing one or more errors.
+func (m MultiErr) Error() string {
+	l := len(m)
+	if l == 1 {
+		return m[0].Error()
+	}
+	var errs []string
+	for _, e := range m {
+		errs = append(errs, e.Error())
+	}
+	return strings.Join(errs, ", ")
+}
+
 // Close triggers the proxyClient to shutdown.
 func (c *Client) Close() error {
+	var mErr MultiErr
 	// First, close all open socket listeners to prevent additional connections.
 	for _, m := range c.mnts {
-		_ = m.close() // TODO this returns an error (if the listener doesn't close)
+		err := m.Close()
+		if err != nil {
+			mErr = append(mErr, err)
+		}
 	}
-	// Next, close the dialer to prevent any future refreshes.
-	_ = c.dialer.Close() // TODO this returns an error (which is always nil right now)
+	// Next, close the dialer to prevent any additional refreshes.
+	cErr := c.dialer.Close()
+	if cErr != nil {
+		mErr = append(mErr, cErr)
+	}
 	if c.waitOnClose == 0 {
+		if len(mErr) > 0 {
+			return mErr
+		}
 		return nil
 	}
 	timeout := time.After(c.waitOnClose)
@@ -315,7 +360,10 @@ func (c *Client) Close() error {
 	}
 	open := atomic.LoadUint32(&c.connCount)
 	if open > 0 {
-		return fmt.Errorf("%d connection(s) still open after waiting %v", open, c.waitOnClose)
+		mErr = append(mErr, fmt.Errorf("%d connection(s) still open after waiting %v", open, c.waitOnClose))
+	}
+	if len(mErr) > 0 {
+		return mErr
 	}
 	return nil
 }
@@ -370,35 +418,89 @@ type socketMount struct {
 	listener net.Listener
 }
 
-func (s *socketMount) Accept() (net.Conn, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.listener == nil {
-		return nil, fmt.Errorf("[%s] mount doesn't have a listener set", s.inst)
-	}
-	return s.listener.Accept()
-}
+func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst InstanceConnConfig, version string) (*socketMount, error) {
+	var (
+		// network is one of "tcp" or "unix"
+		network string
+		// address is either a TCP host port, or a Unix socket
+		address string
+	)
+	// IF
+	//   a global Unix socket directory is NOT set AND
+	//   an instance-level Unix socket is NOT set
+	//   (e.g.,  I didn't set a Unix socket globally or for this instance)
+	// OR
+	//   an instance-level TCP address or port IS set
+	//   (e.g., I'm overriding any global settings to use TCP for this
+	//   instance)
+	// use a TCP listener.
+	// Otherwise, use a Unix socket.
+	if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
+		(inst.Addr != "" || inst.Port != 0) {
+		network = "tcp"
 
-// listen causes a socketMount to create a Listener at the specified network address.
-func (s *socketMount) listen(ctx context.Context, network string, address string) (net.Addr, error) {
+		a := conf.Addr
+		if inst.Addr != "" {
+			a = inst.Addr
+		}
+
+		var np int
+		switch {
+		case inst.Port != 0:
+			np = inst.Port
+		case conf.Port != 0:
+			np = pc.nextPort()
+		default:
+			np = pc.nextDBPort(version)
+		}
+
+		address = net.JoinHostPort(a, fmt.Sprint(np))
+	} else {
+		network = "unix"
+
+		dir := conf.UnixSocket
+		if dir == "" {
+			dir = inst.UnixSocket
+		}
+		if _, err := os.Stat(dir); err != nil {
+			return nil, err
+		}
+		address = UnixAddress(dir, inst.Name)
+		// When setting up a listener for Postgres, create address as a
+		// directory, and use the Postgres-specific socket name
+		// .s.PGSQL.5432.
+		if strings.HasPrefix(version, "POSTGRES") {
+			// Make the directory only if it hasn't already been created.
+			if _, err := os.Stat(address); err != nil {
+				if err = os.Mkdir(address, 0777); err != nil {
+					return nil, err
+				}
+			}
+			address = UnixAddress(address, ".s.PGSQL.5432")
+		}
+	}
+
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
-	l, err := lc.Listen(ctx, network, address)
+	ln, err := lc.Listen(ctx, network, address)
 	if err != nil {
 		return nil, err
 	}
-	s.mu.Lock()
-	s.listener = l
-	s.mu.Unlock()
-	return s.listener.Addr(), nil
+	opts := conf.DialOptions(inst)
+	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
+	return m, nil
+}
+
+func (s *socketMount) Addr() net.Addr {
+	return s.listener.Addr()
+}
+
+func (s *socketMount) Accept() (net.Conn, error) {
+	return s.listener.Accept()
 }
 
 // close stops the mount from listening for any more connections
-func (s *socketMount) close() error {
-	err := s.listener.Close()
-	s.mu.Lock()
-	s.listener = nil
-	s.mu.Unlock()
-	return err
+func (s *socketMount) Close() error {
+	return s.listener.Close()
 }
 
 // proxyConn sets up a bidirectional copy between two open connections

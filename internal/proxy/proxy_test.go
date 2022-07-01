@@ -16,6 +16,7 @@ package proxy_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net"
@@ -65,6 +66,14 @@ func (*fakeDialer) EngineVersion(_ context.Context, inst string) (string, error)
 	default:
 		return "POSTGRES_14", nil
 	}
+}
+
+type errorDialer struct {
+	fakeDialer
+}
+
+func (errorDialer) Close() error {
+	return errors.New("errorDialer returns error on Close")
 }
 
 func createTempDir(t *testing.T) (string, func()) {
@@ -229,7 +238,8 @@ func TestClientInitialization(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c, err := proxy.NewClient(ctx, &fakeDialer{}, &cobra.Command{}, tc.in)
+			tc.in.Dialer = &fakeDialer{}
+			c, err := proxy.NewClient(ctx, &cobra.Command{}, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -260,6 +270,7 @@ func TestClientInitialization(t *testing.T) {
 }
 
 func TestClientLimitsMaxConnections(t *testing.T) {
+	d := &fakeDialer{}
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
 		Port: 5000,
@@ -267,9 +278,9 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 			{Name: "proj:region:pg"},
 		},
 		MaxConnections: 1,
+		Dialer:         d,
 	}
-	d := &fakeDialer{}
-	c, err := proxy.NewClient(context.Background(), d, &cobra.Command{}, in)
+	c, err := proxy.NewClient(context.Background(), &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -310,8 +321,9 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
+		Dialer: &fakeDialer{},
 	}
-	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, &cobra.Command{}, in)
+	c, err := proxy.NewClient(context.Background(), &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -328,7 +340,7 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 	}
 
 	in.WaitOnClose = time.Second
-	c, err = proxy.NewClient(context.Background(), &fakeDialer{}, &cobra.Command{}, in)
+	c, err = proxy.NewClient(context.Background(), &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -345,6 +357,81 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 	}
 }
 
+func TestClientClosesCleanly(t *testing.T) {
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 5000,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:reg:inst"},
+		},
+		Dialer: &fakeDialer{},
+	}
+	c, err := proxy.NewClient(context.Background(), &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
+	}
+	go c.Serve(context.Background())
+	time.Sleep(time.Second) // allow the socket to start listening
+
+	conn, dErr := net.Dial("tcp", "127.0.0.1:5000")
+	if dErr != nil {
+		t.Fatalf("net.Dial error = %v", dErr)
+	}
+	_ = conn.Close()
+
+	if err := c.Close(); err != nil {
+		t.Fatalf("c.Close() error = %v", err)
+	}
+}
+
+func TestClosesWithError(t *testing.T) {
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 5000,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:reg:inst"},
+		},
+		Dialer: &errorDialer{},
+	}
+	c, err := proxy.NewClient(context.Background(), &cobra.Command{}, in)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
+	}
+	go c.Serve(context.Background())
+	time.Sleep(time.Second) // allow the socket to start listening
+
+	if err = c.Close(); err == nil {
+		t.Fatal("c.Close() should error, got nil")
+	}
+}
+
+func TestMultiErrorFormatting(t *testing.T) {
+	tcs := []struct {
+		desc string
+		in   proxy.MultiErr
+		want string
+	}{
+		{
+			desc: "with one error",
+			in:   proxy.MultiErr{errors.New("woops")},
+			want: "woops",
+		},
+		{
+			desc: "with many errors",
+			in:   proxy.MultiErr{errors.New("woops"), errors.New("another error")},
+			want: "woops, another error",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			if got := tc.in.Error(); got != tc.want {
+				t.Errorf("want = %v, got = %v", tc.want, got)
+			}
+		})
+	}
+}
+
 func TestClientInitializationWorksRepeatedly(t *testing.T) {
 	// The client creates a Unix socket on initial startup and does not remove
 	// it on shutdown. This test ensures the existing socket does not cause
@@ -358,14 +445,16 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
+		Dialer: &fakeDialer{},
 	}
-	c, err := proxy.NewClient(ctx, &fakeDialer{}, &cobra.Command{}, in)
+
+	c, err := proxy.NewClient(ctx, &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	c.Close()
 
-	c, err = proxy.NewClient(ctx, &fakeDialer{}, &cobra.Command{}, in)
+	c, err = proxy.NewClient(ctx, &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
