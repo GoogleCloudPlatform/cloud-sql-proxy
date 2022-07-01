@@ -227,9 +227,9 @@ func TestClientInitialization(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			tc.in.Logger = log.NewStdLogger(os.Stdout, os.Stdout)
+			logger := log.NewStdLogger(os.Stdout, os.Stdout)
 			tc.in.Dialer = fakeDialer{}
-			c, err := proxy.NewClient(ctx, tc.in)
+			c, err := proxy.NewClient(ctx, logger, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -267,9 +267,9 @@ func TestClientClosesCleanly(t *testing.T) {
 			{Name: "proj:reg:inst"},
 		},
 		Dialer: fakeDialer{},
-		Logger: log.NewStdLogger(os.Stdout, os.Stdout),
 	}
-	c, err := proxy.NewClient(context.Background(), in)
+	logger := log.NewStdLogger(os.Stdout, os.Stdout)
+	c, err := proxy.NewClient(context.Background(), logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
@@ -295,9 +295,9 @@ func TestClosesWithError(t *testing.T) {
 			{Name: "proj:reg:inst"},
 		},
 		Dialer: errorDialer{},
-		Logger: log.NewStdLogger(os.Stdout, os.Stdout),
 	}
-	c, err := proxy.NewClient(context.Background(), in)
+	logger := log.NewStdLogger(os.Stdout, os.Stdout)
+	c, err := proxy.NewClient(context.Background(), logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
@@ -349,17 +349,17 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
-		Logger: log.NewStdLogger(os.Stdout, os.Stdout),
 		Dialer: fakeDialer{},
 	}
 
-	c, err := proxy.NewClient(ctx, in)
+	logger := log.NewStdLogger(os.Stdout, os.Stdout)
+	c, err := proxy.NewClient(ctx, logger, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	c.Close()
 
-	c, err = proxy.NewClient(ctx, in)
+	c, err = proxy.NewClient(ctx, logger, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}

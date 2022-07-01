@@ -99,9 +99,6 @@ type Config struct {
 	// instances.
 	Dialer cloudsql.Dialer
 
-	// Logger is logger for reporting informational or error messages.
-	Logger log.Logger
-
 	// StructuredLogs sets all output to use JSON in the LogEntry format.
 	// See https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 	StructuredLogs bool
@@ -214,7 +211,7 @@ type Client struct {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, l log.Logger, conf *Config) (*Client, error) {
 	// Check if the caller has configured a dialer.
 	// Otherwise, initialize a new one.
 	d := conf.Dialer
@@ -248,16 +245,16 @@ func NewClient(ctx context.Context, conf *Config) (*Client, error) {
 			for _, m := range mnts {
 				mErr := m.Close()
 				if mErr != nil {
-					conf.Logger.Errorf("failed to close mount: %v", mErr)
+					l.Errorf("failed to close mount: %v", mErr)
 				}
 			}
 			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
 
-		conf.Logger.Infof("[%s] Listening on %s", inst.Name, m.Addr())
+		l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
 		mnts = append(mnts, m)
 	}
-	return &Client{mnts: mnts, logger: conf.Logger, dialer: d}, nil
+	return &Client{mnts: mnts, logger: l, dialer: d}, nil
 }
 
 // Serve listens on the mounted ports and beging proxying the connections to the instances.

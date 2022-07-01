@@ -65,7 +65,8 @@ func Execute() {
 // Command represents an invocation of the Cloud SQL Auth Proxy.
 type Command struct {
 	*cobra.Command
-	conf *proxy.Config
+	conf   *proxy.Config
+	logger log.Logger
 
 	cleanup                    func() error
 	disableTraces              bool
@@ -79,7 +80,7 @@ type Command struct {
 
 // SetLogger overrides the default logger.
 func (c *Command) SetLogger(l log.Logger) {
-	c.conf.Logger = l
+	c.logger = l
 }
 
 // Option is a function that configures a Command.
@@ -95,36 +96,35 @@ func WithDialer(d cloudsql.Dialer) Option {
 
 // NewCommand returns a Command object representing an invocation of the proxy.
 func NewCommand(opts ...Option) *Command {
-	cmd := &cobra.Command{}
+	cmd := &cobra.Command{
+		Version: versionString,
+		Use:     "cloud_sql_proxy instance_connection_name...",
+		Short:   "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
+		Long: `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
+connecting to Cloud SQL instances. It listens on a local port and forwards connections
+to your instance's IP address, providing a secure connection without having to manage
+any client SSL certificates.`,
+	}
 
+	logger := log.NewStdLogger(os.Stdout, os.Stderr)
 	c := &Command{
 		Command: cmd,
+		logger:  logger,
 		cleanup: func() error { return nil },
 		conf: &proxy.Config{
-			Logger: log.NewStdLogger(os.Stdout, os.Stderr),
+			UserAgent: userAgent,
 		},
 	}
 	for _, o := range opts {
 		o(c.conf)
 	}
 
-	cmd.Version = versionString
-
-	cmd.Use = "cloud_sql_proxy instance_connection_name..."
-	cmd.Short = "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL."
-	cmd.Long = `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
-connecting to Cloud SQL instances. It listens on a local port and forwards connections
-to your instance's IP address, providing a secure connection without having to manage
-any client SSL certificates.`
-
 	cmd.Args = func(cmd *cobra.Command, args []string) error {
 		// Handle logger separately from config
 		if c.conf.StructuredLogs {
-			var cleanup func() error
-			c.conf.Logger, cleanup = log.NewStructuredLogger()
-			c.cleanup = cleanup
+			c.logger, c.cleanup = log.NewStructuredLogger()
 		}
-		err := parseConfig(cmd, c.conf, args)
+		err := parseConfig(c, c.conf, args)
 		if err != nil {
 			return err
 		}
@@ -178,13 +178,11 @@ any client SSL certificates.`
 	return c
 }
 
-func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
+func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	// If no instance connection names were provided, error.
 	if len(args) == 0 {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
 	}
-
-	conf.UserAgent = userAgent
 
 	userHasSet := func(f string) bool {
 		return cmd.PersistentFlags().Lookup(f).Changed
@@ -215,13 +213,13 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 
 	if !userHasSet("telemetry-project") && userHasSet("telemetry-prefix") {
-		conf.Logger.Infof("Ignoring telementry-prefix as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring telementry-prefix as telemetry-project was not set")
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-metrics") {
-		conf.Logger.Infof("Ignoring disable-metrics as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring disable-metrics as telemetry-project was not set")
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
-		conf.Logger.Infof("Ignoring disable-traces as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring disable-traces as telemetry-project was not set")
 	}
 
 	if userHasSet("sqladmin-api-endpoint") && conf.ApiEndpointUrl != "" {
@@ -349,8 +347,6 @@ func runSignalWrapper(cmd *Command) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
-	logger := cmd.conf.Logger
-
 	// Configure Cloud Trace and/or Cloud Monitoring based on command
 	// invocation. If a project has not been enabled, no traces or metrics are
 	// enabled.
@@ -400,7 +396,7 @@ func runSignalWrapper(cmd *Command) error {
 				// Give the HTTP server a second to shutdown cleanly.
 				ctx2, _ := context.WithTimeout(context.Background(), time.Second)
 				if err := server.Shutdown(ctx2); err != nil {
-					logger.Errorf("failed to shutdown Prometheus HTTP server: %v\n", err)
+					cmd.logger.Errorf("failed to shutdown Prometheus HTTP server: %v\n", err)
 				}
 			}
 		}()
@@ -438,7 +434,7 @@ func runSignalWrapper(cmd *Command) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, cmd.conf)
+		p, err := proxy.NewClient(ctx, cmd.logger, cmd.conf)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
@@ -449,15 +445,15 @@ func runSignalWrapper(cmd *Command) error {
 	var p *proxy.Client
 	select {
 	case err := <-shutdownCh:
-		logger.Errorf("The proxy has encountered a terminal error: %v", err)
+		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 		return err
 	case p = <-startCh:
 	}
-	logger.Infof("The proxy has started successfully and is ready for new connections!")
+	cmd.logger.Infof("The proxy has started successfully and is ready for new connections!")
 	defer p.Close()
 	defer func() {
 		if cErr := p.Close(); cErr != nil {
-			logger.Errorf("error during shutdown: %v", cErr)
+			cmd.logger.Errorf("error during shutdown: %v", cErr)
 		}
 	}()
 
@@ -468,11 +464,11 @@ func runSignalWrapper(cmd *Command) error {
 	err := <-shutdownCh
 	switch {
 	case errors.Is(err, errSigInt):
-		logger.Errorf("SIGINT signal received. Shutting down...")
+		cmd.logger.Errorf("SIGINT signal received. Shutting down...")
 	case errors.Is(err, errSigTerm):
-		logger.Errorf("SIGTERM signal received. Shutting down...")
+		cmd.logger.Errorf("SIGTERM signal received. Shutting down...")
 	default:
-		logger.Errorf("The proxy has encountered a terminal error: %v", err)
+		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 	}
 	return err
 }
