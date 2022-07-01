@@ -75,9 +75,9 @@ type Config struct {
 	// increments from this value.
 	Port int
 
-	// ApiEndpointUrl is the URL of the google cloud sql api. When left blank,
+	// APIEndpointURL is the URL of the google cloud sql api. When left blank,
 	// the proxy will use the main public api: https://sqladmin.googleapis.com/
-	ApiEndpointUrl string
+	APIEndpointURL string
 
 	// UnixSocket is the directory where Unix sockets will be created,
 	// connected to any Instances. If set, takes precedence over Addr and Port.
@@ -142,8 +142,8 @@ func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
 	default:
 	}
 
-	if c.ApiEndpointUrl != "" {
-		opts = append(opts, cloudsqlconn.WithAdminAPIEndpoint(c.ApiEndpointUrl))
+	if c.APIEndpointURL != "" {
+		opts = append(opts, cloudsqlconn.WithAdminAPIEndpoint(c.APIEndpointURL))
 	}
 
 	if c.IAMAuthN {
