@@ -394,7 +394,7 @@ func runSignalWrapper(cmd *Command) error {
 	cmd.Println("The proxy has started successfully and is ready for new connections!")
 	defer func() {
 		if cErr := p.Close(); cErr != nil {
-			cmd.PrintErrln(cErr)
+			cmd.PrintErrf("error during shutdown: %v\n", cErr)
 		}
 	}()
 

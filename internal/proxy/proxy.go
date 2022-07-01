@@ -204,7 +204,10 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 		m, err := newSocketMount(ctx, conf, pc, inst, version)
 		if err != nil {
 			for _, m := range mnts {
-				_ = m.Close() // TODO: log this error?
+				mErr := m.Close()
+				if mErr != nil {
+					cmd.PrintErrf("failed to close mount: %v", mErr)
+				}
 			}
 			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
@@ -249,15 +252,11 @@ func (m MultiErr) Error() string {
 	if l == 1 {
 		return m[0].Error()
 	}
-	var errStr string
-	for i, err := range m {
-		if i == l-1 {
-			errStr += err.Error()
-			continue
-		}
-		errStr += err.Error() + ", "
+	var errs []string
+	for _, e := range m {
+		errs = append(errs, e.Error())
 	}
-	return errStr
+	return strings.Join(errs, ",")
 }
 
 // Close triggers the proxyClient to shutdown.
