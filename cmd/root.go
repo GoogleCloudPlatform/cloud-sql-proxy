@@ -97,8 +97,8 @@ func WithDialer(d cloudsql.Dialer) Option {
 // NewCommand returns a Command object representing an invocation of the proxy.
 func NewCommand(opts ...Option) *Command {
 	cmd := &cobra.Command{
-		Version: versionString,
 		Use:     "cloud_sql_proxy instance_connection_name...",
+		Version: versionString,
 		Short:   "cloud_sql_proxy provides a secure way to authorize connections to Cloud SQL.",
 		Long: `The Cloud SQL Auth proxy provides IAM-based authorization and encryption when
 connecting to Cloud SQL instances. It listens on a local port and forwards connections
