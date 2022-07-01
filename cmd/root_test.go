@@ -155,6 +155,20 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the api-endpoint flag without trailing slash",
+			args: []string{"--sqladmin-api-endpoint", "https://test.googleapis.com", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ApiEndpointUrl: "https://test.googleapis.com/",
+			}),
+		},
+		{
+			desc: "using the api-endpoint flag with trailing slash",
+			args: []string{"--sqladmin-api-endpoint", "https://test.googleapis.com/", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ApiEndpointUrl: "https://test.googleapis.com/",
+			}),
+		},
+		{
 			desc: "using the unix socket flag",
 			args: []string{"--unix-socket", "/path/to/dir/", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -478,6 +492,10 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "enabling a Prometheus port without a namespace",
 			args: []string{"--htto-port", "1111", "proj:region:inst"},
+		},
+		{
+			desc: "using an invalid url for sqladmin-api-endpoint",
+			args: []string{"--sqladmin-api-endpoint", "https://user:abc{DEf1=ghi@example.com:5432/db?sslmode=require", "proj:region:inst"},
 		},
 	}
 
