@@ -124,26 +124,30 @@ func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
 
 // DialerOptions builds appropriate list of options from the Config
 // values for use by cloudsqlconn.NewClient()
-func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
+func (c *Config) DialerOptions(l log.Logger) ([]cloudsqlconn.Option, error) {
 	opts := []cloudsqlconn.Option{
 		cloudsqlconn.WithUserAgent(c.UserAgent),
 	}
 	switch {
 	case c.Token != "":
+		l.Infof("Authorizing with the -token flag")
 		opts = append(opts, cloudsqlconn.WithTokenSource(
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
 		))
 	case c.CredentialsFile != "":
+		l.Infof("Authorizing with the credentials file at %q", c.CredentialsFile)
 		opts = append(opts, cloudsqlconn.WithCredentialsFile(
 			c.CredentialsFile,
 		))
 	case c.GcloudAuth:
+		l.Infof("Authorizing with gcloud user credentials")
 		ts, err := gcloud.TokenSource()
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
 	default:
+		l.Infof("Authorizing with Application Default Credentials")
 	}
 
 	if c.ApiEndpointUrl != "" {
@@ -217,7 +221,7 @@ func NewClient(ctx context.Context, l log.Logger, conf *Config) (*Client, error)
 	d := conf.Dialer
 	if d == nil {
 		var err error
-		dialerOpts, err := conf.DialerOptions()
+		dialerOpts, err := conf.DialerOptions(l)
 		if err != nil {
 			return nil, fmt.Errorf("error initializing dialer: %v", err)
 		}
