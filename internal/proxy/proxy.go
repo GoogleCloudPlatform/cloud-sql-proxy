@@ -27,7 +27,9 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 // InstanceConnConfig holds the configuration for an individual instance
@@ -46,10 +48,17 @@ type InstanceConnConfig struct {
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
 	IAMAuthN *bool
+
+	// PrivateIP tells the proxy to attempt to connect to the db instance's
+	// private IP address instead of the public IP address
+	PrivateIP *bool
 }
 
 // Config contains all the configuration provided by the caller.
 type Config struct {
+	// UserAgent is the user agent to use when connecting to the cloudsql instance
+	UserAgent string
+
 	// Token is the Bearer token used for authorization.
 	Token string
 
@@ -67,6 +76,10 @@ type Config struct {
 	// increments from this value.
 	Port int
 
+	// ApiEndpointUrl is the URL of the google cloud sql api. When left blank,
+	// the proxy will use the main public api: https://sqladmin.googleapis.com/
+	ApiEndpointUrl string
+
 	// UnixSocket is the directory where Unix sockets will be created,
 	// connected to any Instances. If set, takes precedence over Addr and Port.
 	UnixSocket string
@@ -80,6 +93,10 @@ type Config struct {
 	// connections. A zero-value indicates no limit.
 	MaxConnections uint64
 
+	// PrivateIP enables connections via the database server's private IP address
+	// for all instances.
+	PrivateIP bool
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
@@ -87,10 +104,59 @@ type Config struct {
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
 	// instances.
 	Dialer cloudsql.Dialer
+}
 
-	// DialerOpts specifies the opts to use when creating a new dialer. This
-	// value is ignored when a Dialer has been set.
-	DialerOpts []cloudsqlconn.Option
+// DialOptions interprets appropriate dial options for a particular instance
+// configuration
+func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
+	var opts []cloudsqlconn.DialOption
+
+	if i.IAMAuthN != nil {
+		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*i.IAMAuthN))
+	}
+
+	if i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP {
+		opts = append(opts, cloudsqlconn.WithPrivateIP())
+	} else {
+		opts = append(opts, cloudsqlconn.WithPublicIP())
+	}
+
+	return opts
+}
+
+// DialerOptions builds appropriate list of options from the Config
+// values for use by cloudsqlconn.NewClient()
+func (c *Config) DialerOptions() ([]cloudsqlconn.Option, error) {
+	opts := []cloudsqlconn.Option{
+		cloudsqlconn.WithUserAgent(c.UserAgent),
+	}
+	switch {
+	case c.Token != "":
+		opts = append(opts, cloudsqlconn.WithTokenSource(
+			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+		))
+	case c.CredentialsFile != "":
+		opts = append(opts, cloudsqlconn.WithCredentialsFile(
+			c.CredentialsFile,
+		))
+	case c.GcloudAuth:
+		ts, err := gcloud.TokenSource()
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
+	default:
+	}
+
+	if c.ApiEndpointUrl != "" {
+		opts = append(opts, cloudsqlconn.WithAdminAPIEndpoint(c.ApiEndpointUrl))
+	}
+
+	if c.IAMAuthN {
+		opts = append(opts, cloudsqlconn.WithIAMAuthN())
+	}
+
+	return opts, nil
 }
 
 type portConfig struct {
@@ -155,7 +221,22 @@ type Client struct {
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, error) {
+	// Check if the caller has configured a dialer.
+	// Otherwise, initialize a new one.
+	d := conf.Dialer
+	if d == nil {
+		var err error
+		dialerOpts, err := conf.DialerOptions()
+		if err != nil {
+			return nil, fmt.Errorf("error initializing dialer: %v", err)
+		}
+		d, err = cloudsqlconn.NewDialer(ctx, dialerOpts...)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing dialer: %v", err)
+		}
+	}
+
 	var mnts []*socketMount
 	for _, inst := range conf.Instances {
 		go func(name string) {
@@ -231,10 +312,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, cmd *cobra.Command, conf 
 			}
 		}
 
-		var opts []cloudsqlconn.DialOption
-		if inst.IAMAuthN != nil {
-			opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*inst.IAMAuthN))
-		}
+		opts := conf.DialOptions(inst)
 		m := &socketMount{inst: inst.Name, dialOpts: opts}
 		addr, err := m.listen(ctx, network, address)
 		if err != nil {

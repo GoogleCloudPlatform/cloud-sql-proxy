@@ -229,7 +229,8 @@ func TestClientInitialization(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c, err := proxy.NewClient(ctx, &fakeDialer{}, &cobra.Command{}, tc.in)
+			tc.in.Dialer = &fakeDialer{}
+			c, err := proxy.NewClient(ctx, &cobra.Command{}, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -260,6 +261,7 @@ func TestClientInitialization(t *testing.T) {
 }
 
 func TestClientLimitsMaxConnections(t *testing.T) {
+	d := &fakeDialer{}
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
 		Port: 5000,
@@ -267,9 +269,9 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 			{Name: "proj:region:pg"},
 		},
 		MaxConnections: 1,
+		Dialer:         d,
 	}
-	d := &fakeDialer{}
-	c, err := proxy.NewClient(context.Background(), d, &cobra.Command{}, in)
+	c, err := proxy.NewClient(context.Background(), &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -316,14 +318,15 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
+		Dialer: &fakeDialer{},
 	}
-	c, err := proxy.NewClient(ctx, &fakeDialer{}, &cobra.Command{}, in)
+	c, err := proxy.NewClient(ctx, &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	c.Close()
 
-	c, err = proxy.NewClient(ctx, &fakeDialer{}, &cobra.Command{}, in)
+	c, err = proxy.NewClient(ctx, &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
