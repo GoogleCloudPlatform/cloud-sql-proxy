@@ -102,15 +102,14 @@ type Config struct {
 
 // DialOptions interprets appropriate dial options for a particular instance
 // configuration
-func (c *Config) DialOptions(i *InstanceConnConfig) []cloudsqlconn.DialOption {
+func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
 	var opts []cloudsqlconn.DialOption
 
 	if i.IAMAuthN != nil {
 		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*i.IAMAuthN))
 	}
 
-	if i.PrivateIP != nil && *i.PrivateIP ||
-		i.PrivateIP == nil && c.PrivateIP {
+	if i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP {
 		opts = append(opts, cloudsqlconn.WithPrivateIP())
 	} else {
 		opts = append(opts, cloudsqlconn.WithPublicIP())
@@ -298,7 +297,7 @@ func NewClient(ctx context.Context, cmd *cobra.Command, conf *Config) (*Client, 
 			}
 		}
 
-		opts := conf.DialOptions(&inst)
+		opts := conf.DialOptions(inst)
 		m := &socketMount{inst: inst.Name, dialOpts: opts}
 		addr, err := m.listen(ctx, network, address)
 		if err != nil {
