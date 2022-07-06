@@ -72,7 +72,7 @@ type errorDialer struct {
 	fakeDialer
 }
 
-func (errorDialer) Close() error {
+func (*errorDialer) Close() error {
 	return errors.New("errorDialer returns error on Close")
 }
 
