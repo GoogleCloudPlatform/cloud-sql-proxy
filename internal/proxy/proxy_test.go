@@ -363,8 +363,16 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 	}
 	go c.Serve(context.Background())
 
-	conn = tryTCPDial(t, "127.0.0.1:5001")
-	defer conn.Close() // close the connection only after trying to close the proxy
+	var open []net.Conn
+	for i := 0; i < 5; i++ {
+		conn = tryTCPDial(t, "127.0.0.1:5001")
+		open = append(open, conn)
+	}
+	defer func() {
+		for _, o := range open {
+			o.Close()
+		}
+	}()
 
 	if err := c.Close(); err == nil {
 		t.Fatal("c.Close should error, got = nil")
