@@ -355,14 +355,15 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 		t.Fatalf("c.Close error: %v", err)
 	}
 
-	in.WaitOnClose = 500 * time.Millisecond
+	in.WaitOnClose = time.Second
+	in.Port = 5001
 	c, err = proxy.NewClient(context.Background(), &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
 	go c.Serve(context.Background())
 
-	_ = tryTCPDial(t, "127.0.0.1:5000")
+	conn = tryTCPDial(t, "127.0.0.1:5001")
 	defer conn.Close() // close the connection only after trying to close the proxy
 
 	if err := c.Close(); err == nil {
