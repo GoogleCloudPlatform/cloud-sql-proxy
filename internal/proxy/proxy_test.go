@@ -314,6 +314,25 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	}
 }
 
+func tryTCPDial(t *testing.T, addr string) net.Conn {
+	attempts := 10
+	var (
+		conn net.Conn
+		err  error
+	)
+	for i := 0; i < attempts; i++ {
+		conn, err = net.Dial("tcp", addr)
+		if err != nil {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		return conn
+	}
+
+	t.Fatalf("failed to dial in %v attempts: %v", attempts, err)
+	return nil
+}
+
 func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
@@ -328,30 +347,24 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
 	go c.Serve(context.Background())
-	time.Sleep(time.Millisecond)
 
-	conn, dErr := net.Dial("tcp", "127.0.0.1:5000")
-	if dErr != nil {
-		t.Fatalf("net.Dial error: %v", err)
-	}
+	conn := tryTCPDial(t, "127.0.0.1:5000")
 	_ = conn.Close()
+
 	if err := c.Close(); err != nil {
 		t.Fatalf("c.Close error: %v", err)
 	}
 
-	in.WaitOnClose = time.Second
+	in.WaitOnClose = 500 * time.Millisecond
 	c, err = proxy.NewClient(context.Background(), &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
 	go c.Serve(context.Background())
-	time.Sleep(time.Millisecond)
 
-	conn, dErr = net.Dial("tcp", "127.0.0.1:5000")
-	if dErr != nil {
-		t.Fatalf("net.Dial error: %v", err)
-	}
+	_ = tryTCPDial(t, "127.0.0.1:5000")
 	defer conn.Close() // close the connection only after trying to close the proxy
+
 	if err := c.Close(); err == nil {
 		t.Fatal("c.Close should error, got = nil")
 	}
@@ -371,12 +384,8 @@ func TestClientClosesCleanly(t *testing.T) {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
 	go c.Serve(context.Background())
-	time.Sleep(time.Second) // allow the socket to start listening
 
-	conn, dErr := net.Dial("tcp", "127.0.0.1:5000")
-	if dErr != nil {
-		t.Fatalf("net.Dial error = %v", dErr)
-	}
+	conn := tryTCPDial(t, "127.0.0.1:5000")
 	_ = conn.Close()
 
 	if err := c.Close(); err != nil {
@@ -398,7 +407,9 @@ func TestClosesWithError(t *testing.T) {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
 	go c.Serve(context.Background())
-	time.Sleep(time.Second) // allow the socket to start listening
+
+	conn := tryTCPDial(t, "127.0.0.1:5000")
+	defer conn.Close()
 
 	if err = c.Close(); err == nil {
 		t.Fatal("c.Close() should error, got nil")
