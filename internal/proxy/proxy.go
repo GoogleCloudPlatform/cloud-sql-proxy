@@ -361,8 +361,6 @@ func (c *Client) Close() error {
 	open := atomic.LoadUint32(&c.connCount)
 	if open > 0 {
 		mErr = append(mErr, fmt.Errorf("%d connection(s) still open after waiting %v", open, c.waitOnClose))
-	}
-	if len(mErr) > 0 {
 		return mErr
 	}
 	return nil
