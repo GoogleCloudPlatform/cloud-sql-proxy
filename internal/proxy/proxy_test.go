@@ -303,10 +303,20 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	// wait only a second for the result (since nothing is writing to the
 	// socket)
 	conn2.SetReadDeadline(time.Now().Add(time.Second))
-	_, rErr := conn2.Read(make([]byte, 1))
-	if rErr != io.EOF {
-		t.Fatalf("conn.Read should return io.EOF, got = %v", rErr)
+
+	wantEOF := func(t *testing.T, c net.Conn) {
+		var got error
+		for i := 0; i < 10; i++ {
+			_, got = c.Read(make([]byte, 1))
+			if got == io.EOF {
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		t.Fatalf("conn.Read should return io.EOF, got = %v", got)
 	}
+
+	wantEOF(t, conn2)
 
 	want := 1
 	if got := d.dialAttempts(); got != want {
