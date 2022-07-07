@@ -91,7 +91,7 @@ type Config struct {
 	// MaxConnections are the maximum number of connections the Client may
 	// establish to the Cloud SQL server side proxy before refusing additional
 	// connections. A zero-value indicates no limit.
-	MaxConnections uint32
+	MaxConnections uint64
 
 	// WaitOnClose sets the duration to wait for connections to close before
 	// shutting down. Not setting this field means to close immediately
@@ -210,19 +210,19 @@ func (c *portConfig) nextDBPort(version string) int {
 // Client proxies connections from a local client to the remote server side
 // proxy for multiple Cloud SQL instances.
 type Client struct {
+	// connCount tracks the number of all open connections from the Client to
+	// all Cloud SQL instances.
+	connCount uint64
+
+	// maxConns is the maximum number of allowed connections tracked by
+	// connCount. If not set, there is no limit.
+	maxConns uint64
+
 	cmd    *cobra.Command
 	dialer cloudsql.Dialer
 
 	// mnts is a list of all mounted sockets for this client
 	mnts []*socketMount
-
-	// connCount tracks the number of all open connections from the Client to
-	// all Cloud SQL instances.
-	connCount uint32
-
-	// maxConns is the maximum number of allowed connections tracked by
-	// connCount. If not set, there is no limit.
-	maxConns uint32
 
 	// waitOnClose is the maximum duration to wait for open connections to close
 	// when shutting down.
@@ -351,14 +351,14 @@ func (c *Client) Close() error {
 	for {
 		select {
 		case <-tick:
-			if atomic.LoadUint32(&c.connCount) > 0 {
+			if atomic.LoadUint64(&c.connCount) > 0 {
 				continue
 			}
 		case <-timeout:
 		}
 		break
 	}
-	open := atomic.LoadUint32(&c.connCount)
+	open := atomic.LoadUint64(&c.connCount)
 	if open > 0 {
 		mErr = append(mErr, fmt.Errorf("%d connection(s) still open after waiting %v", open, c.waitOnClose))
 	}
@@ -386,12 +386,16 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		go func() {
 			c.cmd.Printf("[%s] accepted connection from %s\n", s.inst, cConn.RemoteAddr())
 
-			count := atomic.AddUint32(&c.connCount, 1)
-			defer atomic.AddUint32(&c.connCount, ^uint32(0))
+			// A client has established a connection to the local socket. Before
+			// we initiate a connection to the Cloud SQL backend, increment the
+			// connection counter. If the total number of connections exceeds
+			// the maximum, refuse to connect and close the client connection.
+			count := atomic.AddUint64(&c.connCount, 1)
+			defer atomic.AddUint64(&c.connCount, ^uint64(0))
 
 			if c.maxConns > 0 && count > c.maxConns {
 				c.cmd.Printf("max connections (%v) exceeded, refusing new connection\n", c.maxConns)
-				cConn.Close()
+				_ = cConn.Close()
 				return
 			}
 

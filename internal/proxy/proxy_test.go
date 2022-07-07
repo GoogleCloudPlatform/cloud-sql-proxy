@@ -467,7 +467,6 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		},
 		Dialer: &fakeDialer{},
 	}
-
 	c, err := proxy.NewClient(ctx, &cobra.Command{}, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
