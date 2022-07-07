@@ -39,4 +39,6 @@ type Logger interface {
 	Infof(format string, args ...interface{})
 	// Errorf is for reporitng errors.
 	Errorf(format string, args ...interface{})
+	// Debugf is for reporting additional information about internal operations.
+	Debugf(format string, args ...interface{})
 }

@@ -48,6 +48,10 @@ func (l *StdLogger) Errorf(format string, v ...interface{}) {
 	l.errLog.Printf(format, v...)
 }
 
+func (l *StdLogger) Debugf(format string, v ...interface{}) {
+	l.infoLog.Printf(format, v...)
+}
+
 // StructuredLogger writes log messages in JSON.
 type StructuredLogger struct {
 	logger *zap.SugaredLogger
@@ -59,6 +63,10 @@ func (l *StructuredLogger) Infof(format string, v ...interface{}) {
 
 func (l *StructuredLogger) Errorf(format string, v ...interface{}) {
 	l.logger.Errorf(format, v...)
+}
+
+func (l *StructuredLogger) Debugf(format string, v ...interface{}) {
+	l.logger.Infof(format, v...)
 }
 
 // NewStructuredLogger creates a Logger that logs messages using JSON.
