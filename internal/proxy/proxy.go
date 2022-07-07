@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
@@ -86,6 +87,11 @@ type Config struct {
 	// IAMAuthN enables automatic IAM DB Authentication for all instances.
 	// Postgres-only.
 	IAMAuthN bool
+
+	// MaxConnections are the maximum number of connections the Client may
+	// establish to the Cloud SQL server side proxy before refusing additional
+	// connections. A zero-value indicates no limit.
+	MaxConnections uint64
 
 	// PrivateIP enables connections via the database server's private IP address
 	// for all instances.
@@ -204,8 +210,17 @@ func (c *portConfig) nextDBPort(version string) int {
 	}
 }
 
-// Client represents the state of the current instantiation of the proxy.
+// Client proxies connections from a local client to the remote server side
+// proxy for multiple Cloud SQL instances.
 type Client struct {
+	// connCount tracks the number of all open connections from the Client to
+	// all Cloud SQL instances.
+	connCount uint64
+
+	// maxConns is the maximum number of allowed connections tracked by
+	// connCount. If not set, there is no limit.
+	maxConns uint64
+
 	dialer cloudsql.Dialer
 
 	// mnts is a list of all mounted sockets for this client
@@ -258,10 +273,17 @@ func NewClient(ctx context.Context, l log.Logger, conf *Config) (*Client, error)
 		l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
 		mnts = append(mnts, m)
 	}
-	return &Client{mnts: mnts, logger: l, dialer: d}, nil
+	c := &Client{
+		mnts:     mnts,
+		logger:   l,
+		dialer:   d,
+		maxConns: conf.MaxConnections,
+	}
+	return c, nil
 }
 
-// Serve listens on the mounted ports and beging proxying the connections to the instances.
+// Serve starts proxying connections for all configured instances using the
+// associated socket.
 func (c *Client) Serve(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -338,6 +360,19 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		// handle the connection in a separate goroutine
 		go func() {
 			c.logger.Errorf("[%s] accepted connection from %s", s.inst, cConn.RemoteAddr())
+
+			// A client has established a connection to the local socket. Before
+			// we initiate a connection to the Cloud SQL backend, increment the
+			// connection counter. If the total number of connections exceeds
+			// the maximum, refuse to connect and close the client connection.
+			count := atomic.AddUint64(&c.connCount, 1)
+			defer atomic.AddUint64(&c.connCount, ^uint64(0))
+
+			if c.maxConns > 0 && count > c.maxConns {
+				c.logger.Infof("max connections (%v) exceeded, refusing new connection", c.maxConns)
+				_ = cConn.Close()
+				return
+			}
 
 			// give a max of 30 seconds to connect to the instance
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

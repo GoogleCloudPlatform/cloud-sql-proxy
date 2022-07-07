@@ -207,7 +207,6 @@ func TestNewCommandArguments(t *testing.T) {
 		},
 		{
 			desc: "using the iam authn login query param",
-			// the query param's presence equates to true
 			args: []string{"proj:region:inst?auto-iam-authn=true"},
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
@@ -220,6 +219,13 @@ func TestNewCommandArguments(t *testing.T) {
 			args: []string{"--structured-logs", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
 				StructuredLogs: true,
+			}),
+		},
+		{
+			desc: "using the max connections flag",
+			args: []string{"--max-connections", "1", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				MaxConnections: 1,
 			}),
 		},
 		{

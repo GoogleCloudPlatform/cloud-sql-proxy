@@ -17,34 +17,45 @@ package proxy_test
 import (
 	"context"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 )
 
 type fakeDialer struct {
-	cloudsql.Dialer
+	mu        sync.Mutex
+	dialCount int
 }
 
-func (fakeDialer) Close() error {
+func (*fakeDialer) Close() error {
 	return nil
 }
 
-func (fakeDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
-	conn, _ := net.Pipe()
-	return conn, nil
+func (f *fakeDialer) dialAttempts() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.dialCount
 }
 
-func (fakeDialer) EngineVersion(_ context.Context, inst string) (string, error) {
+func (f *fakeDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.dialCount++
+	c1, _ := net.Pipe()
+	return c1, nil
+}
+
+func (*fakeDialer) EngineVersion(_ context.Context, inst string) (string, error) {
 	switch {
 	case strings.Contains(inst, "pg"):
 		return "POSTGRES_14", nil
@@ -228,7 +239,7 @@ func TestClientInitialization(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			logger := log.NewStdLogger(os.Stdout, os.Stdout)
-			tc.in.Dialer = fakeDialer{}
+			tc.in.Dialer = &fakeDialer{}
 			c, err := proxy.NewClient(ctx, logger, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
@@ -259,6 +270,52 @@ func TestClientInitialization(t *testing.T) {
 	}
 }
 
+func TestClientLimitsMaxConnections(t *testing.T) {
+	d := &fakeDialer{}
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 5000,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:region:pg"},
+		},
+		MaxConnections: 1,
+		Dialer:         d,
+	}
+	logger := log.NewStdLogger(os.Stdout, os.Stdout)
+	c, err := proxy.NewClient(context.Background(), logger, in)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error: %v", err)
+	}
+	defer c.Close()
+	go c.Serve(context.Background())
+
+	conn1, err1 := net.Dial("tcp", "127.0.0.1:5000")
+	if err1 != nil {
+		t.Fatalf("net.Dial error: %v", err1)
+	}
+	defer conn1.Close()
+
+	conn2, err2 := net.Dial("tcp", "127.0.0.1:5000")
+	if err2 != nil {
+		t.Fatalf("net.Dial error: %v", err1)
+	}
+	defer conn2.Close()
+
+	// try to read to check if the connection is closed
+	// wait only a second for the result (since nothing is writing to the
+	// socket)
+	conn2.SetReadDeadline(time.Now().Add(time.Second))
+	_, rErr := conn2.Read(make([]byte, 1))
+	if rErr != io.EOF {
+		t.Fatalf("conn.Read should return io.EOF, got = %v", rErr)
+	}
+
+	want := 1
+	if got := d.dialAttempts(); got != want {
+		t.Fatalf("dial attempts did not match expected, want = %v, got = %v", want, got)
+	}
+}
+
 func TestClientClosesCleanly(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
@@ -266,7 +323,7 @@ func TestClientClosesCleanly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:reg:inst"},
 		},
-		Dialer: fakeDialer{},
+		Dialer: &fakeDialer{},
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
 	c, err := proxy.NewClient(context.Background(), logger, in)
@@ -294,7 +351,7 @@ func TestClosesWithError(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:reg:inst"},
 		},
-		Dialer: errorDialer{},
+		Dialer: &errorDialer{},
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
 	c, err := proxy.NewClient(context.Background(), logger, in)
@@ -349,7 +406,7 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
-		Dialer: fakeDialer{},
+		Dialer: &fakeDialer{},
 	}
 
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
