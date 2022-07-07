@@ -32,3 +32,11 @@ type Dialer interface {
 
 	io.Closer
 }
+
+// Logger is the interface used throughout the project for logging.
+type Logger interface {
+	// Infof is for reporting informational messages.
+	Infof(format string, args ...interface{})
+	// Errorf is for reporitng errors.
+	Errorf(format string, args ...interface{})
+}

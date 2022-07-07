@@ -19,17 +19,10 @@ import (
 	llog "log"
 	"os"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-// Logger is the interface used throughout the project for logging.
-type Logger interface {
-	// Infof is for reporting informational messages.
-	Infof(format string, args ...interface{})
-	// Errorf is for reporitng errors.
-	Errorf(format string, args ...interface{})
-}
 
 // StdLogger is the standard logger that distinguishes between info and error
 // logs.
@@ -40,7 +33,7 @@ type StdLogger struct {
 
 // NewStdLogger create a Logger that uses out and err for informational and
 // error messages.
-func NewStdLogger(out, err io.Writer) Logger {
+func NewStdLogger(out, err io.Writer) cloudsql.Logger {
 	return &StdLogger{
 		infoLog: llog.New(out, "", llog.LstdFlags),
 		errLog:  llog.New(err, "", llog.LstdFlags),
@@ -69,7 +62,7 @@ func (l *StructuredLogger) Errorf(format string, v ...interface{}) {
 }
 
 // NewStructuredLogger creates a Logger that logs messages using JSON.
-func NewStructuredLogger() (Logger, func() error) {
+func NewStructuredLogger() (cloudsql.Logger, func() error) {
 	// Configure structured logs to adhere to LogEntry format
 	// https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 	c := zap.NewProductionEncoderConfig()

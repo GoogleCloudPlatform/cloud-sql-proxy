@@ -66,7 +66,8 @@ func Execute() {
 type Command struct {
 	*cobra.Command
 	conf   *proxy.Config
-	logger log.Logger
+	logger cloudsql.Logger
+	dialer cloudsql.Dialer
 
 	cleanup                    func() error
 	disableTraces              bool
@@ -79,18 +80,25 @@ type Command struct {
 }
 
 // SetLogger overrides the default logger.
-func (c *Command) SetLogger(l log.Logger) {
+func (c *Command) SetLogger(l cloudsql.Logger) {
 	c.logger = l
 }
 
 // Option is a function that configures a Command.
-type Option func(*proxy.Config)
+type Option func(*Command)
+
+// WithLogger overrides the default logger.
+func WithLogger(l cloudsql.Logger) Option {
+	return func(c *Command) {
+		c.logger = l
+	}
+}
 
 // WithDialer configures the Command to use the provided dialer to connect to
 // Cloud SQL instances.
 func WithDialer(d cloudsql.Dialer) Option {
-	return func(c *proxy.Config) {
-		c.Dialer = d
+	return func(c *Command) {
+		c.dialer = d
 	}
 }
 
@@ -116,7 +124,7 @@ any client SSL certificates.`,
 		},
 	}
 	for _, o := range opts {
-		o(c.conf)
+		o(c)
 	}
 
 	cmd.Args = func(cmd *cobra.Command, args []string) error {
@@ -437,7 +445,7 @@ func runSignalWrapper(cmd *Command) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, cmd.logger, cmd.conf)
+		p, err := proxy.NewClient(ctx, cmd.dialer, cmd.logger, cmd.conf)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return

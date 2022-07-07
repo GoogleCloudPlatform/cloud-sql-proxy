@@ -239,8 +239,7 @@ func TestClientInitialization(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			logger := log.NewStdLogger(os.Stdout, os.Stdout)
-			tc.in.Dialer = &fakeDialer{}
-			c, err := proxy.NewClient(ctx, logger, tc.in)
+			c, err := proxy.NewClient(ctx, &fakeDialer{}, logger, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -279,10 +278,9 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 			{Name: "proj:region:pg"},
 		},
 		MaxConnections: 1,
-		Dialer:         d,
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(context.Background(), logger, in)
+	c, err := proxy.NewClient(context.Background(), d, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -323,10 +321,9 @@ func TestClientClosesCleanly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:reg:inst"},
 		},
-		Dialer: &fakeDialer{},
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(context.Background(), logger, in)
+	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
@@ -351,10 +348,9 @@ func TestClosesWithError(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:reg:inst"},
 		},
-		Dialer: &errorDialer{},
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(context.Background(), logger, in)
+	c, err := proxy.NewClient(context.Background(), &errorDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
@@ -406,17 +402,16 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
-		Dialer: &fakeDialer{},
 	}
 
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(ctx, logger, in)
+	c, err := proxy.NewClient(ctx, &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	c.Close()
 
-	c, err = proxy.NewClient(ctx, logger, in)
+	c, err = proxy.NewClient(ctx, &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}

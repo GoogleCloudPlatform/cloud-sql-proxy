@@ -28,7 +28,6 @@ import (
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
 	"golang.org/x/oauth2"
 )
 
@@ -101,10 +100,6 @@ type Config struct {
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
 
-	// Dialer specifies the dialer to use when connecting to Cloud SQL
-	// instances.
-	Dialer cloudsql.Dialer
-
 	// StructuredLogs sets all output to use JSON in the LogEntry format.
 	// See https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 	StructuredLogs bool
@@ -130,7 +125,7 @@ func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
 
 // DialerOptions builds appropriate list of options from the Config
 // values for use by cloudsqlconn.NewClient()
-func (c *Config) DialerOptions(l log.Logger) ([]cloudsqlconn.Option, error) {
+func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error) {
 	opts := []cloudsqlconn.Option{
 		cloudsqlconn.WithUserAgent(c.UserAgent),
 	}
@@ -226,14 +221,13 @@ type Client struct {
 	// mnts is a list of all mounted sockets for this client
 	mnts []*socketMount
 
-	logger log.Logger
+	logger cloudsql.Logger
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
-func NewClient(ctx context.Context, l log.Logger, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *Config) (*Client, error) {
 	// Check if the caller has configured a dialer.
 	// Otherwise, initialize a new one.
-	d := conf.Dialer
 	if d == nil {
 		var err error
 		dialerOpts, err := conf.DialerOptions(l)
