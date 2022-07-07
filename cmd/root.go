@@ -32,6 +32,7 @@ import (
 	"contrib.go.opencensus.io/exporter/prometheus"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 	"go.opencensus.io/trace"
@@ -64,8 +65,11 @@ func Execute() {
 // Command represents an invocation of the Cloud SQL Auth Proxy.
 type Command struct {
 	*cobra.Command
-	conf *proxy.Config
+	conf   *proxy.Config
+	logger cloudsql.Logger
+	dialer cloudsql.Dialer
 
+	cleanup                    func() error
 	disableTraces              bool
 	telemetryTracingSampleRate int
 	disableMetrics             bool
@@ -76,25 +80,25 @@ type Command struct {
 }
 
 // Option is a function that configures a Command.
-type Option func(*proxy.Config)
+type Option func(*Command)
+
+// WithLogger overrides the default logger.
+func WithLogger(l cloudsql.Logger) Option {
+	return func(c *Command) {
+		c.logger = l
+	}
+}
 
 // WithDialer configures the Command to use the provided dialer to connect to
 // Cloud SQL instances.
 func WithDialer(d cloudsql.Dialer) Option {
-	return func(c *proxy.Config) {
-		c.Dialer = d
+	return func(c *Command) {
+		c.dialer = d
 	}
 }
 
 // NewCommand returns a Command object representing an invocation of the proxy.
 func NewCommand(opts ...Option) *Command {
-	c := &Command{
-		conf: &proxy.Config{},
-	}
-	for _, o := range opts {
-		o(c.conf)
-	}
-
 	cmd := &cobra.Command{
 		Use:     "cloud_sql_proxy instance_connection_name...",
 		Version: versionString,
@@ -103,19 +107,38 @@ func NewCommand(opts ...Option) *Command {
 connecting to Cloud SQL instances. It listens on a local port and forwards connections
 to your instance's IP address, providing a secure connection without having to manage
 any client SSL certificates.`,
-		Args: func(cmd *cobra.Command, args []string) error {
-			err := parseConfig(cmd, c.conf, args)
-			if err != nil {
-				return err
-			}
-			// The arguments are parsed. Usage is no longer needed.
-			cmd.SilenceUsage = true
-			return nil
-		},
-		RunE: func(*cobra.Command, []string) error {
-			return runSignalWrapper(c)
+	}
+
+	logger := log.NewStdLogger(os.Stdout, os.Stderr)
+	c := &Command{
+		Command: cmd,
+		logger:  logger,
+		cleanup: func() error { return nil },
+		conf: &proxy.Config{
+			UserAgent: userAgent,
 		},
 	}
+	for _, o := range opts {
+		o(c)
+	}
+
+	cmd.Args = func(cmd *cobra.Command, args []string) error {
+		// Handle logger separately from config
+		if c.conf.StructuredLogs {
+			c.logger, c.cleanup = log.NewStructuredLogger()
+		}
+		err := parseConfig(c, c.conf, args)
+		if err != nil {
+			return err
+		}
+		// The arguments are parsed. Usage is no longer needed.
+		cmd.SilenceUsage = true
+		// Errors will be handled by logging from here on.
+		cmd.SilenceErrors = true
+		return nil
+	}
+
+	cmd.RunE = func(*cobra.Command, []string) error { return runSignalWrapper(c) }
 
 	// Global-only flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Token, "token", "t", "",
@@ -124,6 +147,17 @@ any client SSL certificates.`,
 		"Path to a service account key to use for authentication.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user configuration to retrieve a token for authentication.")
+	cmd.PersistentFlags().BoolVarP(&c.conf.StructuredLogs, "structured-logs", "l", false,
+		"Enable structured logs using the LogEntry format")
+	cmd.PersistentFlags().Uint64Var(&c.conf.MaxConnections, "max-connections", 0,
+		`Limits the number of connections by refusing any additional connections.
+When this flag is not set, there is no limit.`)
+	cmd.PersistentFlags().DurationVar(&c.conf.WaitOnClose, "max-sigterm-delay", 0,
+		`Maximum amount of time to wait after for any open connections
+to close after receiving a TERM signal. The proxy will shut
+down when the number of open connections reaches 0 or when
+the maximum time has passed. Defaults to 0s.`)
+
 	cmd.PersistentFlags().StringVar(&c.telemetryProject, "telemetry-project", "",
 		"Enable Cloud Monitoring and Cloud Trace integration with the provided project ID.")
 	cmd.PersistentFlags().BoolVar(&c.disableTraces, "disable-traces", false,
@@ -153,17 +187,14 @@ any client SSL certificates.`,
 	cmd.PersistentFlags().BoolVar(&c.conf.PrivateIP, "private-ip", false,
 		"Connect to the private ip address for all instances")
 
-	c.Command = cmd
 	return c
 }
 
-func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
+func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	// If no instance connection names were provided, error.
 	if len(args) == 0 {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
 	}
-
-	conf.UserAgent = userAgent
 
 	userHasSet := func(f string) bool {
 		return cmd.PersistentFlags().Lookup(f).Changed
@@ -194,13 +225,13 @@ func parseConfig(cmd *cobra.Command, conf *proxy.Config, args []string) error {
 	}
 
 	if !userHasSet("telemetry-project") && userHasSet("telemetry-prefix") {
-		cmd.Println("Ignoring telementry-prefix as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring telementry-prefix as telemetry-project was not set")
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-metrics") {
-		cmd.Println("Ignoring disable-metrics as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring disable-metrics as telemetry-project was not set")
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
-		cmd.Println("Ignoring disable-traces as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring disable-traces as telemetry-project was not set")
 	}
 
 	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
@@ -324,6 +355,7 @@ func parseBoolOpt(q url.Values, name string) (*bool, error) {
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
 func runSignalWrapper(cmd *Command) error {
+	defer cmd.cleanup()
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
@@ -376,7 +408,7 @@ func runSignalWrapper(cmd *Command) error {
 				// Give the HTTP server a second to shutdown cleanly.
 				ctx2, _ := context.WithTimeout(context.Background(), time.Second)
 				if err := server.Shutdown(ctx2); err != nil {
-					cmd.Printf("failed to shutdown Prometheus HTTP server: %v\n", err)
+					cmd.logger.Errorf("failed to shutdown Prometheus HTTP server: %v\n", err)
 				}
 			}
 		}()
@@ -414,7 +446,7 @@ func runSignalWrapper(cmd *Command) error {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, cmd.Command, cmd.conf)
+		p, err := proxy.NewClient(ctx, cmd.dialer, cmd.logger, cmd.conf)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
@@ -425,11 +457,17 @@ func runSignalWrapper(cmd *Command) error {
 	var p *proxy.Client
 	select {
 	case err := <-shutdownCh:
+		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 		return err
 	case p = <-startCh:
 	}
-	cmd.Println("The proxy has started successfully and is ready for new connections!")
+	cmd.logger.Infof("The proxy has started successfully and is ready for new connections!")
 	defer p.Close()
+	defer func() {
+		if cErr := p.Close(); cErr != nil {
+			cmd.logger.Errorf("error during shutdown: %v", cErr)
+		}
+	}()
 
 	go func() {
 		shutdownCh <- p.Serve(ctx)
@@ -438,11 +476,11 @@ func runSignalWrapper(cmd *Command) error {
 	err := <-shutdownCh
 	switch {
 	case errors.Is(err, errSigInt):
-		cmd.PrintErrln("SIGINT signal received. Shuting down...")
+		cmd.logger.Errorf("SIGINT signal received. Shutting down...")
 	case errors.Is(err, errSigTerm):
-		cmd.PrintErrln("SIGTERM signal received. Shuting down...")
+		cmd.logger.Errorf("SIGTERM signal received. Shutting down...")
 	default:
-		cmd.PrintErrf("The proxy has encountered a terminal error: %v\n", err)
+		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 	}
 	return err
 }

@@ -207,12 +207,32 @@ func TestNewCommandArguments(t *testing.T) {
 		},
 		{
 			desc: "using the iam authn login query param",
-			// the query param's presence equates to true
 			args: []string{"proj:region:inst?auto-iam-authn=true"},
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
 					IAMAuthN: &trueValue,
 				}},
+			}),
+		},
+		{
+			desc: "enabling structured logging",
+			args: []string{"--structured-logs", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				StructuredLogs: true,
+			}),
+		},
+		{
+			desc: "using the max connections flag",
+			args: []string{"--max-connections", "1", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				MaxConnections: 1,
+			}),
+		},
+		{
+			desc: "using wait after signterm flag",
+			args: []string{"--max-sigterm-delay", "10s", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				WaitOnClose: 10 * time.Second,
 			}),
 		},
 		{
@@ -491,7 +511,7 @@ func TestNewCommandWithErrors(t *testing.T) {
 		},
 		{
 			desc: "enabling a Prometheus port without a namespace",
-			args: []string{"--htto-port", "1111", "proj:region:inst"},
+			args: []string{"--http-port", "1111", "proj:region:inst"},
 		},
 		{
 			desc: "using an invalid url for sqladmin-api-endpoint",
