@@ -35,10 +35,10 @@ type Dialer interface {
 
 // Logger is the interface used throughout the project for logging.
 type Logger interface {
+	// Debugf is for reporting additional information about internal operations.
+	Debugf(format string, args ...interface{})
 	// Infof is for reporting informational messages.
 	Infof(format string, args ...interface{})
 	// Errorf is for reporting errors.
 	Errorf(format string, args ...interface{})
-	// Debugf is for reporting additional information about internal operations.
-	Debugf(format string, args ...interface{})
 }
