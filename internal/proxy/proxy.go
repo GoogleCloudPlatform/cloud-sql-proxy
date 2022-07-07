@@ -209,15 +209,15 @@ type Client struct {
 	// all Cloud SQL instances.
 	connCount uint64
 
+	// maxConns is the maximum number of allowed connections tracked by
+	// connCount. If not set, there is no limit.
+	maxConns uint64
+
 	cmd    *cobra.Command
 	dialer cloudsql.Dialer
 
 	// mnts is a list of all mounted sockets for this client
 	mnts []*socketMount
-
-	// maxConns is the maximum number of allowed connections tracked by
-	// connCount. If not set, there is no limit.
-	maxConns uint64
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady" state.
