@@ -25,6 +25,6 @@ func TestClientUsesSyncAtomicAlignment(t *testing.T) {
 	c := &Client{}
 
 	if a := unsafe.Offsetof(c.connCount); a%64 != 0 {
-		t.Errorf("Client.ConnectionsCounter is not aligned: want %v, got %v", 0, a)
+		t.Errorf("Client.connCount is not 64-bit aligned: want 0, got %v", a)
 	}
 }
