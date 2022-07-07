@@ -223,7 +223,7 @@ func TestNewCommandArguments(t *testing.T) {
 		},
 		{
 			desc: "using wait after signterm flag",
-			args: []string{"--wait-after-sigterm", "10s", "proj:region:inst"},
+			args: []string{"--max-sigterm-delay", "10s", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
 				WaitOnClose: 10 * time.Second,
 			}),
