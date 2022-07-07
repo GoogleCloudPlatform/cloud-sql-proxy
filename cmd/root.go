@@ -79,11 +79,6 @@ type Command struct {
 	httpPort                   string
 }
 
-// SetLogger overrides the default logger.
-func (c *Command) SetLogger(l cloudsql.Logger) {
-	c.logger = l
-}
-
 // Option is a function that configures a Command.
 type Option func(*Command)
 

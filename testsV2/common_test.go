@@ -46,19 +46,17 @@ type proxyExec struct {
 // StartProxy returns a proxyExec representing a running instance of the proxy.
 func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	cmd := cmd.NewCommand()
-	cmd.SetArgs(args)
-
 	// Open a pipe for tracking the output from the cmd
 	pr, pw, err := os.Pipe()
 	if err != nil {
 		cancel()
 		return nil, fmt.Errorf("unable to open stdout pipe: %w", err)
 	}
-	// defer pw.Close()
+
+	cmd := cmd.NewCommand(cmd.WithLogger(log.NewStdLogger(pw, pw)))
+	cmd.SetArgs(args)
 	cmd.SetOut(pw)
 	cmd.SetErr(pw)
-	cmd.SetLogger(log.NewStdLogger(pw, pw))
 
 	p := &proxyExec{
 		Out:     pr,
