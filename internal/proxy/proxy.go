@@ -92,6 +92,11 @@ type Config struct {
 	// connections. A zero-value indicates no limit.
 	MaxConnections uint64
 
+	// WaitOnClose sets the duration to wait for connections to close before
+	// shutting down. Not setting this field means to close immediately
+	// regardless of any open connections.
+	WaitOnClose time.Duration
+
 	// PrivateIP enables connections via the database server's private IP address
 	// for all instances.
 	PrivateIP bool
@@ -221,6 +226,10 @@ type Client struct {
 	// mnts is a list of all mounted sockets for this client
 	mnts []*socketMount
 
+	// waitOnClose is the maximum duration to wait for open connections to close
+	// when shutting down.
+	waitOnClose time.Duration
+
 	logger cloudsql.Logger
 }
 
@@ -268,10 +277,11 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 		mnts = append(mnts, m)
 	}
 	c := &Client{
-		mnts:     mnts,
-		logger:   l,
-		dialer:   d,
-		maxConns: conf.MaxConnections,
+		mnts:        mnts,
+		logger:      l,
+		dialer:      d,
+		maxConns:    conf.MaxConnections,
+		waitOnClose: conf.WaitOnClose,
 	}
 	return c, nil
 }
@@ -321,15 +331,39 @@ func (m MultiErr) Error() string {
 // Close triggers the proxyClient to shutdown.
 func (c *Client) Close() error {
 	var mErr MultiErr
+	// First, close all open socket listeners to prevent additional connections.
 	for _, m := range c.mnts {
 		err := m.Close()
 		if err != nil {
 			mErr = append(mErr, err)
 		}
 	}
+	// Next, close the dialer to prevent any additional refreshes.
 	cErr := c.dialer.Close()
 	if cErr != nil {
 		mErr = append(mErr, cErr)
+	}
+	if c.waitOnClose == 0 {
+		if len(mErr) > 0 {
+			return mErr
+		}
+		return nil
+	}
+	timeout := time.After(c.waitOnClose)
+	tick := time.Tick(100 * time.Millisecond)
+	for {
+		select {
+		case <-tick:
+			if atomic.LoadUint64(&c.connCount) > 0 {
+				continue
+			}
+		case <-timeout:
+		}
+		break
+	}
+	open := atomic.LoadUint64(&c.connCount)
+	if open > 0 {
+		mErr = append(mErr, fmt.Errorf("%d connection(s) still open after waiting %v", open, c.waitOnClose))
 	}
 	if len(mErr) > 0 {
 		return mErr

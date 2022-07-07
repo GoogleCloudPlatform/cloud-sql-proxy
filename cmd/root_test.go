@@ -229,6 +229,13 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using wait after signterm flag",
+			args: []string{"--max-sigterm-delay", "10s", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				WaitOnClose: 10 * time.Second,
+			}),
+		},
+		{
 			desc: "using the private-ip flag",
 			args: []string{"--private-ip", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
