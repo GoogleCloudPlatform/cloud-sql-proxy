@@ -215,6 +215,13 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "enabling structured logging",
+			args: []string{"--structured-logs", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				StructuredLogs: true,
+			}),
+		},
+		{
 			desc: "using the max connections flag",
 			args: []string{"--max-connections", "1", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
