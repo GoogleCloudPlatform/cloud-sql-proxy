@@ -418,7 +418,6 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 type socketMount struct {
 	inst     string
 	dialOpts []cloudsqlconn.DialOption
-	mu       sync.Mutex
 	listener net.Listener
 }
 
