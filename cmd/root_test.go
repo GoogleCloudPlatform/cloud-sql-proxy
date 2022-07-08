@@ -251,6 +251,13 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "using the quota project flag",
+			args: []string{"--quota-project", "proj", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				QuotaProject: "proj",
+			}),
+		},
 	}
 
 	for _, tc := range tcs {

@@ -174,6 +174,11 @@ the maximum time has passed. Defaults to 0s.`)
 		"Port for the Prometheus server to use")
 	cmd.PersistentFlags().StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
 		"When set, the proxy uses this url as the API endpoint for all Cloud SQL Admin API requests.\nExample: https://sqladmin.googleapis.com")
+	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
+		`Specifies the project to use for Cloud SQL Admin API quota tracking.
+The IAM principal must have the "serviceusage.services.use" permission
+for the given project. See https://cloud.google.com/service-usage/docs/overview and 
+https://cloud.google.com/storage/docs/requester-pays`)
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
