@@ -3,8 +3,8 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy/v2
 go 1.16
 
 require (
-	cloud.google.com/go/cloudsqlconn v0.3.2-0.20220603184906-d7e0037d4c9e
-	cloud.google.com/go/compute v1.6.1
+	cloud.google.com/go/cloudsqlconn v0.4.1-0.20220701163030-bda891776d5d
+	cloud.google.com/go/compute v1.7.0
 	contrib.go.opencensus.io/exporter/prometheus v0.4.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.13
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
@@ -19,9 +19,9 @@ require (
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122 // indirect
-	golang.org/x/net v0.0.0-20220607020251-c690dde0001d
-	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb
-	golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
+	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2
+	golang.org/x/sys v0.0.0-20220624220833-87e55d714810
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858
-	google.golang.org/api v0.84.0
+	google.golang.org/api v0.86.0
 )
