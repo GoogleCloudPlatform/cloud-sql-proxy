@@ -172,13 +172,13 @@ the maximum time has passed. Defaults to 0s.`)
 		"Enable Prometheus for metric collection using the provided namespace")
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for the Prometheus server to use")
+	cmd.PersistentFlags().StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
+		"When set, the proxy uses this url as the API endpoint for all Cloud SQL Admin API requests.\nExample: https://sqladmin.googleapis.com")
 	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
 		`Specifies the project to use for Cloud SQL Admin API quota tracking.
 The IAM principal must have the "serviceusage.services.use" permission
 for the given project. See https://cloud.google.com/service-usage/docs/overview and 
 https://cloud.google.com/storage/docs/requester-pays`)
-	cmd.PersistentFlags().StringVar(&c.conf.ApiEndpointUrl, "sqladmin-api-endpoint", "",
-		"When set, the proxy uses this url as the API endpoint for all sqladmin API requests. Example: https://sqladmin.googleapis.com")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -239,15 +239,15 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		cmd.logger.Infof("Ignoring disable-traces as telemetry-project was not set")
 	}
 
-	if userHasSet("sqladmin-api-endpoint") && conf.ApiEndpointUrl != "" {
-		_, err := url.Parse(conf.ApiEndpointUrl)
+	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
+		_, err := url.Parse(conf.APIEndpointURL)
 		if err != nil {
-			return newBadCommandError(fmt.Sprintf("the value provided for --api-endpoint is not a valid url, %v", conf.ApiEndpointUrl))
+			return newBadCommandError(fmt.Sprintf("the value provided for --sqladmin-api-endpoint is not a valid URL, %v", conf.APIEndpointURL))
 		}
 
 		// add a trailing '/' if omitted
-		if !strings.HasSuffix(conf.ApiEndpointUrl, "/") {
-			conf.ApiEndpointUrl = conf.ApiEndpointUrl + "/"
+		if !strings.HasSuffix(conf.APIEndpointURL, "/") {
+			conf.APIEndpointURL = conf.APIEndpointURL + "/"
 		}
 	}
 
