@@ -172,6 +172,11 @@ the maximum time has passed. Defaults to 0s.`)
 		"Enable Prometheus for metric collection using the provided namespace")
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for the Prometheus server to use")
+	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
+		`Specifies the project to use for Cloud SQL Admin API quota tracking.
+The IAM principal must have the "serviceusage.services.use" permission
+for the given project. See https://cloud.google.com/service-usage/docs/overview and 
+https://cloud.google.com/storage/docs/requester-pays`)
 	cmd.PersistentFlags().StringVar(&c.conf.ApiEndpointUrl, "sqladmin-api-endpoint", "",
 		"When set, the proxy uses this url as the API endpoint for all sqladmin API requests. Example: https://sqladmin.googleapis.com")
 
