@@ -139,7 +139,7 @@ any client SSL certificates.`,
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for the Prometheus server to use")
 	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
-		"Specifies the project to use for Cloud SQL Admin API quota tracking.")
+		"Specifies the project to use for Cloud SQL Admin API quota tracking.\n The request IAM user must have a role with \"serviceusage.services.use\" \nSee https://cloud.google.com/service-usage/docs/overview and https://cloud.google.com/storage/docs/requester-pays")
 	cmd.PersistentFlags().StringVar(&c.conf.ApiEndpointUrl, "sqladmin-api-endpoint", "",
 		"When set, the proxy uses this url as the API endpoint for all sqladmin API requests. Example: https://sqladmin.googleapis.com")
 

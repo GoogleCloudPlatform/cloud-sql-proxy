@@ -95,8 +95,8 @@ type Config struct {
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
 
-	// QuotaProject is the id of the Google Cloud project to use to track
-	// api request quotas.
+	// QuotaProject is the ID of the Google Cloud project to use to track
+	// API request quotas.
 	QuotaProject string
 
 	// Dialer specifies the dialer to use when connecting to Cloud SQL
