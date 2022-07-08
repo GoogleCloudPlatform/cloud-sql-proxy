@@ -105,9 +105,17 @@ type Config struct {
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
 
+	// QuotaProject is the ID of the Google Cloud project to use to track
+	// API request quotas.
+	QuotaProject string
+
 	// StructuredLogs sets all output to use JSON in the LogEntry format.
 	// See https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 	StructuredLogs bool
+
+	// Dialer specifies the dialer to use when connecting to Cloud SQL
+	// instances.
+	Dialer cloudsql.Dialer
 }
 
 // DialOptions interprets appropriate dial options for a particular instance
@@ -162,6 +170,10 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 
 	if c.IAMAuthN {
 		opts = append(opts, cloudsqlconn.WithIAMAuthN())
+	}
+
+	if c.QuotaProject != "" {
+		opts = append(opts, cloudsqlconn.WithQuotaProject(c.QuotaProject))
 	}
 
 	return opts, nil
