@@ -420,7 +420,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 
 			sConn, err := c.dialer.Dial(ctx, s.inst, s.dialOpts...)
 			if err != nil {
-				c.logger.Infof("[%s] failed to connect to instance: %v", s.inst, err)
+				c.logger.Errorf("[%s] failed to connect to instance: %v", s.inst, err)
 				cConn.Close()
 				return
 			}
