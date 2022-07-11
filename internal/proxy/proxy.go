@@ -399,7 +399,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		}
 		// handle the connection in a separate goroutine
 		go func() {
-			c.logger.Errorf("[%s] accepted connection from %s", s.inst, cConn.RemoteAddr())
+			c.logger.Infof("[%s] accepted connection from %s", s.inst, cConn.RemoteAddr())
 
 			// A client has established a connection to the local socket. Before
 			// we initiate a connection to the Cloud SQL backend, increment the
