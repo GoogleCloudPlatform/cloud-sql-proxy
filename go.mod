@@ -15,5 +15,5 @@ require (
 	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0
 	golang.org/x/sys v0.0.0-20220624220833-87e55d714810
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858
-	google.golang.org/api v0.86.0
+	google.golang.org/api v0.87.0
 )
