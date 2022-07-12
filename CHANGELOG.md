@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.1](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.31.0...v1.31.1) (2022-07-12)
+
+
+### Bug Fixes
+
+* strip monotonic clock reading during refresh ([#1223](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1223)) ([957d160](https://github.com/GoogleCloudPlatform/cloudsql-proxy/commit/957d1609ad96bfed77b3744f1c11a762010bc06e))
+
 ## [1.31.0](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.30.1...v1.31.0) (2022-06-02)
 
 
