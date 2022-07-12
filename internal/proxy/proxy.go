@@ -399,7 +399,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		}
 		// handle the connection in a separate goroutine
 		go func() {
-			c.logger.Errorf("[%s] accepted connection from %s", s.inst, cConn.RemoteAddr())
+			c.logger.Infof("[%s] accepted connection from %s", s.inst, cConn.RemoteAddr())
 
 			// A client has established a connection to the local socket. Before
 			// we initiate a connection to the Cloud SQL backend, increment the
@@ -420,7 +420,7 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 
 			sConn, err := c.dialer.Dial(ctx, s.inst, s.dialOpts...)
 			if err != nil {
-				c.logger.Infof("[%s] failed to connect to instance: %v", s.inst, err)
+				c.logger.Errorf("[%s] failed to connect to instance: %v", s.inst, err)
 				cConn.Close()
 				return
 			}
