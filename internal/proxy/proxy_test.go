@@ -311,7 +311,7 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 			if got == io.EOF {
 				return
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 		}
 		t.Fatalf("conn.Read should return io.EOF, got = %v", got)
 	}
