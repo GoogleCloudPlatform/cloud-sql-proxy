@@ -188,7 +188,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && runner.os == 'Windows' }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot.exe -o flakybot.exe -s -L
-          flakybot.exe --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+          ./flakybot.exe --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
 
       - name: FlakyBot (macOS)
         # testing execution of flakybot command, will update to 'schedule' and 'push' events
