@@ -118,6 +118,11 @@ func TestStartupPass(t *testing.T) {
 	// Simulate the proxy client completing startup.
 	s.NotifyStarted()
 
+	// throw error
+	if true {
+		panic("THROWING ERROR FOR FLAKYBOT TO CATCH")
+	}
+
 	resp, err := http.Get("http://localhost:" + testPort + startupPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
