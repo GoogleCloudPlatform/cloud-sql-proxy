@@ -81,8 +81,7 @@ jobs:
           go-junit-report -in test_results.txt -set-exit-code -out unit_sponge_log.xml
 
       - name: FlakyBot
-        # TODO: testing execution of flakybot command, will update to 'schedule' and 'push' events
-        if: ${{ github.event_name == 'pull_request' && always() }}
+        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push')  && always() }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
           chmod +x ./flakybot
@@ -184,11 +183,14 @@ jobs:
           SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
-        run: go test -race -v ./...
+        run: |
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -race -v ./... | tee test_results.txt
+          go-junit-report -in test_results.txt -set-exit-code -out integration_sponge_log.xml
       
       - name: FlakyBot (Linux)
         # only run flakybot on periodic (schedule) and continuous (push) events
-        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Linux' }}
+        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Linux' && always() }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
           chmod +x ./flakybot
@@ -196,14 +198,14 @@ jobs:
         
       - name: FlakyBot (Windows)
         # only run flakybot on periodic (schedule) and continuous (push) events
-        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Windows' }}
+        if: ${{ github.event_name == 'pull_request' && runner.os == 'Windows' && always() }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot.exe -o flakybot.exe -s -L
           ./flakybot.exe --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
 
       - name: FlakyBot (macOS)
         # only run flakybot on periodic (schedule) and continuous (push) events
-        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'macOS' }}
+        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'macOS' && always() }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot-darwin-amd64 -o flakybot -s -L
           chmod +x ./flakybot
