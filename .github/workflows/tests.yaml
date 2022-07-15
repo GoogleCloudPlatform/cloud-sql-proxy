@@ -205,7 +205,7 @@ jobs:
 
       - name: FlakyBot (macOS)
         # only run flakybot on periodic (schedule) and continuous (push) events
-        if: ${{ github.event_name == 'pull_request' && runner.os == 'macOS' && always() }}
+        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'macOS' && always() }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot-darwin-amd64 -o flakybot -s -L
           chmod +x ./flakybot

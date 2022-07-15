@@ -144,11 +144,6 @@ func TestStartupFail(t *testing.T) {
 	}
 	defer s.Close(context.Background())
 
-	// throw error
-	if true {
-		panic("THROWING ERROR FOR FLAKYBOT TO CATCH")
-	}
-
 	resp, err := http.Get("http://localhost:" + testPort + startupPath)
 	if err != nil {
 		t.Fatalf("HTTP GET failed: %v", err)
