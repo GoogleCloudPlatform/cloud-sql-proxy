@@ -77,7 +77,8 @@ jobs:
       - name: Run tests
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
-          go test -short -race -v 2>&1 ./... | go-junit-report > unit_sponge_log.xml
+          go test -short -race -v ./... > test_output.txt
+          go-junit-report -in test_output.txt -iocopy -out unit_sponge_log.xml
 
       - name: FlakyBot
         # TODO: testing execution of flakybot command, will update to 'schedule' and 'push' events
