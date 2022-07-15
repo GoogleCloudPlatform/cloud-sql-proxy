@@ -78,8 +78,8 @@ jobs:
         run: go test -short -race -v ./...
 
       - name: FlakyBot
-        # testing execution of flakybot command, will update to 'schedule' and 'push' events
-        if: ${{ github.event_name == 'pull_request' && always() }}
+        # TODO: testing execution of flakybot command, will update to 'schedule' and 'push' events
+        if: ${{ github.event_name == 'schedule' && always() }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
           chmod +x ./flakybot
