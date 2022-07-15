@@ -198,14 +198,14 @@ jobs:
         
       - name: FlakyBot (Windows)
         # only run flakybot on periodic (schedule) and continuous (push) events
-        if: ${{ github.event_name == 'pull_request' && runner.os == 'Windows' && always() }}
+        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Windows' && always() }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot.exe -o flakybot.exe -s -L
           ./flakybot.exe --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
 
       - name: FlakyBot (macOS)
         # only run flakybot on periodic (schedule) and continuous (push) events
-        if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'macOS' && always() }}
+        if: ${{ github.event_name == 'pull_request' && runner.os == 'macOS' && always() }}
         run: |
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot-darwin-amd64 -o flakybot -s -L
           chmod +x ./flakybot
