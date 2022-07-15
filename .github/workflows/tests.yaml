@@ -75,7 +75,9 @@ jobs:
           access_token_lifetime: 600s
 
       - name: Run tests
-        run: go test -short -race -v ./...
+        run: |
+          go install github.com/jstemmer/go-junit-report/v2@latest
+          go test -short -race -v 2>&1 ./... | go-junit-report -set-exit-code > unit_sponge_log.xml
 
       - name: FlakyBot
         # TODO: testing execution of flakybot command, will update to 'schedule' and 'push' events
