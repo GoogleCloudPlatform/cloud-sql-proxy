@@ -98,7 +98,7 @@ jobs:
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
           TMP: '${{ runner.temp }}'
-        run:
+        run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
           go test -race -v ./... | tee test_results.txt
           go-junit-report -in test_results.txt -set-exit-code -out v2periodic_sponge_log.xml
