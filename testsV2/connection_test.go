@@ -109,7 +109,9 @@ func testHealthCheck(t *testing.T, connName string) {
 			if err != nil {
 				time.Sleep(100 * time.Millisecond)
 			}
-			return resp
+			if resp != nil {
+				return resp
+			}
 		}
 		t.Fatalf("HTTP GET failed: %v", err)
 		return nil
