@@ -23,6 +23,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -127,7 +128,15 @@ func (p *proxyExec) WaitForServe(ctx context.Context) (output string, err error)
 				errCh <- err
 				return
 			}
-			buf.WriteString(s)
+			if _, err = buf.WriteString(s); err != nil {
+				errCh <- err
+				return
+			}
+			// Check for an unrecognized flag
+			if strings.Contains(s, "Error") {
+				errCh <- errors.New(s)
+				return
+			}
 			if strings.Contains(s, "ready for new connections") {
 				errCh <- nil
 				return
@@ -137,10 +146,10 @@ func (p *proxyExec) WaitForServe(ctx context.Context) (output string, err error)
 	// Wait for either the background thread of the context to complete
 	select {
 	case <-ctx.Done():
-		return buf.String(), fmt.Errorf("context done: %w", ctx.Err())
+		return buf.String(), ctx.Err()
 	case err := <-errCh:
 		if err != nil {
-			return buf.String(), fmt.Errorf("proxy start failed: %w", err)
+			return buf.String(), err
 		}
 	}
 	return buf.String(), nil

@@ -17,6 +17,8 @@ package tests
 import (
 	"context"
 	"database/sql"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -76,5 +78,55 @@ func proxyConnTest(t *testing.T, args []string, driver, dsn string) {
 	_, err = db.Exec("SELECT 1;")
 	if err != nil {
 		t.Fatalf("unable to exec on db: %s", err)
+	}
+}
+
+// testHealthCheck verifies that when a proxy client serves the given instance,
+// the readiness endpoint serves http.StatusOK.
+func testHealthCheck(t *testing.T, connName string) {
+	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
+	defer cancel()
+
+	args := []string{connName, "--health-check"}
+	// Start the proxy.
+	p, err := StartProxy(ctx, args...)
+	if err != nil {
+		t.Fatalf("unable to start proxy: %v", err)
+	}
+	defer p.Close()
+	_, err = p.WaitForServe(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tryDial := func(t *testing.T) *http.Response {
+		var (
+			err  error
+			resp *http.Response
+		)
+		for i := 0; i < 10; i++ {
+			resp, err = http.Get("http://localhost:9090/readiness")
+			if err != nil {
+				time.Sleep(100 * time.Millisecond)
+			}
+			return resp
+		}
+		t.Fatalf("HTTP GET failed: %v", err)
+		return nil
+	}
+
+	resp := tryDial(t)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("failed to read HTTP response body: %v", err)
+	}
+	defer resp.Body.Close()
+	if string(body) != "ok" {
+		t.Fatalf("response body was not ok, got = %v", string(body))
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
 	}
 }
