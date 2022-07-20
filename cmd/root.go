@@ -389,8 +389,9 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 }
 
 // parseBoolOpt parses a boolean option from the query string, returning
-//   true if the value is "t" or "true" case-insensitive
-//   false if the value is "f" or "false" case-insensitive
+//
+//	true if the value is "t" or "true" case-insensitive
+//	false if the value is "f" or "false" case-insensitive
 func parseBoolOpt(q url.Values, name string) (*bool, error) {
 	iam, ok := q[name]
 	if !ok {
