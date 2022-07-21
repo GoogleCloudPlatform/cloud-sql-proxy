@@ -167,27 +167,27 @@ func TestCreateInstanceConfigs(t *testing.T) {
 			skipFailedInstanceConfig: false,
 		},
 	} {
-		// fuse is not supported in CI for darwin
-		if runtime.GOOS == "darwin" && v.useFuse {
-			continue
-		}
-		// fuse and unix sockets are not supported on windows
-		if runtime.GOOS == "windows" && (v.useFuse || v.dir != "") {
-			continue
-		}
-		if v.useFuse && testing.Short() {
-			t.Skip("skipping fuse tests in short mode.")
-		}
-		_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient, v.skipFailedInstanceConfig)
-		if v.wantErr {
-			if err == nil {
-				t.Errorf("CreateInstanceConfigs passed when %s, wanted error", v.desc)
+		t.Run(v.desc, func(t *testing.T) {
+			// fuse is not supported in CI for darwin
+			if runtime.GOOS == "darwin" && v.useFuse {
+				t.Skip("skipping Darwin and FUSE test")
 			}
-			continue
-		}
-		if err != nil {
-			t.Errorf("CreateInstanceConfigs gave error when %s: %v", v.desc, err)
-		}
+			// fuse and unix sockets are not supported on windows
+			if runtime.GOOS == "windows" && (v.useFuse || v.dir != "") {
+				t.Skip("skipping Windows and FUSE/Unix socket test")
+			}
+			if v.useFuse && testing.Short() {
+				t.Skip("skipping fuse tests in short mode.")
+			}
+			_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient, v.skipFailedInstanceConfig)
+			if v.wantErr && err == nil {
+				t.Errorf("CreateInstanceConfigs passed when %s, wanted error", v.desc)
+				return
+			}
+			if err != nil {
+				t.Errorf("CreateInstanceConfigs gave error when %s: %v", v.desc, err)
+			}
+		})
 	}
 }
 
