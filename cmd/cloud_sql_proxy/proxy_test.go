@@ -42,58 +42,137 @@ func TestCreateInstanceConfigs(t *testing.T) {
 		useFuse      bool
 		instances    []string
 		instancesSrc string
-
 		// We don't need to check the []instancesConfig return value, we already
 		// have a TestParseInstanceConfig.
 		wantErr bool
 
 		skipFailedInstanceConfig bool
-
-		supportedOnWindows bool
 	}{
 		{
-			"setting -fuse and -dir",
-			"dir", true, nil, "", false, false, false,
-		}, {
-			"setting -fuse",
-			"", true, nil, "", true, false, false,
-		}, {
-			"setting -fuse, -dir, and -instances",
-			"dir", true, []string{"proj:reg:x"}, "", true, false, false,
-		}, {
-			"setting -fuse, -dir, and -instances_metadata",
-			"dir", true, nil, "md", true, false, false,
-		}, {
-			"setting -dir and -instances (unix socket)",
-			"dir", false, []string{"proj:reg:x"}, "", false, false, false,
-		}, {
+			desc:                     "setting -fuse and -dir",
+			dir:                      "dir",
+			useFuse:                  true,
+			instances:                nil,
+			instancesSrc:             "",
+			wantErr:                  false,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -fuse",
+			dir:                      "",
+			useFuse:                  true,
+			instances:                nil,
+			instancesSrc:             "",
+			wantErr:                  true,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -fuse, -dir, and -instances",
+			dir:                      "dir",
+			useFuse:                  true,
+			instances:                []string{"proj:reg:x"},
+			instancesSrc:             "",
+			wantErr:                  true,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -fuse, -dir, and -instances_metadata",
+			dir:                      "dir",
+			useFuse:                  true,
+			instances:                nil,
+			instancesSrc:             "md",
+			wantErr:                  true,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -dir and -instances (unix socket)",
+			dir:                      "dir",
+			useFuse:                  false,
+			instances:                []string{"proj:reg:x"},
+			instancesSrc:             "",
+			wantErr:                  false,
+			skipFailedInstanceConfig: false,
+		},
+		{
 			// tests for the case where invalid configs can still exist, when skipped
-			"setting -dir and -instances (unix socket) w/ something invalid",
-			"dir", false, []string{"proj:reg:x", "INVALID_PROJECT_STRING"}, "", false, true, false,
-		}, {
-			"Seting -instance (unix socket)",
-			"", false, []string{"proj:reg:x"}, "", true, false, false,
-		}, {
-			"setting -instance (tcp socket)",
-			"", false, []string{"proj:reg:x=tcp:1234"}, "", false, false, true,
-		}, {
-			"setting -instance (tcp socket) and -instances_metadata",
-			"", false, []string{"proj:reg:x=tcp:1234"}, "md", true, false, true,
-		}, {
-			"setting -dir, -instance (tcp socket), and -instances_metadata",
-			"dir", false, []string{"proj:reg:x=tcp:1234"}, "md", false, false, true,
-		}, {
-			"setting -dir, -instance (unix socket), and -instances_metadata",
-			"dir", false, []string{"proj:reg:x"}, "md", false, false, false,
-		}, {
-			"setting -dir and -instances_metadata",
-			"dir", false, nil, "md", false, false, false,
-		}, {
-			"setting -instances_metadata",
-			"", false, nil, "md", true, false, true,
+			desc:                     "setting -dir and -instances (unix socket) w/ something invalid",
+			dir:                      "dir",
+			useFuse:                  false,
+			instances:                []string{"proj:reg:x", "INVALID_PROJECT_STRING"},
+			instancesSrc:             "",
+			wantErr:                  false,
+			skipFailedInstanceConfig: true,
+		},
+		{
+			desc:                     "Seting -instance (unix socket)",
+			dir:                      "",
+			useFuse:                  false,
+			instances:                []string{"proj:reg:x"},
+			instancesSrc:             "",
+			wantErr:                  true,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -instance (tcp socket)",
+			dir:                      "",
+			useFuse:                  false,
+			instances:                []string{"proj:reg:x=tcp:1234"},
+			instancesSrc:             "",
+			wantErr:                  false,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -instance (tcp socket) and -instances_metadata",
+			dir:                      "",
+			useFuse:                  false,
+			instances:                []string{"proj:reg:x=tcp:1234"},
+			instancesSrc:             "md",
+			wantErr:                  true,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -dir, -instance (tcp socket), and -instances_metadata",
+			dir:                      "dir",
+			useFuse:                  false,
+			instances:                []string{"proj:reg:x=tcp:1234"},
+			instancesSrc:             "md",
+			wantErr:                  false,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -dir, -instance (unix socket), and -instances_metadata",
+			dir:                      "dir",
+			useFuse:                  false,
+			instances:                []string{"proj:reg:x"},
+			instancesSrc:             "md",
+			wantErr:                  false,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -dir and -instances_metadata",
+			dir:                      "dir",
+			useFuse:                  false,
+			instances:                nil,
+			instancesSrc:             "md",
+			wantErr:                  false,
+			skipFailedInstanceConfig: false,
+		},
+		{
+			desc:                     "setting -instances_metadata",
+			dir:                      "",
+			useFuse:                  false,
+			instances:                nil,
+			instancesSrc:             "md",
+			wantErr:                  true,
+			skipFailedInstanceConfig: false,
 		},
 	} {
-		if runtime.GOOS == "windows" && !v.supportedOnWindows {
+		// fuse is not supported in CI for darwin
+		if runtime.GOOS == "darwin" && v.useFuse {
+			continue
+		}
+		// fuse and unix sockets are not supported on windows
+		if runtime.GOOS == "windows" && (v.useFuse || v.dir != "") {
 			continue
 		}
 		if v.useFuse && testing.Short() {

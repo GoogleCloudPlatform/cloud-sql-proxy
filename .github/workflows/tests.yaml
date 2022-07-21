@@ -94,7 +94,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-10.15, windows-latest, ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
       fail-fast: false
     permissions:
       contents: 'read'
@@ -159,12 +159,6 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
-
-      - name: Enable fuse config (MacOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew update > /dev/null
-          brew install --cask --quiet osxfuse
 
       - name: Run tests
         env:
