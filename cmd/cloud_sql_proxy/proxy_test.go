@@ -180,8 +180,10 @@ func TestCreateInstanceConfigs(t *testing.T) {
 				t.Skip("skipping fuse tests in short mode.")
 			}
 			_, err := CreateInstanceConfigs(v.dir, v.useFuse, v.instances, v.instancesSrc, mockClient, v.skipFailedInstanceConfig)
-			if v.wantErr && err == nil {
-				t.Errorf("CreateInstanceConfigs passed when %s, wanted error", v.desc)
+			if v.wantErr {
+				if err == nil {
+					t.Errorf("CreateInstanceConfigs passed when %s, wanted error", v.desc)
+				}
 				return
 			}
 			if err != nil {
