@@ -3,7 +3,7 @@
 The Cloud SQL Auth proxy v2 CLI interface maintains a close match to the v1
 interface. Migrating to v2 will require minimal changes. Below are a number
 of examples of v1 vs v2 invocations covering the most common uses. See
-[Flag Changes][#flag changes] for details.
+[Flag Changes][#flag_changes] for details.
 
 All the examples below use `<INSTANCE_CONNECTION_NAME>` as a placeholder for
 your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
@@ -12,7 +12,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ### Listen on TCP socket
 
-``` shell
+```shell
 # v1
 ./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5432
 
@@ -23,7 +23,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ### Listen on Unix Socket
 
-``` shell
+```shell
 # v1
 ./cloud_sql_proxy -dir /cloudsql -instances=<INSTANCE_CONNECTION_NAME>
 
@@ -33,7 +33,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ### Listen on multiple TCP sockets with incrementing ports
 
-``` shell
+```shell
 # v1
 ./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5000,<INSTANCE_CONNECTION_NAME2>=tcp:5001
 
@@ -44,7 +44,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ### Listen on multiple TCP sockets with non-sequential ports
 
-``` shell
+```shell
 # v1
 ./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:6000,<INSTANCE_CONNECTION_NAME2>=tcp:7000
 
@@ -54,7 +54,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ### Listen on all interfaces
 
-``` shell
+```shell
 # v1
 ./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp0.0.0.0:6000
 
@@ -66,34 +66,33 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 The following table lists in alphabetical order v1 flags and their v2 version.
 
-🗓️: Planned
-❌: Deprecated
-🤔: Unplanned, but has open feature request
+- 🗓️: Planned
+- ❌: Deprecated
+- 🤔: Unplanned, but has open feature request
 
-
-| v1                          | v2                    | Notes               |
-|-----------------------------|-----------------------|---------------------|
-| check_region                |       ❌              |                     |
-| credential_file             | credentials-file      |                     |
-| dir                         | unix-socket           |                     |
-| enable_iam_login            | auto-iam-authn        |                     |
-| fd_rlimit                   |       🤔              | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258)       |
-| fuse                        |       🗓️              |                     |
-| fuse_tmp                    |       🗓️              |                     |
-| health_check_port           | http-port             |                     |
-| host                        | sqladmin-api-endpoint |                     |
-| instances_metadata          |       🤔              | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259)       |
-| ip_address_types            | private-ip            | Defaults to public  |
-| log_debug_stdout            |       ❌              | v2 logs to stdout, errors to stderr by default |
-| max_connections             | max-connections       |                     |
-| projects                    |       ❌              |                     |
-| quiet                       |       ❌              |                     |
-| quota_project               | quota-project         |                     |
-| refresh_config_throttle     |       ❌              |                     |
-| skip_failed_instance_config |       ❌              |                     |
-| structured_logs             | structured-logs       |                     |
-| term_timeout                | max-sigterm-delay     |                     |
-| token                       | token                 |                     |
-| use_http_health_check       | health-check          |                     |
-| verbose                     |       ❌              |                     |
-| version                     | version               |                     |
+| v1                          | v2                    | Notes                                                                                |
+| --------------------------- | --------------------- | ------------------------------------------------------------------------------------ |
+| check_region                | ❌                    |                                                                                      |
+| credential_file             | credentials-file      |                                                                                      |
+| dir                         | unix-socket           |                                                                                      |
+| enable_iam_login            | auto-iam-authn        |                                                                                      |
+| fd_rlimit                   | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258) |
+| fuse                        | 🗓️                    |                                                                                      |
+| fuse_tmp                    | 🗓️                    |                                                                                      |
+| health_check_port           | http-port             |                                                                                      |
+| host                        | sqladmin-api-endpoint |                                                                                      |
+| instances_metadata          | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259) |
+| ip_address_types            | private-ip            | Defaults to public                                                                   |
+| log_debug_stdout            | ❌                    | v2 logs to stdout, errors to stderr by default                                       |
+| max_connections             | max-connections       |                                                                                      |
+| projects                    | ❌                    |                                                                                      |
+| quiet                       | ❌                    |                                                                                      |
+| quota_project               | quota-project         |                                                                                      |
+| refresh_config_throttle     | ❌                    |                                                                                      |
+| skip_failed_instance_config | ❌                    |                                                                                      |
+| structured_logs             | structured-logs       |                                                                                      |
+| term_timeout                | max-sigterm-delay     |                                                                                      |
+| token                       | token                 |                                                                                      |
+| use_http_health_check       | health-check          |                                                                                      |
+| verbose                     | ❌                    |                                                                                      |
+| version                     | version               |                                                                                      |
