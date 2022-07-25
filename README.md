@@ -2,21 +2,29 @@
 
 [![CI][ci-badge]][ci-build]
 
-The Cloud SQL Auth proxy is a binary that provides IAM-based authorization and
-TLS 1.3 encryption for client connections to a Cloud SQL instance.
+The Cloud SQL Auth proxy is the recommended way to connect to your Cloud SQL instance.
+The proxy authorizes all client connections based the IAM principal and secures
+each connection with TLS 1.3 encryption.
 
-In addition, the proxy has support for:
+The Cloud SQL Auth proxy has support for:
 
-* [Auto IAM Authentication][iam-auth] (Postgres only)
-* [Cloud Monitoring][] and [Cloud Trace][]
-* [Prometheus][]
-* [HTTP Healthchecks][health-check-example] for use with Kubernetes
+- [Auto IAM Authentication][iam-auth] (Postgres only)
+- [Cloud Monitoring][] and [Cloud Trace][]
+- [Prometheus][]
+- [HTTP Healthchecks][health-check-example] for use with Kubernetes
+- Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
+- Fully POSIX-compliant flags
+
+If you're using Go, consider using the [Cloud SQL Go connector][go connector] directly.
 
 For users migrating from v1, see the [Migration Guide](migration-guide).
+The [v1 README][v1 readme] is still available.
 
-[Cloud Monitoring]: https://cloud.google.com/monitoring
-[Cloud Trace]: https://cloud.google.com/trace
-[Prometheus]: https://prometheus.io/
+[cloud monitoring]: https://cloud.google.com/monitoring
+[cloud trace]: https://cloud.google.com/trace
+[prometheus]: https://prometheus.io/
+[go connector]: https://github.com/GoogleCloudPlatform/cloud-sql-go-connector
+[v1 readme]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/5f5b09b62eb6dfcaa58ce399d0131c1544bf813f/README.md
 
 ## Installation
 
@@ -67,7 +75,7 @@ To start the proxy, use:
 
 The proxy supports multiple instances:
 
-``` shell
+```shell
 ./cloudsql-proxy <INSTANCE_CONNECTION_NAME_1> <INSTANCE_CONNECTION_NAME_2>
 ```
 
@@ -88,7 +96,7 @@ To overide the choice of `localhost`, use the `--addr` flag:
 By default, the proxy attempts to connect to an instance's public IP. To enable
 private IP, use:
 
-``` shell
+```shell
 # Starts a listener connected to the private IP of the Cloud SQL instance.
 # Note: there must be a network path present for this to work.
 ./cloudsql-proxy --private-ip <INSTANCE_CONNECTION_NAME>
@@ -96,7 +104,7 @@ private IP, use:
 
 The proxy also supports Unix sockets. To start the proxy with Unix sockets, run:
 
-``` shell
+```shell
 # Uses the directory "/mycooldir" to create a Unix socket
 # For example, the following directory would be created:
 #   /mycooldir/myproject:myregion:myinstance
@@ -105,7 +113,7 @@ The proxy also supports Unix sockets. To start the proxy with Unix sockets, run:
 
 To see a full list of flags, use:
 
-``` shell
+```shell
 ./cloudsql-proxy -h
 ```
 
@@ -118,7 +126,7 @@ the shell.
 
 For example, to configure ports on a per instance basis, use:
 
-``` shell
+```shell
 # Starts a listener on localhost:5000 for the instance called "postgres"
 # and starts a listener on localhost:3306 for the instance called "mysql"
 ./cloudsql-proxy 'myproject:my-region:postgres?port=5000' \
@@ -127,7 +135,7 @@ For example, to configure ports on a per instance basis, use:
 
 To bind one listener to all interfaces for only a single instance, use:
 
-``` shell
+```shell
 # Starts a listener on 0.0.0.0 for "postgres" at port 5432
 # and a listener on localhost:3306 for "mysql"
 ./cloudsql-proxy 'myproject:my-region:postgres?addr=0.0.0.0' \
@@ -137,14 +145,14 @@ To bind one listener to all interfaces for only a single instance, use:
 Many flags are also supported as a query-params. For a list of what flags are
 supported, use:
 
-``` shell
+```shell
 ./cloudsql-proxy -h
 ```
 
 ## Credentials
 
-The Cloud SQL proxy uses a Cloud IAM principal to authorize connections against 
-a Cloud SQL instance. The proxy sources the credentials using 
+The Cloud SQL proxy uses a Cloud IAM principal to authorize connections against
+a Cloud SQL instance. The proxy sources the credentials using
 [Application Default Credentials](https://cloud.google.com/docs/authentication/production).
 
 Note: Any IAM principal connecting to a Cloud SQL database will need one of the
@@ -226,6 +234,49 @@ when you want to proxy this traffic. Otherwise, it is optional. See
 [`http.ProxyFromEnvironment`](https://pkg.go.dev/net/http@go1.17.3#ProxyFromEnvironment)
 for possible values.
 
+## Frequently Asked Questions
+
+### Why would I use the proxy?
+
+The proxy removes the need to manage database client certificates and Authorized
+Networks, while providing an encrypted channel to your Cloud SQL instance using
+TLS 1.3 based on ephemeral certificates. In addition, the proxy allow you to manage
+access to your database using IAM.
+
+### Why can't the proxy connect to my private IP instance?
+
+The proxy must have a network path to a private IP instance to function. If no
+network path exists, the proxy cannot create a network path and so cannot connect.
+
+### Is there a library version of the proxy that I can use?
+
+Yes. Cloud SQL supports three language connectors:
+
+- [Cloud SQL Go Connector][go connector]
+- [Cloud SQL Java Connector](https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory)
+- [Cloud SQL Python Connector](https://github.com/GoogleCloudPlatform/cloud-sql-python-connector)
+
+If you're using Go, Java, or Python, the language connectors offer the best
+experience. If you're using another language, then the proxy is the way to go.
+
+### Should I use the proxy for large deployments?
+
+We recommend deploying the proxy next to every application. It's possible that
+large deployments may bump up against the SQL Admin API quota. In those cases,
+we recommend deploying the proxy with a connection pooler like [pgbouncer][] or
+[ProxySQL][]. For details, see [Running the Cloud SQL Proxy as a Service][service-example].
+
+### Can I share the proxy across mulitple applications?
+
+Instead of using a single proxy across multiple applications, we recommend using
+one proxy instance for every application process. The proxy uses the context's IAM
+principal and so have a 1-to-1 mapping between application and IAM principal is
+best. If multiple applications use the same proxy instance, then it becomes unclear
+from an IAM perspective which principal is doing what.\*\*\*\*
+
+[pgbouncer]: https://www.pgbouncer.org/
+[proxysql]: https://www.proxysql.com/
+
 ## Reference Documentation
 
 - [Cloud SQL][cloud-sql]
@@ -290,3 +341,4 @@ By participating in this project you agree to abide by its terms. See
 [roles-and-permissions]: https://cloud.google.com/sql/docs/mysql/roles-and-permissions
 [service-account]: https://cloud.google.com/iam/docs/service-accounts
 [sidecar-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/examples/k8s-sidecar#run-the-cloud-sql-proxy-as-a-sidecar
+[service-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/examples/k8s-service
