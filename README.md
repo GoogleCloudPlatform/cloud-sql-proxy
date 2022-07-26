@@ -102,7 +102,7 @@ private IP, use:
 ./cloudsql-proxy --private-ip <INSTANCE_CONNECTION_NAME>
 ```
 
-The proxy also supports Unix sockets. To start the proxy with Unix sockets, run:
+The proxy also supports [Unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket). To start the proxy with Unix sockets, run:
 
 ```shell
 # Uses the directory "/mycooldir" to create a Unix socket
