@@ -230,18 +230,18 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError("cannot specify --credentials-file and --gcloud-auth flags at the same time")
 	}
 
-	if userHasSet("http-port") && !userHasSet("prometheus-namespace") {
-		return newBadCommandError("cannot specify --http-port without --prometheus-namespace")
+	if userHasSet("http-port") && !userHasSet("prometheus-namespace") && !userHasSet("health-check") {
+		cmd.logger.Infof("Ignoring --http-port because --prometheus-namespace or --health-check was not set")
 	}
 
 	if !userHasSet("telemetry-project") && userHasSet("telemetry-prefix") {
-		cmd.logger.Infof("Ignoring telementry-prefix as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring --telementry-prefix because --telemetry-project was not set")
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-metrics") {
-		cmd.logger.Infof("Ignoring disable-metrics as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring --disable-metrics because --telemetry-project was not set")
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
-		cmd.logger.Infof("Ignoring disable-traces as telemetry-project was not set")
+		cmd.logger.Infof("Ignoring --disable-traces because --telemetry-project was not set")
 	}
 
 	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
