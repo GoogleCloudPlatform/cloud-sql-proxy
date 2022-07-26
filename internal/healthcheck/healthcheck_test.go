@@ -172,7 +172,7 @@ func TestHandleReadinessForMaxConns(t *testing.T) {
 			if resp.StatusCode == wantCode {
 				return resp
 			}
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(time.Second)
 		}
 		return nil
 	}
