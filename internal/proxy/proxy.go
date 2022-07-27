@@ -337,7 +337,7 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 }
 
 // ConnCount returns the number of open connections and the maximum allowed
-// connections. Returns 0 when the maximum allowed connetions have not been set.
+// connections. Returns 0 when the maximum allowed connections have not been set.
 func (c *Client) ConnCount() (uint64, uint64) {
 	return atomic.LoadUint64(&c.connCount), c.maxConns
 }
