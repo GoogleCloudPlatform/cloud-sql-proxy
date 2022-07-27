@@ -488,7 +488,7 @@ func runSignalWrapper(cmd *Command) error {
 				return
 			}
 			if err != nil {
-				shutdownCh <- fmt.Errorf("failed to start prometheus HTTP server: %v", err)
+				shutdownCh <- fmt.Errorf("failed to start HTTP server: %v", err)
 			}
 		}()
 	}
