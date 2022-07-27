@@ -37,7 +37,7 @@ import (
 var (
 	logger    = log.NewStdLogger(os.Stdout, os.Stdout)
 	proxyHost = "127.0.0.1"
-	proxyPort = 5000
+	proxyPort = 9000
 )
 
 func proxyAddr() string {

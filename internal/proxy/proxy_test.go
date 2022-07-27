@@ -307,11 +307,6 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	}
 	defer conn2.Close()
 
-	// try to read to check if the connection is closed
-	// wait only a second for the result (since nothing is writing to the
-	// socket)
-	conn2.SetReadDeadline(time.Now().Add(time.Second))
-
 	wantEOF := func(t *testing.T, c net.Conn) {
 		var got error
 		for i := 0; i < 10; i++ {
@@ -319,7 +314,7 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 			if got == io.EOF {
 				return
 			}
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(time.Second)
 		}
 		t.Fatalf("conn.Read should return io.EOF, got = %v", got)
 	}
