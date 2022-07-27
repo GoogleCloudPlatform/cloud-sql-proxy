@@ -109,7 +109,11 @@ func newTestProxy(t *testing.T) *proxy.Client {
 
 func TestHandleStartupWhenNotNotified(t *testing.T) {
 	p := newTestProxy(t)
-	defer p.Close()
+	defer func() {
+		if err := p.Close(); err != nil {
+			t.Logf("failed to close proxy client: %v", err)
+		}
+	}()
 	check := healthcheck.NewCheck(p, logger)
 
 	rec := httptest.NewRecorder()
@@ -125,7 +129,11 @@ func TestHandleStartupWhenNotNotified(t *testing.T) {
 
 func TestHandleStartupWhenNotified(t *testing.T) {
 	p := newTestProxy(t)
-	defer p.Close()
+	defer func() {
+		if err := p.Close(); err != nil {
+			t.Logf("failed to close proxy client: %v", err)
+		}
+	}()
 	check := healthcheck.NewCheck(p, logger)
 
 	check.NotifyStarted()
@@ -141,7 +149,11 @@ func TestHandleStartupWhenNotified(t *testing.T) {
 
 func TestHandleReadinessWhenNotNotified(t *testing.T) {
 	p := newTestProxy(t)
-	defer p.Close()
+	defer func() {
+		if err := p.Close(); err != nil {
+			t.Logf("failed to close proxy client: %v", err)
+		}
+	}()
 	check := healthcheck.NewCheck(p, logger)
 
 	rec := httptest.NewRecorder()
@@ -155,9 +167,23 @@ func TestHandleReadinessWhenNotNotified(t *testing.T) {
 
 func TestHandleReadinessForMaxConns(t *testing.T) {
 	p := newTestProxyWithMaxConns(t, 1)
-	defer p.Close()
+	defer func() {
+		if err := p.Close(); err != nil {
+			t.Logf("failed to close proxy client: %v", err)
+		}
+	}()
+	started := make(chan struct{})
 	check := healthcheck.NewCheck(p, logger)
-	go p.Serve(context.Background(), check.NotifyStarted)
+	go p.Serve(context.Background(), func() {
+		check.NotifyStarted()
+		close(started)
+	})
+	select {
+	case <-started:
+		// proxy has started
+	case <-time.After(10 * time.Second):
+		t.Fatal("proxy has not started after 10 seconds")
+	}
 
 	conn := dialTCP(t, proxyAddr())
 	defer conn.Close()
@@ -189,7 +215,11 @@ func TestHandleReadinessForMaxConns(t *testing.T) {
 
 func TestHandleReadinessWithConnectionProblems(t *testing.T) {
 	p := newTestProxyWithDialer(t, &errorDialer{}) // error dialer will error on dial
-	defer p.Close()
+	defer func() {
+		if err := p.Close(); err != nil {
+			t.Logf("failed to close proxy client: %v", err)
+		}
+	}()
 	check := healthcheck.NewCheck(p, logger)
 	check.NotifyStarted()
 

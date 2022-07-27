@@ -18,6 +18,7 @@ package healthcheck
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -61,10 +62,7 @@ func (c *Check) HandleStartup(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-var (
-	errNotStarted     = errors.New("proxy is not started")
-	errMaxConnections = errors.New("max connections reached")
-)
+var errNotStarted = errors.New("proxy is not started")
 
 // HandleReadiness ensures the Check has been notified of successful startup,
 // that the proxy has not reached maximum connections, and that all connections
@@ -83,9 +81,10 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	if open, max := c.proxy.ConnCount(); max > 0 && open == max {
-		c.logger.Errorf("[Health Check] Readiness failed: %v", errMaxConnections)
+		err := fmt.Errorf("max connections reached (open = %v, max = %v)", open, max)
+		c.logger.Errorf("[Health Check] Readiness failed: %v", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
-		w.Write([]byte(errMaxConnections.Error()))
+		w.Write([]byte(err.Error()))
 		return
 	}
 

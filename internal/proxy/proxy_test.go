@@ -247,7 +247,11 @@ func TestClientInitialization(t *testing.T) {
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
-			defer c.Close()
+			defer func() {
+				if err := c.Close(); err != nil {
+					t.Logf("failed to close client: %v", err)
+				}
+			}()
 			for _, addr := range tc.wantTCPAddrs {
 				conn, err := net.Dial("tcp", addr)
 				if err != nil {

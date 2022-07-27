@@ -473,16 +473,7 @@ func runSignalWrapper(cmd *Command) error {
 	// Prometheus, health-check
 	// enabled.
 	if cmd.prometheusNamespace != "" || cmd.healthCheck {
-		go func() {
-			select {
-			case <-ctx.Done():
-				// Give the HTTP server a second to shutdown cleanly.
-				ctx2, _ := context.WithTimeout(context.Background(), time.Second)
-				if err := server.Shutdown(ctx2); err != nil {
-					cmd.logger.Errorf("failed to shutdown Prometheus HTTP server: %v\n", err)
-				}
-			}
-		}()
+		// Start the HTTP server.
 		go func() {
 			err := server.ListenAndServe()
 			if err == http.ErrServerClosed {
@@ -490,6 +481,18 @@ func runSignalWrapper(cmd *Command) error {
 			}
 			if err != nil {
 				shutdownCh <- fmt.Errorf("failed to start HTTP server: %v", err)
+			}
+		}()
+		// Handle shutdown of the HTTP server gracefully.
+		go func() {
+			select {
+			case <-ctx.Done():
+				// Give the HTTP server a second to shutdown cleanly.
+				ctx2, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				if err := server.Shutdown(ctx2); err != nil {
+					cmd.logger.Errorf("failed to shutdown Prometheus HTTP server: %v\n", err)
+				}
 			}
 		}()
 	}
