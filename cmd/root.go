@@ -469,7 +469,8 @@ func runSignalWrapper(cmd *Command) error {
 		notify = hc.NotifyStarted
 	}
 
-	// Start the HTTP server is either Prometheus or the health check was
+	// Start the HTTP server if anything requiring http is specified, including:
+	// Prometheus, health-check
 	// enabled.
 	if cmd.prometheusNamespace != "" || cmd.healthCheck {
 		go func() {
