@@ -250,7 +250,6 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	// Check if the caller has configured a dialer.
 	// Otherwise, initialize a new one.
 	if d == nil {
-		var err error
 		dialerOpts, err := conf.DialerOptions(l)
 		if err != nil {
 			return nil, fmt.Errorf("error initializing dialer: %v", err)
@@ -298,9 +297,54 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	return c, nil
 }
 
+// CheckConnections dials each registered instance and reports any errors that
+// may have occurred.
+func (c *Client) CheckConnections(ctx context.Context) error {
+	var (
+		wg    sync.WaitGroup
+		errCh = make(chan error, len(c.mnts))
+	)
+	for _, m := range c.mnts {
+		wg.Add(1)
+		go func(inst string) {
+			defer wg.Done()
+			conn, err := c.dialer.Dial(ctx, inst)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			cErr := conn.Close()
+			if err != nil {
+				errCh <- fmt.Errorf("%v: %v", inst, cErr)
+			}
+		}(m.inst)
+	}
+	wg.Wait()
+
+	var mErr MultiErr
+	for i := 0; i < len(c.mnts); i++ {
+		select {
+		case err := <-errCh:
+			mErr = append(mErr, err)
+		default:
+			continue
+		}
+	}
+	if len(mErr) > 0 {
+		return mErr
+	}
+	return nil
+}
+
+// ConnCount returns the number of open connections and the maximum allowed
+// connections. Returns 0 when the maximum allowed connections have not been set.
+func (c *Client) ConnCount() (uint64, uint64) {
+	return atomic.LoadUint64(&c.connCount), c.maxConns
+}
+
 // Serve starts proxying connections for all configured instances using the
 // associated socket.
-func (c *Client) Serve(ctx context.Context) error {
+func (c *Client) Serve(ctx context.Context, notify func()) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	exitCh := make(chan error)
@@ -321,6 +365,7 @@ func (c *Client) Serve(ctx context.Context) error {
 			}
 		}(m)
 	}
+	notify()
 	return <-exitCh
 }
 

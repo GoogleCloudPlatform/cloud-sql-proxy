@@ -123,3 +123,7 @@ func TestMySQLAuthWithCredentialsFile(t *testing.T) {
 		[]string{"--credentials-file", path, *mysqlConnName},
 		"mysql", cfg.FormatDSN())
 }
+
+func TestMySQLHealthCheck(t *testing.T) {
+	testHealthCheck(t, *mysqlConnName)
+}

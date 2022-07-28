@@ -517,10 +517,6 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{"proj:region:inst?auto-iam-authn=nope"},
 		},
 		{
-			desc: "enabling a Prometheus port without a namespace",
-			args: []string{"--http-port", "1111", "proj:region:inst"},
-		},
-		{
 			desc: "using an invalid url for sqladmin-api-endpoint",
 			args: []string{"--sqladmin-api-endpoint", "https://user:abc{DEf1=ghi@example.com:5432/db?sslmode=require", "proj:region:inst"},
 		},

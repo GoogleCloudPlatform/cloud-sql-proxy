@@ -152,3 +152,7 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 		[]string{fmt.Sprintf("%s?auto-iam-authn=true", *postgresConnName)},
 		"pgx", dsn)
 }
+
+func TestPostgresHealthCheck(t *testing.T) {
+	testHealthCheck(t, *postgresConnName)
+}

@@ -84,3 +84,7 @@ func TestSQLServerAuthWithCredentialsFile(t *testing.T) {
 		[]string{"--credentials-file", path, *sqlserverConnName},
 		"sqlserver", dsn)
 }
+
+func TestSQLServerHealthCheck(t *testing.T) {
+	testHealthCheck(t, *sqlserverConnName)
+}
