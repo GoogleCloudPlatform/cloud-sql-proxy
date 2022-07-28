@@ -469,9 +469,7 @@ func runSignalWrapper(cmd *Command) error {
 		notify = hc.NotifyStarted
 	}
 
-	// Start the HTTP server if anything requiring HTTP is specified, including:
-	// Prometheus, health-check
-	// enabled.
+	// Start the HTTP server if anything requiring HTTP is specified.
 	if needsHTTPServer {
 		server := &http.Server{
 			Addr:    fmt.Sprintf("localhost:%s", cmd.httpPort),
