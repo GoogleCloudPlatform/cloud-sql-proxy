@@ -398,13 +398,12 @@ func runSignalWrapper(cmd *Command) error {
 		}()
 	}
 
-	mux := http.NewServeMux()
-	server := &http.Server{
-		Addr:    fmt.Sprintf("localhost:%s", cmd.httpPort),
-		Handler: mux,
-	}
-
+	var (
+		needsHTTPServer bool
+		mux             = http.NewServeMux()
+	)
 	if cmd.prometheusNamespace != "" {
+		needsHTTPServer = true
 		e, err := prometheus.NewExporter(prometheus.Options{
 			Namespace: cmd.prometheusNamespace,
 		})
@@ -462,6 +461,7 @@ func runSignalWrapper(cmd *Command) error {
 
 	notify := func() {}
 	if cmd.healthCheck {
+		needsHTTPServer = true
 		hc := healthcheck.NewCheck(p, cmd.logger)
 		mux.HandleFunc("/startup", hc.HandleStartup)
 		mux.HandleFunc("/readiness", hc.HandleReadiness)
@@ -469,10 +469,14 @@ func runSignalWrapper(cmd *Command) error {
 		notify = hc.NotifyStarted
 	}
 
-	// Start the HTTP server if anything requiring http is specified, including:
+	// Start the HTTP server if anything requiring HTTP is specified, including:
 	// Prometheus, health-check
 	// enabled.
-	if cmd.prometheusNamespace != "" || cmd.healthCheck {
+	if needsHTTPServer {
+		server := &http.Server{
+			Addr:    fmt.Sprintf("localhost:%s", cmd.httpPort),
+			Handler: mux,
+		}
 		// Start the HTTP server.
 		go func() {
 			err := server.ListenAndServe()
