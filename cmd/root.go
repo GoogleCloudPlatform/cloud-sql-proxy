@@ -76,6 +76,7 @@ type Command struct {
 	disableMetrics             bool
 	telemetryProject           string
 	telemetryPrefix            string
+	prometheus                 bool
 	prometheusNamespace        string
 	healthCheck                bool
 	httpPort                   string
@@ -169,8 +170,10 @@ the maximum time has passed. Defaults to 0s.`)
 		"Disable Cloud Monitoring integration (used with telemetry-project)")
 	cmd.PersistentFlags().StringVar(&c.telemetryPrefix, "telemetry-prefix", "",
 		"Prefix to use for Cloud Monitoring metrics.")
+	cmd.PersistentFlags().BoolVar(&c.prometheus, "prometheus", false,
+		"Enable Prometheus HTTP endpoint /metrics")
 	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
-		"Enable Prometheus for metric collection using the provided namespace")
+		"Use the provided Prometheus namespace for metrics")
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for the Prometheus server to use")
 	cmd.PersistentFlags().BoolVar(&c.healthCheck, "health-check", false,
@@ -230,8 +233,8 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError("cannot specify --credentials-file and --gcloud-auth flags at the same time")
 	}
 
-	if userHasSet("http-port") && !userHasSet("prometheus-namespace") && !userHasSet("health-check") {
-		cmd.logger.Infof("Ignoring --http-port because --prometheus-namespace or --health-check was not set")
+	if userHasSet("http-port") && !userHasSet("prometheus") && !userHasSet("health-check") {
+		cmd.logger.Infof("Ignoring --http-port because --prometheus or --health-check was not set")
 	}
 
 	if !userHasSet("telemetry-project") && userHasSet("telemetry-prefix") {
@@ -402,7 +405,7 @@ func runSignalWrapper(cmd *Command) error {
 		needsHTTPServer bool
 		mux             = http.NewServeMux()
 	)
-	if cmd.prometheusNamespace != "" {
+	if cmd.prometheus {
 		needsHTTPServer = true
 		e, err := prometheus.NewExporter(prometheus.Options{
 			Namespace: cmd.prometheusNamespace,
