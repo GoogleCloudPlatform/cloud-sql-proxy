@@ -56,7 +56,7 @@ spec:
           # - "-ip_address_types=PRIVATE"
 
           # By default, the proxy will write all logs to stderr. In some
-          # environments, anything printed to stderr is consider an error. To
+          # environments, anything printed to stderr is considered an error. To
           # disable this behavior and write all logs to stdout (except errors
           # which will still go to stderr), use:
           - "-log_debug_stdout"
