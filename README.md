@@ -15,11 +15,16 @@ The Cloud SQL Auth proxy has support for:
 - [Auto IAM Authentication][iam-auth] (Postgres only)
 - [Cloud Monitoring][] and [Cloud Trace][]
 - [Prometheus][]
-- [HTTP Healthchecks][health-check-example] for use with Kubernetes
+- [HTTP Healthchecks][health-check-example]
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
 - Fully POSIX-compliant flags
 
-If you're using Go, consider using the [Cloud SQL Go connector][go connector] directly.
+If you're using Go, Java, or Python, consider using the corresponding Cloud SQL
+connector which does everything the proxy does, but in process:
+
+- [Cloud SQL Go connector][go connector]
+- [Cloud SQL Java connector][java connector]
+- [Cloud SQL Python connector][python connector]
 
 For users migrating from v1, see the [Migration Guide](migration-guide).
 The [v1 README][v1 readme] is still available.
@@ -28,6 +33,8 @@ The [v1 README][v1 readme] is still available.
 [cloud trace]: https://cloud.google.com/trace
 [prometheus]: https://prometheus.io/
 [go connector]: https://github.com/GoogleCloudPlatform/cloud-sql-go-connector
+[java connector]: https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory
+[python connector]: https://github.com/GoogleCloudPlatform/cloud-sql-python-connector
 [v1 readme]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/5f5b09b62eb6dfcaa58ce399d0131c1544bf813f/README.md
 
 ## Installation
@@ -58,7 +65,8 @@ The `cloudsql-proxy` will be placed in `$GOPATH/bin` or `$HOME/go/bin`.
 The following examples all reference an `INSTANCE_CONNECTION_NAME`, which takes
 the form: `myproject:myregion:myinstance`.
 
-To find your Cloud SQL instance's `INSTANCE_CONNECTION_NAME`, run:
+To find your Cloud SQL instance's `INSTANCE_CONNECTION_NAME`, visit the detail
+page of your Cloud SQL instance in the console, or use `gcloud` with:
 
 ```shell
 gcloud sql instances describe <INSTANCE_NAME> --format='value(connectionName)'
@@ -83,6 +91,8 @@ The proxy supports multiple instances:
 ./cloudsql-proxy <INSTANCE_CONNECTION_NAME_1> <INSTANCE_CONNECTION_NAME_2>
 ```
 
+### Configuring Port
+
 To override the port, use the `--port` flag:
 
 ```shell
@@ -90,12 +100,42 @@ To override the port, use the `--port` flag:
 ./cloudsql-proxy --port 6000 <INSTANCE_CONNECTION_NAME>
 ```
 
-To overide the choice of `localhost`, use the `--addr` flag:
+When specifying multiple instances, the port will increment from the flag value:
+
+```shell
+# Starts a listener on localhost:6000 for INSTANCE_CONNECTION_1
+# and localhost:6001 for INSTANCE_CONNECTION_NAME_2.
+./cloudsql-proxy --port 6000 <INSTANCE_CONNECTION_NAME_1> <INSTANCE_CONNECTION_NAME_2>
+```
+
+To configure ports on a per instance basis, use the `port` query param:
+
+```shell
+# Starts a listener on localhost:5000 for the instance called "postgres"
+# and starts a listener on localhost:6000 for the instance called "mysql"
+./cloudsql-proxy 'myproject:my-region:postgres?port=5000' \
+    'myproject:my-region:mysql?port=6000'
+```
+
+### Configuring Address
+
+To overide the choice of `localhost`, use the `--address` flag:
 
 ```shell
 # Starts a listener on all interfaces at port 5432
-./cloudsql-proxy --addr 0.0.0.0 <INSTANCE_CONNECTION_NAME>
+./cloudsql-proxy --address 0.0.0.0 <INSTANCE_CONNECTION_NAME>
 ```
+
+To override address on a per instance basis, use the `address` query param:
+
+```shell
+# Starts a listener on 0.0.0.0 for "postgres" at port 5432
+# and a listener on 10.0.0.1:3306 for "mysql"
+./cloudsql-proxy 'myproject:my-region:postgres?address=0.0.0.0' \
+    'myproject:my-region:mysql?address=10.0.0.1"
+```
+
+### Configuring IP address type
 
 By default, the proxy attempts to connect to an instance's public IP. To enable
 private IP, use:
@@ -106,7 +146,10 @@ private IP, use:
 ./cloudsql-proxy --private-ip <INSTANCE_CONNECTION_NAME>
 ```
 
-The proxy also supports [Unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket). To start the proxy with Unix sockets, run:
+### Enable Unix domain sockets
+
+The proxy also supports [Unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
+To start the proxy with Unix sockets, run:
 
 ```shell
 # Uses the directory "/mycooldir" to create a Unix socket
@@ -115,39 +158,9 @@ The proxy also supports [Unix domain sockets](https://en.wikipedia.org/wiki/Unix
 ./cloudsql-proxy --unix-socket /mycooldir <INSTANCE_CONNECTION_NAME>
 ```
 
+### Additional flags
+
 To see a full list of flags, use:
-
-```shell
-./cloudsql-proxy -h
-```
-
-### Advanced Usage
-
-The proxy supports overriding settings on a per-instance basis using a
-query-param style syntax. When using the query-param syntax, instance connection
-names will need to be wrapped in quotes to avoid any unintended interaction with
-the shell.
-
-For example, to configure ports on a per instance basis, use:
-
-```shell
-# Starts a listener on localhost:5000 for the instance called "postgres"
-# and starts a listener on localhost:3306 for the instance called "mysql"
-./cloudsql-proxy 'myproject:my-region:postgres?port=5000' \
-    myproject:my-region:mysql
-```
-
-To bind one listener to all interfaces for only a single instance, use:
-
-```shell
-# Starts a listener on 0.0.0.0 for "postgres" at port 5432
-# and a listener on localhost:3306 for "mysql"
-./cloudsql-proxy 'myproject:my-region:postgres?addr=0.0.0.0' \
-    myproject:my-region:mysql
-```
-
-Many flags are also supported as a query-params. For a list of what flags are
-supported, use:
 
 ```shell
 ./cloudsql-proxy -h
@@ -205,8 +218,8 @@ currently supported:
 We recommend pinning to a specific version tag and using automation with a CI pipeline
 to update regularly.
 
-The default container image uses [distroless][]. If you need a shell
-or related tools, use the Alpine or Buster images listed above.
+The default container image uses [distroless][] with a non-root user. If you
+need a shell or related tools, use the Alpine or Buster images listed above.
 
 [distroless]: https://github.com/GoogleContainerTools/distroless
 
@@ -314,7 +327,7 @@ versions will be considered a minor change, and will be noted in the release not
 
 The Cloud SQL Auth proxy aims for a minimum monthly release cadence. If no new
 features or fixes have been added, a new PATCH version with the latest
-dependencies is released.
+dependencies is released. We support releases only within the past year.
 
 ## Contributing
 
