@@ -6,6 +6,10 @@ The Cloud SQL Auth proxy is the recommended way to connect to your Cloud SQL ins
 The proxy authorizes all client connections based the IAM principal and secures
 each connection with TLS 1.3 encryption.
 
+See the [Connecting Overview][connection-overview] page for more information on
+connecting to a Cloud SQL instance, or the [About the proxy][about-proxy] page
+for details on how the Cloud SQL proxy works.
+
 The Cloud SQL Auth proxy has support for:
 
 - [Auto IAM Authentication][iam-auth] (Postgres only)
