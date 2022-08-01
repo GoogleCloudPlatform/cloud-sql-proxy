@@ -101,14 +101,23 @@ func WithDialer(d cloudsql.Dialer) Option {
 }
 
 var longHelp = `
-The Cloud SQL Auth proxy provides IAM-based authorization and TLS 1.3 encryption
-when connecting to Cloud SQL instances. For every provided instance connection
-name, the proxy creates a local listener that will proxy traffic to and from your
-Cloud SQL instance using an encrypted connection based on an ephemeral certificate
-that is renewed by the proxy every hour.
+The Cloud SQL Auth proxy is a utility for ensuring secure connections to your
+Cloud SQL instances. It provides IAM authorization, allowing you to control who
+can connect to your instance through IAM permissions, and TLS 1.3 encryption,
+without having to manage certificates.
 
-With the proxy, clients need not manage SSL certificates manually and get the
-benefit of IAM authorization of all client connections.
+For every provided instance connection name, the proxy creates:
+
+- a listener that mimics a database running locally, and
+- an encrypted connection using TLS 1.3 back to your Cloud SQL instance.
+
+The proxy uses an ephemeral certificate to establish a secure connection to your
+Cloud SQL instance. The proxy will refresh those certificates on an hourly
+basis. Existing client connections are unaffected by the refresh cycle.
+
+NOTE: The proxy does not configure the network. You MUST ensure the proxy can
+reach your Cloud SQL instance, either by deploying it in a VPC that has access
+to your Private IP instance, or by configuring Public IP.
 
 To start the proxy, you will need your instance connection name, which may be found
 in the Cloud SQL instance overview page or by using gcloud with the following
@@ -116,18 +125,19 @@ command:
 
     gcloud sql instances describe INSTANCE --format='value(connectionName)'
 
-Starting the proxy will look like this for example:
+Starting the proxy will look like, for example:
 
-    cloudsql-proxy my-project:us-central1:my-db-server
+    ./cloudsql-proxy my-project:us-central1:my-db-server
 
 By default, the proxy will determine the database engine and start a listener
 on localhost using the default database engine's port, i.e., MySQL is 3306,
 Postgres is 5432, SQL Server is 1433. If multiple instances are specified which
 all use the same database engine, the first will be started on the default
 database port and subsequent instances will be incremented from there (e.g.,
-3306, 3307, 3308, etc). If a caller prefers to increment all listeners starting
-with a static value, the --port flag may be used. All listeners use localhost.
-To override this behavior, use the --address flag.
+3306, 3307, 3308, etc). To disable this behavior (and reduce startup time), use
+the --port flag. All subsequent listeners will increment from the provided value.
+
+All listeners use localhost. To override this behavior, use the --address flag.
 
 The proxy supports overriding configuration on an instance-level with an
 optional query string syntax using the corresponding full flag name. The query
@@ -193,11 +203,11 @@ func NewCommand(opts ...Option) *Command {
 
 	// Global-only flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Token, "token", "t", "",
-		"Use bearer token for authentication.")
+		"Use bearer token as a source of IAM credentials.")
 	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
-		"Use service account key file for authentication.")
+		"Use service account key file as a source of IAM credentials.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
-		"Use gcloud's user credentials for authentication.")
+		"Use gcloud's user credentials as a source of IAM credentials.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.StructuredLogs, "structured-logs", "l", false,
 		"Enable structured logging with LogEntry format")
 	cmd.PersistentFlags().Uint64Var(&c.conf.MaxConnections, "max-connections", 0,
