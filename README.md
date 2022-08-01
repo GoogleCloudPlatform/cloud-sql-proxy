@@ -2,9 +2,10 @@
 
 [![CI][ci-badge]][ci-build]
 
-The Cloud SQL Auth proxy is the recommended way to connect to your Cloud SQL instance.
-The proxy authorizes all client connections based the IAM principal and secures
-each connection with TLS 1.3 encryption.
+The Cloud SQL Auth proxy is a utility for ensuring secure connections to your
+Cloud SQL instances. It provides IAM authorization, allowing you to control who
+can connect to your instance through IAM permissions, and TLS 1.3 encryption,
+without having to manage certificates.
 
 See the [Connecting Overview][connection-overview] page for more information on
 connecting to a Cloud SQL instance, or the [About the proxy][about-proxy] page
@@ -12,9 +13,8 @@ for details on how the Cloud SQL proxy works.
 
 The Cloud SQL Auth proxy has support for:
 
-- [Auto IAM Authentication][iam-auth] (Postgres only)
-- [Cloud Monitoring][] and [Cloud Trace][]
-- [Prometheus][]
+- [Automatic IAM Authentication][iam-auth] (Postgres only)
+- Metrics ([Cloud Monitoring][], [Cloud Trace][], and [Prometheus][])
 - [HTTP Healthchecks][health-check-example]
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
 - Fully POSIX-compliant flags
@@ -39,14 +39,104 @@ The [v1 README][v1 readme] is still available.
 
 ## Installation
 
-For 64-bit Linux, run:
+Check for the latest version on the [releases page][releases] and use the
+following instructions for your OS and CPU architecture.
 
-```shell
-wget "https://storage.googleapis.com/cloud-sql-connectors/v2.0.0-preview.1/cloudsql-proxy.linux.amd64" -O cloudsql-proxy
-chmod +x cloudsql-proxy
+<details>
+<summary>Linux amd64</summary>
+
+``` sh
+# see Releases for other versions
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+
+wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.amd64" -O cloudsql-proxy
+
+chmod +x cloud-sql-connectors/cloudsql-proxy
 ```
+</details>
 
-Releases for additional OS's and architectures and be found on the [releases page][releases].
+<details>
+<summary>Linux 386</summary>
+
+``` sh
+# see Releases for other versions
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+
+wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.386" -O cloudsql-proxy
+
+chmod +x cloud-sql-connectors/cloudsql-proxy
+```
+</details>
+
+<details>
+<summary>Linux arm64</summary>
+
+``` sh
+# see Releases for other versions
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+
+wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.arm64" -O cloudsql-proxy
+
+chmod +x cloud-sql-connectors/cloudsql-proxy
+```
+</details>
+
+<details>
+<summary>Linux arm</summary>
+
+``` sh
+# see Releases for other versions
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+
+wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.arm" -O cloudsql-proxy
+
+chmod +x cloud-sql-connectors/cloudsql-proxy
+```
+</details>
+
+<details>
+<summary>Mac (Intel)</summary>
+
+``` sh
+# see Releases for other versions
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+
+wget "$URL/cloud-sql-connectors/cloudsql-proxy.darwin.amd64" -O cloudsql-proxy
+
+chmod +x cloud-sql-connectors/cloudsql-proxy
+```
+</details>
+
+<details>
+<summary>Mac (Apple Silicon)</summary>
+
+``` sh
+# see Releases for other versions
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+
+wget "$URL/cloud-sql-connectors/cloudsql-proxy.darwin.arm64" -O cloudsql-proxy
+
+chmod +x cloud-sql-connectors/cloudsql-proxy
+```
+</details>
+
+<details>
+<summary>Windows x64</summary>
+
+``` sh
+# see Releases for other versions
+wget https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0/cloudsql-proxy-x64.exe -O cloudsql-proxy.exe
+```
+</details>
+
+<details>
+<summary>Windows x86</summary>
+
+``` sh
+# see Releases for other versions
+wget https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0/cloudsql-proxy-x86.exe -O cloudsql-proxy.exe
+```
+</details>
 
 ### Install from Source
 
@@ -85,6 +175,10 @@ To start the proxy, use:
 ./cloudsql-proxy <INSTANCE_CONNECTION_NAME>
 ```
 
+The proxy will automatically detect the default database engine's port and start
+a corresponding listener. Production deployments should use the --port flag to
+reduce startup time.
+
 The proxy supports multiple instances:
 
 ```shell
@@ -113,7 +207,8 @@ To configure ports on a per instance basis, use the `port` query param:
 ```shell
 # Starts a listener on localhost:5000 for the instance called "postgres"
 # and starts a listener on localhost:6000 for the instance called "mysql"
-./cloudsql-proxy 'myproject:my-region:postgres?port=5000' \
+./cloudsql-proxy \
+    'myproject:my-region:postgres?port=5000' \
     'myproject:my-region:mysql?port=6000'
 ```
 
@@ -126,16 +221,17 @@ To overide the choice of `localhost`, use the `--address` flag:
 ./cloudsql-proxy --address 0.0.0.0 <INSTANCE_CONNECTION_NAME>
 ```
 
-To override address on a per instance basis, use the `address` query param:
+To override address on a per-instance basis, use the `address` query param:
 
 ```shell
 # Starts a listener on 0.0.0.0 for "postgres" at port 5432
 # and a listener on 10.0.0.1:3306 for "mysql"
-./cloudsql-proxy 'myproject:my-region:postgres?address=0.0.0.0' \
+./cloudsql-proxy \
+    'myproject:my-region:postgres?address=0.0.0.0' \
     'myproject:my-region:mysql?address=10.0.0.1"
 ```
 
-### Configuring IP address type
+### Configuring Private IP
 
 By default, the proxy attempts to connect to an instance's public IP. To enable
 private IP, use:
@@ -146,7 +242,11 @@ private IP, use:
 ./cloudsql-proxy --private-ip <INSTANCE_CONNECTION_NAME>
 ```
 
-### Enable Unix domain sockets
+NOTE: The proxy does not configure the network. You MUST ensure the proxy can
+reach your Cloud SQL instance, either by deploying it in a VPC that has access
+to your Private IP instance, or by configuring Public IP.
+
+### Configuring Unix domain sockets
 
 The proxy also supports [Unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
 To start the proxy with Unix sockets, run:
@@ -156,6 +256,27 @@ To start the proxy with Unix sockets, run:
 # For example, the following directory would be created:
 #   /mycooldir/myproject:myregion:myinstance
 ./cloudsql-proxy --unix-socket /mycooldir <INSTANCE_CONNECTION_NAME>
+```
+
+To configure a Unix domain socket on a per-instance basis, use the `unix-socket`
+query param:
+
+``` shell
+# Starts a TCP listener on localhost:5432 for "postgres"
+# and creates a Unix domain socket for "mysql":
+#     /cloudsql/myproject:my-region:mysql
+./cloudsql-proxy \
+    myproject:my-region:postgres \
+    'myproject:my-region:mysql?unix-socket=/cloudsql'
+```
+
+NOTE: The proxy supports Unix domain sockets on recent versions of Windows, but
+replaces colons with periods:
+
+``` shell
+# Starts a Unix domain socket at the path:
+#    \cloudsql\myproject.my-region.msql
+./cloudsql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 ```
 
 ### Additional flags
@@ -251,19 +372,81 @@ when you want to proxy this traffic. Otherwise, it is optional. See
 [`http.ProxyFromEnvironment`](https://pkg.go.dev/net/http@go1.17.3#ProxyFromEnvironment)
 for possible values.
 
+## Support for Metrics and Tracing
+
+The proxy supports [Cloud Monitoring][], [Cloud Trace][], and [Prometheus][].
+
+Supported metrics include:
+
+- `/cloudsqlconn/dial_latency`: The distribution of dialer latencies (ms)
+- `/cloudsqlconn/open_connections`: The current number of open Cloud SQL
+  connections
+- `/cloudsqlconn/dial_failure_count`: The number of failed dial attempts
+- `/cloudsqlconn/refresh_success_count`: The number of successful certificate
+  refresh operations
+- `/cloudsqlconn/refresh_failure_count`: The number of failed refresh
+  operations.
+
+Supported traces include:
+
+- `cloud.google.com/go/cloudsqlconn.Dial`: The dial operation including
+  refreshing an ephemeral certificate and connecting the instance
+- `cloud.google.com/go/cloudsqlconn/internal.InstanceInfo`: The call to retrieve
+  instance metadata (e.g., database engine type, IP address, etc)
+- `cloud.google.com/go/cloudsqlconn/internal.Connect`: The connection attempt
+  using the ephemeral certificate
+- SQL Admin API client operations
+
+To enable Cloud Monitoring and Cloud Trace, use the `--telemetry-project` flag
+with the project where you want to view metrics and traces. To configure the
+metrics prefix used by Cloud Monitoring, use the `--telemetry-prefix` flag. When
+enabling telementry, both Cloud Monitoring and Cloud Trace are enabled. To
+disable Cloud Monitoring, use `--disable-metrics`. To disable Cloud Trace, use
+`--disable-traces`.
+
+To enable Prometheus, use the `--prometheus` flag. This will start an HTTP
+server on localhost with a `/metrics` endpoint. The Prometheus namespace may
+optionally be set with `--prometheus-namespace`.
+
 ## Frequently Asked Questions
 
 ### Why would I use the proxy?
 
-The proxy removes the need to manage database client certificates and Authorized
-Networks, while providing an encrypted channel to your Cloud SQL instance using
-TLS 1.3 based on ephemeral certificates. In addition, the proxy allow you to manage
-access to your database using IAM.
+The proxy is a convenient way to control access to your database using IAM
+permissions while ensuring a secure connection to your Cloud SQL instance. When
+using the proxy, you do not have to manage database client certificates,
+configured Authorized Networks, or ensure clients connect securely. The proxy
+handles all of this for you.
+
+### How should I use the proxy?
+
+The proxy is a gateway to your Cloud SQL instance. Clients connect to the proxy
+over an unencrypted connection and are authorized using the environment's IAM
+principal. The proxy then encrypts the connection to your Cloud SQL instance.
+
+Because client connections are not encrypted and authorized using the
+environment's IAM principal, we recommend running the proxy on the same VM (or
+GKE pod) as your application. This means unencrypted traffic does not leave the
+VM. It also means there is a one-to-one correspondance between the IAM principal
+used by the application and the proxy. This approach ensures a secure connection
+and leverages all the power of IAM.
+
+Here are some common examples of how to run the proxy in different environments:
+
+- [Connect to Cloud SQL for MySQL from your local computer][local-quickstart]
+- [Connect to Cloud SQL for MySQL from Google Kubernetes Engine][gke-quickstart]
+
+[local-quickstart]: https://cloud.google.com/sql/docs/mysql/connect-instance-local-computer
+[gke-quickstart]: https://cloud.google.com/sql/docs/mysql/connect-instance-kubernetes
 
 ### Why can't the proxy connect to my private IP instance?
 
-The proxy must have a network path to a private IP instance to function. If no
-network path exists, the proxy cannot create a network path and so cannot connect.
+The proxy does not configure the network. You MUST ensure the proxy can reach
+your Cloud SQL instance, either by deploying it in a VPC that has access to your
+Private IP instance, or by configuring Public IP.
+
+If no network path exists, the proxy cannot create a network path and so cannot
+connect.
 
 ### Is there a library version of the proxy that I can use?
 
@@ -348,7 +531,7 @@ By participating in this project you agree to abide by its terms. See
 [connection-overview]: https://cloud.google.com/sql/docs/mysql/connect-overview
 [contributing]: CONTRIBUTING.md
 [health-check-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/examples/k8s-health-check#cloud-sql-proxy-health-checks
-[iam-auth]: https://cloud.google.com/sql/docs/postgres/authentication
+[iam-auth]: https://cloud.google.com/sql/docs/postgres/authentication#automatic
 [pkg-badge]: https://pkg.go.dev/badge/github.com/GoogleCloudPlatform/cloudsql-proxy.svg
 [pkg-docs]: https://pkg.go.dev/github.com/GoogleCloudPlatform/cloudsql-proxy
 [private-ip]: https://cloud.google.com/sql/docs/mysql/private-ip#requirements_for_private_ip
