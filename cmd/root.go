@@ -110,7 +110,7 @@ that is renewed by the proxy every hour.
 With the proxy, clients need not manage SSL certificates manually and get the
 benefit of IAM authorization of all client connections.
 
-To start the proxy, you will need your instance connection name which may be found
+To start the proxy, you will need your instance connection name, which may be found
 in the Cloud SQL instance overview page or by using gcloud with the following
 command:
 
