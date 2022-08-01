@@ -42,7 +42,7 @@ The [v1 README][v1 readme] is still available.
 Check for the latest version on the [releases page][releases] and use the
 following instructions for your OS and CPU architecture.
 
-<details>
+<details open>
 <summary>Linux amd64</summary>
 
 ``` sh
