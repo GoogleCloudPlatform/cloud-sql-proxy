@@ -108,7 +108,7 @@ without having to manage certificates.
 
 For every provided instance connection name, the proxy creates:
 
-- a listener that mimics a database running locally, and
+- a socket that mimics a database running locally, and
 - an encrypted connection using TLS 1.3 back to your Cloud SQL instance.
 
 The proxy uses an ephemeral certificate to establish a secure connection to your
