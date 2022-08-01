@@ -151,7 +151,8 @@ connection name and query string to prevent conflicts with the shell. For
 example, to override the address and port for one instance but otherwise use
 the default behavior, use:
 
-    cloudsql-proxy my-project:us-central1:my-db-server \
+    ./cloudsql-proxy \
+	    my-project:us-central1:my-db-server \
 	    'my-project:us-central1:my-other-server?address=0.0.0.0&port=7000'
 
 (*) indicates a flag that may be used as a query parameter
