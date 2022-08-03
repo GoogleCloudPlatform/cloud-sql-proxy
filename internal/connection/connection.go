@@ -1,3 +1,17 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package connection
 
 import (
@@ -14,8 +28,9 @@ import (
 	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
 )
 
-// serveSocketMount persistently listens to the socketMounts listener and proxies connections to a
-// given Cloud SQL instance.
+// AcceptAndHandle runs in a loop accepting connections from a listener and
+// starting goroutines to handle the copying of bytes to the remote Cloud SQL
+// instance.
 func AcceptAndHandle(ctx context.Context, ln net.Listener, l cloudsql.Logger, d cloudsql.Dialer, counter *Counter, instance string, opts ...cloudsqlconn.DialOption) error {
 	for {
 		cConn, err := ln.Accept()
@@ -145,12 +160,36 @@ type Counter struct {
 	max uint64
 }
 
+// IsZero reports whether the existing connection count is zero.
 func (c *Counter) IsZero() bool {
 	return atomic.LoadUint64(&c.count) == 0
 }
 
+// Count reports the number of open connections, and the maximum configured
+// connections.
 func (c *Counter) Count() (uint64, uint64) {
-	return c.count, c.max
+	return atomic.LoadUint64(&c.count), c.max
+}
+
+// Inc increases the count. Callers should cal the cleanup function to decrement
+// the count.
+func (c *Counter) Inc() (func(), error) {
+	count := atomic.AddUint64(&c.count, 1)
+	cleanup := func() { atomic.AddUint64(&c.count, ^uint64(0)) }
+
+	if c.max > 0 && count > c.max {
+		return func() {}, errMaxExceeded
+	}
+	return cleanup, nil
+}
+c *Counter) IsZero() bool {
+	return atomic.LoadUint64(&c.count) == 0
+}
+
+// Count reports the number of open connections, and the maximum configured
+// connections.
+func (c *Counter) Count() (uint64, uint64) {
+	return atomic.LoadUint64(&c.count), c.max
 }
 
 // Inc increases the count. Callers should cal the cleanup function to decrement
