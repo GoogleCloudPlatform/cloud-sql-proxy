@@ -182,24 +182,3 @@ func (c *Counter) Inc() (func(), error) {
 	}
 	return cleanup, nil
 }
-c *Counter) IsZero() bool {
-	return atomic.LoadUint64(&c.count) == 0
-}
-
-// Count reports the number of open connections, and the maximum configured
-// connections.
-func (c *Counter) Count() (uint64, uint64) {
-	return atomic.LoadUint64(&c.count), c.max
-}
-
-// Inc increases the count. Callers should cal the cleanup function to decrement
-// the count.
-func (c *Counter) Inc() (func(), error) {
-	count := atomic.AddUint64(&c.count, 1)
-	cleanup := func() { atomic.AddUint64(&c.count, ^uint64(0)) }
-
-	if c.max > 0 && count > c.max {
-		return func() {}, errMaxExceeded
-	}
-	return cleanup, nil
-}
