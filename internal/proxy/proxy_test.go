@@ -354,24 +354,9 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
+		WaitOnClose: 5 * time.Second,
 	}
-
 	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, logger, in)
-	if err != nil {
-		t.Fatalf("proxy.NewClient error: %v", err)
-	}
-	go c.Serve(context.Background(), func() {})
-
-	conn := tryTCPDial(t, "127.0.0.1:5000")
-	_ = conn.Close()
-
-	if err := c.Close(); err != nil {
-		t.Fatalf("c.Close error: %v", err)
-	}
-
-	in.WaitOnClose = time.Second
-	in.Port = 5001
-	c, err = proxy.NewClient(context.Background(), &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -379,7 +364,7 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 
 	var open []net.Conn
 	for i := 0; i < 5; i++ {
-		conn = tryTCPDial(t, "127.0.0.1:5001")
+		conn := tryTCPDial(t, "127.0.0.1:5000")
 		open = append(open, conn)
 	}
 	defer func() {
