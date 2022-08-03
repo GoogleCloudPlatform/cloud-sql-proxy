@@ -437,27 +437,27 @@ func runSignalWrapper(cmd *Command) error {
 	}()
 
 	// Start the proxy asynchronously, so we can exit early if a shutdown signal is sent
-	startCh := make(chan *proxy.Client)
+	startCh := make(chan *proxy.Session)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, cmd.dialer, cmd.logger, cmd.conf)
+		s, err := proxy.NewSession(ctx, cmd.dialer, cmd.logger, cmd.conf)
 		if err != nil {
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
 		}
-		startCh <- p
+		startCh <- s
 	}()
 	// Wait for either startup to finish or a signal to interupt
-	var p *proxy.Client
+	var s *proxy.Session
 	select {
 	case err := <-shutdownCh:
 		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 		return err
-	case p = <-startCh:
+	case s = <-startCh:
 		cmd.logger.Infof("The proxy has started successfully and is ready for new connections!")
 	}
 	defer func() {
-		if cErr := p.Close(); cErr != nil {
+		if cErr := s.Close(); cErr != nil {
 			cmd.logger.Errorf("error during shutdown: %v", cErr)
 		}
 	}()
@@ -465,7 +465,7 @@ func runSignalWrapper(cmd *Command) error {
 	notify := func() {}
 	if cmd.healthCheck {
 		needsHTTPServer = true
-		hc := healthcheck.NewCheck(p, cmd.logger)
+		hc := healthcheck.NewCheck(s, cmd.logger)
 		mux.HandleFunc("/startup", hc.HandleStartup)
 		mux.HandleFunc("/readiness", hc.HandleReadiness)
 		mux.HandleFunc("/liveness", hc.HandleLiveness)
@@ -502,7 +502,7 @@ func runSignalWrapper(cmd *Command) error {
 		}()
 	}
 
-	go func() { shutdownCh <- p.Serve(ctx, notify) }()
+	go func() { shutdownCh <- s.Start(ctx, notify) }()
 
 	err := <-shutdownCh
 	switch {

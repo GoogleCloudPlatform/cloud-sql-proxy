@@ -243,7 +243,7 @@ func TestClientInitialization(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			logger := log.NewStdLogger(os.Stdout, os.Stdout)
-			c, err := proxy.NewClient(ctx, &fakeDialer{}, logger, tc.in)
+			c, err := proxy.NewSession(ctx, &fakeDialer{}, logger, tc.in)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -288,12 +288,12 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 		MaxConnections: 1,
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(context.Background(), d, logger, in)
+	c, err := proxy.NewSession(context.Background(), d, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
 	defer c.Close()
-	go c.Serve(context.Background(), func() {})
+	go c.Start(context.Background(), func() {})
 
 	conn1, err1 := net.Dial("tcp", "127.0.0.1:5000")
 	if err1 != nil {
@@ -356,11 +356,11 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 		},
 	}
 
-	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, logger, in)
+	c, err := proxy.NewSession(context.Background(), &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
-	go c.Serve(context.Background(), func() {})
+	go c.Start(context.Background(), func() {})
 
 	conn := tryTCPDial(t, "127.0.0.1:5000")
 	_ = conn.Close()
@@ -371,11 +371,11 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 
 	in.WaitOnClose = time.Second
 	in.Port = 5001
-	c, err = proxy.NewClient(context.Background(), &fakeDialer{}, logger, in)
+	c, err = proxy.NewSession(context.Background(), &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
-	go c.Serve(context.Background(), func() {})
+	go c.Start(context.Background(), func() {})
 
 	var open []net.Conn
 	for i := 0; i < 5; i++ {
@@ -402,11 +402,11 @@ func TestClientClosesCleanly(t *testing.T) {
 		},
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, logger, in)
+	c, err := proxy.NewSession(context.Background(), &fakeDialer{}, logger, in)
 	if err != nil {
-		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
+		t.Fatalf("proxy.NewSession error want = nil, got = %v", err)
 	}
-	go c.Serve(context.Background(), func() {})
+	go c.Start(context.Background(), func() {})
 
 	conn := tryTCPDial(t, "127.0.0.1:5000")
 	_ = conn.Close()
@@ -425,11 +425,11 @@ func TestClosesWithError(t *testing.T) {
 		},
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(context.Background(), &errorDialer{}, logger, in)
+	c, err := proxy.NewSession(context.Background(), &errorDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
-	go c.Serve(context.Background(), func() {})
+	go c.Start(context.Background(), func() {})
 
 	conn := tryTCPDial(t, "127.0.0.1:5000")
 	defer conn.Close()
@@ -482,13 +482,13 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 	}
 
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(ctx, &fakeDialer{}, logger, in)
+	c, err := proxy.NewSession(ctx, &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	c.Close()
 
-	c, err = proxy.NewClient(ctx, &fakeDialer{}, logger, in)
+	c, err = proxy.NewSession(ctx, &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
@@ -503,14 +503,14 @@ func TestClientNotifiesCallerOnServe(t *testing.T) {
 		},
 	}
 	logger := log.NewStdLogger(os.Stdout, os.Stdout)
-	c, err := proxy.NewClient(ctx, &fakeDialer{}, logger, in)
+	c, err := proxy.NewSession(ctx, &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	done := make(chan struct{})
 	notify := func() { close(done) }
 
-	go c.Serve(ctx, notify)
+	go c.Start(ctx, notify)
 
 	verifyNotification := func(t *testing.T, ch <-chan struct{}) {
 		for i := 0; i < 10; i++ {
@@ -537,12 +537,12 @@ func TestClientConnCount(t *testing.T) {
 		MaxConnections: 10,
 	}
 
-	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, logger, in)
+	c, err := proxy.NewSession(context.Background(), &fakeDialer{}, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
 	defer c.Close()
-	go c.Serve(context.Background(), func() {})
+	go c.Start(context.Background(), func() {})
 
 	gotOpen, gotMax := c.ConnCount()
 	if gotOpen != 0 {
@@ -579,12 +579,12 @@ func TestCheckConnections(t *testing.T) {
 		},
 	}
 	d := &fakeDialer{}
-	c, err := proxy.NewClient(context.Background(), d, logger, in)
+	c, err := proxy.NewSession(context.Background(), d, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
 	defer c.Close()
-	go c.Serve(context.Background(), func() {})
+	go c.Start(context.Background(), func() {})
 
 	if err = c.CheckConnections(context.Background()); err != nil {
 		t.Fatalf("CheckConnections failed: %v", err)
@@ -603,12 +603,12 @@ func TestCheckConnections(t *testing.T) {
 		},
 	}
 	ed := &errorDialer{}
-	c, err = proxy.NewClient(context.Background(), ed, logger, in)
+	c, err = proxy.NewSession(context.Background(), ed, logger, in)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
 	defer c.Close()
-	go c.Serve(context.Background(), func() {})
+	go c.Start(context.Background(), func() {})
 
 	err = c.CheckConnections(context.Background())
 	if err == nil {

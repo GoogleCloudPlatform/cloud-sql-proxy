@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proxy
+package connection
 
 import (
 	"testing"
 	"unsafe"
 )
 
-func TestClientUsesSyncAtomicAlignment(t *testing.T) {
+func TestCounterUsesSyncAtomicAlignment(t *testing.T) {
 	// The sync/atomic pkg has a bug that requires the developer to guarantee
 	// 64-bit alignment when using 64-bit functions on 32-bit systems.
-	c := &Client{}
+	c := NewCounter(0)
 
-	if a := unsafe.Offsetof(c.connCount); a%64 != 0 {
-		t.Errorf("Client.connCount is not 64-bit aligned: want 0, got %v", a)
+	if a := unsafe.Offsetof(c.count); a%64 != 0 {
+		t.Errorf("Counter.count is not 64-bit aligned: want 0, got %v", a)
 	}
 }

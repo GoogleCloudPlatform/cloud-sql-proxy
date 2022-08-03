@@ -31,12 +31,12 @@ import (
 type Check struct {
 	once    *sync.Once
 	started chan struct{}
-	proxy   *proxy.Client
+	proxy   *proxy.Session
 	logger  cloudsql.Logger
 }
 
 // NewCheck is the initializer for Check.
-func NewCheck(p *proxy.Client, l cloudsql.Logger) *Check {
+func NewCheck(p *proxy.Session, l cloudsql.Logger) *Check {
 	return &Check{
 		once:    &sync.Once{},
 		started: make(chan struct{}),

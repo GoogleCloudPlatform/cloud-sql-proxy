@@ -79,7 +79,7 @@ func (*errorDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.
 	return nil, errors.New("errorDialer always errors")
 }
 
-func newProxyWithParams(t *testing.T, maxConns uint64, dialer cloudsql.Dialer) *proxy.Client {
+func newProxyWithParams(t *testing.T, maxConns uint64, dialer cloudsql.Dialer) *proxy.Session {
 	c := &proxy.Config{
 		Addr: proxyHost,
 		Port: proxyPort,
@@ -88,22 +88,22 @@ func newProxyWithParams(t *testing.T, maxConns uint64, dialer cloudsql.Dialer) *
 		},
 		MaxConnections: maxConns,
 	}
-	p, err := proxy.NewClient(context.Background(), dialer, logger, c)
+	p, err := proxy.NewSession(context.Background(), dialer, logger, c)
 	if err != nil {
 		t.Fatalf("proxy.NewClient: %v", err)
 	}
 	return p
 }
 
-func newTestProxyWithMaxConns(t *testing.T, maxConns uint64) *proxy.Client {
+func newTestProxyWithMaxConns(t *testing.T, maxConns uint64) *proxy.Session {
 	return newProxyWithParams(t, maxConns, &fakeDialer{})
 }
 
-func newTestProxyWithDialer(t *testing.T, d cloudsql.Dialer) *proxy.Client {
+func newTestProxyWithDialer(t *testing.T, d cloudsql.Dialer) *proxy.Session {
 	return newProxyWithParams(t, 0, d)
 }
 
-func newTestProxy(t *testing.T) *proxy.Client {
+func newTestProxy(t *testing.T) *proxy.Session {
 	return newProxyWithParams(t, 0, &fakeDialer{})
 }
 
@@ -174,7 +174,7 @@ func TestHandleReadinessForMaxConns(t *testing.T) {
 	}()
 	started := make(chan struct{})
 	check := healthcheck.NewCheck(p, logger)
-	go p.Serve(context.Background(), func() {
+	go p.Start(context.Background(), func() {
 		check.NotifyStarted()
 		close(started)
 	})
