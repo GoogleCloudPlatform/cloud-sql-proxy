@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -187,6 +188,11 @@ only. Uses the port specified by the http-port flag.`)
 The IAM principal must have the "serviceusage.services.use" permission
 for the given project. See https://cloud.google.com/service-usage/docs/overview and
 https://cloud.google.com/storage/docs/requester-pays`)
+	cmd.PersistentFlags().StringVar(&c.conf.FUSE, "fuse", "",
+		"Mount a directory at the path using FUSE to access Cloud SQL instances.")
+	cmd.PersistentFlags().StringVar(&c.conf.FUSETempDir, "fuse-tmp-dir",
+		filepath.Join(os.TempDir(), "csql-tmp"),
+		"Temp dir for Unix sockets created with FUSE")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -204,9 +210,14 @@ https://cloud.google.com/storage/docs/requester-pays`)
 }
 
 func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
-	// If no instance connection names were provided, error.
-	if len(args) == 0 {
+	// If no instance connection names were provided AND FUSE isn't enabled,
+	// error.
+	if len(args) == 0 && conf.FUSE == "" {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
+	}
+
+	if len(args) == 0 && conf.FUSE == "" && conf.FUSETempDir != "" {
+		return newBadCommandError("cannot specify --fuse-tmp-dir without --fuse")
 	}
 
 	userHasSet := func(f string) bool {

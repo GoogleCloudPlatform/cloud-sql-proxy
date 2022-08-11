@@ -19,6 +19,8 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -41,11 +43,16 @@ func TestNewCommandArguments(t *testing.T) {
 		if c.Addr == "" {
 			c.Addr = "127.0.0.1"
 		}
-		if c.Instances == nil {
-			c.Instances = []proxy.InstanceConnConfig{{}}
+		if c.FUSE == "" {
+			if c.Instances == nil {
+				c.Instances = []proxy.InstanceConnConfig{{}}
+			}
+			if i := &c.Instances[0]; i.Name == "" {
+				i.Name = "proj:region:inst"
+			}
 		}
-		if i := &c.Instances[0]; i.Name == "" {
-			i.Name = "proj:region:inst"
+		if c.FUSETempDir == "" {
+			c.FUSETempDir = filepath.Join(os.TempDir(), "csql-tmp")
 		}
 		return c
 	}
@@ -256,6 +263,21 @@ func TestNewCommandArguments(t *testing.T) {
 			args: []string{"--quota-project", "proj", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
 				QuotaProject: "proj",
+			}),
+		},
+		{
+			desc: "using the fuse flag",
+			args: []string{"--fuse", "/cloudsql"},
+			want: withDefaults(&proxy.Config{
+				FUSE: "/cloudsql",
+			}),
+		},
+		{
+			desc: "using the fuse temporary directory flag",
+			args: []string{"--fuse", "/cloudsql", "--fuse-tmp-dir", "/mycooldir"},
+			want: withDefaults(&proxy.Config{
+				FUSE:        "/cloudsql",
+				FUSETempDir: "/mycooldir",
 			}),
 		},
 	}
@@ -519,6 +541,10 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "using an invalid url for sqladmin-api-endpoint",
 			args: []string{"--sqladmin-api-endpoint", "https://user:abc{DEf1=ghi@example.com:5432/db?sslmode=require", "proj:region:inst"},
+		},
+		{
+			desc: "using fuse-tmp-dir without fuse",
+			args: []string{"--fuse-tmp-dir", "/mydir"},
 		},
 	}
 
