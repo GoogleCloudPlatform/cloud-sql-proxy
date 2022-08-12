@@ -15,6 +15,7 @@
 package proxy
 
 import (
+	"errors"
 	"os"
 )
 

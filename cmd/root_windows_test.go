@@ -16,6 +16,8 @@ package cmd
 
 import (
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestWindowsDoesNotSupportFUSE(t *testing.T) {
