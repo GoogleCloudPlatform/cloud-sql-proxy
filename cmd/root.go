@@ -216,6 +216,14 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
 	}
 
+	if conf.FUSE != "" {
+		if err := proxy.SupportsFUSE(); err != nil {
+			return newBadCommandError(
+				fmt.Sprintf("--fuse is not supported: %v", err),
+			)
+		}
+	}
+
 	if len(args) == 0 && conf.FUSE == "" && conf.FUSETempDir != "" {
 		return newBadCommandError("cannot specify --fuse-tmp-dir without --fuse")
 	}
