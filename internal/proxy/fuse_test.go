@@ -82,6 +82,20 @@ func TestREADME(t *testing.T) {
 		t.Fatal("proxy.Client failed to start serving")
 	}
 
+	var attempts int
+	f := filepath.Join(dir, "README")
+	for {
+		if attempts > 9 {
+			t.Fatalf("os.Stat failed for %v", f)
+		}
+		if _, err = os.Stat(f); err == nil {
+			// File exists, stop checking
+			break
+		}
+		attempts++
+		time.Sleep(time.Second)
+	}
+
 	_, err = ioutil.ReadFile(filepath.Join(dir, "README"))
 	if err != nil {
 		t.Fatal(err)
