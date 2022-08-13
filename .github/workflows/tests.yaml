@@ -100,6 +100,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
+          echo "cat /etc/fuse.conf"
+          cat /etc/fuse.conf
 
       - name: Run tests
         env:
@@ -123,7 +125,7 @@ jobs:
           go install github.com/jstemmer/go-junit-report/v2@latest
           go test -race -v ./... | tee test_results.txt
           go-junit-report -in test_results.txt -set-exit-code -out integration_sponge_log.xml
-      
+
       - name: FlakyBot (Linux)
         # only run flakybot on periodic (schedule) and continuous (push) events
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Linux' && always() }}
@@ -131,7 +133,7 @@ jobs:
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
           chmod +x ./flakybot
           ./flakybot --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
-        
+
       - name: FlakyBot (Windows)
         # only run flakybot on periodic (schedule) and continuous (push) events
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Windows' && always() }}
