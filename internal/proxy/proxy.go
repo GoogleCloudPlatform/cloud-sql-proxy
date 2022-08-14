@@ -20,6 +20,8 @@ import (
 	"io"
 	"net"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -33,6 +35,44 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 	"golang.org/x/oauth2"
 )
+
+var (
+	// Instance connection name is the format <PROJECT>:<REGION>:<INSTANCE>
+	// Additionally, we have to support legacy "domain-scoped" projects (e.g. "google.com:PROJECT")
+	connNameRegex = regexp.MustCompile("([^:]+(:[^:]+)?):([^:]+):([^:]+)")
+)
+
+// connName represents the "instance connection name", in the format
+// "project:region:name". Use the "parseConnName" method to initialize this
+// struct.
+type connName struct {
+	project string
+	region  string
+	name    string
+}
+
+func (c *connName) String() string {
+	return fmt.Sprintf("%s:%s:%s", c.project, c.region, c.name)
+}
+
+// parseConnName initializes a new connName struct.
+func parseConnName(cn string) (connName, error) {
+	b := []byte(cn)
+	m := connNameRegex.FindSubmatch(b)
+	if m == nil {
+		return connName{}, fmt.Errorf(
+			"invalid instance connection name, want = PROJECT:REGION:INSTANCE, got = %v",
+			cn,
+		)
+	}
+
+	c := connName{
+		project: string(m[1]),
+		region:  string(m[3]),
+		name:    string(m[4]),
+	}
+	return c, nil
+}
 
 // InstanceConnConfig holds the configuration for an individual instance
 // connection.
@@ -234,6 +274,11 @@ func (c *portConfig) nextDBPort(version string) int {
 	}
 }
 
+type socketSymlink struct {
+	socket  *socketMount
+	symlink *symlink
+}
+
 // Client proxies connections from a local client to the remote server side
 // proxy for multiple Cloud SQL instances.
 type Client struct {
@@ -257,9 +302,18 @@ type Client struct {
 	logger cloudsql.Logger
 
 	// fuseDir specifies the directory where a FUSE server is mounted. The value
-	// is empty if FUSE is not enabled.
-	fuseDir    string
-	fuseServer *fuse.Server
+	// is empty if FUSE is not enabled. The directory holds symlinks to Unix
+	// domain sockets in the fuseTmpDir.
+	fuseDir     string
+	fuseTempDir string
+	// fuseMu protects access to fuseSockets.
+	fuseMu sync.Mutex
+	// fuseSockets is a map of instance connection name to socketMount and
+	// symlink.
+	fuseSockets  map[string]socketSymlink
+	fuseServerMu sync.Mutex
+	fuseServer   *fuse.Server
+	fuseWg       sync.WaitGroup
 
 	// Inode adds support for FUSE operations.
 	fs.Inode
@@ -289,7 +343,12 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	}
 
 	if conf.FUSEDir != "" {
+		if err := os.MkdirAll(conf.FUSETempDir, 0777); err != nil {
+			return nil, err
+		}
 		c.fuseDir = conf.FUSEDir
+		c.fuseTempDir = conf.FUSETempDir
+		c.fuseSockets = map[string]socketSymlink{}
 		return c, nil
 	}
 
@@ -324,9 +383,23 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	return c, nil
 }
 
+// Readdir returns a list of all active Unix sockets in addition to the README.
 func (c *Client) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	entries := []fuse.DirEntry{
 		{Name: "README", Mode: 0555 | fuse.S_IFREG},
+	}
+	var active []string
+	c.fuseMu.Lock()
+	for k := range c.fuseSockets {
+		active = append(active, k)
+	}
+	c.fuseMu.Unlock()
+
+	for _, a := range active {
+		entries = append(entries, fuse.DirEntry{
+			Name: a,
+			Mode: 0777 | syscall.S_IFSOCK,
+		})
 	}
 	return fs.NewListDirStream(entries), fs.OK
 }
@@ -340,7 +413,54 @@ func (c *Client) Lookup(ctx context.Context, instance string, out *fuse.EntryOut
 	if instance == "README" {
 		return c.NewInode(ctx, &readme{}, fs.StableAttr{}), fs.OK
 	}
-	return nil, syscall.ENOENT
+
+	if _, err := parseConnName(instance); err != nil {
+		return nil, syscall.ENOENT
+	}
+
+	c.fuseMu.Lock()
+	defer c.fuseMu.Unlock()
+	if l, ok := c.fuseSockets[instance]; ok {
+		return l.symlink.EmbeddedInode(), fs.OK
+	}
+
+	version, err := c.dialer.EngineVersion(ctx, instance)
+	if err != nil {
+		c.logger.Errorf("could not resolve version for %q: %v", instance, err)
+		return nil, syscall.ENOENT
+	}
+
+	s, err := newSocketMount(
+		ctx, &Config{UnixSocket: c.fuseTempDir},
+		nil, InstanceConnConfig{Name: instance}, version,
+	)
+	if err != nil {
+		c.logger.Errorf("could not create socket for %q: %v", instance, err)
+		return nil, syscall.ENOENT
+	}
+
+	c.fuseWg.Add(1)
+	go func() {
+		defer c.fuseWg.Done()
+		sErr := c.serveSocketMount(ctx, s)
+		if sErr != nil {
+			c.fuseMu.Lock()
+			delete(c.fuseSockets, instance)
+			c.fuseMu.Unlock()
+		}
+	}()
+
+	// Return a symlink that points to the actual Unix socket within the
+	// temporary directory. For Postgres, return a symlink that points to the
+	// directory which holds the ".s.PGSQL.5432" Unix socket.
+	sl := &symlink{path: filepath.Join(c.fuseTempDir, instance)}
+	c.fuseSockets[instance] = socketSymlink{
+		socket:  s,
+		symlink: sl,
+	}
+	return c.NewInode(ctx, sl, fs.StableAttr{
+		Mode: 0777 | fuse.S_IFLNK},
+	), fs.OK
 }
 
 // CheckConnections dials each registered instance and reports any errors that
@@ -349,8 +469,18 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 	var (
 		wg    sync.WaitGroup
 		errCh = make(chan error, len(c.mnts))
+		mnts  = c.mnts
 	)
-	for _, m := range c.mnts {
+	if c.fuseDir != "" {
+		mnts = []*socketMount{}
+		c.fuseMu.Lock()
+		for _, m := range c.fuseSockets {
+			mnts = append(mnts, m.socket)
+		}
+		c.fuseMu.Unlock()
+	}
+
+	for _, m := range mnts {
 		wg.Add(1)
 		go func(inst string) {
 			defer wg.Done()
@@ -401,7 +531,9 @@ func (c *Client) Serve(ctx context.Context, notify func()) error {
 		if err != nil {
 			return fmt.Errorf("FUSE mount failed: %q: %v", c.fuseDir, err)
 		}
+		c.fuseServerMu.Lock()
 		c.fuseServer = srv
+		c.fuseServerMu.Unlock()
 		notify()
 		<-ctx.Done()
 		return ctx.Err()
@@ -447,18 +579,34 @@ func (m MultiErr) Error() string {
 
 // Close triggers the proxyClient to shutdown.
 func (c *Client) Close() error {
+	mnts := c.mnts
+
+	c.fuseServerMu.Lock()
+	hasFuseServer := c.fuseServer != nil
+	c.fuseServerMu.Unlock()
+
 	var mErr MultiErr
-	if c.fuseServer != nil {
+	if hasFuseServer {
 		if err := c.fuseServer.Unmount(); err != nil {
 			mErr = append(mErr, err)
 		}
+		mnts = []*socketMount{}
+		c.fuseMu.Lock()
+		for _, m := range c.fuseSockets {
+			mnts = append(mnts, m.socket)
+		}
+		c.fuseMu.Unlock()
 	}
+
 	// First, close all open socket listeners to prevent additional connections.
-	for _, m := range c.mnts {
+	for _, m := range mnts {
 		err := m.Close()
 		if err != nil {
 			mErr = append(mErr, err)
 		}
+	}
+	if hasFuseServer {
+		c.fuseWg.Wait()
 	}
 	// Next, close the dialer to prevent any additional refreshes.
 	cErr := c.dialer.Close()
@@ -541,9 +689,10 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 
 // socketMount is a tcp/unix socket that listens for a Cloud SQL instance.
 type socketMount struct {
+	fs.Inode
 	inst     string
-	dialOpts []cloudsqlconn.DialOption
 	listener net.Listener
+	dialOpts []cloudsqlconn.DialOption
 }
 
 func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst InstanceConnConfig, version string) (*socketMount, error) {
