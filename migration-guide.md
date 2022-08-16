@@ -67,7 +67,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 The following table lists in alphabetical order v1 flags and their v2 version.
 
 - 🗓️: Planned
-- ❌: Deprecated
+- ❌: Not supported in V2
 - 🤔: Unplanned, but has open feature request
 
 | v1                          | v2                    | Notes                                                                                |
@@ -85,7 +85,7 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | ip_address_types            | private-ip            | Defaults to public                                                                   |
 | log_debug_stdout            | ❌                    | v2 logs to stdout, errors to stderr by default                                       |
 | max_connections             | max-connections       |                                                                                      |
-| projects                    | ❌                    |                                                                                      |
+| projects                    | ❌                    | v2 prefers explicit connection configuration to avoid user error                     |
 | quiet                       | ❌                    |                                                                                      |
 | quota_project               | quota-project         |                                                                                      |
 | refresh_config_throttle     | ❌                    |                                                                                      |

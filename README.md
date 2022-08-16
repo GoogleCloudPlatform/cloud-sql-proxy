@@ -45,7 +45,7 @@ following instructions for your OS and CPU architecture.
 <details open>
 <summary>Linux amd64</summary>
 
-``` sh
+```sh
 # see Releases for other versions
 URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
 
@@ -53,12 +53,13 @@ wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.amd64" -O cloudsql-proxy
 
 chmod +x cloud-sql-connectors/cloudsql-proxy
 ```
+
 </details>
 
 <details>
 <summary>Linux 386</summary>
 
-``` sh
+```sh
 # see Releases for other versions
 URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
 
@@ -66,12 +67,13 @@ wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.386" -O cloudsql-proxy
 
 chmod +x cloud-sql-connectors/cloudsql-proxy
 ```
+
 </details>
 
 <details>
 <summary>Linux arm64</summary>
 
-``` sh
+```sh
 # see Releases for other versions
 URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
 
@@ -79,12 +81,13 @@ wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.arm64" -O cloudsql-proxy
 
 chmod +x cloud-sql-connectors/cloudsql-proxy
 ```
+
 </details>
 
 <details>
 <summary>Linux arm</summary>
 
-``` sh
+```sh
 # see Releases for other versions
 URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
 
@@ -92,12 +95,13 @@ wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.arm" -O cloudsql-proxy
 
 chmod +x cloud-sql-connectors/cloudsql-proxy
 ```
+
 </details>
 
 <details>
 <summary>Mac (Intel)</summary>
 
-``` sh
+```sh
 # see Releases for other versions
 URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
 
@@ -105,12 +109,13 @@ wget "$URL/cloud-sql-connectors/cloudsql-proxy.darwin.amd64" -O cloudsql-proxy
 
 chmod +x cloud-sql-connectors/cloudsql-proxy
 ```
+
 </details>
 
 <details>
 <summary>Mac (Apple Silicon)</summary>
 
-``` sh
+```sh
 # see Releases for other versions
 URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
 
@@ -118,24 +123,27 @@ wget "$URL/cloud-sql-connectors/cloudsql-proxy.darwin.arm64" -O cloudsql-proxy
 
 chmod +x cloud-sql-connectors/cloudsql-proxy
 ```
+
 </details>
 
 <details>
 <summary>Windows x64</summary>
 
-``` sh
+```sh
 # see Releases for other versions
 wget https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0/cloudsql-proxy-x64.exe -O cloudsql-proxy.exe
 ```
+
 </details>
 
 <details>
 <summary>Windows x86</summary>
 
-``` sh
+```sh
 # see Releases for other versions
 wget https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0/cloudsql-proxy-x86.exe -O cloudsql-proxy.exe
 ```
+
 </details>
 
 ### Install from Source
@@ -261,7 +269,7 @@ To start the proxy with Unix sockets, run:
 To configure a Unix domain socket on a per-instance basis, use the `unix-socket`
 query param:
 
-``` shell
+```shell
 # Starts a TCP listener on localhost:5432 for "postgres"
 # and creates a Unix domain socket for "mysql":
 #     /cloudsql/myproject:my-region:mysql
@@ -273,7 +281,7 @@ query param:
 NOTE: The proxy supports Unix domain sockets on recent versions of Windows, but
 replaces colons with periods:
 
-``` shell
+```shell
 # Starts a Unix domain socket at the path:
 #    \cloudsql\myproject.my-region.msql
 ./cloudsql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
@@ -425,11 +433,11 @@ over an unencrypted connection and are authorized using the environment's IAM
 principal. The proxy then encrypts the connection to your Cloud SQL instance.
 
 Because client connections are not encrypted and authorized using the
-environment's IAM principal, we recommend running the proxy on the same VM (or
-GKE pod) as your application. This means unencrypted traffic does not leave the
-VM. It also means there is a one-to-one correspondance between the IAM principal
-used by the application and the proxy. This approach ensures a secure connection
-and leverages all the power of IAM.
+environment's IAM principal, we recommend running the proxy on the same VM or
+Kubernetes pod as your application and using the proxy's default behavior of
+allowing connections from only the local network interface. This is the most
+secure configuration: unencrypted traffic does not leave the VM, and only
+connections from applications on the VM are allowed.
 
 Here are some common examples of how to run the proxy in different environments:
 
@@ -441,12 +449,10 @@ Here are some common examples of how to run the proxy in different environments:
 
 ### Why can't the proxy connect to my private IP instance?
 
-The proxy does not configure the network. You MUST ensure the proxy can reach
-your Cloud SQL instance, either by deploying it in a VPC that has access to your
-Private IP instance, or by configuring Public IP.
-
-If no network path exists, the proxy cannot create a network path and so cannot
-connect.
+The proxy does not configure the network between the VM it's running on and the
+Cloud SQL instance. You MUST ensure the proxy can reach your Cloud SQL
+instance, either by deploying it in a VPC that has access to your Private IP
+instance, or by configuring Public IP.
 
 ### Is there a library version of the proxy that I can use?
 
@@ -456,23 +462,25 @@ Yes. Cloud SQL supports three language connectors:
 - [Cloud SQL Java Connector](https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory)
 - [Cloud SQL Python Connector](https://github.com/GoogleCloudPlatform/cloud-sql-python-connector)
 
-If you're using Go, Java, or Python, the language connectors offer the best
-experience. If you're using another language, then the proxy is the way to go.
+The connectors for Go, Java, and Python offer the best experience when you are
+writing an application in those languages. Use the proxy when your application
+uses another language.
 
 ### Should I use the proxy for large deployments?
 
-We recommend deploying the proxy next to every application. It's possible that
-large deployments may bump up against the SQL Admin API quota. In those cases,
-we recommend deploying the proxy with a connection pooler like [pgbouncer][] or
-[ProxySQL][]. For details, see [Running the Cloud SQL Proxy as a Service][service-example].
+We recommend deploying the proxy on the host machines that are running the
+application. However, large deployments may exceed the request quota for the SQL
+Admin API . If your proxy reports request quota errors, we recommend deploying
+the proxy with a connection pooler like [pgbouncer][] or [ProxySQL][]. For
+details, see [Running the Cloud SQL Proxy as a Service][service-example].
 
 ### Can I share the proxy across mulitple applications?
 
 Instead of using a single proxy across multiple applications, we recommend using
-one proxy instance for every application process. The proxy uses the context's IAM
-principal and so have a 1-to-1 mapping between application and IAM principal is
-best. If multiple applications use the same proxy instance, then it becomes unclear
-from an IAM perspective which principal is doing what.\*\*\*\*
+one proxy instance for every application process. The proxy uses the context's
+IAM principal and so have a 1-to-1 mapping between application and IAM principal
+is best. If multiple applications use the same proxy instance, then it becomes
+unclear from an IAM perspective which principal is doing what.\*\*\*\*
 
 [pgbouncer]: https://www.pgbouncer.org/
 [proxysql]: https://www.proxysql.com/
@@ -504,13 +512,16 @@ considered publicly unsupported.
 ### Supported Go Versions
 
 We test and support at least the latest 3 Go versions. Changes in supported Go
-versions will be considered a minor change, and will be noted in the release notes.
+versions will be considered a minor change, and will be noted in the release
+notes.
 
 ### Release cadence
 
 The Cloud SQL Auth proxy aims for a minimum monthly release cadence. If no new
 features or fixes have been added, a new PATCH version with the latest
-dependencies is released. We support releases only within the past year.
+dependencies is released.
+
+We support releases for 1 year from the release date.
 
 ## Contributing
 
