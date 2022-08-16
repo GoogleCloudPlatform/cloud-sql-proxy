@@ -125,7 +125,8 @@ command:
 
     gcloud sql instances describe INSTANCE --format='value(connectionName)'
 
-Starting the proxy will look like, for example:
+For example, if your instance connection name is "my-project:us-central1:my-db-server",
+starting the proxy will be:
 
     ./cloudsql-proxy my-project:us-central1:my-db-server
 
@@ -137,7 +138,8 @@ database port and subsequent instances will be incremented from there (e.g.,
 3306, 3307, 3308, etc). To disable this behavior (and reduce startup time), use
 the --port flag. All subsequent listeners will increment from the provided value.
 
-All listeners use localhost. To override this behavior, use the --address flag.
+All socket listeners use the localhost network interface. To override this
+behavior, use the --address flag.
 
 The proxy supports overriding configuration on an instance-level with an
 optional query string syntax using the corresponding full flag name. The query
@@ -214,13 +216,13 @@ func NewCommand(opts ...Option) *Command {
 	cmd.PersistentFlags().Uint64Var(&c.conf.MaxConnections, "max-connections", 0,
 		"Limit the number of connections. Default is no limit.")
 	cmd.PersistentFlags().DurationVar(&c.conf.WaitOnClose, "max-sigterm-delay", 0,
-		"Maximum time to wait for connections to close after receiving a TERM signal.")
+		"Maximum time to wait i seconds for connections to close after receiving a TERM signal.")
 	cmd.PersistentFlags().StringVar(&c.telemetryProject, "telemetry-project", "",
 		"Enable Cloud Monitoring and Cloud Trace with the provided project ID.")
 	cmd.PersistentFlags().BoolVar(&c.disableTraces, "disable-traces", false,
 		"Disable Cloud Trace integration (used with --telemetry-project)")
 	cmd.PersistentFlags().IntVar(&c.telemetryTracingSampleRate, "telemetry-sample-rate", 10_000,
-		"Configure the sample rate of traces sent to Cloud Trace. A smaller number means more traces.")
+		"Set the Cloud Trace sample rate. A smaller number means more traces.")
 	cmd.PersistentFlags().BoolVar(&c.disableMetrics, "disable-metrics", false,
 		"Disable Cloud Monitoring integration (used with --telemetry-project)")
 	cmd.PersistentFlags().StringVar(&c.telemetryPrefix, "telemetry-prefix", "",
@@ -230,9 +232,9 @@ func NewCommand(opts ...Option) *Command {
 	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
 		"Use the provided Prometheus namespace for metrics")
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
-		"Port for Prometheus and/or health check server")
+		"Port for Prometheus and health check server")
 	cmd.PersistentFlags().BoolVar(&c.healthCheck, "health-check", false,
-		"Enables HTTP endpoints /startup, /liveness, and /readiness on localhost.")
+		"Enables health check endpoints /startup, /liveness, and /readiness on localhost.")
 	cmd.PersistentFlags().StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
 		"API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)")
 	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
