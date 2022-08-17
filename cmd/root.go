@@ -106,6 +106,10 @@ Cloud SQL instances. It provides IAM authorization, allowing you to control who
 can connect to your instance through IAM permissions, and TLS 1.3 encryption,
 without having to manage certificates.
 
+NOTE: The proxy does not configure the network. You MUST ensure the proxy can
+reach your Cloud SQL instance, either by deploying it in a VPC that has access
+to your Private IP instance, or by configuring Public IP.
+
 For every provided instance connection name, the proxy creates:
 
 - a socket that mimics a database running locally, and
@@ -114,10 +118,6 @@ For every provided instance connection name, the proxy creates:
 The proxy uses an ephemeral certificate to establish a secure connection to your
 Cloud SQL instance. The proxy will refresh those certificates on an hourly
 basis. Existing client connections are unaffected by the refresh cycle.
-
-NOTE: The proxy does not configure the network. You MUST ensure the proxy can
-reach your Cloud SQL instance, either by deploying it in a VPC that has access
-to your Private IP instance, or by configuring Public IP.
 
 To start the proxy, you will need your instance connection name, which may be found
 in the Cloud SQL instance overview page or by using gcloud with the following
