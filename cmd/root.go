@@ -216,7 +216,7 @@ func NewCommand(opts ...Option) *Command {
 	cmd.PersistentFlags().Uint64Var(&c.conf.MaxConnections, "max-connections", 0,
 		"Limit the number of connections. Default is no limit.")
 	cmd.PersistentFlags().DurationVar(&c.conf.WaitOnClose, "max-sigterm-delay", 0,
-		"Maximum time to wait i seconds for connections to close after receiving a TERM signal.")
+		"Maximum number of seconds to wait for connections to close after receiving a TERM signal.")
 	cmd.PersistentFlags().StringVar(&c.telemetryProject, "telemetry-project", "",
 		"Enable Cloud Monitoring and Cloud Trace with the provided project ID.")
 	cmd.PersistentFlags().BoolVar(&c.disableTraces, "disable-traces", false,
