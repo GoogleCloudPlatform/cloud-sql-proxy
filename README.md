@@ -29,6 +29,11 @@ connector which does everything the proxy does, but in process:
 For users migrating from v1, see the [Migration Guide](migration-guide).
 The [v1 README][v1 readme] is still available.
 
+NOTE: The proxy does not configure the network between the VM it's running on
+and the Cloud SQL instance. You MUST ensure the proxy can reach your Cloud SQL
+instance, either by deploying it in a VPC that has access to your Private IP
+instance, or by configuring Public IP.
+
 [cloud monitoring]: https://cloud.google.com/monitoring
 [cloud trace]: https://cloud.google.com/trace
 [prometheus]: https://prometheus.io/
@@ -220,7 +225,7 @@ To configure ports on a per instance basis, use the `port` query param:
     'myproject:my-region:mysql?port=6000'
 ```
 
-### Configuring Address
+### Configuring Listening Address
 
 To overide the choice of `localhost`, use the `--address` flag:
 
