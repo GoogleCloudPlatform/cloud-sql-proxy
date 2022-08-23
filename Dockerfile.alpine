@@ -23,7 +23,7 @@ ARG TARGETARCH
 
 RUN go get ./...
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-X main.metadataString=container.alpine" -o cloud_sql_proxy ./main.go
+    go build -ldflags "-X main.metadataString=container.alpine" -o cloud_sql_proxy
 
 # Final stage
 FROM alpine:3

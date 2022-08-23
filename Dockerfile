@@ -23,7 +23,7 @@ ARG TARGETARCH
 
 RUN go get ./...
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-X main.metadataString=container" -o cloud_sql_proxy ./main.go
+    go build -ldflags "-X main.metadataString=container" -o cloud_sql_proxy
 
 # Final Stage
 FROM gcr.io/distroless/static:nonroot
