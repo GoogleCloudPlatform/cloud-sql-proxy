@@ -21,7 +21,7 @@ PROJ_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. >/dev/null 2>&1 && pwd )"
 cd $PROJ_ROOT
 
 # get the current version
-export VERSION=$(cat cmd/cloud_sql_proxy/version.txt)
+export VERSION=$(cat cmd/version.txt)
 if [ -z "$VERSION" ]; then
   echo "error: No version.txt found in $PROJ_ROOT"
   exit 1
