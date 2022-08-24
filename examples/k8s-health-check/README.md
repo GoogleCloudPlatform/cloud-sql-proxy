@@ -49,22 +49,15 @@ Kubernetes supports three types of health checks.
 2. Add `-use_http_health_check` and `-health-check-port` (optional) to your proxy container configuration under `command: `.
     > [proxy_with_http_health_check.yaml](proxy_with_http_health_check.yaml#L39-L55)
     ```yaml
-        command:
-          - "/cloud_sql_proxy"
+        args:
+          # Enable structured logging with LogEntry format:
+          - "--structured-logs"
 
-          # If connecting from a VPC-native GKE cluster, you can use the
-          # following flag to have the proxy connect over private IP
-          # - "-ip_address_types=PRIVATE"
+          # Turn on health check endpoints on port 8090:
+          - "--health-check"
+          - "--http-port=8090"
 
           # Replace DB_PORT with the port the proxy should listen on
-          # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
-          - "-instances=<INSTANCE_CONNECTION_NAME>=tcp:<DB_PORT>"
-          # Enables HTTP health checks.
-          - "-use_http_health_check"
-          # Specifies the health check server port.
-          # Defaults to 8090.
-          - "-health_check_port=<YOUR-HEALTH-CHECK-PORT>"
-          # This flag specifies where the service account key can be found
-          - "-credential_file=/secrets/service_account.json"
+          - "<INSTANCE_CONNECTION_NAME>?port=<DB_PORT>"
     ```
 
