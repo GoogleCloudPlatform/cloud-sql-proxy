@@ -54,7 +54,7 @@ following instructions for your OS and CPU architecture.
 # see Releases for other versions
 URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
 
-wget "$URL/cloud-sql-connectors/cloud-sql-proxy.linux.amd64" -O cloud-sql-proxy
+wget "$URL/cloud-sql-proxy.linux.amd64" -O cloud-sql-proxy
 
 chmod +x cloud-sql-proxy
 ```
