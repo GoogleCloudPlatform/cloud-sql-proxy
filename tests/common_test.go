@@ -1,10 +1,10 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,72 +23,21 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"flag"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
 	"os"
-	"os/exec"
-	"path"
-	"runtime"
 	"strings"
-	"testing"
+
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cmd"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
 )
-
-var (
-	binPath = ""
-)
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	// compile the proxy as a binary
-	var err error
-	binPath, err = compileProxy()
-	if err != nil {
-		log.Fatalf("failed to compile proxy: %s", err)
-	}
-	// Run tests and cleanup
-	rtn := m.Run()
-	os.RemoveAll(binPath)
-
-	os.Exit(rtn)
-}
-
-// compileProxy compiles the binary into a temporary directory, and returns the path to the file or any error that occured.
-func compileProxy() (string, error) {
-	// get path of the cmd pkg
-	_, f, _, ok := runtime.Caller(0)
-	if !ok {
-		return "", fmt.Errorf("failed to find cmd pkg")
-	}
-	projRoot := path.Dir(path.Dir(f)) // cd ../..
-	pkgPath := path.Join(projRoot, "cmd", "cloud_sql_proxy")
-	// compile the proxy into a tmp directory
-	tmp, err := ioutil.TempDir("", "")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp dir: %s", err)
-	}
-
-	b := path.Join(tmp, "cloud_sql_proxy")
-
-	if runtime.GOOS == "windows" {
-		b += ".exe"
-	}
-
-	cmd := exec.Command("go", "build", "-o", b, pkgPath)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("failed to run 'go build': %w \n %s", err, out)
-	}
-	return b, nil
-}
 
 // proxyExec represents an execution of the Cloud SQL proxy.
-type ProxyExec struct {
+type proxyExec struct {
 	Out io.ReadCloser
 
-	cmd     *exec.Cmd
+	cmd     *cmd.Command
 	cancel  context.CancelFunc
 	closers []io.Closer
 	done    chan bool // closed once the cmd is completed
@@ -96,48 +45,53 @@ type ProxyExec struct {
 }
 
 // StartProxy returns a proxyExec representing a running instance of the proxy.
-func StartProxy(ctx context.Context, args ...string) (*ProxyExec, error) {
-	var err error
+func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	p := ProxyExec{
-		cmd:    exec.CommandContext(ctx, binPath, args...),
-		cancel: cancel,
-		done:   make(chan bool),
-	}
+	// Open a pipe for tracking the output from the cmd
 	pr, pw, err := os.Pipe()
 	if err != nil {
+		cancel()
 		return nil, fmt.Errorf("unable to open stdout pipe: %w", err)
 	}
-	defer pw.Close()
-	p.Out, p.cmd.Stdout, p.cmd.Stderr = pr, pw, pw
-	p.closers = append(p.closers, pr)
-	if err := p.cmd.Start(); err != nil {
-		defer p.Close()
-		return nil, fmt.Errorf("unable to start cmd: %w", err)
+
+	cmd := cmd.NewCommand(cmd.WithLogger(log.NewStdLogger(pw, pw)))
+	cmd.SetArgs(args)
+	cmd.SetOut(pw)
+	cmd.SetErr(pw)
+
+	p := &proxyExec{
+		Out:     pr,
+		cmd:     cmd,
+		cancel:  cancel,
+		closers: []io.Closer{pr, pw},
+		done:    make(chan bool),
 	}
-	// when process is complete, mark as finished
+	// Start the command in the background
 	go func() {
 		defer close(p.done)
-		p.err = p.cmd.Wait()
+		defer cancel()
+		p.err = cmd.ExecuteContext(ctx)
 	}()
-	return &p, nil
+	return p, nil
 }
 
-// Stop sends the pskill signal to the proxy and returns.
-func (p *ProxyExec) Kill() {
+// Stop sends the TERM signal to the proxy and returns.
+func (p *proxyExec) Stop() {
 	p.cancel()
 }
 
 // Waits until the execution is completed and returns any error.
-func (p *ProxyExec) Wait() error {
+func (p *proxyExec) Wait(ctx context.Context) error {
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case <-p.done:
 		return p.err
 	}
 }
 
-// Stop sends the pskill signal to the proxy and returns.
-func (p *ProxyExec) Done() bool {
+// Done returns true if the proxy has exited.
+func (p *proxyExec) Done() bool {
 	select {
 	case <-p.done:
 		return true
@@ -146,17 +100,18 @@ func (p *ProxyExec) Done() bool {
 	return false
 }
 
-// Close releases any resources assotiated with the instance.
-func (p *ProxyExec) Close() {
+// Close releases any resources associated with the instance.
+func (p *proxyExec) Close() {
 	p.cancel()
 	for _, c := range p.closers {
 		c.Close()
 	}
 }
 
-// WaitForServe waits until the proxy ready to serve traffic. Returns any output from the proxy
-// while starting or any errors experienced before the proxy was ready to server.
-func (p *ProxyExec) WaitForServe(ctx context.Context) (output string, err error) {
+// WaitForServe waits until the proxy ready to serve traffic. Returns any output from
+// the proxy while starting or any errors experienced before the proxy was ready to
+// server.
+func (p *proxyExec) WaitForServe(ctx context.Context) (output string, err error) {
 	// Watch for the "Ready for new connections" to indicate the proxy is listening
 	buf, in, errCh := new(bytes.Buffer), bufio.NewReader(p.Out), make(chan error, 1)
 	go func() {
@@ -173,8 +128,16 @@ func (p *ProxyExec) WaitForServe(ctx context.Context) (output string, err error)
 				errCh <- err
 				return
 			}
-			buf.WriteString(s)
-			if strings.Contains(s, "Ready for new connections") {
+			if _, err = buf.WriteString(s); err != nil {
+				errCh <- err
+				return
+			}
+			// Check for an unrecognized flag
+			if strings.Contains(s, "Error") {
+				errCh <- errors.New(s)
+				return
+			}
+			if strings.Contains(s, "ready for new connections") {
 				errCh <- nil
 				return
 			}
@@ -183,10 +146,10 @@ func (p *ProxyExec) WaitForServe(ctx context.Context) (output string, err error)
 	// Wait for either the background thread of the context to complete
 	select {
 	case <-ctx.Done():
-		return buf.String(), fmt.Errorf("context done: %w", ctx.Err())
+		return buf.String(), ctx.Err()
 	case err := <-errCh:
 		if err != nil {
-			return buf.String(), fmt.Errorf("proxy start failed: %w", err)
+			return buf.String(), err
 		}
 	}
 	return buf.String(), nil
