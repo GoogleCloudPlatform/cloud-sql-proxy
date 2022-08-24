@@ -29,7 +29,7 @@ tag_latest() {
     local new_version=$1
     for registry in "gcr.io" "us.gcr.io" "eu.gcr.io" "asia.gcr.io"
     do
-        local base_image="$registry/cloudsql-docker/gce-proxy"
+        local base_image="$registry/cloudsql-docker/cloud-sql-proxy"
         if [ "$dry_run" != true ]
         then
             gcloud container images add-tag --quiet "$base_image:$new_version" "$base_image:latest"
