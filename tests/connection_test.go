@@ -1,10 +1,10 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,28 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// connection_test.go provides some helpers for basic connectivity tests to Cloud SQL instances.
 package tests
 
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"sync"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"testing"
+	"time"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/sqladmin/v1"
 )
 
-// proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
-func proxyConnTest(t *testing.T, connName, driver, dsn string, port int, dir string) {
-	ctx := context.Background()
+const connTestTimeout = time.Minute
 
-	var args []string
-	if dir != "" { // unix port
-		args = append(args, fmt.Sprintf("-dir=%s", dir), fmt.Sprintf("-instances=%s", connName))
-	} else { // tcp socket
-		args = append(args, fmt.Sprintf("-instances=%s=tcp:%d", connName, port))
+// removeAuthEnvVar retrieves an OAuth2 token and a path to a service account key
+// and then unsets GOOGLE_APPLICATION_CREDENTIALS. It returns a cleanup function
+// that restores the original setup.
+func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
+	ts, err := google.DefaultTokenSource(context.Background(), sqladmin.SqlserviceAdminScope)
+	if err != nil {
+		t.Errorf("failed to resolve token source: %v", err)
 	}
+	tok, err := ts.Token()
+	if err != nil {
+		t.Errorf("failed to get token: %v", err)
+	}
+	path, ok := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS")
+	if !ok {
+		t.Fatalf("GOOGLE_APPLICATION_CREDENTIALS was not set in the environment")
+	}
+	if err := os.Unsetenv("GOOGLE_APPLICATION_CREDENTIALS"); err != nil {
+		t.Fatalf("failed to unset GOOGLE_APPLICATION_CREDENTIALS")
+	}
+	return tok, path, func() {
+		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", path)
+	}
+}
 
+// proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
+func proxyConnTest(t *testing.T, args []string, driver, dsn string) {
+	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
+	defer cancel()
 	// Start the proxy
 	p, err := StartProxy(ctx, args...)
 	if err != nil {
@@ -53,72 +77,58 @@ func proxyConnTest(t *testing.T, connName, driver, dsn string, port int, dir str
 	defer db.Close()
 	_, err = db.Exec("SELECT 1;")
 	if err != nil {
-
 		t.Fatalf("unable to exec on db: %s", err)
 	}
 }
 
-func proxyConnLimitTest(t *testing.T, connName, driver, dsn string, port int) {
-	ctx := context.Background()
+// testHealthCheck verifies that when a proxy client serves the given instance,
+// the readiness endpoint serves http.StatusOK.
+func testHealthCheck(t *testing.T, connName string) {
+	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
+	defer cancel()
 
-	maxConn, totConn := 5, 10
-
-	// Start the proxy
-	p, err := StartProxy(ctx, fmt.Sprintf("-instances=%s=tcp:%d", connName, port), fmt.Sprintf("-max_connections=%d", maxConn))
+	args := []string{connName, "--health-check"}
+	// Start the proxy.
+	p, err := StartProxy(ctx, args...)
 	if err != nil {
 		t.Fatalf("unable to start proxy: %v", err)
 	}
 	defer p.Close()
-	output, err := p.WaitForServe(ctx)
+	_, err = p.WaitForServe(ctx)
 	if err != nil {
-		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
+		t.Fatal(err)
 	}
 
-	// Create connection pool
-	var stmt string
-	switch driver {
-	case "mysql":
-		stmt = "SELECT sleep(2);"
-	case "postgres":
-		stmt = "SELECT pg_sleep(2);"
-	case "sqlserver":
-		stmt = "WAITFOR DELAY '00:00:02'"
-	default:
-		t.Fatalf("unsupported driver: no sleep query found")
-	}
-	db, err := sql.Open(driver, dsn)
-	if err != nil {
-		t.Fatalf("unable to connect to db: %s", err)
-	}
-	db.SetMaxIdleConns(0)
-	defer db.Close()
-
-	// Connect with up to totConn and count errors
-	var wg sync.WaitGroup
-	c := make(chan error, totConn)
-	for i := 0; i < totConn; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			_, err := db.ExecContext(ctx, stmt)
+	tryDial := func(t *testing.T) *http.Response {
+		var (
+			err  error
+			resp *http.Response
+		)
+		for i := 0; i < 10; i++ {
+			resp, err = http.Get("http://localhost:9090/readiness")
 			if err != nil {
-				c <- err
+				time.Sleep(100 * time.Millisecond)
 			}
-		}()
-	}
-	wg.Wait()
-	close(c)
-
-	var errs []error
-	for e := range c {
-		errs = append(errs, e)
-	}
-	want, got := totConn-maxConn, len(errs)
-	if want != got {
-		t.Errorf("wrong errCt - want: %d, got %d", want, got)
-		for _, e := range errs {
-			t.Errorf("%s\n", e)
+			if resp != nil {
+				return resp
+			}
 		}
-		t.Fail()
+		t.Fatalf("HTTP GET failed: %v", err)
+		return nil
+	}
+
+	resp := tryDial(t)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("failed to read HTTP response body: %v", err)
+	}
+	defer resp.Body.Close()
+	if string(body) != "ok" {
+		t.Fatalf("response body was not ok, got = %v", string(body))
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
 	}
 }

@@ -1,11 +1,11 @@
-// Copyright 2020 Google LLC
-//
+// Copyright 2021 Google LLC
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
+
+//     https://www.apache.org/licenses/LICENSE-2.0
+
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,13 +17,10 @@ package tests
 
 import (
 	"flag"
-	"io/ioutil"
-	"log"
 	"os"
-	"path"
-	"runtime"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
 	mysql "github.com/go-sql-driver/mysql"
 )
 
@@ -31,12 +28,10 @@ var (
 	mysqlConnName = flag.String("mysql_conn_name", os.Getenv("MYSQL_CONNECTION_NAME"), "Cloud SQL MYSQL instance connection name, in the form of 'project:region:instance'.")
 	mysqlUser     = flag.String("mysql_user", os.Getenv("MYSQL_USER"), "Name of database user.")
 	mysqlPass     = flag.String("mysql_pass", os.Getenv("MYSQL_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	mysqlDb       = flag.String("mysql_db", os.Getenv("MYSQL_DB"), "Name of the database to connect to.")
-
-	mysqlPort = 3306
+	mysqlDB       = flag.String("mysql_db", os.Getenv("MYSQL_DB"), "Name of the database to connect to.")
 )
 
-func requireMysqlVars(t *testing.T) {
+func requireMySQLVars(t *testing.T) {
 	switch "" {
 	case *mysqlConnName:
 		t.Fatal("'mysql_conn_name' not set")
@@ -44,75 +39,91 @@ func requireMysqlVars(t *testing.T) {
 		t.Fatal("'mysql_user' not set")
 	case *mysqlPass:
 		t.Fatal("'mysql_pass' not set")
-	case *mysqlDb:
+	case *mysqlDB:
 		t.Fatal("'mysql_db' not set")
 	}
 }
 
-func TestMysqlTcp(t *testing.T) {
+func TestMySQLTCP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping MySQL integration tests")
 	}
-	requireMysqlVars(t)
+	requireMySQLVars(t)
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
 		Passwd:               *mysqlPass,
-		DBName:               *mysqlDb,
+		DBName:               *mysqlDB,
 		AllowNativePasswords: true,
+		Addr:                 "127.0.0.1:3306",
+		Net:                  "tcp",
 	}
-	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort, "")
+	proxyConnTest(t, []string{*mysqlConnName}, "mysql", cfg.FormatDSN())
 }
 
-func TestMysqlSocket(t *testing.T) {
+func TestMySQLUnix(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping MySQL integration tests")
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipped Unix socket test on Windows")
-	}
-	requireMysqlVars(t)
-
-	dir, err := ioutil.TempDir("", "csql-proxy-tests")
-	if err != nil {
-		log.Fatalf("unable to create tmp dir: %s", err)
-	}
-	defer os.RemoveAll(dir)
+	requireMySQLVars(t)
+	tmpDir, cleanup := createTempDir(t)
+	defer cleanup()
 
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
 		Passwd:               *mysqlPass,
-		Net:                  "unix",
-		Addr:                 path.Join(dir, *mysqlConnName),
-		DBName:               *mysqlDb,
+		DBName:               *mysqlDB,
 		AllowNativePasswords: true,
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		Addr: proxy.UnixAddress(tmpDir, *mysqlConnName),
+		Net:  "unix",
 	}
-	proxyConnTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), 0, dir)
+	proxyConnTest(t,
+		[]string{"--unix-socket", tmpDir, *mysqlConnName}, "mysql", cfg.FormatDSN())
 }
 
-func TestMysqlConnLimit(t *testing.T) {
+func TestMySQLAuthWithToken(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping MySQL integration tests")
 	}
-	requireMysqlVars(t)
+	requireMySQLVars(t)
+	tok, _, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
 		Passwd:               *mysqlPass,
-		DBName:               *mysqlDb,
+		DBName:               *mysqlDB,
 		AllowNativePasswords: true,
+		Addr:                 "127.0.0.1:3306",
+		Net:                  "tcp",
 	}
-	proxyConnLimitTest(t, *mysqlConnName, "mysql", cfg.FormatDSN(), mysqlPort)
+	proxyConnTest(t,
+		[]string{"--token", tok.AccessToken, *mysqlConnName},
+		"mysql", cfg.FormatDSN())
 }
 
-// Test to verify that when a proxy client serves one mysql instance that can be
-// dialed successfully, the health check readiness endpoint serves http.StatusOK.
-func TestMysqlDial(t *testing.T) {
+func TestMySQLAuthWithCredentialsFile(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping MySQL integration tests")
 	}
-	switch "" {
-	case *mysqlConnName:
-		t.Fatal("'mysql_conn_name' not set")
-	}
+	requireMySQLVars(t)
+	_, path, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
 
-	singleInstanceDial(t, *mysqlConnName)
+	cfg := mysql.Config{
+		User:                 *mysqlUser,
+		Passwd:               *mysqlPass,
+		DBName:               *mysqlDB,
+		AllowNativePasswords: true,
+		Addr:                 "127.0.0.1:3306",
+		Net:                  "tcp",
+	}
+	proxyConnTest(t,
+		[]string{"--credentials-file", path, *mysqlConnName},
+		"mysql", cfg.FormatDSN())
+}
+
+func TestMySQLHealthCheck(t *testing.T) {
+	testHealthCheck(t, *mysqlConnName)
 }

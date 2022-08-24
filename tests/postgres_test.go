@@ -1,11 +1,11 @@
-// Copyright 2020 Google LLC
-//
+// Copyright 2021 Google LLC
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
+
+//     https://www.apache.org/licenses/LICENSE-2.0
+
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,31 +16,23 @@
 package tests
 
 import (
-	"context"
-	"database/sql"
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"path"
-	"runtime"
 	"testing"
-	"time"
 
-	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/v2/proxy/dialers/postgres"
-	_ "github.com/lib/pq"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 var (
 	postgresConnName = flag.String("postgres_conn_name", os.Getenv("POSTGRES_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name, in the form of 'project:region:instance'.")
 	postgresUser     = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
 	postgresPass     = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	postgresDb       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
+	postgresDB       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
 
 	postgresIAMUser = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
-
-	postgresPort = 5432
 )
 
 func requirePostgresVars(t *testing.T) {
@@ -51,48 +43,93 @@ func requirePostgresVars(t *testing.T) {
 		t.Fatal("'postgres_user' not set")
 	case *postgresPass:
 		t.Fatal("'postgres_pass' not set")
-	case *postgresDb:
+	case *postgresDB:
 		t.Fatal("'postgres_db' not set")
 	}
 }
 
-func TestPostgresTcp(t *testing.T) {
+func TestPostgresTCP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
-	proxyConnTest(t, *postgresConnName, "postgres", dsn, postgresPort, "")
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t, []string{*postgresConnName}, "pgx", dsn)
 }
 
-func TestPostgresSocket(t *testing.T) {
+func TestPostgresUnix(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipped Unix socket test on Windows")
-	}
 	requirePostgresVars(t)
+	tmpDir, cleanup := createTempDir(t)
+	defer cleanup()
 
-	dir, err := ioutil.TempDir("", "csql-proxy")
+	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		proxy.UnixAddress(tmpDir, *postgresConnName),
+		*postgresUser, *postgresPass, *postgresDB)
+
+	proxyConnTest(t,
+		[]string{"--unix-socket", tmpDir, *postgresConnName}, "pgx", dsn)
+}
+
+func createTempDir(t *testing.T) (string, func()) {
+	testDir, err := ioutil.TempDir("", "*")
 	if err != nil {
-		log.Fatalf("unable to create tmp dir: %s", err)
+		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(dir)
-
-	dsn := fmt.Sprintf("user=%s password=%s database=%s host=%s", *postgresUser, *postgresPass, *postgresDb, path.Join(dir, *postgresConnName))
-	proxyConnTest(t, *postgresConnName, "postgres", dsn, 0, dir)
+	return testDir, func() {
+		if err := os.RemoveAll(testDir); err != nil {
+			t.Logf("failed to cleanup temp dir: %v", err)
+		}
+	}
 }
 
-func TestPostgresConnLimit(t *testing.T) {
+func TestPostgresAuthWithToken(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	tok, _, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t,
+		[]string{"--token", tok.AccessToken, *postgresConnName},
+		"pgx", dsn)
+}
+
+func TestPostgresAuthWithCredentialsFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	_, path, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t,
+		[]string{"--credentials-file", path, *postgresConnName},
+		"pgx", dsn)
+}
+
+func TestAuthWithGcloudAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("user=%s password=%s database=%s sslmode=disable", *postgresUser, *postgresPass, *postgresDb)
-	proxyConnLimitTest(t, *postgresConnName, "postgres", dsn, postgresPort)
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t,
+		[]string{"--gcloud-auth", *postgresConnName},
+		"pgx", dsn)
 }
 
 func TestPostgresIAMDBAuthn(t *testing.T) {
@@ -104,62 +141,18 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 		t.Fatal("'postgres_user_iam' not set")
 	}
 
-	ctx := context.Background()
-
-	// Start the proxy
-	p, err := StartProxy(ctx, fmt.Sprintf("-instances=%s=tcp:%d", *postgresConnName, 5432), "-enable_iam_login")
-	if err != nil {
-		t.Fatalf("unable to start proxy: %v", err)
-	}
-	defer p.Close()
-	output, err := p.WaitForServe(ctx)
-	if err != nil {
-		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
-	}
-
-	dsn := fmt.Sprintf("user=%s database=%s sslmode=disable", *postgresIAMUser, *postgresDb)
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		t.Fatalf("unable to connect to db: %s", err)
-	}
-	defer db.Close()
-	_, err = db.Exec("SELECT 1;")
-	if err != nil {
-
-		t.Fatalf("unable to exec on db: %s", err)
-	}
+	dsn := fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
+		*postgresIAMUser, *postgresDB)
+	// using the global flag
+	proxyConnTest(t,
+		[]string{"--auto-iam-authn", *postgresConnName},
+		"pgx", dsn)
+	// using the instance-level query param
+	proxyConnTest(t,
+		[]string{fmt.Sprintf("%s?auto-iam-authn=true", *postgresConnName)},
+		"pgx", dsn)
 }
 
-func TestPostgresHook(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping Postgres integration tests")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", *postgresConnName, *postgresUser, *postgresPass, *postgresDb)
-	db, err := sql.Open("cloudsqlpostgres", dsn)
-	if err != nil {
-		t.Fatalf("connect failed: %s", err)
-	}
-	defer db.Close()
-	var now time.Time
-	err = db.QueryRowContext(ctx, "SELECT NOW()").Scan(&now)
-	if err != nil {
-		t.Fatalf("query failed: %s", err)
-	}
-}
-
-// Test to verify that when a proxy client serves one postgres instance that can be
-// dialed successfully, the health check readiness endpoint serves http.StatusOK.
-func TestPostgresDial(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping Postgres integration tests")
-	}
-	switch "" {
-	case *postgresConnName:
-		t.Fatal("'postgres_conn_name' not set")
-	}
-
-	singleInstanceDial(t, *postgresConnName)
+func TestPostgresHealthCheck(t *testing.T) {
+	testHealthCheck(t, *postgresConnName)
 }
