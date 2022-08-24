@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/cobra"
 )

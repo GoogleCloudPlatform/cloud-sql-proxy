@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cmd"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
 )
 
 func main() {

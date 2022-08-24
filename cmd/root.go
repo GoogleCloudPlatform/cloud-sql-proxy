@@ -31,10 +31,10 @@ import (
 
 	"contrib.go.opencensus.io/exporter/prometheus"
 	"contrib.go.opencensus.io/exporter/stackdriver"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/healthcheck"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 	"go.opencensus.io/trace"
 )
