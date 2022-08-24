@@ -76,12 +76,12 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | credential_file             | credentials-file      |                                                                                      |
 | dir                         | unix-socket           |                                                                                      |
 | enable_iam_login            | auto-iam-authn        |                                                                                      |
-| fd_rlimit                   | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1258) |
-| fuse                        | 🗓️                    |                                                                                      |
+| fd_rlimit                   | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258) |
+| fuse                        | 🗓️                      |                                                                                    |
 | fuse_tmp                    | 🗓️                    |                                                                                      |
 | health_check_port           | http-port             |                                                                                      |
 | host                        | sqladmin-api-endpoint |                                                                                      |
-| instances_metadata          | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1259) |
+| instances_metadata          | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259) |
 | ip_address_types            | private-ip            | Defaults to public                                                                   |
 | log_debug_stdout            | ❌                    | v2 logs to stdout, errors to stderr by default                                       |
 | max_connections             | max-connections       |                                                                                      |
