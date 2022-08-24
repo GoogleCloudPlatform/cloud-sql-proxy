@@ -43,14 +43,14 @@ gcloud builds submit --async --config .build/alpine.yaml --substitutions _VERSIO
 # Build the binarys and upload to GCS
 gcloud builds submit --config .build/gcs_upload.yaml --substitutions _VERSION=$VERSION
 # cleam up any artifacts.json left by previous builds
-gsutil rm -f gs://cloudsql-proxy/v$VERSION/*.json 2> /dev/null || true
+gsutil rm -f gs://cloud-sql-connectors/cloud-sql-proxy/v$VERSION/*.json 2> /dev/null || true
 
 # Generate sha256 hashes for authentication
 echo -e "Add the following table to the release notes on GitHub: \n\n"
 echo "| filename | sha256 hash |"
 echo "|----------|-------------|"
-for f in $(gsutil ls "gs://cloudsql-proxy/v$VERSION/cloud_sql_proxy*"); do
+for f in $(gsutil ls "gs://cloud-sql-connectors/cloud-sql-proxy/v$VERSION/cloud-sql-proxy*"); do
     file=$(basename $f)
     sha=$(gsutil cat $f | sha256sum --binary | head -c 64)
-    echo "| [$file](https://storage.googleapis.com/cloudsql-proxy/v$VERSION/$file) | $sha |"
+    echo "| [$file](https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v$VERSION/$file) | $sha |"
 done

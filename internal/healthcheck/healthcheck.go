@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 )
 
 // Check provides HTTP handlers for use as healthchecks typically in a

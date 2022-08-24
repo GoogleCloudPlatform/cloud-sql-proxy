@@ -31,10 +31,10 @@ import (
 
 	"contrib.go.opencensus.io/exporter/prometheus"
 	"contrib.go.opencensus.io/exporter/stackdriver"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/healthcheck"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 	"github.com/spf13/cobra"
 	"go.opencensus.io/trace"
 )
@@ -48,7 +48,7 @@ var (
 
 func init() {
 	versionString = strings.TrimSpace(versionString)
-	userAgent = "cloud-sql-auth-proxy/" + versionString
+	userAgent = "cloud-sql-proxy/" + versionString
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -128,7 +128,7 @@ command:
 For example, if your instance connection name is "my-project:us-central1:my-db-server",
 starting the proxy will be:
 
-    ./cloudsql-proxy my-project:us-central1:my-db-server
+    ./cloud-sql-proxy my-project:us-central1:my-db-server
 
 By default, the proxy will determine the database engine and start a listener
 on localhost using the default database engine's port, i.e., MySQL is 3306,
@@ -153,7 +153,7 @@ connection name and query string to prevent conflicts with the shell. For
 example, to override the address and port for one instance but otherwise use
 the default behavior, use:
 
-    ./cloudsql-proxy \
+    ./cloud-sql-proxy \
 	    my-project:us-central1:my-db-server \
 	    'my-project:us-central1:my-other-server?address=0.0.0.0&port=7000'
 
@@ -163,9 +163,9 @@ the default behavior, use:
 // NewCommand returns a Command object representing an invocation of the proxy.
 func NewCommand(opts ...Option) *Command {
 	cmd := &cobra.Command{
-		Use:     "cloudsql-proxy INSTANCE_CONNECTION_NAME...",
+		Use:     "cloud-sql-proxy INSTANCE_CONNECTION_NAME...",
 		Version: versionString,
-		Short:   "cloudsql-proxy authorizes and encrypts connections to Cloud SQL.",
+		Short:   "cloud-sql-proxy authorizes and encrypts connections to Cloud SQL.",
 		Long:    longHelp,
 	}
 
@@ -201,8 +201,8 @@ func NewCommand(opts ...Option) *Command {
 	cmd.RunE = func(*cobra.Command, []string) error { return runSignalWrapper(c) }
 
 	// Override Cobra's default messages.
-	cmd.PersistentFlags().BoolP("help", "h", false, "Display help information for cloudsql-proxy")
-	cmd.PersistentFlags().BoolP("version", "v", false, "Print the cloudsql-proxy version")
+	cmd.PersistentFlags().BoolP("help", "h", false, "Display help information for cloud-sql-proxy")
+	cmd.PersistentFlags().BoolP("version", "v", false, "Print the cloud-sql-proxy version")
 
 	// Global-only flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Token, "token", "t", "",

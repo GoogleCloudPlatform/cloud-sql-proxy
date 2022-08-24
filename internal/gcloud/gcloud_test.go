@@ -17,7 +17,7 @@ package gcloud_test
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/gcloud"
 )
 
 func TestGcloud(t *testing.T) {

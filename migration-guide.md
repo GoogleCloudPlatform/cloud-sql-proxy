@@ -14,52 +14,52 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ```shell
 # v1
-./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5432
+./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5432
 
 # v2
 # Using automatic database port selection (MySQL 3306, Postgres 5432, SQL Server 1433)
-./cloudsql-proxy <INSTANCE_CONNECTION_NAME>
+./cloud-sql-proxy <INSTANCE_CONNECTION_NAME>
 ```
 
 ### Listen on Unix Socket
 
 ```shell
 # v1
-./cloud_sql_proxy -dir /cloudsql -instances=<INSTANCE_CONNECTION_NAME>
+./cloud-sql-proxy -dir /cloudsql -instances=<INSTANCE_CONNECTION_NAME>
 
 # v2
-./cloudsql-proxy --unix-socket /cloudsql <INSTANCE_CONNECTION_NAME>
+./cloud-sql-proxy --unix-socket /cloudsql <INSTANCE_CONNECTION_NAME>
 ```
 
 ### Listen on multiple TCP sockets with incrementing ports
 
 ```shell
 # v1
-./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5000,<INSTANCE_CONNECTION_NAME2>=tcp:5001
+./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5000,<INSTANCE_CONNECTION_NAME2>=tcp:5001
 
 # v2
 # starts listener on port 5000, increments for additional listeners
-./cloudsql-proxy --port 5000 INSTANCE_CONNECTION_NAME INSTANCE_CONNECTION_NAME2
+./cloud-sql-proxy --port 5000 INSTANCE_CONNECTION_NAME INSTANCE_CONNECTION_NAME2
 ```
 
 ### Listen on multiple TCP sockets with non-sequential ports
 
 ```shell
 # v1
-./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:6000,<INSTANCE_CONNECTION_NAME2>=tcp:7000
+./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:6000,<INSTANCE_CONNECTION_NAME2>=tcp:7000
 
 # v2
-./cloudsql-proxy 'INSTANCE_CONNECTION_NAME?port=6000' 'INSTANCE_CONNECTION_NAME2?port=7000'
+./cloud-sql-proxy 'INSTANCE_CONNECTION_NAME?port=6000' 'INSTANCE_CONNECTION_NAME2?port=7000'
 ```
 
 ### Listen on all interfaces
 
 ```shell
 # v1
-./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp0.0.0.0:6000
+./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp0.0.0.0:6000
 
 # v2
-./cloudsql-proxy --address 0.0.0.0 --port 6000 INSTANCE_CONNECTION_NAME
+./cloud-sql-proxy --address 0.0.0.0 --port 6000 INSTANCE_CONNECTION_NAME
 ```
 
 ## Flag Changes
@@ -77,7 +77,7 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | dir                         | unix-socket           |                                                                                      |
 | enable_iam_login            | auto-iam-authn        |                                                                                      |
 | fd_rlimit                   | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258) |
-| fuse                        | 🗓️                    |                                                                                      |
+| fuse                        | 🗓️                    |                                                                                    |
 | fuse_tmp                    | 🗓️                    |                                                                                      |
 | health_check_port           | http-port             |                                                                                      |
 | host                        | sqladmin-api-endpoint |                                                                                      |

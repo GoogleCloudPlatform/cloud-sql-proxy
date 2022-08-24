@@ -15,7 +15,7 @@
 # Use the latest stable golang 1.x to compile to a binary
 FROM --platform=$BUILDPLATFORM golang:1 as build
 
-WORKDIR /go/src/cloudsql-proxy
+WORKDIR /go/src/cloud-sql-proxy
 COPY . .
 
 ARG TARGETOS
@@ -23,11 +23,11 @@ ARG TARGETARCH
 
 RUN go get ./...
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-X main.metadataString=container" -o cloud_sql_proxy
+    go build -ldflags "-X main.metadataString=container"
 
 # Final Stage
 FROM gcr.io/distroless/static:nonroot
-COPY --from=build --chown=nonroot /go/src/cloudsql-proxy/cloud_sql_proxy /cloud_sql_proxy
+COPY --from=build --chown=nonroot /go/src/cloud-sql-proxy/cloud-sql-proxy /cloud-sql-proxy
 # set the uid as an integer for compatibility with runAsNonRoot in Kubernetes
 USER 65532
-ENTRYPOINT ["/cloud_sql_proxy"]
+ENTRYPOINT ["/cloud-sql-proxy"]

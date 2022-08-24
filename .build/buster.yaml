@@ -39,18 +39,18 @@ steps:
     - '--bootstrap'
   id: 'show-target-build-platforms'
 - name: 'gcr.io/cloud-builders/docker'
-  args: 
+  args:
     - 'buildx'
     - 'build'
     - '--platform'
     - $_DOCKER_BUILDX_PLATFORMS
-    - '--tag=gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-buster'
-    - '--tag=us.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-buster'
-    - '--tag=eu.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-buster'
-    - '--tag=asia.gcr.io/$PROJECT_ID/gce-proxy:${_VERSION}-buster'
+    - '--tag=gcr.io/$PROJECT_ID/cloud-sql-proxy:${_VERSION}'
+    - '--tag=us.gcr.io/$PROJECT_ID/cloud-sql-proxy:${_VERSION}'
+    - '--tag=eu.gcr.io/$PROJECT_ID/cloud-sql-proxy:${_VERSION}'
+    - '--tag=asia.gcr.io/$PROJECT_ID/cloud-sql-proxy:${_VERSION}'
     - '-f=Dockerfile.buster'
     - '--push'
-    - '.' 
+    - '.'
   id: 'build-multi-architecture-container-image'
 options:
   env:

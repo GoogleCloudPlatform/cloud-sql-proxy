@@ -26,8 +26,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/gcloud"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/gcloud"
 	"golang.org/x/oauth2"
 )
 
