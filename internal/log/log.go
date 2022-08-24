@@ -19,7 +19,7 @@ import (
 	llog "log"
 	"os"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cloudsql"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
