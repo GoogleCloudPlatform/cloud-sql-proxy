@@ -77,7 +77,7 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | dir                         | unix-socket           |                                                                                      |
 | enable_iam_login            | auto-iam-authn        |                                                                                      |
 | fd_rlimit                   | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258) |
-| fuse                        | 🗓️                      |                                                                                    |
+| fuse                        | 🗓️                    |                                                                                    |
 | fuse_tmp                    | 🗓️                    |                                                                                      |
 | health_check_port           | http-port             |                                                                                      |
 | host                        | sqladmin-api-endpoint |                                                                                      |

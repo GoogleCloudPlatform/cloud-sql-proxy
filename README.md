@@ -40,7 +40,7 @@ instance, or by configuring Public IP.
 [go connector]: https://github.com/GoogleCloudPlatform/cloud-sql-go-connector
 [java connector]: https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory
 [python connector]: https://github.com/GoogleCloudPlatform/cloud-sql-python-connector
-[v1 readme]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/blob/5f5b09b62eb6dfcaa58ce399d0131c1544bf813f/README.md
+[v1 readme]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/5f5b09b62eb6dfcaa58ce399d0131c1544bf813f/README.md
 
 ## Installation
 
@@ -538,23 +538,23 @@ By participating in this project you agree to abide by its terms. See
 [Contributor Code of Conduct][code-of-conduct] for more information.
 
 [about-proxy]: https://cloud.google.com/sql/docs/mysql/sql-proxy
-[ci-badge]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/actions/workflows/tests.yaml/badge.svg?event=push
-[ci-build]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/actions/workflows/tests.yaml?query=event%3Apush+branch%3Amain
+[ci-badge]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/actions/workflows/tests.yaml/badge.svg?event=push
+[ci-build]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/actions/workflows/tests.yaml?query=event%3Apush+branch%3Amain
 [cloud-sql]: https://cloud.google.com/sql
 [code-samples]: https://cloud.google.com/sql/docs/mysql/samples
 [code-of-conduct]: CONTRIBUTING.md#contributor-code-of-conduct
 [connect-to-k8s]: https://cloud.google.com/sql/docs/mysql/connect-kubernetes-engine
 [connection-overview]: https://cloud.google.com/sql/docs/mysql/connect-overview
 [contributing]: CONTRIBUTING.md
-[health-check-example]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/tree/main/examples/k8s-health-check#cloud-sql-proxy-health-checks
+[health-check-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/examples/k8s-health-check#cloud-sql-proxy-health-checks
 [iam-auth]: https://cloud.google.com/sql/docs/postgres/authentication#automatic
-[pkg-badge]: https://pkg.go.dev/badge/github.com/GoogleCloudPlatform/cloud-sql-proxy.svg
-[pkg-docs]: https://pkg.go.dev/github.com/GoogleCloudPlatform/cloud-sql-proxy
+[pkg-badge]: https://pkg.go.dev/badge/github.com/GoogleCloudPlatform/cloudsql-proxy.svg
+[pkg-docs]: https://pkg.go.dev/github.com/GoogleCloudPlatform/cloudsql-proxy
 [private-ip]: https://cloud.google.com/sql/docs/mysql/private-ip#requirements_for_private_ip
 [proxy-page]: https://cloud.google.com/sql/docs/mysql/sql-proxy
 [quickstarts]: https://cloud.google.com/sql/docs/mysql/quickstarts
-[releases]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/releases
+[releases]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/releases
 [roles-and-permissions]: https://cloud.google.com/sql/docs/mysql/roles-and-permissions
 [service-account]: https://cloud.google.com/iam/docs/service-accounts
-[sidecar-example]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/tree/master/examples/k8s-sidecar#run-the-cloud-sql-proxy-as-a-sidecar
-[service-example]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/tree/main/examples/k8s-service
+[sidecar-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/master/examples/k8s-sidecar#run-the-cloud-sql-proxy-as-a-sidecar
+[service-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/examples/k8s-service
