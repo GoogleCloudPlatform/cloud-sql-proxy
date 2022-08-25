@@ -84,6 +84,7 @@ spec:
       - name: cloud-sql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0.preview.0  # make sure to use the latest version
         args:
-          - "<INSTANCE_CONNECTION_NAME>?port=5431"
+          - "--port=5431"
+          - "<INSTANCE_CONNECTION_NAME>"
         securityContext:
           runAsNonRoot: true
