@@ -59,6 +59,7 @@ spec:
           - "--structured-logs"
 
           # This flag specifies where the service account key can be found
+          # Remove this argument if you are using workload identity
           - "--credentials-file=/secrets/service_account.json"
 
           # Replace DB_PORT with the port the proxy should listen on
