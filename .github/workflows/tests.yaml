@@ -77,6 +77,11 @@ jobs:
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v0.6.0'
 
+      - name: "debug"
+        run: |
+          echo "is there a client email?"
+          grep client_email $GOOGLE_APPLICATION_CREDENTIALS
+
       - id: 'secrets'
         name: Get secrets
         uses: 'google-github-actions/get-secretmanager-secrets@v0.5.0'
@@ -123,7 +128,7 @@ jobs:
           go install github.com/jstemmer/go-junit-report/v2@latest
           go test -race -v ./... | tee test_results.txt
           go-junit-report -in test_results.txt -set-exit-code -out integration_sponge_log.xml
-      
+
       - name: FlakyBot (Linux)
         # only run flakybot on periodic (schedule) and continuous (push) events
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Linux' && always() }}
@@ -131,7 +136,7 @@ jobs:
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
           chmod +x ./flakybot
           ./flakybot --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
-        
+
       - name: FlakyBot (Windows)
         # only run flakybot on periodic (schedule) and continuous (push) events
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Windows' && always() }}
