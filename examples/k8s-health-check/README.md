@@ -58,6 +58,7 @@ Kubernetes supports three types of health checks.
           - "--http-port=8090"
 
           # Replace DB_PORT with the port the proxy should listen on
-          - "<INSTANCE_CONNECTION_NAME>?port=<DB_PORT>"
+          - "--port=<DB_PORT>"
+          - "<INSTANCE_CONNECTION_NAME>"
     ```
 
