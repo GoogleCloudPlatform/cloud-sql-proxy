@@ -52,11 +52,11 @@ following instructions for your OS and CPU architecture.
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
 
-wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.amd64" -O cloudsql-proxy
+wget "$URL/cloud-sql-proxy.linux.amd64" -O cloud-sql-proxy
 
-chmod +x cloud-sql-connectors/cloudsql-proxy
+chmod +x cloud-sql-proxy
 ```
 
 </details>
@@ -66,11 +66,11 @@ chmod +x cloud-sql-connectors/cloudsql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
 
-wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.386" -O cloudsql-proxy
+wget "$URL/cloud-sql-proxy.linux.386" -O cloud-sql-proxy
 
-chmod +x cloud-sql-connectors/cloudsql-proxy
+chmod +x cloud-sql-proxy
 ```
 
 </details>
@@ -80,11 +80,11 @@ chmod +x cloud-sql-connectors/cloudsql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
 
-wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.arm64" -O cloudsql-proxy
+wget "$URL/cloud-sql-proxy.linux.arm64" -O cloud-sql-proxy
 
-chmod +x cloud-sql-connectors/cloudsql-proxy
+chmod +x cloud-sql-proxy
 ```
 
 </details>
@@ -94,11 +94,11 @@ chmod +x cloud-sql-connectors/cloudsql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
 
-wget "$URL/cloud-sql-connectors/cloudsql-proxy.linux.arm" -O cloudsql-proxy
+wget "$URL/cloud-sql-proxy.linux.arm" -O cloud-sql-proxy
 
-chmod +x cloud-sql-connectors/cloudsql-proxy
+chmod +x cloud-sql-proxy
 ```
 
 </details>
@@ -108,11 +108,11 @@ chmod +x cloud-sql-connectors/cloudsql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
 
-wget "$URL/cloud-sql-connectors/cloudsql-proxy.darwin.amd64" -O cloudsql-proxy
+wget "$URL/cloud-sql-proxy.darwin.amd64" -O cloud-sql-proxy
 
-chmod +x cloud-sql-connectors/cloudsql-proxy
+chmod +x cloud-sql-proxy
 ```
 
 </details>
@@ -122,11 +122,11 @@ chmod +x cloud-sql-connectors/cloudsql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
 
-wget "$URL/cloud-sql-connectors/cloudsql-proxy.darwin.arm64" -O cloudsql-proxy
+wget "$URL/cloud-sql-proxy.darwin.arm64" -O cloud-sql-proxy
 
-chmod +x cloud-sql-connectors/cloudsql-proxy
+chmod +x cloud-sql-proxy
 ```
 
 </details>
@@ -136,7 +136,7 @@ chmod +x cloud-sql-connectors/cloudsql-proxy
 
 ```sh
 # see Releases for other versions
-wget https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0/cloudsql-proxy-x64.exe -O cloudsql-proxy.exe
+wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0/cloud-sql-proxy-x64.exe -O cloud-sql-proxy.exe
 ```
 
 </details>
@@ -146,7 +146,7 @@ wget https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-p
 
 ```sh
 # see Releases for other versions
-wget https://storage.googleapis.com/cloud-sql-connectors/cloudsql-proxy/v2.0.0-preview.0/cloudsql-proxy-x86.exe -O cloudsql-proxy.exe
+wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0/cloud-sql-proxy-x86.exe -O cloud-sql-proxy.exe
 ```
 
 </details>
@@ -158,10 +158,10 @@ To install from source, ensure you have the latest version of [Go installed](htt
 Then, simply run:
 
 ```shell
-go install github.com/GoogleCloudPlatform/cloudsql-proxy@latest
+go install github.com/GoogleCloudPlatform/cloud-sql-proxy@latest
 ```
 
-The `cloudsql-proxy` will be placed in `$GOPATH/bin` or `$HOME/go/bin`.
+The `cloud-sql-proxy` will be placed in `$GOPATH/bin` or `$HOME/go/bin`.
 
 ## Usage
 
@@ -185,7 +185,7 @@ To start the proxy, use:
 #   MySQL      localhost:3306
 #   Postgres   localhost:5432
 #   SQL Server localhost:1433
-./cloudsql-proxy <INSTANCE_CONNECTION_NAME>
+./cloud-sql-proxy <INSTANCE_CONNECTION_NAME>
 ```
 
 The proxy will automatically detect the default database engine's port and start
@@ -195,7 +195,7 @@ reduce startup time.
 The proxy supports multiple instances:
 
 ```shell
-./cloudsql-proxy <INSTANCE_CONNECTION_NAME_1> <INSTANCE_CONNECTION_NAME_2>
+./cloud-sql-proxy <INSTANCE_CONNECTION_NAME_1> <INSTANCE_CONNECTION_NAME_2>
 ```
 
 ### Configuring Port
@@ -204,7 +204,7 @@ To override the port, use the `--port` flag:
 
 ```shell
 # Starts a listener on localhost:6000
-./cloudsql-proxy --port 6000 <INSTANCE_CONNECTION_NAME>
+./cloud-sql-proxy --port 6000 <INSTANCE_CONNECTION_NAME>
 ```
 
 When specifying multiple instances, the port will increment from the flag value:
@@ -212,7 +212,7 @@ When specifying multiple instances, the port will increment from the flag value:
 ```shell
 # Starts a listener on localhost:6000 for INSTANCE_CONNECTION_1
 # and localhost:6001 for INSTANCE_CONNECTION_NAME_2.
-./cloudsql-proxy --port 6000 <INSTANCE_CONNECTION_NAME_1> <INSTANCE_CONNECTION_NAME_2>
+./cloud-sql-proxy --port 6000 <INSTANCE_CONNECTION_NAME_1> <INSTANCE_CONNECTION_NAME_2>
 ```
 
 To configure ports on a per instance basis, use the `port` query param:
@@ -220,7 +220,7 @@ To configure ports on a per instance basis, use the `port` query param:
 ```shell
 # Starts a listener on localhost:5000 for the instance called "postgres"
 # and starts a listener on localhost:6000 for the instance called "mysql"
-./cloudsql-proxy \
+./cloud-sql-proxy \
     'myproject:my-region:postgres?port=5000' \
     'myproject:my-region:mysql?port=6000'
 ```
@@ -231,7 +231,7 @@ To overide the choice of `localhost`, use the `--address` flag:
 
 ```shell
 # Starts a listener on all interfaces at port 5432
-./cloudsql-proxy --address 0.0.0.0 <INSTANCE_CONNECTION_NAME>
+./cloud-sql-proxy --address 0.0.0.0 <INSTANCE_CONNECTION_NAME>
 ```
 
 To override address on a per-instance basis, use the `address` query param:
@@ -239,7 +239,7 @@ To override address on a per-instance basis, use the `address` query param:
 ```shell
 # Starts a listener on 0.0.0.0 for "postgres" at port 5432
 # and a listener on 10.0.0.1:3306 for "mysql"
-./cloudsql-proxy \
+./cloud-sql-proxy \
     'myproject:my-region:postgres?address=0.0.0.0' \
     'myproject:my-region:mysql?address=10.0.0.1"
 ```
@@ -252,7 +252,7 @@ private IP, use:
 ```shell
 # Starts a listener connected to the private IP of the Cloud SQL instance.
 # Note: there must be a network path present for this to work.
-./cloudsql-proxy --private-ip <INSTANCE_CONNECTION_NAME>
+./cloud-sql-proxy --private-ip <INSTANCE_CONNECTION_NAME>
 ```
 
 NOTE: The proxy does not configure the network. You MUST ensure the proxy can
@@ -268,7 +268,7 @@ To start the proxy with Unix sockets, run:
 # Uses the directory "/mycooldir" to create a Unix socket
 # For example, the following directory would be created:
 #   /mycooldir/myproject:myregion:myinstance
-./cloudsql-proxy --unix-socket /mycooldir <INSTANCE_CONNECTION_NAME>
+./cloud-sql-proxy --unix-socket /mycooldir <INSTANCE_CONNECTION_NAME>
 ```
 
 To configure a Unix domain socket on a per-instance basis, use the `unix-socket`
@@ -278,7 +278,7 @@ query param:
 # Starts a TCP listener on localhost:5432 for "postgres"
 # and creates a Unix domain socket for "mysql":
 #     /cloudsql/myproject:my-region:mysql
-./cloudsql-proxy \
+./cloud-sql-proxy \
     myproject:my-region:postgres \
     'myproject:my-region:mysql?unix-socket=/cloudsql'
 ```
@@ -289,7 +289,7 @@ replaces colons with periods:
 ```shell
 # Starts a Unix domain socket at the path:
 #    \cloudsql\myproject.my-region.msql
-./cloudsql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
+./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 ```
 
 ### Additional flags
@@ -297,7 +297,7 @@ replaces colons with periods:
 To see a full list of flags, use:
 
 ```shell
-./cloudsql-proxy -h
+./cloud-sql-proxy -h
 ```
 
 ## Credentials
@@ -371,7 +371,7 @@ the Cloud SQL Auth Proxy would look like:
 ```
 ALL_PROXY=socks5://localhost:8000 \
 HTTPS_PROXY=socks5://localhost:8000 \
-    cloudsql-proxy <INSTANCE_CONNECTION_NAME>
+    cloud-sql-proxy <INSTANCE_CONNECTION_NAME>
 ```
 
 The `ALL_PROXY` environment variable specifies the proxy for all TCP

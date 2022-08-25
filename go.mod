@@ -1,4 +1,4 @@
-module github.com/GoogleCloudPlatform/cloudsql-proxy/v2
+module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 
 go 1.18
 

@@ -29,8 +29,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/cmd"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
 )
 
 // proxyExec represents an execution of the Cloud SQL proxy.
