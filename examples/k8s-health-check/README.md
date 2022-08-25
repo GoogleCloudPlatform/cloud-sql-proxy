@@ -53,6 +53,10 @@ Kubernetes supports three types of health checks.
           # Enable structured logging with LogEntry format:
           - "--structured-logs"
 
+          # This flag specifies where the service account key can be found
+          # Remove this argument if you are using workload identity
+          - "--credentials-file=/secrets/service_account.json"
+
           # Turn on health check endpoints on port 8090:
           - "--health-check"
           - "--http-port=8090"
