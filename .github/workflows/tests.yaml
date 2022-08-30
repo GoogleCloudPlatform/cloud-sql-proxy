@@ -16,8 +16,7 @@ name: tests
 on:
   push:
     branches:
-    - 'main'
-    - 'v2'
+    - 'v1'
   pull_request:
   pull_request_target:
     types: [labeled]
@@ -26,7 +25,7 @@ on:
 
 jobs:
   unit:
-   # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)  
+   # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
     if: "${{ (github.event.action != 'labeled' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) || github.event.label.name == 'tests: run' }}"
     name: unit tests
     runs-on: "ubuntu-latest"
@@ -65,7 +64,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-          
+
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0.8.0'
@@ -88,7 +87,7 @@ jobs:
           ./flakybot --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
 
   integration:
-   # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)  
+   # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
     if: "${{ (github.event.action != 'labeled' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) || github.event.label.name == 'tests: run' }}"
     name: integration tests
     runs-on: ${{ matrix.os }}
@@ -127,7 +126,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.18
-          
+
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0.8.0'
@@ -154,7 +153,7 @@ jobs:
             SQLSERVER_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_USER
             SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
-      
+
       - name: Enable fuse config (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -181,7 +180,7 @@ jobs:
           go install github.com/jstemmer/go-junit-report/v2@latest
           go test -race -v ./... | tee test_results.txt
           go-junit-report -in test_results.txt -set-exit-code -out integration_sponge_log.xml
-      
+
       - name: FlakyBot (Linux)
         # only run flakybot on periodic (schedule) and continuous (push) events
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Linux' && always() }}
@@ -189,7 +188,7 @@ jobs:
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
           chmod +x ./flakybot
           ./flakybot --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
-        
+
       - name: FlakyBot (Windows)
         # only run flakybot on periodic (schedule) and continuous (push) events
         if: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && runner.os == 'Windows' && always() }}
