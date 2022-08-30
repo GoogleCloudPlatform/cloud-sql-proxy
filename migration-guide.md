@@ -3,7 +3,7 @@
 The Cloud SQL Auth proxy v2 CLI interface maintains a close match to the v1
 interface. Migrating to v2 will require minimal changes. Below are a number
 of examples of v1 vs v2 invocations covering the most common uses. See
-[Flag Changes][#flag_changes] for details.
+[Flag Changes][#flag-changes] for details.
 
 All the examples below use `<INSTANCE_CONNECTION_NAME>` as a placeholder for
 your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
@@ -56,7 +56,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ```shell
 # v1
-./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp0.0.0.0:6000
+./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:0.0.0.0:6000
 
 # v2
 ./cloud-sql-proxy --address 0.0.0.0 --port 6000 INSTANCE_CONNECTION_NAME
