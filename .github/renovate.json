@@ -1,22 +1,27 @@
 {
+  "baseBranches": [
+    "main",
+    "v1"
+  ],
   "extends": [
     "config:base",
     ":semanticCommitTypeAll(chore)"
   ],
-  "ignorePresets": [":semanticPrefixFixDepsChoreOthers"],
+  "ignorePresets": [
+      ":semanticPrefixFixDepsChoreOthers"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["golang.org/x/net"],
+      "enabled": false,
+      "matchBaseBranches": ["v1"]
+    }
+  ],
   "prConcurrentLimit": 0,
   "rebaseStalePrs": true,
   "dependencyDashboard": true,
   "semanticCommits": true,
   "postUpdateOptions": [
     "gomodTidy"
-  ],
-  "ignoreDeps": [
-      "golang.org/x/net"
-  ],
-  "force": {
-    "constraints": {
-      "go": "1.16"
-    }
-  }
+  ]
 }
