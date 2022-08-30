@@ -56,7 +56,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ```shell
 # v1
-./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp0.0.0.0:6000
+./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:0.0.0.0:6000
 
 # v2
 ./cloud-sql-proxy --address 0.0.0.0 --port 6000 INSTANCE_CONNECTION_NAME
