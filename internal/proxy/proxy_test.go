@@ -307,19 +307,22 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	}
 	defer conn2.Close()
 
-	wantEOF := func(t *testing.T, c net.Conn) {
-		var got error
-		for i := 0; i < 10; i++ {
-			_, got = c.Read(make([]byte, 1))
-			if got == io.EOF {
+	wantEOF := func(t *testing.T, conns ...net.Conn) {
+		for _, c := range conns {
+			// Set a read deadline so any open connections will error on an i/o
+			// timeout instead of hanging indefinitely.
+			c.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+			_, err := c.Read(make([]byte, 1))
+			if err == io.EOF {
 				return
 			}
-			time.Sleep(time.Second)
 		}
-		t.Fatalf("conn.Read should return io.EOF, got = %v", got)
+		t.Fatal("neither connection returned an io.EOF")
 	}
 
-	wantEOF(t, conn2)
+	// either conn1 or conn2 should be closed
+	// it doesn't matter which is closed
+	wantEOF(t, conn1, conn2)
 
 	want := 1
 	if got := d.dialAttempts(); got != want {
