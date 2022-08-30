@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: v2 periodic
+name: v1 periodic
 on:
   schedule:
     - cron:  '0 2 * * *'
@@ -32,13 +32,13 @@ jobs:
       - name: Checkout code
         uses: 'actions/checkout@v3'
         with:
-          ref: v2
+          ref: v1
 
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.18
-          
+
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0.8.0'
@@ -68,7 +68,7 @@ jobs:
             SQLSERVER_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_USER
             SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
-      
+
       - name: Enable fuse config (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -96,7 +96,7 @@ jobs:
           go install github.com/jstemmer/go-junit-report/v2@latest
           go test -race -v ./... | tee test_results.txt
           go-junit-report -in test_results.txt -set-exit-code -out v2periodic_sponge_log.xml
-      
+
       - name: FlakyBot (Linux)
         # only run flakybot on periodic (schedule) event
         if: ${{ github.event_name == 'schedule' && runner.os == 'Linux' && always() }}
@@ -104,7 +104,7 @@ jobs:
           curl https://github.com/googleapis/repo-automation-bots/releases/download/flakybot-1.1.0/flakybot -o flakybot -s -L
           chmod +x ./flakybot
           ./flakybot --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
-        
+
       - name: FlakyBot (Windows)
         # only run flakybot on periodic (schedule) event
         if: ${{ github.event_name == 'schedule' && runner.os == 'Windows' && always() }}
