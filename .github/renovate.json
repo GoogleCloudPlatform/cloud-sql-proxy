@@ -12,8 +12,7 @@
   ],
   "packageRules": [
     {
-      "matchPackageNames": ["golang.org/x/net"],
-      "enabled": false,
+      "excludedPackageNames": ["golang.org/x/net"],
       "matchBaseBranches": ["v1"]
     }
   ],
