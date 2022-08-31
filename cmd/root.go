@@ -78,8 +78,9 @@ type Command struct {
 	telemetryPrefix            string
 	prometheus                 bool
 	prometheusNamespace        string
+	prometheusAddress          string
+	prometheusPort             string
 	healthCheck                bool
-	httpAddress                string
 	httpPort                   string
 }
 
@@ -229,13 +230,15 @@ func NewCommand(opts ...Option) *Command {
 	cmd.PersistentFlags().StringVar(&c.telemetryPrefix, "telemetry-prefix", "",
 		"Prefix for Cloud Monitoring metrics.")
 	cmd.PersistentFlags().BoolVar(&c.prometheus, "prometheus", false,
-		"Enable Prometheus HTTP endpoint /metrics on localhost")
+		"Enable Prometheus HTTP endpoint /metrics")
 	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
 		"Use the provided Prometheus namespace for metrics")
-	cmd.PersistentFlags().StringVar(&c.httpAddress, "http-address", "localhost",
-		"Address for Prometheus and health check server")
-	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
-		"Port for Prometheus and health check server")
+	cmd.PersistentFlags().StringVar(&c.prometheusAddress, "prometheus-address", "localhost",
+		"Address for Prometheus server")
+	cmd.PersistentFlags().StringVar(&c.prometheusPort, "prometheus-port", "9090",
+		"Port for the Prometheus server")
+	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "8090",
+		"Port for the health check server")
 	cmd.PersistentFlags().BoolVar(&c.healthCheck, "health-check", false,
 		"Enables health check endpoints /startup, /liveness, and /readiness on localhost.")
 	cmd.PersistentFlags().StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
@@ -457,22 +460,26 @@ func runSignalWrapper(cmd *Command) error {
 		}()
 	}
 
-	var (
-		needsHTTPServer bool
-		mux             = http.NewServeMux()
-	)
+	// shutdownCh wil produce any available error from any goroutine started
+	// below.
+	shutdownCh := make(chan error)
+
 	if cmd.prometheus {
-		needsHTTPServer = true
 		e, err := prometheus.NewExporter(prometheus.Options{
 			Namespace: cmd.prometheusNamespace,
 		})
 		if err != nil {
 			return err
 		}
+		mux := http.NewServeMux()
 		mux.Handle("/metrics", e)
+		srv := &http.Server{
+			Addr:    fmt.Sprintf("%s:%s", cmd.prometheusAddress, cmd.prometheusPort),
+			Handler: mux,
+		}
+		startHTTPServer(ctx, cmd.logger, srv, shutdownCh)
 	}
 
-	shutdownCh := make(chan error)
 	// watch for sigterm / sigint signals
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
@@ -520,42 +527,17 @@ func runSignalWrapper(cmd *Command) error {
 
 	notify := func() {}
 	if cmd.healthCheck {
-		needsHTTPServer = true
 		hc := healthcheck.NewCheck(p, cmd.logger)
+		mux := http.NewServeMux()
 		mux.HandleFunc("/startup", hc.HandleStartup)
 		mux.HandleFunc("/readiness", hc.HandleReadiness)
 		mux.HandleFunc("/liveness", hc.HandleLiveness)
 		notify = hc.NotifyStarted
-	}
-
-	// Start the HTTP server if anything requiring HTTP is specified.
-	if needsHTTPServer {
-		server := &http.Server{
-			Addr:    fmt.Sprintf("%s:%s", cmd.httpAddress, cmd.httpPort),
+		srv := &http.Server{
+			Addr:    fmt.Sprintf("localhost:%s", cmd.httpPort),
 			Handler: mux,
 		}
-		// Start the HTTP server.
-		go func() {
-			err := server.ListenAndServe()
-			if err == http.ErrServerClosed {
-				return
-			}
-			if err != nil {
-				shutdownCh <- fmt.Errorf("failed to start HTTP server: %v", err)
-			}
-		}()
-		// Handle shutdown of the HTTP server gracefully.
-		go func() {
-			select {
-			case <-ctx.Done():
-				// Give the HTTP server a second to shutdown cleanly.
-				ctx2, cancel := context.WithTimeout(context.Background(), time.Second)
-				defer cancel()
-				if err := server.Shutdown(ctx2); err != nil {
-					cmd.logger.Errorf("failed to shutdown Prometheus HTTP server: %v\n", err)
-				}
-			}
-		}()
+		startHTTPServer(ctx, cmd.logger, srv, shutdownCh)
 	}
 
 	go func() { shutdownCh <- p.Serve(ctx, notify) }()
@@ -570,4 +552,27 @@ func runSignalWrapper(cmd *Command) error {
 		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 	}
 	return err
+}
+
+func startHTTPServer(ctx context.Context, logger cloudsql.Logger, srv *http.Server, shutdownCh chan<- error) {
+	// Start the HTTP server.
+	go func() {
+		err := srv.ListenAndServe()
+		if err == http.ErrServerClosed {
+			return
+		}
+		if err != nil {
+			shutdownCh <- fmt.Errorf("failed to start HTTP server: %v", err)
+		}
+	}()
+	// Handle shutdown of the HTTP server gracefully.
+	go func() {
+		<-ctx.Done()
+		// Give the HTTP server a second to shutdown cleanly.
+		ctx2, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		if err := srv.Shutdown(ctx2); err != nil {
+			logger.Errorf("failed to shutdown Prometheus HTTP server: %v\n", err)
+		}
+	}()
 }
