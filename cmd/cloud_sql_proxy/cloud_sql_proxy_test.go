@@ -23,7 +23,7 @@ import (
 func TestVersionStripsNewline(t *testing.T) {
 	v, err := os.ReadFile("version.txt")
 	if err != nil {
-		t.Fatalf("failed to read verion.txt: %v", err)
+		t.Fatalf("failed to read version.txt: %v", err)
 	}
 	want := strings.TrimSpace(string(v))
 

@@ -239,10 +239,11 @@ Connection:
      the Proxy.
 
   -projects
-    To direct the proxy to allow connections to all instances in specific
-    projects, set the projects parameter:
+    To direct the proxy to allow connections to all (or region) instances in
+    specific projects, Set the projects parameter:
 
         -projects=my-project
+        -projects=my-project:my-region
 
   -fuse
     If your local environment has FUSE installed, you can specify the -fuse
@@ -274,6 +275,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
+//
 //go:embed version.txt
 var versionString string
 
@@ -432,6 +434,16 @@ func stringList(s string) []string {
 	return spl
 }
 
+func projectRegion(region string) (string, string) {
+	projreg := strings.SplitN(region, ":", 2)
+	// Incase no separator was present
+	if len(projreg) == 1 {
+		return projreg[0], ""
+	}
+
+	return projreg[0], projreg[1]
+}
+
 func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]string, error) {
 	if len(projects) == 0 {
 		// No projects requested.
@@ -450,13 +462,21 @@ func listInstances(ctx context.Context, cl *http.Client, projects []string) ([]s
 	var wg sync.WaitGroup
 	wg.Add(len(projects))
 	for _, proj := range projects {
-		proj := proj
+		proj, region := projectRegion(proj)
 		go func() {
 			err := sql.Instances.List(proj).Pages(ctx, func(r *sqladmin.InstancesListResponse) error {
 				for _, in := range r.Items {
 					// The Proxy is only support on Second Gen
 					if in.BackendType == "SECOND_GEN" {
-						ch <- in.ConnectionName
+						if len(region) > 0 {
+							if in.Region == region {
+								ch <- in.ConnectionName
+							} else {
+								logging.Infof("Skipping %v as not in region %v", in.ConnectionName, region)
+							}
+						} else {
+							ch <- in.ConnectionName
+						}
 					}
 				}
 				return nil
