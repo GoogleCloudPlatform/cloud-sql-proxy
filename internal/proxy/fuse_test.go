@@ -25,8 +25,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/log"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/v2/internal/proxy"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 )
 
 func randTmpDir(t interface {
