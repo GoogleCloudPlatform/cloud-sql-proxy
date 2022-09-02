@@ -9,7 +9,7 @@ require (
 	github.com/denisenkom/go-mssqldb v0.12.2
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.5.8
-	github.com/jackc/pgx/v4 v4.17.0
+	github.com/jackc/pgx/v4 v4.17.1
 	github.com/spf13/cobra v1.2.1
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.23.0
