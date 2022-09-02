@@ -3,7 +3,7 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 go 1.18
 
 require (
-	cloud.google.com/go/cloudsqlconn v0.4.1-0.20220701163030-bda891776d5d
+	cloud.google.com/go/cloudsqlconn v0.5.1
 	contrib.go.opencensus.io/exporter/prometheus v0.4.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.13
 	github.com/denisenkom/go-mssqldb v0.12.2
