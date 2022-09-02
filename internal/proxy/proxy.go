@@ -304,20 +304,20 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 		wg    sync.WaitGroup
 		errCh = make(chan error, len(c.mnts))
 	)
-	for _, m := range c.mnts {
+	for _, mnt := range c.mnts {
 		wg.Add(1)
-		go func(inst string) {
+		go func(m *socketMount) {
 			defer wg.Done()
-			conn, err := c.dialer.Dial(ctx, inst)
+			conn, err := c.dialer.Dial(ctx, m.inst, m.dialOpts...)
 			if err != nil {
 				errCh <- err
 				return
 			}
 			cErr := conn.Close()
 			if err != nil {
-				errCh <- fmt.Errorf("%v: %v", inst, cErr)
+				errCh <- fmt.Errorf("%v: %v", m.inst, cErr)
 			}
-		}(m.inst)
+		}(mnt)
 	}
 	wg.Wait()
 
