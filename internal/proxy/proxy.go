@@ -23,11 +23,14 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/gcloud"
+	"github.com/hanwen/go-fuse/v2/fs"
+	"github.com/hanwen/go-fuse/v2/fuse"
 	"golang.org/x/oauth2"
 )
 
@@ -82,6 +85,15 @@ type Config struct {
 	// UnixSocket is the directory where Unix sockets will be created,
 	// connected to any Instances. If set, takes precedence over Addr and Port.
 	UnixSocket string
+
+	// FUSEDir enables a file system in user space at the provided path that
+	// connects to the requested instance only when a client requests it.
+	FUSEDir string
+
+	// FUSETempDir sets the temporary directory where the FUSE mount will place
+	// Unix domain sockets connected to Cloud SQL instances. The temp directory
+	// is not accessed directly.
+	FUSETempDir string
 
 	// IAMAuthN enables automatic IAM DB Authentication for all instances.
 	// Postgres-only.
@@ -243,9 +255,18 @@ type Client struct {
 	waitOnClose time.Duration
 
 	logger cloudsql.Logger
+
+	// fuseDir specifies the directory where a FUSE server is mounted. The value
+	// is empty if FUSE is not enabled.
+	fuseDir    string
+	fuseServer *fuse.Server
+
+	// Inode adds support for FUSE operations.
+	fs.Inode
 }
 
-// NewClient completes the initial setup required to get the proxy to a "steady" state.
+// NewClient completes the initial setup required to get the proxy to a "steady"
+// state.
 func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *Config) (*Client, error) {
 	// Check if the caller has configured a dialer.
 	// Otherwise, initialize a new one.
@@ -258,6 +279,18 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 		if err != nil {
 			return nil, fmt.Errorf("error initializing dialer: %v", err)
 		}
+	}
+
+	c := &Client{
+		logger:      l,
+		dialer:      d,
+		maxConns:    conf.MaxConnections,
+		waitOnClose: conf.WaitOnClose,
+	}
+
+	if conf.FUSEDir != "" {
+		c.fuseDir = conf.FUSEDir
+		return c, nil
 	}
 
 	for _, inst := range conf.Instances {
@@ -287,14 +320,27 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 		l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
 		mnts = append(mnts, m)
 	}
-	c := &Client{
-		mnts:        mnts,
-		logger:      l,
-		dialer:      d,
-		maxConns:    conf.MaxConnections,
-		waitOnClose: conf.WaitOnClose,
-	}
+	c.mnts = mnts
 	return c, nil
+}
+
+func (c *Client) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
+	entries := []fuse.DirEntry{
+		{Name: "README", Mode: 0555 | fuse.S_IFREG},
+	}
+	return fs.NewListDirStream(entries), fs.OK
+}
+
+// Lookup implements the fs.NodeLookuper interface and returns an index node
+// (inode) for a symlink that points to a Unix domain socket. The Unix domain
+// socket is connected to the requested Cloud SQL instance. Lookup returns a
+// symlink (instead of the socket itself) so that multiple callers all use the
+// same Unix socket.
+func (c *Client) Lookup(ctx context.Context, instance string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
+	if instance == "README" {
+		return c.NewInode(ctx, &readme{}, fs.StableAttr{}), fs.OK
+	}
+	return nil, syscall.ENOENT
 }
 
 // CheckConnections dials each registered instance and reports any errors that
@@ -347,6 +393,20 @@ func (c *Client) ConnCount() (uint64, uint64) {
 func (c *Client) Serve(ctx context.Context, notify func()) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	if c.fuseDir != "" {
+		srv, err := fs.Mount(c.fuseDir, c, &fs.Options{
+			MountOptions: fuse.MountOptions{AllowOther: true},
+		})
+		if err != nil {
+			return fmt.Errorf("FUSE mount failed: %q: %v", c.fuseDir, err)
+		}
+		c.fuseServer = srv
+		notify()
+		<-ctx.Done()
+		return ctx.Err()
+	}
+
 	exitCh := make(chan error)
 	for _, m := range c.mnts {
 		go func(mnt *socketMount) {
@@ -388,6 +448,11 @@ func (m MultiErr) Error() string {
 // Close triggers the proxyClient to shutdown.
 func (c *Client) Close() error {
 	var mErr MultiErr
+	if c.fuseServer != nil {
+		if err := c.fuseServer.Unmount(); err != nil {
+			mErr = append(mErr, err)
+		}
+	}
 	// First, close all open socket listeners to prevent additional connections.
 	for _, m := range c.mnts {
 		err := m.Close()
