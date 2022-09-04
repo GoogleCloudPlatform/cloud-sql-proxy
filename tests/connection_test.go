@@ -17,8 +17,8 @@ package tests
 import (
 	"context"
 	"database/sql"
-	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"testing"
 	"time"
@@ -99,32 +99,28 @@ func testHealthCheck(t *testing.T, connName string) {
 		t.Fatal(err)
 	}
 
-	tryDial := func(t *testing.T) *http.Response {
-		var (
-			gErr error
-			resp *http.Response
-		)
-		for i := 0; i < 10; i++ {
-			resp, gErr = http.Get("http://localhost:9090/readiness")
-			if gErr != nil {
-				time.Sleep(100 * time.Millisecond)
-			}
-			if resp != nil && resp.StatusCode == http.StatusOK {
-				return resp
-			}
+	var (
+		gErr error
+		resp *http.Response
+	)
+	for i := 0; i < 10; i++ {
+		resp, gErr = http.Get("http://localhost:9090/readiness")
+		if gErr != nil {
+			time.Sleep(100 * time.Millisecond)
+			continue
 		}
+		if resp.StatusCode != http.StatusOK {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		return // The response is OK, the test passes.
+	}
+	if gErr != nil {
 		t.Fatalf("HTTP GET failed: %v", gErr)
-		return nil
 	}
-
-	resp := tryDial(t)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatalf("failed to read HTTP response body: %v", err)
+	respBody, dErr := httputil.DumpResponse(resp, true)
+	if dErr != nil {
+		t.Fatalf("failed to dump HTTP response: %v", dErr)
 	}
-	defer resp.Body.Close()
-	if string(body) != "ok" {
-		t.Fatalf("response body was not ok, got = %v", string(body))
-	}
+	t.Fatalf("HTTP GET failed: response =\n%v", string(respBody))
 }
