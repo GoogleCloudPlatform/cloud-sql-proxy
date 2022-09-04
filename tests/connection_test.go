@@ -101,19 +101,19 @@ func testHealthCheck(t *testing.T, connName string) {
 
 	tryDial := func(t *testing.T) *http.Response {
 		var (
-			err  error
+			gErr error
 			resp *http.Response
 		)
 		for i := 0; i < 10; i++ {
-			resp, err = http.Get("http://localhost:9090/readiness")
-			if err != nil {
+			resp, gErr = http.Get("http://localhost:9090/readiness")
+			if gErr != nil {
 				time.Sleep(100 * time.Millisecond)
 			}
-			if resp != nil {
+			if resp != nil && resp.StatusCode == http.StatusOK {
 				return resp
 			}
 		}
-		t.Fatalf("HTTP GET failed: %v", err)
+		t.Fatalf("HTTP GET failed: %v", gErr)
 		return nil
 	}
 
@@ -126,9 +126,5 @@ func testHealthCheck(t *testing.T, connName string) {
 	defer resp.Body.Close()
 	if string(body) != "ok" {
 		t.Fatalf("response body was not ok, got = %v", string(body))
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("want %v, got %v", http.StatusOK, resp.StatusCode)
 	}
 }
