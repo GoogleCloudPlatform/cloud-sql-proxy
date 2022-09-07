@@ -337,10 +337,10 @@ The proxy also supports three flags related to credentials:
 There are containerized versions of the proxy available from the following
 Google Cloud Container Registry repositories:
 
-- `gcr.io/cloud-sql-connectors/auth-proxy`
-- `us.gcr.io/cloud-sql-connectors/auth-proxy`
-- `eu.gcr.io/cloud-sql-connectors/auth-proxy`
-- `asia.gcr.io/cloud-sql-connectors/auth-proxy`
+- `gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy`
+- `us.gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy`
+- `eu.gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy`
+- `asia.gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy`
 
 Each image is tagged with the associated proxy version. The following tags are
 currently supported:
