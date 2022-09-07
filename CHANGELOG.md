@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.0-preview.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0-preview.0...v2.0.0-preview.1) (2022-09-07)
+
+
+### Features
+
+* add support for FUSE ([#1381](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1381)) ([6cf4d25](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/6cf4d255fe7d640db4e7e651aed9c377ecf4e735))
+
+
+### Bug Fixes
+
+* pass dial options when checking connections ([#1366](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1366)) ([0033c36](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/0033c36200e7b5ba77b8d1157b1168af5fba73fc))
+* support configuration of HTTP server address ([#1365](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1365)) ([b53d77f](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/b53d77fce751af9316a4bc1349cd3bbcaaf151b0))
+
+
+### Miscellaneous Chores
+
+* release 2.0.0-preview.1 ([#1382](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1382)) ([3999339](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/3999339a59df761551baf76098969f06f6dfdde9))
+
 ## [1.31.2](https://github.com/GoogleCloudPlatform/cloudsql-proxy/compare/v1.31.1...v1.31.2) (2022-08-02)
 
 
