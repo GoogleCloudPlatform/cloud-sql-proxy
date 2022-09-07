@@ -349,6 +349,16 @@ currently supported:
 - `$VERSION-alpine`
 - `$VERSION-buster`
 
+The `$VERSION` is the proxy version without the leading "v" (e.g.,
+`2.0.0-preview.0`).
+
+For example, to pull a particular version, use a command like:
+
+``` shell
+# $VERSION is 2.0.0-preview.0
+docker pull gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy:2.0.0-preview.0
+```
+
 We recommend pinning to a specific version tag and using automation with a CI pipeline
 to update regularly.
 
