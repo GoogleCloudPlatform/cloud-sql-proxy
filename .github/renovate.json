@@ -1,8 +1,4 @@
 {
-  "baseBranches": [
-    "main",
-    "v1"
-  ],
   "extends": [
     "config:base",
     ":semanticCommitTypeAll(chore)"
