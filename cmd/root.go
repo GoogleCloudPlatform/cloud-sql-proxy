@@ -79,6 +79,7 @@ type Command struct {
 	prometheus                 bool
 	prometheusNamespace        string
 	healthCheck                bool
+	httpAddress                string
 	httpPort                   string
 }
 
@@ -231,6 +232,8 @@ func NewCommand(opts ...Option) *Command {
 		"Enable Prometheus HTTP endpoint /metrics on localhost")
 	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
 		"Use the provided Prometheus namespace for metrics")
+	cmd.PersistentFlags().StringVar(&c.httpAddress, "http-address", "localhost",
+		"Address for Prometheus and health check server")
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for Prometheus and health check server")
 	cmd.PersistentFlags().BoolVar(&c.healthCheck, "health-check", false,
@@ -528,7 +531,7 @@ func runSignalWrapper(cmd *Command) error {
 	// Start the HTTP server if anything requiring HTTP is specified.
 	if needsHTTPServer {
 		server := &http.Server{
-			Addr:    fmt.Sprintf("localhost:%s", cmd.httpPort),
+			Addr:    fmt.Sprintf("%s:%s", cmd.httpAddress, cmd.httpPort),
 			Handler: mux,
 		}
 		// Start the HTTP server.

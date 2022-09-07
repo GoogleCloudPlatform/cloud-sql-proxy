@@ -26,7 +26,7 @@ connector which does everything the proxy does, but in process:
 - [Cloud SQL Java connector][java connector]
 - [Cloud SQL Python connector][python connector]
 
-For users migrating from v1, see the [Migration Guide](migration-guide).
+For users migrating from v1, see the [Migration Guide](migration-guide.md).
 The [v1 README][v1 readme] is still available.
 
 NOTE: The proxy does not configure the network between the VM it's running on
@@ -288,7 +288,7 @@ replaces colons with periods:
 
 ```shell
 # Starts a Unix domain socket at the path:
-#    \cloudsql\myproject.my-region.msql
+#    C:\cloudsql\myproject.my-region.mysql
 ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 ```
 
