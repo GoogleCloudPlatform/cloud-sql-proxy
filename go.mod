@@ -10,7 +10,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.5.8
 	github.com/jackc/pgx/v4 v4.17.0
-	github.com/spf13/cobra v1.2.1
+	github.com/spf13/cobra v1.5.0
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
