@@ -288,7 +288,7 @@ replaces colons with periods:
 
 ```shell
 # Starts a Unix domain socket at the path:
-#    \cloudsql\myproject.my-region.msql
+#    C:\cloudsql\myproject.my-region.mysql
 ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 ```
 
