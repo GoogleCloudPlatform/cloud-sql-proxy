@@ -9,13 +9,14 @@ require (
 	github.com/denisenkom/go-mssqldb v0.12.2
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.5.8
+	github.com/hanwen/go-fuse/v2 v2.1.0
 	github.com/jackc/pgx/v4 v4.17.0
-	github.com/spf13/cobra v1.2.1
+	github.com/spf13/cobra v1.5.0
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6
-	google.golang.org/api v0.94.0
+	google.golang.org/api v0.95.0
 )
 
 require (
