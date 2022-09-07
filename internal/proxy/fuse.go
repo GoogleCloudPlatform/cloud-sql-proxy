@@ -23,14 +23,26 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse/nodefs"
 )
 
+// symlink implements a symbolic link, returning the underlying path when
+// Readlink is called.
+type symlink struct {
+	fs.Inode
+	path string
+}
+
+// Readlink implements fs.NodeReadlinker and returns the symlink's path.
+func (s *symlink) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
+	return []byte(s.path), fs.OK
+}
+
 // readme represents a static read-only text file.
 type readme struct {
 	fs.Inode
 }
 
 const readmeText = `
-When programs attempt to open files in this directory, a remote connection to
-the Cloud SQL instance of the same name will be established.
+When applications attempt to open files in this directory, a remote connection
+to the Cloud SQL instance of the same name will be established.
 
 For example, when you run one of the followg commands, the proxy will initiate a
 connection to the corresponding Cloud SQL instance, given you have the correct
