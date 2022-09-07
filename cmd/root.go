@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -79,6 +80,7 @@ type Command struct {
 	prometheus                 bool
 	prometheusNamespace        string
 	healthCheck                bool
+	httpAddress                string
 	httpPort                   string
 }
 
@@ -231,6 +233,8 @@ func NewCommand(opts ...Option) *Command {
 		"Enable Prometheus HTTP endpoint /metrics on localhost")
 	cmd.PersistentFlags().StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
 		"Use the provided Prometheus namespace for metrics")
+	cmd.PersistentFlags().StringVar(&c.httpAddress, "http-address", "localhost",
+		"Address for Prometheus and health check server")
 	cmd.PersistentFlags().StringVar(&c.httpPort, "http-port", "9090",
 		"Port for Prometheus and health check server")
 	cmd.PersistentFlags().BoolVar(&c.healthCheck, "health-check", false,
@@ -238,7 +242,15 @@ func NewCommand(opts ...Option) *Command {
 	cmd.PersistentFlags().StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
 		"API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)")
 	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
-		`Specifies the project for Cloud SQL Admin API quota tracking. Must have "serviceusage.service.use" IAM permission.`)
+		`Specifies the project to use for Cloud SQL Admin API quota tracking.
+The IAM principal must have the "serviceusage.services.use" permission
+for the given project. See https://cloud.google.com/service-usage/docs/overview and
+https://cloud.google.com/storage/docs/requester-pays`)
+	cmd.PersistentFlags().StringVar(&c.conf.FUSEDir, "fuse", "",
+		"Mount a directory at the path using FUSE to access Cloud SQL instances.")
+	cmd.PersistentFlags().StringVar(&c.conf.FUSETempDir, "fuse-tmp-dir",
+		filepath.Join(os.TempDir(), "csql-tmp"),
+		"Temp dir for Unix sockets created with FUSE")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -256,9 +268,22 @@ func NewCommand(opts ...Option) *Command {
 }
 
 func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
-	// If no instance connection names were provided, error.
-	if len(args) == 0 {
+	// If no instance connection names were provided AND FUSE isn't enabled,
+	// error.
+	if len(args) == 0 && conf.FUSEDir == "" {
 		return newBadCommandError("missing instance_connection_name (e.g., project:region:instance)")
+	}
+
+	if conf.FUSEDir != "" {
+		if err := proxy.SupportsFUSE(); err != nil {
+			return newBadCommandError(
+				fmt.Sprintf("--fuse is not supported: %v", err),
+			)
+		}
+	}
+
+	if len(args) == 0 && conf.FUSEDir == "" && conf.FUSETempDir != "" {
+		return newBadCommandError("cannot specify --fuse-tmp-dir without --fuse")
 	}
 
 	userHasSet := func(f string) bool {
@@ -528,7 +553,7 @@ func runSignalWrapper(cmd *Command) error {
 	// Start the HTTP server if anything requiring HTTP is specified.
 	if needsHTTPServer {
 		server := &http.Server{
-			Addr:    fmt.Sprintf("localhost:%s", cmd.httpPort),
+			Addr:    fmt.Sprintf("%s:%s", cmd.httpAddress, cmd.httpPort),
 			Handler: mux,
 		}
 		// Start the HTTP server.
