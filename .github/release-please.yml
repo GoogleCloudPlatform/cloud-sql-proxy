@@ -19,3 +19,4 @@ versionFile: 'cmd/version.txt'
 branches:
 - branch: v1
   versionFile: 'cmd/cloud_sql_proxy/version.txt'
+  releaseType: simple
