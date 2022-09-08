@@ -16,9 +16,7 @@ handleGHRelease: true
 packageName: cloud-sql-proxy
 releaseType: simple
 versionFile: 'cmd/version.txt'
-changelogPath: 'CHANGELOG.md'
 branches:
 - branch: v1
   versionFile: 'cmd/cloud_sql_proxy/version.txt'
   releaseType: simple
-  changelogPath: 'CHANGELOG.md'
