@@ -119,6 +119,7 @@ jobs:
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
           TMP: '${{ runner.temp }}'
+        # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`
         shell: bash
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
