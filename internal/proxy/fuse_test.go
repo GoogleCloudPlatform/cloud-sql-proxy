@@ -310,3 +310,11 @@ func TestFUSEClose(t *testing.T) {
 		t.Fatal("net.Dial() should fail")
 	}
 }
+
+func TestFUSEWithBadDir(t *testing.T) {
+	conf := &proxy.Config{FUSEDir: "/not/a/dir", FUSETempDir: randTmpDir(t)}
+	_, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, conf)
+	if err == nil {
+		t.Fatal("proxy client should fail with bad dir")
+	}
+}
