@@ -270,6 +270,31 @@ func (c *portConfig) nextDBPort(version string) int {
 	}
 }
 
+// Client proxies connections from a local client to the remote server side
+// proxy for multiple Cloud SQL instances.
+type Client struct {
+	// connCount tracks the number of all open connections from the Client to
+	// all Cloud SQL instances.
+	connCount uint64
+
+	// maxConns is the maximum number of allowed connections tracked by
+	// connCount. If not set, there is no limit.
+	maxConns uint64
+
+	dialer cloudsql.Dialer
+
+	// mnts is a list of all mounted sockets for this client
+	mnts []*socketMount
+
+	// waitOnClose is the maximum duration to wait for open connections to close
+	// when shutting down.
+	waitOnClose time.Duration
+
+	logger cloudsql.Logger
+
+	fuseMount
+}
+
 // NewClient completes the initial setup required to get the proxy to a "steady"
 // state.
 func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *Config) (*Client, error) {
@@ -523,6 +548,13 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 			c.proxyConn(s.inst, cConn, sConn)
 		}()
 	}
+}
+
+// socketMount is a tcp/unix socket that listens for a Cloud SQL instance.
+type socketMount struct {
+	inst     string
+	listener net.Listener
+	dialOpts []cloudsqlconn.DialOption
 }
 
 func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst InstanceConnConfig, version string) (*socketMount, error) {

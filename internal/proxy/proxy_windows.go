@@ -35,37 +35,8 @@ func UnixAddress(dir, inst string) string {
 	return filepath.Join(dir, inst2)
 }
 
-// socketMount is a tcp/unix socket that listens for a Cloud SQL instance.
-type socketMount struct {
-	inst     string
-	listener net.Listener
-	dialOpts []cloudsqlconn.DialOption
-}
-
-// Client proxies connections from a local client to the remote server side
-// proxy for multiple Cloud SQL instances.
-type Client struct {
-	// connCount tracks the number of all open connections from the Client to
-	// all Cloud SQL instances.
-	connCount uint64
-
-	// maxConns is the maximum number of allowed connections tracked by
-	// connCount. If not set, there is no limit.
-	maxConns uint64
-
-	dialer cloudsql.Dialer
-
-	// mnts is a list of all mounted sockets for this client
-	mnts []*socketMount
-
-	// waitOnClose is the maximum duration to wait for open connections to close
-	// when shutting down.
-	waitOnClose time.Duration
-
-	logger cloudsql.Logger
-
-	// fuseDir is never set on Windows. All FUSE-related behavior is enabled
-	// when this value is set on Linux and Darwin versions.
+type fuseMount struct {
+	// fuseDir is always an empty string on Windows.
 	fuseDir string
 }
 

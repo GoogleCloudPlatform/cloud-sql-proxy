@@ -20,15 +20,11 @@ package proxy
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"sync"
 	"syscall"
-	"time"
 
-	"cloud.google.com/go/cloudsqlconn"
-	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
@@ -52,54 +48,33 @@ func configureFUSE(c *Client, conf *Config) (*Client, error) {
 	if err := os.MkdirAll(conf.FUSETempDir, 0777); err != nil {
 		return nil, err
 	}
-	c.fuseDir = conf.FUSEDir
-	c.fuseTempDir = conf.FUSETempDir
-	c.fuseSockets = map[string]socketSymlink{}
+	c.fuseMount = fuseMount{
+		fuseDir:     conf.FUSEDir,
+		fuseTempDir: conf.FUSETempDir,
+		fuseSockets: map[string]socketSymlink{},
+		// Use pointers for the following mutexes so fuseMount may be embedded
+		// as a value and support zero value lookups on fuseDir.
+		fuseMu:       &sync.Mutex{},
+		fuseServerMu: &sync.Mutex{},
+		fuseWg:       &sync.WaitGroup{},
+	}
 	return c, nil
 }
 
-// socketMount is a tcp/unix socket that listens for a Cloud SQL instance.
-type socketMount struct {
-	inst     string
-	listener net.Listener
-	dialOpts []cloudsqlconn.DialOption
-}
-
-// Client proxies connections from a local client to the remote server side
-// proxy for multiple Cloud SQL instances.
-type Client struct {
-	// connCount tracks the number of all open connections from the Client to
-	// all Cloud SQL instances.
-	connCount uint64
-
-	// maxConns is the maximum number of allowed connections tracked by
-	// connCount. If not set, there is no limit.
-	maxConns uint64
-
-	dialer cloudsql.Dialer
-
-	// mnts is a list of all mounted sockets for this client
-	mnts []*socketMount
-
-	// waitOnClose is the maximum duration to wait for open connections to close
-	// when shutting down.
-	waitOnClose time.Duration
-
-	logger cloudsql.Logger
-
+type fuseMount struct {
 	// fuseDir specifies the directory where a FUSE server is mounted. The value
 	// is empty if FUSE is not enabled. The directory holds symlinks to Unix
 	// domain sockets in the fuseTmpDir.
 	fuseDir     string
 	fuseTempDir string
 	// fuseMu protects access to fuseSockets.
-	fuseMu sync.Mutex
+	fuseMu *sync.Mutex
 	// fuseSockets is a map of instance connection name to socketMount and
 	// symlink.
 	fuseSockets  map[string]socketSymlink
-	fuseServerMu sync.Mutex
+	fuseServerMu *sync.Mutex
 	fuseServer   *fuse.Server
-	fuseWg       sync.WaitGroup
+	fuseWg       *sync.WaitGroup
 
 	// Inode adds support for FUSE operations.
 	fs.Inode
