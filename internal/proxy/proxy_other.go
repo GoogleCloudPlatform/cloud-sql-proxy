@@ -185,14 +185,10 @@ func (c *Client) fuseMounts() []*socketMount {
 	return mnts
 }
 
-// TODO add a stub to windows
-func (c *Client) unmountFUSEMounts(mErr MultiErr) MultiErr {
+func (c *Client) unmountFUSE() error {
 	c.fuseServerMu.Lock()
-	if err := c.fuseServer.Unmount(); err != nil {
-		mErr = append(mErr, err)
-	}
-	c.fuseServerMu.Unlock()
-	return mErr
+	defer c.fuseServerMu.Unlock()
+	return c.fuseServer.Unmount()
 }
 
 func (c *Client) waitForFUSEMounts() { c.fuseWg.Wait() }

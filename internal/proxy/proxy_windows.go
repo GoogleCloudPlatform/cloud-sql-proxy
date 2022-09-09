@@ -17,13 +17,8 @@ package proxy
 import (
 	"context"
 	"errors"
-	"net"
 	"path/filepath"
 	"strings"
-	"time"
-
-	"cloud.google.com/go/cloudsqlconn"
-	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
 )
 
 var errFUSENotSupported = errors.New("FUSE is not supported on Windows")
@@ -43,5 +38,5 @@ type fuseMount struct {
 func configureFUSE(c *Client, conf *Config) (*Client, error)         { return nil, errFUSENotSupported }
 func (c *Client) fuseMounts() []*socketMount                         { return nil }
 func (c *Client) serveFuse(ctx context.Context, notify func()) error { return errFUSENotSupported }
-func (c *Client) unmountFUSEMounts(_ MultiErr) MultiErr              { return nil }
+func (c *Client) unmountFUSE() error                                 { return nil }
 func (c *Client) waitForFUSEMounts()                                 {}

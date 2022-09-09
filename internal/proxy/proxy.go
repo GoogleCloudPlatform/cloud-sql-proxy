@@ -457,8 +457,9 @@ func (c *Client) Close() error {
 	var mErr MultiErr
 
 	if c.fuseDir != "" {
-		mErr = c.unmountFUSEMounts(mErr)
-		mnts = c.fuseMounts()
+		if err := c.unmountFUSE(); err != nil {
+			mErr = append(mErr, err)
+		}
 	}
 
 	// First, close all open socket listeners to prevent additional connections.
