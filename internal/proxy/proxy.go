@@ -460,6 +460,7 @@ func (c *Client) Close() error {
 		if err := c.unmountFUSE(); err != nil {
 			mErr = append(mErr, err)
 		}
+		mnts = c.fuseMounts()
 	}
 
 	// First, close all open socket listeners to prevent additional connections.
