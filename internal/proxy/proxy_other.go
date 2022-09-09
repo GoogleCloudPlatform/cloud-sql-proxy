@@ -60,8 +60,6 @@ func configureFUSE(c *Client, conf *Config) (*Client, error) {
 
 // socketMount is a tcp/unix socket that listens for a Cloud SQL instance.
 type socketMount struct {
-	// TODO do we need this?
-	fs.Inode // embedding an fs.Inode adds support for FUSE
 	inst     string
 	listener net.Listener
 	dialOpts []cloudsqlconn.DialOption
