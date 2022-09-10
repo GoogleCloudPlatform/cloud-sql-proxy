@@ -337,10 +337,10 @@ The proxy also supports three flags related to credentials:
 There are containerized versions of the proxy available from the following
 Google Cloud Container Registry repositories:
 
-- `gcr.io/cloud-sql-connectors/auth-proxy`
-- `us.gcr.io/cloud-sql-connectors/auth-proxy`
-- `eu.gcr.io/cloud-sql-connectors/auth-proxy`
-- `asia.gcr.io/cloud-sql-connectors/auth-proxy`
+- `gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy`
+- `us.gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy`
+- `eu.gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy`
+- `asia.gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy`
 
 Each image is tagged with the associated proxy version. The following tags are
 currently supported:
@@ -348,6 +348,16 @@ currently supported:
 - `$VERSION` (default)
 - `$VERSION-alpine`
 - `$VERSION-buster`
+
+The `$VERSION` is the proxy version without the leading "v" (e.g.,
+`2.0.0-preview.0`).
+
+For example, to pull a particular version, use a command like:
+
+``` shell
+# $VERSION is 2.0.0-preview.0
+docker pull gcr.io/cloud-sql-connectors/cloud-sql-auth-proxy:2.0.0-preview.0
+```
 
 We recommend pinning to a specific version tag and using automation with a CI pipeline
 to update regularly.
