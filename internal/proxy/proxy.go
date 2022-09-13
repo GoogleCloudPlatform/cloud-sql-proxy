@@ -619,7 +619,6 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 			}
 			address = UnixAddress(address, ".s.PGSQL.5432")
 		}
-
 	}
 
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
