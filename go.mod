@@ -3,14 +3,14 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 go 1.18
 
 require (
-	cloud.google.com/go/cloudsqlconn v0.5.1
+	cloud.google.com/go/cloudsqlconn v0.5.2
 	contrib.go.opencensus.io/exporter/prometheus v0.4.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.13
 	github.com/denisenkom/go-mssqldb v0.12.2
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.5.8
 	github.com/hanwen/go-fuse/v2 v2.1.0
-	github.com/jackc/pgx/v4 v4.17.0
+	github.com/jackc/pgx/v4 v4.17.2
 	github.com/spf13/cobra v1.5.0
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.23.0
@@ -62,8 +62,8 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220804142021-4e6b2dfa6612 // indirect
-	google.golang.org/grpc v1.48.0 // indirect
+	google.golang.org/genproto v0.0.0-20220902135211-223410557253 // indirect
+	google.golang.org/grpc v1.49.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
