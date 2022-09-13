@@ -14,7 +14,10 @@
 
 package proxy_test
 
-import "strings"
+import (
+	"strings"
+	"testing"
+)
 
 var (
 	pg         = strings.ReplaceAll("proj:region:pg", ":", ".")
