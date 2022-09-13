@@ -89,9 +89,15 @@ jobs:
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
           TMP: '${{ runner.temp }}'
+        # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`
+        shell: bash
+        run: |
+          go test -race -v ./... | tee test_results.txt
+
+      - name: Convert test output to XML
+        if: ${{ github.event_name == 'schedule' && always() }}
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
-          go test -race -v ./... | tee test_results.txt
           go-junit-report -in test_results.txt -set-exit-code -out v1periodic_sponge_log.xml
 
       - name: FlakyBot (Linux)
