@@ -5,7 +5,7 @@ go 1.18
 require (
 	cloud.google.com/go/cloudsqlconn v0.5.1
 	contrib.go.opencensus.io/exporter/prometheus v0.4.1
-	contrib.go.opencensus.io/exporter/stackdriver v0.13.13
+	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/denisenkom/go-mssqldb v0.12.2
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-cmp v0.5.8
