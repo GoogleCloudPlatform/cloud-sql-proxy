@@ -16,7 +16,8 @@
 // works as expected when executed as a binary.
 //
 // Required flags:
-//    -mysql_conn_name, -db_user, -db_pass
+//
+//	-mysql_conn_name, -db_user, -db_pass
 package tests
 
 import (
