@@ -29,7 +29,7 @@ jobs:
     runs-on: "ubuntu-latest"
     strategy:
       matrix:
-        go-version: ["1.16.7", 1.17]
+        go-version: [1.16, 1.17]
       fail-fast: false
     permissions:
       contents: 'read'
