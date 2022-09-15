@@ -47,8 +47,8 @@ const readmeText = `
 When applications attempt to open files in this directory, a remote connection
 to the Cloud SQL instance of the same name will be established.
 
-For example, when you run one of the followg commands, the proxy will initiate a
-connection to the corresponding Cloud SQL instance, given you have the correct
+For example, when you run one of the following commands, the proxy will initiate
+a connection to the corresponding Cloud SQL instance, given you have the correct
 IAM permissions.
 
 	mysql -u root -S "/somedir/project:region:instance"
