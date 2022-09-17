@@ -103,6 +103,9 @@ type Config struct {
 	// CredentialsFile is the path to a service account key.
 	CredentialsFile string
 
+	// CredentialsJSON is a JSON representation of the service account key.
+	CredentialsJSON string
+
 	// GcloudAuth set whether to use Gcloud's config helper to retrieve a
 	// token for authentication.
 	GcloudAuth bool
@@ -200,6 +203,11 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 		l.Infof("Authorizing with the credentials file at %q", c.CredentialsFile)
 		opts = append(opts, cloudsqlconn.WithCredentialsFile(
 			c.CredentialsFile,
+		))
+	case c.CredentialsJSON != "":
+		l.Infof("Authorizing with JSON credentials environment variable")
+		opts = append(opts, cloudsqlconn.WithCredentialsJSON(
+			[]byte(c.CredentialsJSON),
 		))
 	case c.GcloudAuth:
 		l.Infof("Authorizing with gcloud user credentials")

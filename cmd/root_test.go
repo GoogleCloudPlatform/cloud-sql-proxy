@@ -148,6 +148,20 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the JSON credentials",
+			args: []string{"--credentials-json", `{"json":"goes-here"}`, "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				CredentialsJSON: `{"json":"goes-here"}`,
+			}),
+		},
+		{
+			desc: "using the (short) JSON credentials",
+			args: []string{"-j", `{"json":"goes-here"}`, "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				CredentialsJSON: `{"json":"goes-here"}`,
+			}),
+		},
+		{
 			desc: "using the gcloud auth flag",
 			args: []string{"--gcloud-auth", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -493,7 +507,25 @@ func TestNewCommandWithErrors(t *testing.T) {
 			desc: "when both gcloud auth and credentials file are set",
 			args: []string{
 				"--gcloud-auth",
-				"--credential-file", "/path/to/file", "proj:region:inst"},
+				"--credentials-file", "/path/to/file", "proj:region:inst"},
+		},
+		{
+			desc: "when both token and credentials JSON are set",
+			args: []string{
+				"--token", "a-token",
+				"--credentials-json", `{"json":"here"}`, "proj:region:inst"},
+		},
+		{
+			desc: "when both credentials file and credentials JSON are set",
+			args: []string{
+				"--credentials-file", "/a/file",
+				"--credentials-json", `{"json":"here"}`, "proj:region:inst"},
+		},
+		{
+			desc: "when both gcloud auth and credentials JSON are set",
+			args: []string{
+				"--gcloud-auth",
+				"--credentials-json", `{"json":"here"}`, "proj:region:inst"},
 		},
 		{
 			desc: "when the unix socket query param contains multiple values",

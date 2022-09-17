@@ -85,6 +85,22 @@ func TestSQLServerAuthWithCredentialsFile(t *testing.T) {
 		"sqlserver", dsn)
 }
 
+func TestSQLServerAuthWithCredentialsJSON(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping SQL Server integration tests")
+	}
+	requireSQLServerVars(t)
+	creds := keyfile(t)
+	_, _, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
+		*sqlserverUser, *sqlserverPass, *sqlserverDB)
+	proxyConnTest(t,
+		[]string{"--credentials-json", creds, *sqlserverConnName},
+		"sqlserver", dsn)
+}
+
 func TestSQLServerHealthCheck(t *testing.T) {
 	testHealthCheck(t, *sqlserverConnName)
 }

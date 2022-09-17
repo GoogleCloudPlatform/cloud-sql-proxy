@@ -119,6 +119,22 @@ func TestPostgresAuthWithCredentialsFile(t *testing.T) {
 		"pgx", dsn)
 }
 
+func TestPostgresAuthWithCredentialsJSON(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	creds := keyfile(t)
+	_, _, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+	proxyConnTest(t,
+		[]string{"--credentials-json", string(creds), *postgresConnName},
+		"pgx", dsn)
+}
+
 func TestAuthWithGcloudAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
