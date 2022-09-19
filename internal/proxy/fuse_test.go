@@ -129,6 +129,9 @@ func tryDialUnix(t *testing.T, addr string) net.Conn {
 }
 
 func TestFUSEDialInstance(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
 	fuseDir := randTmpDir(t)
 	fuseTempDir := randTmpDir(t)
 	tcs := []struct {
@@ -185,6 +188,9 @@ func TestFUSEDialInstance(t *testing.T) {
 }
 
 func TestFUSEReadDir(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
 	fuseDir := randTmpDir(t)
 	_, cleanup := newTestClient(t, &fakeDialer{}, fuseDir, randTmpDir(t))
 	defer cleanup()
@@ -211,6 +217,9 @@ func TestFUSEReadDir(t *testing.T) {
 }
 
 func TestFUSEErrors(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
 	ctx := context.Background()
 	d := &fakeDialer{}
 	c, _ := newTestClient(t, d, randTmpDir(t), randTmpDir(t))
@@ -248,6 +257,9 @@ func TestFUSEErrors(t *testing.T) {
 }
 
 func TestFUSEWithBadInstanceName(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
 	fuseDir := randTmpDir(t)
 	d := &fakeDialer{}
 	_, cleanup := newTestClient(t, d, fuseDir, randTmpDir(t))
@@ -264,6 +276,9 @@ func TestFUSEWithBadInstanceName(t *testing.T) {
 }
 
 func TestFUSECheckConnections(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
 	fuseDir := randTmpDir(t)
 	d := &fakeDialer{}
 	c, cleanup := newTestClient(t, d, fuseDir, randTmpDir(t))
@@ -292,6 +307,9 @@ func TestFUSECheckConnections(t *testing.T) {
 }
 
 func TestFUSEClose(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
 	fuseDir := randTmpDir(t)
 	d := &fakeDialer{}
 	c, _ := newTestClient(t, d, fuseDir, randTmpDir(t))
@@ -312,6 +330,9 @@ func TestFUSEClose(t *testing.T) {
 }
 
 func TestFUSEWithBadDir(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
 	conf := &proxy.Config{FUSEDir: "/not/a/dir", FUSETempDir: randTmpDir(t)}
 	_, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, conf)
 	if err == nil {
