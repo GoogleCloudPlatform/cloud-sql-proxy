@@ -283,6 +283,8 @@ func TestClientInitialization(t *testing.T) {
 			}
 
 			for _, addr := range tc.wantUnixAddrs {
+				verifySocketPermissions(t, addr)
+
 				conn, err := net.Dial("unix", addr)
 				if err != nil {
 					t.Fatalf("want error = nil, got = %v", err)

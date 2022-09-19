@@ -626,6 +626,12 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	if err != nil {
 		return nil, err
 	}
+	// Change file permisions to allow access for user, group, and other.
+	if network == "unix" {
+		// Best effort. If this call fails, group and other won't have write
+		// access.
+		_ = os.Chmod(address, 0777)
+	}
 	opts := conf.DialOptions(inst)
 	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
 	return m, nil
