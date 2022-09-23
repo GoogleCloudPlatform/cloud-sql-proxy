@@ -211,8 +211,8 @@ func NewCommand(opts ...Option) *Command {
 		"Use bearer token as a source of IAM credentials.")
 	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
 		"Use service account key file as a source of IAM credentials.")
-	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsJSON, "credentials-json", "j", "",
-		"Use JSON service account key file as a source of IAM credentials.")
+	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsJSON, "json-credentials", "j", "",
+		"Use service account key JSON as a source of IAM credentials.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user credentials as a source of IAM credentials.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.StructuredLogs, "structured-logs", "l", false,
