@@ -142,6 +142,6 @@ func TestMySQLAuthWithCredentialsJSON(t *testing.T) {
 		Net:                  "tcp",
 	}
 	proxyConnTest(t,
-		[]string{"--credentials-json", creds, *mysqlConnName},
+		[]string{"--json-credentials", creds, *mysqlConnName},
 		"mysql", cfg.FormatDSN())
 }

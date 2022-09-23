@@ -312,13 +312,13 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError("cannot specify --credentials-file and --gcloud-auth flags at the same time")
 	}
 	if conf.CredentialsJSON != "" && conf.Token != "" {
-		return newBadCommandError("cannot specify --credentials-json and --token flags at the same time")
+		return newBadCommandError("cannot specify --json-credentials and --token flags at the same time")
 	}
 	if conf.CredentialsJSON != "" && conf.CredentialsFile != "" {
-		return newBadCommandError("cannot specify --credentials-json and --credentials-file flags at the same time")
+		return newBadCommandError("cannot specify --json-credentials and --credentials-file flags at the same time")
 	}
 	if conf.CredentialsJSON != "" && conf.GcloudAuth {
-		return newBadCommandError("cannot specify --credentials-json and --gcloud-auth flags at the same time")
+		return newBadCommandError("cannot specify --json-credentials and --gcloud-auth flags at the same time")
 	}
 
 	if userHasSet("http-port") && !userHasSet("prometheus") && !userHasSet("health-check") {

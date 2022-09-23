@@ -131,7 +131,7 @@ func TestPostgresAuthWithCredentialsJSON(t *testing.T) {
 	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
 		*postgresUser, *postgresPass, *postgresDB)
 	proxyConnTest(t,
-		[]string{"--credentials-json", string(creds), *postgresConnName},
+		[]string{"--json-credentials", string(creds), *postgresConnName},
 		"pgx", dsn)
 }
 

@@ -97,7 +97,7 @@ func TestSQLServerAuthWithCredentialsJSON(t *testing.T) {
 	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
 		*sqlserverUser, *sqlserverPass, *sqlserverDB)
 	proxyConnTest(t,
-		[]string{"--credentials-json", creds, *sqlserverConnName},
+		[]string{"--json-credentials", creds, *sqlserverConnName},
 		"sqlserver", dsn)
 }
 
