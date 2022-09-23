@@ -17,6 +17,7 @@ package tests
 import (
 	"context"
 	"database/sql"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -52,6 +53,18 @@ func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
 	return tok, path, func() {
 		os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", path)
 	}
+}
+
+func keyfile(t *testing.T) string {
+	path := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	if path == "" {
+		t.Fatal("GOOGLE_APPLICATION_CREDENTIALS not set")
+	}
+	creds, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatalf("io.ReadAll(): %v", err)
+	}
+	return string(creds)
 }
 
 // proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
