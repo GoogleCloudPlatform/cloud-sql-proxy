@@ -14,10 +14,12 @@ This option uses a wrapper script around the Cloud SQL Auth proxy to detect
 when the secret has changed, and restart the proxy with the new value. This
 could be done in many languages, but here’s an example using bash:
 
+> [failover.sh](examples/disaster-recovery/failover.sh)
 ```sh
 #! /bin/bash
 
 SECRET_ID="my-secret-id" # TODO(developer): replace this value
+REFRESH_INTERVAL=5
 PORT=5432
 
 # Get the latest version of the secret and start the proxy
@@ -28,7 +30,7 @@ PID=$!
 # Every 5s, get the latest version of the secret. If it's changed, restart the
 # proxy with the new value.
 while true; do
-    sleep 5
+    sleep $REFRESH_INTERVAL
     NEW=$(gcloud secrets versions access "latest" --secret="$SECRET_ID")
     if [ "$INSTANCE" != "$NEW" ]; then
         INSTANCE=$NEW
