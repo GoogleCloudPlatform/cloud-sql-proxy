@@ -274,6 +274,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
+//
 //go:embed version.txt
 var versionString string
 
