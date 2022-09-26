@@ -17,21 +17,17 @@ package proxy
 import (
 	"context"
 	"errors"
-	"path/filepath"
-	"strings"
 )
 
-var errFUSENotSupported = errors.New("FUSE is not supported on Windows")
+var errFUSENotSupported = errors.New("FUSE is not supported on FreeBSD")
 
-// UnixAddress returns the Unix socket for a given instance in the provided
-// directory, by replacing all colons in the instance's name with periods.
-func UnixAddress(dir, inst string) string {
-	inst2 := strings.ReplaceAll(inst, ":", ".")
-	return filepath.Join(dir, inst2)
+// SupportsFUSE is false on FreeBSD.
+func SupportsFUSE() error {
+	return errFUSENotSupported
 }
 
 type fuseMount struct {
-	// fuseDir is always an empty string on Windows.
+	// fuseDir is always an empty string on OpenBSD.
 	fuseDir string
 }
 
