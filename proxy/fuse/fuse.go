@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !windows && !openbsd
-// +build !windows,!openbsd
+//go:build !windows && !openbsd && !freebsd
+// +build !windows,!openbsd,!freebsd
 
 // Package fuse provides a connection source wherein the user does not need to
 // specify which instance they are connecting to before they start the
