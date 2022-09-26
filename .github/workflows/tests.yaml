@@ -101,6 +101,11 @@ jobs:
         run: |
           sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 
+      - name: Verify FreeBSD and OpenBSD Builds
+        run: |
+          CGO_ENABLED=0 GOOS=freebsd go build
+          CGO_ENABLED=0 GOOS=openbsd go build
+
       - name: Run tests
         env:
           GOOGLE_CLOUD_PROJECT: '${{ secrets.GOOGLE_CLOUD_PROJECT }}'
