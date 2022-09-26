@@ -124,6 +124,24 @@ func TestMySQLAuthWithCredentialsFile(t *testing.T) {
 		"mysql", cfg.FormatDSN())
 }
 
-func TestMySQLHealthCheck(t *testing.T) {
-	testHealthCheck(t, *mysqlConnName)
+func TestMySQLAuthWithCredentialsJSON(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
+	requireMySQLVars(t)
+	creds := keyfile(t)
+	_, _, cleanup := removeAuthEnvVar(t)
+	defer cleanup()
+
+	cfg := mysql.Config{
+		User:                 *mysqlUser,
+		Passwd:               *mysqlPass,
+		DBName:               *mysqlDB,
+		AllowNativePasswords: true,
+		Addr:                 "127.0.0.1:3306",
+		Net:                  "tcp",
+	}
+	proxyConnTest(t,
+		[]string{"--json-credentials", creds, *mysqlConnName},
+		"mysql", cfg.FormatDSN())
 }

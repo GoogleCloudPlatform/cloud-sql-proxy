@@ -211,6 +211,8 @@ func NewCommand(opts ...Option) *Command {
 		"Use bearer token as a source of IAM credentials.")
 	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
 		"Use service account key file as a source of IAM credentials.")
+	cmd.PersistentFlags().StringVarP(&c.conf.CredentialsJSON, "json-credentials", "j", "",
+		"Use service account key JSON as a source of IAM credentials.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
 		"Use gcloud's user credentials as a source of IAM credentials.")
 	cmd.PersistentFlags().BoolVarP(&c.conf.StructuredLogs, "structured-logs", "l", false,
@@ -308,6 +310,15 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 	if conf.CredentialsFile != "" && conf.GcloudAuth {
 		return newBadCommandError("cannot specify --credentials-file and --gcloud-auth flags at the same time")
+	}
+	if conf.CredentialsJSON != "" && conf.Token != "" {
+		return newBadCommandError("cannot specify --json-credentials and --token flags at the same time")
+	}
+	if conf.CredentialsJSON != "" && conf.CredentialsFile != "" {
+		return newBadCommandError("cannot specify --json-credentials and --credentials-file flags at the same time")
+	}
+	if conf.CredentialsJSON != "" && conf.GcloudAuth {
+		return newBadCommandError("cannot specify --json-credentials and --gcloud-auth flags at the same time")
 	}
 
 	if userHasSet("http-port") && !userHasSet("prometheus") && !userHasSet("health-check") {
