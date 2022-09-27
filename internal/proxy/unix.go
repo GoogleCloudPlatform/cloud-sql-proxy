@@ -19,7 +19,7 @@ package proxy
 
 import "path/filepath"
 
-// UnixAddress is defined as a function to distinguish between Linux-based
+// UnixAddress is defined as a function to distinguish between Unix-based
 // implementations where the dir and inst and simply joins, and Windows-based
 // implementations where the inst must be further altered.
 func UnixAddress(dir, inst string) string {
