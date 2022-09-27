@@ -27,7 +27,7 @@ func SupportsFUSE() error {
 }
 
 type fuseMount struct {
-	// fuseDir is always an empty string on OpenBSD.
+	// fuseDir is always an empty string on FreeBSD.
 	fuseDir string
 }
 
