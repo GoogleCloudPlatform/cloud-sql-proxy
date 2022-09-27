@@ -49,7 +49,8 @@ func Dial(instance, user string) (*sql.DB, error) {
 // Note that using a password with the proxy is not necessary as long as the
 // user's hostname in the mysql.user table is 'cloudsqlproxy~'. For more
 // information, see:
-//    https://cloud.google.com/sql/docs/sql-proxy#user
+//
+//	https://cloud.google.com/sql/docs/sql-proxy#user
 func DialPassword(instance, user, password string) (*sql.DB, error) {
 	cfg := mysql.NewConfig()
 	cfg.User = user
@@ -75,7 +76,8 @@ func Cfg(instance, user, password string) *mysql.Config {
 // provided configuration. It is otherwise the same as Dial.
 //
 // The cfg.Addr should be the instance's connection string, in the format of:
-//	      project-name:region:instance-name.
+//
+//	project-name:region:instance-name.
 func DialCfg(cfg *mysql.Config) (*sql.DB, error) {
 	if cfg.TLSConfig != "" {
 		return nil, errors.New("do not specify TLS when using the Proxy")
