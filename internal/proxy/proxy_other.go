@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !windows
-// +build !windows
+//go:build !windows && !openbsd && !freebsd
+// +build !windows,!openbsd,!freebsd
 
 package proxy
 
@@ -28,13 +28,6 @@ import (
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
-
-// UnixAddress is defined as a function to distinguish between Linux-based
-// implementations where the dir and inst and simply joins, and Windows-based
-// implementations where the inst must be further altered.
-func UnixAddress(dir, inst string) string {
-	return filepath.Join(dir, inst)
-}
 
 type socketSymlink struct {
 	socket  *socketMount
