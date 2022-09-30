@@ -22,9 +22,10 @@ import "strings"
 // metadata, the region is optional.
 //
 // Examples:
-//    "proj:region:my-db" -> ("proj", "region", "my-db")
-//		"google.com:project:region:instance" -> ("google.com:project", "region", "instance")
-//		"google.com:missing:part" -> ("google.com:missing", "", "part")
+//
+//	   "proj:region:my-db" -> ("proj", "region", "my-db")
+//			"google.com:project:region:instance" -> ("google.com:project", "region", "instance")
+//			"google.com:missing:part" -> ("google.com:missing", "", "part")
 func SplitName(instance string) (project, region, name string) {
 	spl := strings.Split(instance, ":")
 	if len(spl) < 2 {
