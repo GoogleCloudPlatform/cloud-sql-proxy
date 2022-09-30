@@ -274,6 +274,7 @@ Information for all flags:
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
 // versionString indiciates the version of the proxy currently in use.
+//
 //go:embed version.txt
 var versionString string
 
@@ -346,6 +347,8 @@ func checkFlags(onGCE bool) error {
 	return nil
 }
 
+const loginScope = "https://www.googleapis.com/auth/sqlservice.login"
+
 func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, oauth2.TokenSource, error) {
 	all, err := ioutil.ReadFile(f)
 	if err != nil {
@@ -354,38 +357,57 @@ func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, o
 	// First try and load this as a service account config, which allows us to see the service account email:
 	if cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope); err == nil {
 		logging.Infof("using credential file for authentication; email=%s", cfg.Email)
-		return cfg.Client(ctx), cfg.TokenSource(ctx), nil
+		// Created a downscoped token source using the same credentials.
+		scoped, err := goauth.JWTConfigFromJSON(all, loginScope)
+		if err != nil {
+			return nil, nil, err
+		}
+		return cfg.Client(ctx), scoped.TokenSource(ctx), nil
 	}
 
 	cred, err := goauth.CredentialsFromJSON(ctx, all, proxy.SQLScope)
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid json file %q: %v", f, err)
 	}
+	// Created a downscoped token source using the same credentials.
+	scoped, err := goauth.CredentialsFromJSON(ctx, all, loginScope)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid json file %q: %v", f, err)
+	}
 	logging.Infof("using credential file for authentication; path=%q", f)
-	return oauth2.NewClient(ctx, cred.TokenSource), cred.TokenSource, nil
+	// TODO here
+	return oauth2.NewClient(ctx, cred.TokenSource), scoped.TokenSource, nil
 }
 
 func authenticatedClient(ctx context.Context) (*http.Client, oauth2.TokenSource, error) {
 	if *tokenFile != "" {
 		return authenticatedClientFromPath(ctx, *tokenFile)
-	} else if tok := *token; tok != "" {
+	}
+	if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
 		return oauth2.NewClient(ctx, src), src, nil
-	} else if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
+	}
+	if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
 		return authenticatedClientFromPath(ctx, f)
 	}
 
 	// If flags or env don't specify an auth source, try either gcloud or application default
 	// credentials.
 	src, err := util.GcloudTokenSource(ctx)
+	scoped := src
 	if err != nil {
 		src, err = goauth.DefaultTokenSource(ctx, proxy.SQLScope)
-	}
-	if err != nil {
-		return nil, nil, err
+		if err != nil {
+			return nil, nil, err
+		}
+		// Created a downscoped token source using the same credentials.
+		scoped, err = goauth.DefaultTokenSource(ctx, loginScope)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
-	return oauth2.NewClient(ctx, src), src, nil
+	return oauth2.NewClient(ctx, src), scoped, nil
 }
 
 // quotaProjectTransport is an http.RoundTripper that adds an X-Goog-User-Project
