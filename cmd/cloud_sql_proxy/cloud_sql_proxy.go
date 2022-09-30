@@ -375,7 +375,6 @@ func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, o
 		return nil, nil, fmt.Errorf("invalid json file %q: %v", f, err)
 	}
 	logging.Infof("using credential file for authentication; path=%q", f)
-	// TODO here
 	return oauth2.NewClient(ctx, cred.TokenSource), scoped.TokenSource, nil
 }
 
