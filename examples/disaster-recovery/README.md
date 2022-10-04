@@ -18,9 +18,9 @@ could be done in many languages, but here’s an example using bash:
 ```sh
 #! /bin/bash
 
-SECRET_ID="SECRET_ID"
+SECRET_ID="my-secret-id" # TODO(developer): replace this value
 REFRESH_INTERVAL=5
-PORT="PORT_NUMBER"
+PORT=5432                # TODO(developer): change this port as needed
 
 # Get the latest version of the secret and start the proxy
 INSTANCE=$(gcloud secrets versions access "latest" --secret="$SECRET_ID")
