@@ -17,7 +17,7 @@
 
 SECRET_ID="my-secret-id" # TODO(developer): replace this value
 REFRESH_INTERVAL=5
-PORT=5432
+PORT=5432                # TODO(developer): change this port as needed
 
 # Get the latest version of the secret and start the proxy
 INSTANCE=$(gcloud secrets versions access "latest" --secret="$SECRET_ID")
