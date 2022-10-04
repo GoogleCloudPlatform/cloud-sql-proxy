@@ -15,9 +15,9 @@
 # [START cloud_sql_proxy_secret_manager_failover]
 #! /bin/bash
 
-SECRET_ID="my-secret-id" # TODO(developer): replace this value
+SECRET_ID="SECRET_ID"
 REFRESH_INTERVAL=5
-PORT=5432
+PORT="PORT_NUMBER"
 
 # Get the latest version of the secret and start the proxy
 INSTANCE=$(gcloud secrets versions access "latest" --secret="$SECRET_ID")
