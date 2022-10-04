@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !windows && !openbsd
-// +build !windows,!openbsd
+//go:build !windows && !openbsd && !freebsd
+// +build !windows,!openbsd,!freebsd
 
 // Package fuse provides a connection source wherein the user does not need to
 // specify which instance they are connecting to before they start the
@@ -24,14 +24,14 @@
 // Specifically, given that NewConnSrc was called with the mounting directory
 // as /cloudsql:
 //
-// 1) Execute `mysql -S /cloudsql/speckle:instance`
-// 2) The 'mysql' executable looks up the file "speckle:instance" inside "/cloudsql"
-// 3) This lookup is intercepted by the code in this package. A local unix socket
-//    located in a temporary directory is opened for listening and the lookup for
-//    "speckle:instance" returns to mysql saying that it is a symbolic link
-//    pointing to this new local socket.
-// 4) mysql dials the local unix socket, creating a new connection to the
-//    specified instance.
+//  1. Execute `mysql -S /cloudsql/speckle:instance`
+//  2. The 'mysql' executable looks up the file "speckle:instance" inside "/cloudsql"
+//  3. This lookup is intercepted by the code in this package. A local unix socket
+//     located in a temporary directory is opened for listening and the lookup for
+//     "speckle:instance" returns to mysql saying that it is a symbolic link
+//     pointing to this new local socket.
+//  4. mysql dials the local unix socket, creating a new connection to the
+//     specified instance.
 package fuse
 
 import (
