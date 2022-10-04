@@ -16,6 +16,7 @@
 #! /bin/bash
 
 SECRET_ID="my-secret-id" # TODO(developer): replace this value
+REFRESH_INTERVAL=5
 PORT=5432
 
 # Get the latest version of the secret and start the proxy
@@ -26,7 +27,7 @@ PID=$!
 # Every 5s, get the latest version of the secret. If it's changed, restart the
 # proxy with the new value.
 while true; do
-    sleep 5
+    sleep $REFRESH_INTERVAL
     NEW=$(gcloud secrets versions access "latest" --secret="$SECRET_ID")
     if [ "$INSTANCE" != "$NEW" ]; then
         INSTANCE=$NEW
