@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # [START cloud_sql_proxy_secret_manager_failover]
-#! /bin/bash
+#!/bin/bash
 
 SECRET_ID="my-secret-id" # TODO(developer): replace this value
 REFRESH_INTERVAL=5
