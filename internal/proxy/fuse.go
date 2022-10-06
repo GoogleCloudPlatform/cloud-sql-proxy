@@ -68,7 +68,7 @@ connections.
 
 // Getattr implements fs.NodeGetattrer and indicates that this file is a regular
 // file.
-func (*readme) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+func (*readme) Getattr(_ context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
 	*out = fuse.AttrOut{Attr: fuse.Attr{
 		Mode: 0444 | syscall.S_IFREG,
 		Size: uint64(len(readmeText)),
@@ -77,7 +77,7 @@ func (*readme) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) 
 }
 
 // Read implements fs.NodeReader and supports incremental reads.
-func (*readme) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
+func (*readme) Read(_ context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
 	end := int(off) + len(dest)
 	if end > len(readmeText) {
 		end = len(readmeText)
