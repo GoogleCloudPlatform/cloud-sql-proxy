@@ -347,7 +347,10 @@ func checkFlags(onGCE bool) error {
 	return nil
 }
 
-const loginScope = "https://www.googleapis.com/auth/sqlservice.login"
+// iamLoginScope is the OAuth2 scope attached to tokens which are used for
+// database login only. This scope is only applicable when auto IAM authn is
+// being used.
+const iamLoginScope = "https://www.googleapis.com/auth/sqlservice.login"
 
 func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, oauth2.TokenSource, error) {
 	all, err := ioutil.ReadFile(f)
@@ -358,7 +361,7 @@ func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, o
 	if cfg, err := goauth.JWTConfigFromJSON(all, proxy.SQLScope); err == nil {
 		logging.Infof("using credential file for authentication; email=%s", cfg.Email)
 		// Created a downscoped token source using the same credentials.
-		scoped, err := goauth.JWTConfigFromJSON(all, loginScope)
+		scoped, err := goauth.JWTConfigFromJSON(all, iamLoginScope)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -370,7 +373,7 @@ func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, o
 		return nil, nil, fmt.Errorf("invalid json file %q: %v", f, err)
 	}
 	// Created a downscoped token source using the same credentials.
-	scoped, err := goauth.CredentialsFromJSON(ctx, all, loginScope)
+	scoped, err := goauth.CredentialsFromJSON(ctx, all, iamLoginScope)
 	if err != nil {
 		return nil, nil, fmt.Errorf("invalid json file %q: %v", f, err)
 	}
@@ -400,7 +403,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, oauth2.TokenSource,
 			return nil, nil, err
 		}
 		// Created a downscoped token source using the same credentials.
-		scoped, err = goauth.DefaultTokenSource(ctx, loginScope)
+		scoped, err = goauth.DefaultTokenSource(ctx, iamLoginScope)
 		if err != nil {
 			return nil, nil, err
 		}
