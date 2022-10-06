@@ -16,7 +16,7 @@ could be done in many languages, but here’s an example using bash:
 
 > [failover.sh](examples/disaster-recovery/failover.sh)
 ```sh
-#! /bin/bash
+#!/bin/bash
 
 SECRET_ID="my-secret-id" # TODO(developer): replace this value
 REFRESH_INTERVAL=5
