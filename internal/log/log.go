@@ -40,14 +40,17 @@ func NewStdLogger(out, err io.Writer) cloudsql.Logger {
 	}
 }
 
+// Infof logs informational messages
 func (l *StdLogger) Infof(format string, v ...interface{}) {
 	l.infoLog.Printf(format, v...)
 }
 
+// Errorf logs error messages
 func (l *StdLogger) Errorf(format string, v ...interface{}) {
 	l.errLog.Printf(format, v...)
 }
 
+// Debugf logs debug messages
 func (l *StdLogger) Debugf(format string, v ...interface{}) {
 	l.infoLog.Printf(format, v...)
 }
@@ -57,14 +60,17 @@ type StructuredLogger struct {
 	logger *zap.SugaredLogger
 }
 
+// Infof logs informational messages
 func (l *StructuredLogger) Infof(format string, v ...interface{}) {
 	l.logger.Infof(format, v...)
 }
 
+// Errorf logs error messages
 func (l *StructuredLogger) Errorf(format string, v ...interface{}) {
 	l.logger.Errorf(format, v...)
 }
 
+// Debugf logs debug messages
 func (l *StructuredLogger) Debugf(format string, v ...interface{}) {
 	l.logger.Infof(format, v...)
 }

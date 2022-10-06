@@ -63,7 +63,7 @@ func (f *fakeDialer) dialedInstances() []string {
 	return append([]string{}, f.instances...)
 }
 
-func (f *fakeDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
+func (f *fakeDialer) Dial(_ context.Context, inst string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.dialCount++
@@ -92,7 +92,7 @@ type errorDialer struct {
 	fakeDialer
 }
 
-func (*errorDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
+func (*errorDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
 	return nil, errors.New("errorDialer returns error on Dial")
 }
 

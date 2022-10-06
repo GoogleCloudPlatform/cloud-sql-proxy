@@ -74,7 +74,7 @@ type fuseMount struct {
 }
 
 // Readdir returns a list of all active Unix sockets in addition to the README.
-func (c *Client) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
+func (c *Client) Readdir(_ context.Context) (fs.DirStream, syscall.Errno) {
 	entries := []fuse.DirEntry{
 		{Name: "README", Mode: 0555 | fuse.S_IFREG},
 	}
@@ -99,7 +99,7 @@ func (c *Client) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 // socket is connected to the requested Cloud SQL instance. Lookup returns a
 // symlink (instead of the socket itself) so that multiple callers all use the
 // same Unix socket.
-func (c *Client) Lookup(ctx context.Context, instance string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
+func (c *Client) Lookup(ctx context.Context, instance string, _ *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
 	if instance == "README" {
 		return c.NewInode(ctx, &readme{}, fs.StableAttr{}), fs.OK
 	}
