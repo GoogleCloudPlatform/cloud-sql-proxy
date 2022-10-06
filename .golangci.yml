@@ -30,7 +30,6 @@ linters-settings:
       - name: error-strings
       - name: error-naming
       - name: exported
-        disabled: true # Temporary disabled until all prototype code has landed
       - name: if-return
       - name: increment-decrement
       - name: var-naming
@@ -42,10 +41,8 @@ linters-settings:
       - name: indent-error-flow
       - name: errorf
       - name: empty-block
-        disabled: true # Temporary disabled until all prototype code has landed
       - name: superfluous-else
       - name: unused-parameter
-        disabled: true # Temporary disabled until all prototype code has landed
       - name: unreachable-code
       - name: redefines-builtin-id
       - name: range-val-in-closure
