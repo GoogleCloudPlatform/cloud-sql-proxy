@@ -597,11 +597,11 @@ func (s *spyDialer) instance() string {
 	return i
 }
 
-func (*spyDialer) Dial(_ context.Context, inst string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
+func (*spyDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
 	return nil, errors.New("spy dialer does not dial")
 }
 
-func (s *spyDialer) EngineVersion(ctx context.Context, inst string) (string, error) {
+func (s *spyDialer) EngineVersion(_ context.Context, inst string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.got = inst

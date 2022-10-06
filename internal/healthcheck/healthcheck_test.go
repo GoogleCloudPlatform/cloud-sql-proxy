@@ -58,12 +58,12 @@ func dialTCP(t *testing.T, addr string) net.Conn {
 
 type fakeDialer struct{}
 
-func (*fakeDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
+func (*fakeDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
 	conn, _ := net.Pipe()
 	return conn, nil
 }
 
-func (*fakeDialer) EngineVersion(ctx context.Context, inst string) (string, error) {
+func (*fakeDialer) EngineVersion(_ context.Context, _ string) (string, error) {
 	return "POSTGRES_14", nil
 }
 
@@ -75,7 +75,7 @@ type errorDialer struct {
 	fakeDialer
 }
 
-func (*errorDialer) Dial(ctx context.Context, inst string, opts ...cloudsqlconn.DialOption) (net.Conn, error) {
+func (*errorDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
 	return nil, errors.New("errorDialer always errors")
 }
 

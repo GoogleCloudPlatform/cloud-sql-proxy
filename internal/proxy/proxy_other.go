@@ -74,7 +74,7 @@ type fuseMount struct {
 }
 
 // Readdir returns a list of all active Unix sockets in addition to the README.
-func (c *Client) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
+func (c *Client) Readdir(_ context.Context) (fs.DirStream, syscall.Errno) {
 	entries := []fuse.DirEntry{
 		{Name: "README", Mode: 0555 | fuse.S_IFREG},
 	}

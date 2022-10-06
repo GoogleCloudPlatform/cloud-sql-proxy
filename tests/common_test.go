@@ -34,8 +34,8 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
 )
 
-// proxyExec represents an execution of the Cloud SQL proxy.
-type proxyExec struct {
+// ProxyExec represents an execution of the Cloud SQL proxy.
+type ProxyExec struct {
 	Out io.ReadCloser
 
 	cmd     *cmd.Command
@@ -46,7 +46,7 @@ type proxyExec struct {
 }
 
 // StartProxy returns a proxyExec representing a running instance of the proxy.
-func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
+func StartProxy(ctx context.Context, args ...string) (*ProxyExec, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	// Open a pipe for tracking the output from the cmd
 	pr, pw, err := os.Pipe()
@@ -55,14 +55,14 @@ func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
 		return nil, fmt.Errorf("unable to open stdout pipe: %w", err)
 	}
 
-	cmd := cmd.NewCommand(cmd.WithLogger(log.NewStdLogger(pw, pw)))
-	cmd.SetArgs(args)
-	cmd.SetOut(pw)
-	cmd.SetErr(pw)
+	c := cmd.NewCommand(cmd.WithLogger(log.NewStdLogger(pw, pw)))
+	c.SetArgs(args)
+	c.SetOut(pw)
+	c.SetErr(pw)
 
-	p := &proxyExec{
+	p := &ProxyExec{
 		Out:     pr,
-		cmd:     cmd,
+		cmd:     c,
 		cancel:  cancel,
 		closers: []io.Closer{pr, pw},
 		done:    make(chan bool),
@@ -71,18 +71,18 @@ func StartProxy(ctx context.Context, args ...string) (*proxyExec, error) {
 	go func() {
 		defer close(p.done)
 		defer cancel()
-		p.err = cmd.ExecuteContext(ctx)
+		p.err = c.ExecuteContext(ctx)
 	}()
 	return p, nil
 }
 
 // Stop sends the TERM signal to the proxy and returns.
-func (p *proxyExec) Stop() {
+func (p *ProxyExec) Stop() {
 	p.cancel()
 }
 
 // Waits until the execution is completed and returns any error.
-func (p *proxyExec) Wait(ctx context.Context) error {
+func (p *ProxyExec) Wait(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -92,7 +92,7 @@ func (p *proxyExec) Wait(ctx context.Context) error {
 }
 
 // Done returns true if the proxy has exited.
-func (p *proxyExec) Done() bool {
+func (p *ProxyExec) Done() bool {
 	select {
 	case <-p.done:
 		return true
@@ -102,7 +102,7 @@ func (p *proxyExec) Done() bool {
 }
 
 // Close releases any resources associated with the instance.
-func (p *proxyExec) Close() {
+func (p *ProxyExec) Close() {
 	p.cancel()
 	for _, c := range p.closers {
 		c.Close()
@@ -112,7 +112,7 @@ func (p *proxyExec) Close() {
 // WaitForServe waits until the proxy ready to serve traffic. Returns any output from
 // the proxy while starting or any errors experienced before the proxy was ready to
 // server.
-func (p *proxyExec) WaitForServe(ctx context.Context) (output string, err error) {
+func (p *ProxyExec) WaitForServe(ctx context.Context) (output string, err error) {
 	// Watch for the "Ready for new connections" to indicate the proxy is listening
 	buf, in, errCh := new(bytes.Buffer), bufio.NewReader(p.Out), make(chan error, 1)
 	go func() {

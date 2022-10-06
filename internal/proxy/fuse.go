@@ -34,7 +34,7 @@ type symlink struct {
 }
 
 // Readlink implements fs.NodeReadlinker and returns the symlink's path.
-func (s *symlink) Readlink(ctx context.Context) ([]byte, syscall.Errno) {
+func (s *symlink) Readlink(_ context.Context) ([]byte, syscall.Errno) {
 	return []byte(s.path), fs.OK
 }
 
@@ -68,7 +68,7 @@ connections.
 
 // Getattr implements fs.NodeGetattrer and indicates that this file is a regular
 // file.
-func (*readme) Getattr(_ context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+func (*readme) Getattr(_ context.Context, _ fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
 	*out = fuse.AttrOut{Attr: fuse.Attr{
 		Mode: 0444 | syscall.S_IFREG,
 		Size: uint64(len(readmeText)),
@@ -77,7 +77,7 @@ func (*readme) Getattr(_ context.Context, f fs.FileHandle, out *fuse.AttrOut) sy
 }
 
 // Read implements fs.NodeReader and supports incremental reads.
-func (*readme) Read(_ context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
+func (*readme) Read(_ context.Context, _ fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
 	end := int(off) + len(dest)
 	if end > len(readmeText) {
 		end = len(readmeText)
@@ -87,7 +87,7 @@ func (*readme) Read(_ context.Context, f fs.FileHandle, dest []byte, off int64) 
 
 // Open implements fs.NodeOpener and supports opening the README as a read-only
 // file.
-func (*readme) Open(ctx context.Context, mode uint32) (fs.FileHandle, uint32, syscall.Errno) {
+func (*readme) Open(_ context.Context, _ uint32) (fs.FileHandle, uint32, syscall.Errno) {
 	df := nodefs.NewDataFile([]byte(readmeText))
 	rf := nodefs.NewReadOnlyFile(df)
 	return rf, 0, fs.OK
