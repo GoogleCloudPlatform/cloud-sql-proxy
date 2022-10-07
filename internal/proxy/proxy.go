@@ -493,10 +493,11 @@ func (c *Client) Close() error {
 		return nil
 	}
 	timeout := time.After(c.waitOnClose)
-	tick := time.Tick(100 * time.Millisecond)
+	t := time.NewTicker(100 * time.Millisecond)
+	defer t.Stop()
 	for {
 		select {
-		case <-tick:
+		case <-t.C:
 			if atomic.LoadUint64(&c.connCount) > 0 {
 				continue
 			}

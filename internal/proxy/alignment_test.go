@@ -23,6 +23,8 @@ func TestClientUsesSyncAtomicAlignment(t *testing.T) {
 	// The sync/atomic pkg has a bug that requires the developer to guarantee
 	// 64-bit alignment when using 64-bit functions on 32-bit systems.
 	c := &Client{}
+	// linter can't see the read below of c.connCount, so just make it happy
+	_ = c
 
 	if a := unsafe.Offsetof(c.connCount); a%64 != 0 {
 		t.Errorf("Client.connCount is not 64-bit aligned: want 0, got %v", a)
