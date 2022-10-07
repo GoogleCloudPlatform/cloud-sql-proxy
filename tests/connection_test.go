@@ -35,7 +35,10 @@ const connTestTimeout = time.Minute
 // and then unsets GOOGLE_APPLICATION_CREDENTIALS. It returns a cleanup function
 // that restores the original setup.
 func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
-	ts, err := google.DefaultTokenSource(context.Background(), sqladmin.SqlserviceAdminScope)
+	ts, err := google.DefaultTokenSource(context.Background(),
+		sqladmin.CloudPlatformScope,
+		sqladmin.SqlserviceAdminScope,
+	)
 	if err != nil {
 		t.Errorf("failed to resolve token source: %v", err)
 	}

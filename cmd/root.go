@@ -82,6 +82,13 @@ type Command struct {
 	healthCheck                bool
 	httpAddress                string
 	httpPort                   string
+
+	// impersonationChain is a comma separated list of one or more service
+	// accounts. The last entry in the chain is the impersonation target. Any
+	// additional service accounts before the target are delegates. The
+	// roles/iam.serviceAccountTokenCreator must be configured for each account
+	// that will be impersonated.
+	impersonationChain string
 }
 
 // Option is a function that configures a Command.
@@ -253,6 +260,9 @@ https://cloud.google.com/storage/docs/requester-pays`)
 	cmd.PersistentFlags().StringVar(&c.conf.FUSETempDir, "fuse-tmp-dir",
 		filepath.Join(os.TempDir(), "csql-tmp"),
 		"Temp dir for Unix sockets created with FUSE")
+	cmd.PersistentFlags().StringVar(&c.impersonationChain, "impersonate-service-account", "",
+		`Comma separated list of service accounts to impersonate. Last value
+is the target account.`)
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -338,12 +348,25 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
 		_, err := url.Parse(conf.APIEndpointURL)
 		if err != nil {
-			return newBadCommandError(fmt.Sprintf("the value provided for --sqladmin-api-endpoint is not a valid URL, %v", conf.APIEndpointURL))
+			return newBadCommandError(fmt.Sprintf(
+				"the value provided for --sqladmin-api-endpoint is not a valid URL, %v",
+				conf.APIEndpointURL,
+			))
 		}
 
 		// add a trailing '/' if omitted
 		if !strings.HasSuffix(conf.APIEndpointURL, "/") {
 			conf.APIEndpointURL = conf.APIEndpointURL + "/"
+		}
+	}
+
+	if cmd.impersonationChain != "" {
+		accts := strings.Split(cmd.impersonationChain, ",")
+		conf.ImpersonateTarget = accts[0]
+		// Assign delegates if the chain is more than one account.
+		if l := len(accts); l > 1 {
+			conf.ImpersonateTarget = accts[l-1]
+			conf.ImpersonateDelegates = accts[:l-1]
 		}
 	}
 
