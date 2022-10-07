@@ -15,6 +15,8 @@
 linters:
   disable-all: true
   enable:
+    # From https://golangci-lint.run/usage/linters/
+    # This is a minor deviation from the default linters
     - goimports
     - gosimple
     - govet
