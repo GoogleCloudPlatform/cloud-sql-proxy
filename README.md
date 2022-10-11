@@ -348,6 +348,7 @@ currently supported:
 - `$VERSION` (default)
 - `$VERSION-alpine`
 - `$VERSION-buster`
+- `$VERSION-bullseye`
 
 The `$VERSION` is the proxy version without the leading "v" (e.g.,
 `2.0.0-preview.1`).
