@@ -23,7 +23,7 @@ ARG TARGETARCH
 
 RUN go get ./...
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-X main.metadataString=container.buster" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+    go build -ldflags "-X main.metadataString=container.bullseye" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
 
 # Final stage
 FROM debian:bullseye
