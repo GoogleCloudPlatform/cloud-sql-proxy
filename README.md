@@ -47,6 +47,8 @@ currently supported:
   as a base image (only supported from v1.17 up)
 * `$VERSION-buster` - uses [`debian:buster`](https://hub.docker.com/_/debian)
   as a base image (only supported from v1.17 up)
+* `$VERSION-bullseye` - uses [`debian:bullseye`](https://hub.docker.com/_/debian)
+  as a base image (only supported from v1.17 up)
 
 We recommend using the latest version of the proxy and updating the version
 regularly. However, we also recommend pinning to a specific tag and avoid the
