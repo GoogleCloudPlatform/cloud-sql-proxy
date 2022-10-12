@@ -362,10 +362,10 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 
 	if cmd.impersonationChain != "" {
 		accts := strings.Split(cmd.impersonationChain, ",")
-		conf.ImpersonateTarget = accts[0]
+		l := len(accts)
+		conf.ImpersonateTarget = accts[l-1]
 		// Assign delegates if the chain is more than one account.
-		if l := len(accts); l > 1 {
-			conf.ImpersonateTarget = accts[l-1]
+		if l > 1 {
 			conf.ImpersonateDelegates = accts[:l-1]
 		}
 	}

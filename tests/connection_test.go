@@ -26,7 +26,6 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/sqladmin/v1"
 )
 
 const connTestTimeout = time.Minute
@@ -36,8 +35,7 @@ const connTestTimeout = time.Minute
 // that restores the original setup.
 func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
 	ts, err := google.DefaultTokenSource(context.Background(),
-		sqladmin.CloudPlatformScope,
-		sqladmin.SqlserviceAdminScope,
+		"https://www.googleapis.com/auth/cloud-platform",
 	)
 	if err != nil {
 		t.Errorf("failed to resolve token source: %v", err)

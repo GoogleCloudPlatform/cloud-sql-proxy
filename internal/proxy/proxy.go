@@ -231,10 +231,7 @@ func (c *Config) credentialsOpt(l cloudsql.Logger) (cloudsqlconn.Option, error) 
 			impersonate.CredentialsConfig{
 				TargetPrincipal: c.ImpersonateTarget,
 				Delegates:       c.ImpersonateDelegates,
-				Scopes: []string{
-					sqladmin.CloudPlatformScope,
-					sqladmin.SqlserviceAdminScope,
-				},
+				Scopes:          []string{sqladmin.SqlserviceAdminScope},
 			},
 			iopts...,
 		)
