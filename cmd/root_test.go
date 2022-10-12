@@ -285,9 +285,9 @@ func TestNewCommandArguments(t *testing.T) {
 				"sv1@developer.gserviceaccount.com,sv2@developer.gserviceaccount.com,sv3@developer.gserviceaccount.com",
 				"proj:region:inst"},
 			want: withDefaults(&proxy.Config{
-				ImpersonateTarget: "sv3@developer.gserviceaccount.com",
+				ImpersonateTarget: "sv1@developer.gserviceaccount.com",
 				ImpersonateDelegates: []string{
-					"sv1@developer.gserviceaccount.com",
+					"sv3@developer.gserviceaccount.com",
 					"sv2@developer.gserviceaccount.com",
 				},
 			}),
