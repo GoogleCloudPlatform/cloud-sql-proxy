@@ -31,7 +31,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          version: 1.19
+          go-version: 1.19
           check-latest: true # run latest version
 
       - name: Checkout base branch
