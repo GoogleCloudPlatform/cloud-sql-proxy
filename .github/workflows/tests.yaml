@@ -108,6 +108,7 @@ jobs:
             SQLSERVER_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_USER
             SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
+            IMPERSONATED_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/IMPERSONATED_USER
 
       - name: Enable fuse config (Linux)
         if: runner.os == 'Linux'
@@ -130,6 +131,7 @@ jobs:
           SQLSERVER_USER: '${{ steps.secrets.outputs.SQLSERVER_USER }}'
           SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
+          IMPERSONATED_USER: '${{ steps.secrets.outputs.IMPERSONATED_USER }}'
           TMPDIR: "/tmp"
           TMP: '${{ runner.temp }}'
         # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`

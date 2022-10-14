@@ -16,6 +16,7 @@ The Cloud SQL Auth proxy has support for:
 - [Automatic IAM Authentication][iam-auth] (Postgres only)
 - Metrics ([Cloud Monitoring][], [Cloud Trace][], and [Prometheus][])
 - [HTTP Healthchecks][health-check-example]
+- Service account impersonation
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
 - Fully POSIX-compliant flags
 
