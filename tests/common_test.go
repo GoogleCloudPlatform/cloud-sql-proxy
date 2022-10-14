@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -32,6 +33,14 @@ import (
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
+)
+
+var (
+	impersonatedUser = flag.String(
+		"impersonated_user",
+		os.Getenv("IMPERSONATED_USER"),
+		"Name of the service account that supports impersonation (impersonator must have roles/iam.serviceAccountTokenCreator)",
+	)
 )
 
 // ProxyExec represents an execution of the Cloud SQL proxy.
