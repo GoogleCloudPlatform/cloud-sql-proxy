@@ -181,9 +181,9 @@ type Config struct {
 	Dialer cloudsql.Dialer
 }
 
-// DialOptions interprets appropriate dial options for a particular instance
+// dialOptions interprets appropriate dial options for a particular instance
 // configuration
-func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
+func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	var opts []cloudsqlconn.DialOption
 
 	if i.IAMAuthN != nil {
@@ -199,7 +199,7 @@ func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
 	return opts
 }
 
-func (c *Config) credentialsOpt(l cloudsql.Logger) (cloudsqlconn.Option, error) {
+func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 	// If service account impersonation is configured, set up an impersonated
 	// credentials token source.
 	if c.ImpersonateTarget != "" {
@@ -274,7 +274,7 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 	opts := []cloudsqlconn.Option{
 		cloudsqlconn.WithUserAgent(c.UserAgent),
 	}
-	co, err := c.credentialsOpt(l)
+	co, err := credentialsOpt(*c, l)
 	if err != nil {
 		return nil, err
 	}
@@ -700,7 +700,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 		// access.
 		_ = os.Chmod(address, 0777)
 	}
-	opts := conf.DialOptions(inst)
+	opts := dialOptions(*conf, inst)
 	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
 	return m, nil
 }
