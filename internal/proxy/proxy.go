@@ -553,10 +553,11 @@ func (c *Client) Close() error {
 		return nil
 	}
 	timeout := time.After(c.waitOnClose)
-	tick := time.Tick(100 * time.Millisecond)
+	t := time.NewTicker(100 * time.Millisecond)
+	defer t.Stop()
 	for {
 		select {
-		case <-tick:
+		case <-t.C:
 			if atomic.LoadUint64(&c.connCount) > 0 {
 				continue
 			}
@@ -580,7 +581,7 @@ func (c *Client) serveSocketMount(_ context.Context, s *socketMount) error {
 	for {
 		cConn, err := s.Accept()
 		if err != nil {
-			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 				c.logger.Errorf("[%s] Error accepting connection: %v", s.inst, err)
 				// For transient errors, wait a small amount of time to see if it resolves itself
 				time.Sleep(10 * time.Millisecond)
