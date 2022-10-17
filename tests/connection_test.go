@@ -17,7 +17,6 @@ package tests
 import (
 	"context"
 	"database/sql"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -60,7 +59,7 @@ func keyfile(t *testing.T) string {
 	if path == "" {
 		t.Fatal("GOOGLE_APPLICATION_CREDENTIALS not set")
 	}
-	creds, err := ioutil.ReadFile(path)
+	creds, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("io.ReadAll(): %v", err)
 	}

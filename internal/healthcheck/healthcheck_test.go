@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -204,7 +204,7 @@ func TestHandleReadinessForMaxConns(t *testing.T) {
 	}
 	resp := waitForConnect(t, http.StatusServiceUnavailable)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("failed to read response body: %v", err)
 	}
@@ -231,7 +231,7 @@ func TestHandleReadinessWithConnectionProblems(t *testing.T) {
 		t.Fatalf("want = %v, got = %v", want, got)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("failed to read response body: %v", err)
 	}

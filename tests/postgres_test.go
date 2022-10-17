@@ -18,7 +18,6 @@ package tests
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -78,7 +77,7 @@ func TestPostgresUnix(t *testing.T) {
 }
 
 func createTempDir(t *testing.T) (string, func()) {
-	testDir, err := ioutil.TempDir("", "*")
+	testDir, err := os.MkdirTemp("", "*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}

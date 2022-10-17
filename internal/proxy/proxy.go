@@ -521,7 +521,7 @@ func (c *Client) serveSocketMount(_ context.Context, s *socketMount) error {
 	for {
 		cConn, err := s.Accept()
 		if err != nil {
-			if nerr, ok := err.(net.Error); ok && nerr.Temporary() {
+			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 				c.logger.Errorf("[%s] Error accepting connection: %v", s.inst, err)
 				// For transient errors, wait a small amount of time to see if it resolves itself
 				time.Sleep(10 * time.Millisecond)
