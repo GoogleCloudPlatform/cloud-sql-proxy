@@ -110,63 +110,103 @@ func WithDialer(d cloudsql.Dialer) Option {
 }
 
 var longHelp = `
-The Cloud SQL Auth proxy is a utility for ensuring secure connections to your
-Cloud SQL instances. It provides IAM authorization, allowing you to control who
-can connect to your instance through IAM permissions, and TLS 1.3 encryption,
-without having to manage certificates.
+Overview
 
-NOTE: The proxy does not configure the network. You MUST ensure the proxy can
-reach your Cloud SQL instance, either by deploying it in a VPC that has access
-to your Private IP instance, or by configuring Public IP.
+    The Cloud SQL Auth proxy is a utility for ensuring secure connections to
+    your Cloud SQL instances. It provides IAM authorization, allowing you to
+    control who can connect to your instance through IAM permissions, and TLS
+    1.3 encryption, without having to manage certificates.
 
-For every provided instance connection name, the proxy creates:
+    NOTE: The proxy does not configure the network. You MUST ensure the proxy
+    can reach your Cloud SQL instance, either by deploying it in a VPC that has
+    access to your Private IP instance, or by configuring Public IP.
 
-- a socket that mimics a database running locally, and
-- an encrypted connection using TLS 1.3 back to your Cloud SQL instance.
+    For every provided instance connection name, the proxy creates:
 
-The proxy uses an ephemeral certificate to establish a secure connection to your
-Cloud SQL instance. The proxy will refresh those certificates on an hourly
-basis. Existing client connections are unaffected by the refresh cycle.
+    - a socket that mimics a database running locally, and
+    - an encrypted connection using TLS 1.3 back to your Cloud SQL instance.
 
-To start the proxy, you will need your instance connection name, which may be found
-in the Cloud SQL instance overview page or by using gcloud with the following
-command:
+    The proxy uses an ephemeral certificate to establish a secure connection to
+    your Cloud SQL instance. The proxy will refresh those certificates on an
+    hourly basis. Existing client connections are unaffected by the refresh
+    cycle.
 
-    gcloud sql instances describe INSTANCE --format='value(connectionName)'
+Starting the Proxy
 
-For example, if your instance connection name is "my-project:us-central1:my-db-server",
-starting the proxy will be:
+    To start the proxy, you will need your instance connection name, which may
+    be found in the Cloud SQL instance overview page or by using gcloud with the
+    following command:
 
-    ./cloud-sql-proxy my-project:us-central1:my-db-server
+        gcloud sql instances describe INSTANCE --format='value(connectionName)'
 
-By default, the proxy will determine the database engine and start a listener
-on localhost using the default database engine's port, i.e., MySQL is 3306,
-Postgres is 5432, SQL Server is 1433. If multiple instances are specified which
-all use the same database engine, the first will be started on the default
-database port and subsequent instances will be incremented from there (e.g.,
-3306, 3307, 3308, etc). To disable this behavior (and reduce startup time), use
-the --port flag. All subsequent listeners will increment from the provided value.
+    For example, if your instance connection name is
+    "my-project:us-central1:my-db-server", starting the proxy will be:
 
-All socket listeners use the localhost network interface. To override this
-behavior, use the --address flag.
+        ./cloud-sql-proxy my-project:us-central1:my-db-server
 
-The proxy supports overriding configuration on an instance-level with an
-optional query string syntax using the corresponding full flag name. The query
-string takes the form of a URL query string and should be appended to the
-INSTANCE_CONNECTION_NAME, e.g.,
+    By default, the proxy will determine the database engine and start a
+    listener on localhost using the default database engine's port, i.e., MySQL
+    is 3306, Postgres is 5432, SQL Server is 1433. If multiple instances are
+    specified which all use the same database engine, the first will be started
+    on the default database port and subsequent instances will be incremented
+    from there (e.g., 3306, 3307, 3308, etc). To disable this behavior (and
+    reduce startup time), use the --port flag. All subsequent listeners will
+    increment from the provided value.
 
-    'my-project:us-central1:my-db-server?key1=value1&key2=value2'
+    All socket listeners use the localhost network interface. To override this
+    behavior, use the --address flag.
 
-When using the optional query string syntax, quotes must wrap the instance
-connection name and query string to prevent conflicts with the shell. For
-example, to override the address and port for one instance but otherwise use
-the default behavior, use:
+Instance Level Configuration
 
-    ./cloud-sql-proxy \
-	    my-project:us-central1:my-db-server \
-	    'my-project:us-central1:my-other-server?address=0.0.0.0&port=7000'
+    The proxy supports overriding configuration on an instance-level with an
+    optional query string syntax using the corresponding full flag name. The
+    query string takes the form of a URL query string and should be appended to
+    the INSTANCE_CONNECTION_NAME, e.g.,
+
+        'my-project:us-central1:my-db-server?key1=value1&key2=value2'
+
+    When using the optional query string syntax, quotes must wrap the instance
+    connection name and query string to prevent conflicts with the shell. For
+    example, to override the address and port for one instance but otherwise use
+    the default behavior, use:
+
+        ./cloud-sql-proxy \
+    	    my-project:us-central1:my-db-server \
+    	    'my-project:us-central1:my-other-server?address=0.0.0.0&port=7000'
+
+Service Account Impersonation
+
+    The proxy supports service account impersonation with the
+    --impersonate-service-account flag and matches gcloud's flag. When enabled,
+    all API requests are made impersonating the supplied service account. The
+    IAM principal must have the iam.serviceAccounts.getAccessToken permission or
+    the role roles/iam.serviceAccounts.serviceAccountTokenCreator.
+
+    For example:
+
+        ./cloud-sql-proxy \
+            --impersonate-service-account=impersonated@my-project.iam.gserviceaccount.com
+            my-project:us-central1:my-db-server
+
+    In addition, the flag supports an impersonation delegation chain where the
+    value is a comma-separated list of service accounts. The first service
+    account in the list is the impersonation target. Each subsequent service
+    account is a delegate to the previous service account. When delegation is
+    used, each delegate must have the permissions named above on the service
+    account it is delegating to.
+
+    For example:
+
+        ./cloud-sql-proxy \
+            --impersonate-service-account=SERVICE_ACCOUNT_1,SERVICE_ACCOUNT_2,SERVICE_ACCOUNT_3
+            my-project:us-central1:my-db-server
+
+    In this example, the environment's IAM principal impersonates
+    SERVICE_ACCOUNT_3 which impersonates SERVICE_ACCOUNT_2 which then
+    impersonates the target SERVICE_ACCOUNT_1.
 
 (*) indicates a flag that may be used as a query parameter
+
 `
 
 // NewCommand returns a Command object representing an invocation of the proxy.
