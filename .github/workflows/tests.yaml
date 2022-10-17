@@ -81,18 +81,18 @@ jobs:
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0.8.1'
+        uses: 'google-github-actions/auth@v0.8.3'
         with:
           workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
 
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v0.6.0'
+        uses: 'google-github-actions/setup-gcloud@v0.6.2'
 
       - id: 'secrets'
         name: Get secrets
-        uses: 'google-github-actions/get-secretmanager-secrets@v0.5.0'
+        uses: 'google-github-actions/get-secretmanager-secrets@v0.5.3'
         with:
           secrets: |-
             MYSQL_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_CONNECTION_NAME
@@ -108,6 +108,7 @@ jobs:
             SQLSERVER_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_USER
             SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
+            IMPERSONATED_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/IMPERSONATED_USER
 
       - name: Enable fuse config (Linux)
         if: runner.os == 'Linux'
@@ -130,6 +131,7 @@ jobs:
           SQLSERVER_USER: '${{ steps.secrets.outputs.SQLSERVER_USER }}'
           SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
+          IMPERSONATED_USER: '${{ steps.secrets.outputs.IMPERSONATED_USER }}'
           TMPDIR: "/tmp"
           TMP: '${{ runner.temp }}'
         # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`

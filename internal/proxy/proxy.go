@@ -30,6 +30,9 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/gcloud"
 	"golang.org/x/oauth2"
+	"google.golang.org/api/impersonate"
+	"google.golang.org/api/option"
+	"google.golang.org/api/sqladmin/v1"
 )
 
 var (
@@ -160,6 +163,15 @@ type Config struct {
 	// API request quotas.
 	QuotaProject string
 
+	// ImpersonateTarget is the service account to impersonate. The IAM
+	// principal doing the impersonation must have the
+	// roles/iam.serviceAccountTokenCreator role.
+	ImpersonateTarget string
+	// ImpersonateDelegates are the intermediate service accounts through which
+	// the impersonation is achieved. Each delegate must have the
+	// roles/iam.serviceAccountTokenCreator role.
+	ImpersonateDelegates []string
+
 	// StructuredLogs sets all output to use JSON in the LogEntry format.
 	// See https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 	StructuredLogs bool
@@ -169,9 +181,9 @@ type Config struct {
 	Dialer cloudsql.Dialer
 }
 
-// DialOptions interprets appropriate dial options for a particular instance
+// dialOptions interprets appropriate dial options for a particular instance
 // configuration
-func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
+func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	var opts []cloudsqlconn.DialOption
 
 	if i.IAMAuthN != nil {
@@ -187,38 +199,86 @@ func (c *Config) DialOptions(i InstanceConnConfig) []cloudsqlconn.DialOption {
 	return opts
 }
 
-// DialerOptions builds appropriate list of options from the Config
-// values for use by cloudsqlconn.NewClient()
-func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error) {
-	opts := []cloudsqlconn.Option{
-		cloudsqlconn.WithUserAgent(c.UserAgent),
+func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
+	// If service account impersonation is configured, set up an impersonated
+	// credentials token source.
+	if c.ImpersonateTarget != "" {
+		var iopts []option.ClientOption
+		switch {
+		case c.Token != "":
+			l.Infof("Impersonating service account with OAuth2 token")
+			iopts = append(iopts, option.WithTokenSource(
+				oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
+			))
+		case c.CredentialsFile != "":
+			l.Infof("Impersonating service account with the credentials file at %q", c.CredentialsFile)
+			iopts = append(iopts, option.WithCredentialsFile(c.CredentialsFile))
+		case c.CredentialsJSON != "":
+			l.Infof("Impersonating service account with JSON credentials environment variable")
+			iopts = append(iopts, option.WithCredentialsJSON([]byte(c.CredentialsJSON)))
+		case c.GcloudAuth:
+			l.Infof("Impersonating service account with gcloud user credentials")
+			ts, err := gcloud.TokenSource()
+			if err != nil {
+				return nil, err
+			}
+			iopts = append(iopts, option.WithTokenSource(ts))
+		default:
+			l.Infof("Impersonating service account with Application Default Credentials")
+		}
+		ts, err := impersonate.CredentialsTokenSource(
+			context.Background(),
+			impersonate.CredentialsConfig{
+				TargetPrincipal: c.ImpersonateTarget,
+				Delegates:       c.ImpersonateDelegates,
+				Scopes:          []string{sqladmin.SqlserviceAdminScope},
+			},
+			iopts...,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return cloudsqlconn.WithTokenSource(ts), nil
 	}
+
+	// Otherwise, configure credentials as usual.
 	switch {
 	case c.Token != "":
-		l.Infof("Authorizing with the -token flag")
-		opts = append(opts, cloudsqlconn.WithTokenSource(
+		l.Infof("Authorizing with OAuth2 token")
+		return cloudsqlconn.WithTokenSource(
 			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
-		))
+		), nil
 	case c.CredentialsFile != "":
 		l.Infof("Authorizing with the credentials file at %q", c.CredentialsFile)
-		opts = append(opts, cloudsqlconn.WithCredentialsFile(
-			c.CredentialsFile,
-		))
+		return cloudsqlconn.WithCredentialsFile(c.CredentialsFile), nil
 	case c.CredentialsJSON != "":
 		l.Infof("Authorizing with JSON credentials environment variable")
-		opts = append(opts, cloudsqlconn.WithCredentialsJSON(
-			[]byte(c.CredentialsJSON),
-		))
+		return cloudsqlconn.WithCredentialsJSON([]byte(c.CredentialsJSON)), nil
 	case c.GcloudAuth:
 		l.Infof("Authorizing with gcloud user credentials")
 		ts, err := gcloud.TokenSource()
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, cloudsqlconn.WithTokenSource(ts))
+		return cloudsqlconn.WithTokenSource(ts), nil
 	default:
 		l.Infof("Authorizing with Application Default Credentials")
+		// Return no-op options to avoid having to handle nil in caller code
+		return cloudsqlconn.WithOptions(), nil
 	}
+}
+
+// DialerOptions builds appropriate list of options from the Config
+// values for use by cloudsqlconn.NewClient()
+func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error) {
+	opts := []cloudsqlconn.Option{
+		cloudsqlconn.WithUserAgent(c.UserAgent),
+	}
+	co, err := credentialsOpt(*c, l)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, co)
 
 	if c.APIEndpointURL != "" {
 		opts = append(opts, cloudsqlconn.WithAdminAPIEndpoint(c.APIEndpointURL))
@@ -641,7 +701,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 		// access.
 		_ = os.Chmod(address, 0777)
 	}
-	opts := conf.DialOptions(inst)
+	opts := dialOptions(*conf, inst)
 	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
 	return m, nil
 }
