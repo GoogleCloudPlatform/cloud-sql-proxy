@@ -14,7 +14,7 @@ require (
 	github.com/spf13/cobra v1.6.0
 	go.opencensus.io v0.23.0
 	go.uber.org/zap v1.23.0
-	golang.org/x/oauth2 v0.0.0-20221019162724-e48dfd961a93
+	golang.org/x/oauth2 v0.1.0
 	golang.org/x/sys v0.1.0
 	google.golang.org/api v0.100.0
 )
