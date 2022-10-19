@@ -264,7 +264,7 @@ func TestReadinessWithMinReady(t *testing.T) {
 	}{
 		{
 			desc:       "when all instances must be ready",
-			minReady:   0,
+			minReady:   2,
 			wantStatus: http.StatusServiceUnavailable,
 		},
 		{

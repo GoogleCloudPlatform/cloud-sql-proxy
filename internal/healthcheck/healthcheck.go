@@ -107,10 +107,7 @@ func ready(err error, minReady uint64) bool {
 	if !ok {
 		return false
 	}
-	if uint64(len(mErr)) > minReady {
-		return false
-	}
-	return true
+	return minReady != 0 && minReady <= uint64(len(mErr))
 }
 
 // HandleLiveness indicates the process is up and responding to HTTP requests.
