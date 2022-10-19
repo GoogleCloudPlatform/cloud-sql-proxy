@@ -29,19 +29,21 @@ import (
 // Check provides HTTP handlers for use as healthchecks typically in a
 // Kubernetes context.
 type Check struct {
-	once    *sync.Once
-	started chan struct{}
-	proxy   *proxy.Client
-	logger  cloudsql.Logger
+	once     *sync.Once
+	started  chan struct{}
+	proxy    *proxy.Client
+	logger   cloudsql.Logger
+	minReady uint64
 }
 
 // NewCheck is the initializer for Check.
-func NewCheck(p *proxy.Client, l cloudsql.Logger) *Check {
+func NewCheck(p *proxy.Client, l cloudsql.Logger, minReady uint64) *Check {
 	return &Check{
-		once:    &sync.Once{},
-		started: make(chan struct{}),
-		proxy:   p,
-		logger:  l,
+		once:     &sync.Once{},
+		started:  make(chan struct{}),
+		proxy:    p,
+		logger:   l,
+		minReady: minReady,
 	}
 }
 
@@ -89,7 +91,7 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	err := c.proxy.CheckConnections(ctx)
-	if err != nil {
+	if err != nil && !ready(err, c.minReady) {
 		c.logger.Errorf("[Health Check] Readiness failed: %v", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write([]byte(err.Error()))
@@ -98,6 +100,17 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
+}
+
+func ready(err error, minReady uint64) bool {
+	mErr, ok := err.(proxy.MultiErr)
+	if !ok {
+		return false
+	}
+	if uint64(len(mErr)) > minReady {
+		return false
+	}
+	return true
 }
 
 // HandleLiveness indicates the process is up and responding to HTTP requests.

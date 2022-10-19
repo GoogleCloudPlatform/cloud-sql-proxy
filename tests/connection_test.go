@@ -100,7 +100,7 @@ func testHealthCheck(t *testing.T, connName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
 	defer cancel()
 
-	args := []string{connName, "--health-check"}
+	args := []string{connName, "--min-ready-instances", "1", "--health-check"}
 	// Start the proxy.
 	p, err := StartProxy(ctx, args...)
 	if err != nil {

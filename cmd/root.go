@@ -80,6 +80,7 @@ type Command struct {
 	prometheus                 bool
 	prometheusNamespace        string
 	healthCheck                bool
+	minReady                   uint64
 	httpAddress                string
 	httpPort                   string
 
@@ -288,6 +289,8 @@ func NewCommand(opts ...Option) *Command {
 		"Port for Prometheus and health check server")
 	cmd.PersistentFlags().BoolVar(&c.healthCheck, "health-check", false,
 		"Enables health check endpoints /startup, /liveness, and /readiness on localhost.")
+	cmd.PersistentFlags().Uint64Var(&c.minReady, "min-ready-instances", 0,
+		"Configures the minimum ready number of instances for the readiness check to pass")
 	cmd.PersistentFlags().StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
 		"API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)")
 	cmd.PersistentFlags().StringVar(&c.conf.QuotaProject, "quota-project", "",
@@ -620,7 +623,7 @@ func runSignalWrapper(cmd *Command) error {
 	notify := func() {}
 	if cmd.healthCheck {
 		needsHTTPServer = true
-		hc := healthcheck.NewCheck(p, cmd.logger)
+		hc := healthcheck.NewCheck(p, cmd.logger, cmd.minReady)
 		mux.HandleFunc("/startup", hc.HandleStartup)
 		mux.HandleFunc("/readiness", hc.HandleReadiness)
 		mux.HandleFunc("/liveness", hc.HandleLiveness)

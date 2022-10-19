@@ -24,6 +24,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -71,6 +72,21 @@ func (*fakeDialer) Close() error {
 	return nil
 }
 
+type flakyDialer struct {
+	dialCount uint64
+	fakeDialer
+}
+
+// Dial fails on odd calls and succeeds on even calls.
+func (f *flakyDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
+	c := atomic.AddUint64(&f.dialCount, 1)
+	if c%2 == 0 {
+		conn, _ := net.Pipe()
+		return conn, nil
+	}
+	return nil, errors.New("flakey dialer fails on odd calls")
+}
+
 type errorDialer struct {
 	fakeDialer
 }
@@ -79,13 +95,11 @@ func (*errorDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOpti
 	return nil, errors.New("errorDialer always errors")
 }
 
-func newProxyWithParams(t *testing.T, maxConns uint64, dialer cloudsql.Dialer) *proxy.Client {
+func newProxyWithParams(t *testing.T, maxConns uint64, dialer cloudsql.Dialer, instances []proxy.InstanceConnConfig) *proxy.Client {
 	c := &proxy.Config{
-		Addr: proxyHost,
-		Port: proxyPort,
-		Instances: []proxy.InstanceConnConfig{
-			{Name: "proj:region:pg"},
-		},
+		Addr:           proxyHost,
+		Port:           proxyPort,
+		Instances:      instances,
 		MaxConnections: maxConns,
 	}
 	p, err := proxy.NewClient(context.Background(), dialer, logger, c)
@@ -96,15 +110,17 @@ func newProxyWithParams(t *testing.T, maxConns uint64, dialer cloudsql.Dialer) *
 }
 
 func newTestProxyWithMaxConns(t *testing.T, maxConns uint64) *proxy.Client {
-	return newProxyWithParams(t, maxConns, &fakeDialer{})
+	return newProxyWithParams(t, maxConns, &fakeDialer{}, []proxy.InstanceConnConfig{
+		{Name: "proj:region:pg"},
+	})
 }
 
 func newTestProxyWithDialer(t *testing.T, d cloudsql.Dialer) *proxy.Client {
-	return newProxyWithParams(t, 0, d)
+	return newProxyWithParams(t, 0, d, []proxy.InstanceConnConfig{{Name: "proj:region:pg"}})
 }
 
 func newTestProxy(t *testing.T) *proxy.Client {
-	return newProxyWithParams(t, 0, &fakeDialer{})
+	return newProxyWithParams(t, 0, &fakeDialer{}, []proxy.InstanceConnConfig{{Name: "proj:region:pg"}})
 }
 
 func TestHandleStartupWhenNotNotified(t *testing.T) {
@@ -114,7 +130,7 @@ func TestHandleStartupWhenNotNotified(t *testing.T) {
 			t.Logf("failed to close proxy client: %v", err)
 		}
 	}()
-	check := healthcheck.NewCheck(p, logger)
+	check := healthcheck.NewCheck(p, logger, 0)
 
 	rec := httptest.NewRecorder()
 	check.HandleStartup(rec, &http.Request{})
@@ -134,7 +150,7 @@ func TestHandleStartupWhenNotified(t *testing.T) {
 			t.Logf("failed to close proxy client: %v", err)
 		}
 	}()
-	check := healthcheck.NewCheck(p, logger)
+	check := healthcheck.NewCheck(p, logger, 0)
 
 	check.NotifyStarted()
 
@@ -154,7 +170,7 @@ func TestHandleReadinessWhenNotNotified(t *testing.T) {
 			t.Logf("failed to close proxy client: %v", err)
 		}
 	}()
-	check := healthcheck.NewCheck(p, logger)
+	check := healthcheck.NewCheck(p, logger, 0)
 
 	rec := httptest.NewRecorder()
 	check.HandleReadiness(rec, &http.Request{})
@@ -173,7 +189,7 @@ func TestHandleReadinessForMaxConns(t *testing.T) {
 		}
 	}()
 	started := make(chan struct{})
-	check := healthcheck.NewCheck(p, logger)
+	check := healthcheck.NewCheck(p, logger, 0)
 	go p.Serve(context.Background(), func() {
 		check.NotifyStarted()
 		close(started)
@@ -220,7 +236,7 @@ func TestHandleReadinessWithConnectionProblems(t *testing.T) {
 			t.Logf("failed to close proxy client: %v", err)
 		}
 	}()
-	check := healthcheck.NewCheck(p, logger)
+	check := healthcheck.NewCheck(p, logger, 0)
 	check.NotifyStarted()
 
 	rec := httptest.NewRecorder()
@@ -237,5 +253,53 @@ func TestHandleReadinessWithConnectionProblems(t *testing.T) {
 	}
 	if want := "errorDialer"; !strings.Contains(string(body), want) {
 		t.Fatalf("want substring with = %q, got = %v", want, string(body))
+	}
+}
+
+func TestReadinessWithMinReady(t *testing.T) {
+	tcs := []struct {
+		desc       string
+		minReady   uint64
+		wantStatus int
+	}{
+		{
+			desc:       "when all instances must be ready",
+			minReady:   0,
+			wantStatus: http.StatusServiceUnavailable,
+		},
+		{
+			desc:       "when only one instance must be ready",
+			minReady:   1,
+			wantStatus: http.StatusOK,
+		},
+	}
+	p := newProxyWithParams(t, 0,
+		// for every two calls, flaky dialer fails for the first, succeeds for
+		// the second
+		&flakyDialer{},
+		[]proxy.InstanceConnConfig{
+			{Name: "p:r:instance-1"},
+			{Name: "p:r:instance-2"},
+		},
+	)
+	defer func() {
+		if err := p.Close(); err != nil {
+			t.Logf("failed to close proxy client: %v", err)
+		}
+	}()
+
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			check := healthcheck.NewCheck(p, logger, tc.minReady)
+			check.NotifyStarted()
+
+			rec := httptest.NewRecorder()
+			check.HandleReadiness(rec, &http.Request{})
+
+			resp := rec.Result()
+			if got, want := resp.StatusCode, tc.wantStatus; got != want {
+				t.Fatalf("want = %v, got = %v", want, got)
+			}
+		})
 	}
 }

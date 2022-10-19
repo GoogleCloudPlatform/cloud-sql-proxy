@@ -443,7 +443,10 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 			}
 			cErr := conn.Close()
 			if cErr != nil {
-				errCh <- fmt.Errorf("%v: %v", m.inst, cErr)
+				c.logger.Errorf(
+					"connection check failed to close connection for %v: %v",
+					m.inst, cErr,
+				)
 			}
 		}(mnt)
 	}
