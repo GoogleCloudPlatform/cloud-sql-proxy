@@ -72,13 +72,13 @@ func (*fakeDialer) Close() error {
 	return nil
 }
 
-type flakyDialer struct {
+type flakeyDialer struct {
 	dialCount uint64
 	fakeDialer
 }
 
 // Dial fails on odd calls and succeeds on even calls.
-func (f *flakyDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
+func (f *flakeyDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
 	c := atomic.AddUint64(&f.dialCount, 1)
 	if c%2 == 0 {
 		conn, _ := net.Pipe()
@@ -276,7 +276,7 @@ func TestReadinessWithMinReady(t *testing.T) {
 	p := newProxyWithParams(t, 0,
 		// for every two calls, flaky dialer fails for the first, succeeds for
 		// the second
-		&flakyDialer{},
+		&flakeyDialer{},
 		[]proxy.InstanceConnConfig{
 			{Name: "p:r:instance-1"},
 			{Name: "p:r:instance-2"},
