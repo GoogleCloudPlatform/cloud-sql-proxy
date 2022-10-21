@@ -72,6 +72,8 @@ jobs:
           access_token_lifetime: 600s
 
       - name: Run tests
+        # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`
+        shell: bash
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
           go test -short -race -v ./... | tee test_results.txt
