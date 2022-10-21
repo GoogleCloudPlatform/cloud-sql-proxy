@@ -3,7 +3,7 @@
 The Cloud SQL Auth proxy v2 CLI interface maintains a close match to the v1
 interface. Migrating to v2 will require minimal changes. Below are a number
 of examples of v1 vs v2 invocations covering the most common uses. See
-[Flag Changes][#flag-changes] for details.
+[Flag Changes](#flag-changes) for details.
 
 All the examples below use `<INSTANCE_CONNECTION_NAME>` as a placeholder for
 your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
@@ -39,7 +39,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 # v2
 # starts listener on port 5000, increments for additional listeners
-./cloud-sql-proxy --port 5000 INSTANCE_CONNECTION_NAME INSTANCE_CONNECTION_NAME2
+./cloud-sql-proxy --port 5000 <INSTANCE_CONNECTION_NAME> <INSTANCE_CONNECTION_NAME2>
 ```
 
 ### Listen on multiple TCP sockets with non-sequential ports
@@ -49,7 +49,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 ./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:6000,<INSTANCE_CONNECTION_NAME2>=tcp:7000
 
 # v2
-./cloud-sql-proxy 'INSTANCE_CONNECTION_NAME?port=6000' 'INSTANCE_CONNECTION_NAME2?port=7000'
+./cloud-sql-proxy '<INSTANCE_CONNECTION_NAME>?port=6000' '<INSTANCE_CONNECTION_NAME2>?port=7000'
 ```
 
 ### Listen on all interfaces
@@ -59,7 +59,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 ./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:0.0.0.0:6000
 
 # v2
-./cloud-sql-proxy --address 0.0.0.0 --port 6000 INSTANCE_CONNECTION_NAME
+./cloud-sql-proxy --address 0.0.0.0 --port 6000 <INSTANCE_CONNECTION_NAME>
 ```
 
 ## Flag Changes
@@ -77,8 +77,8 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | dir                         | unix-socket           |                                                                                      |
 | enable_iam_login            | auto-iam-authn        |                                                                                      |
 | fd_rlimit                   | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258) |
-| fuse                        | 🗓️                    |                                                                                    |
-| fuse_tmp                    | 🗓️                    |                                                                                      |
+| fuse                        | fuse                  |                                                                                    |
+| fuse_tmp                    | fuse-temp-dir         |                                                                                      |
 | health_check_port           | http-port             |                                                                                      |
 | host                        | sqladmin-api-endpoint |                                                                                      |
 | instances_metadata          | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259) |
