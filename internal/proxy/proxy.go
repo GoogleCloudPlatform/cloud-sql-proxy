@@ -421,9 +421,9 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	return c, nil
 }
 
-// CheckConnections dials each registered instance and reports any errors that
-// may have occurred.
-func (c *Client) CheckConnections(ctx context.Context) error {
+// CheckConnections dials each registered instance and reports the number of
+// connections checked and any errors that may have occurred.
+func (c *Client) CheckConnections(ctx context.Context) (int, error) {
 	var (
 		wg    sync.WaitGroup
 		errCh = make(chan error, len(c.mnts))
@@ -453,7 +453,7 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 	wg.Wait()
 
 	var mErr MultiErr
-	for i := 0; i < len(c.mnts); i++ {
+	for i := 0; i < len(mnts); i++ {
 		select {
 		case err := <-errCh:
 			mErr = append(mErr, err)
@@ -461,10 +461,11 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 			continue
 		}
 	}
+	mLen := len(mnts)
 	if len(mErr) > 0 {
-		return mErr
+		return mLen, mErr
 	}
-	return nil
+	return mLen, nil
 }
 
 // ConnCount returns the number of open connections and the maximum allowed

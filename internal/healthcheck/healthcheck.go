@@ -90,8 +90,8 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	err := c.proxy.CheckConnections(ctx)
-	if err != nil && !ready(err, c.minReady) {
+	n, err := c.proxy.CheckConnections(ctx)
+	if err != nil && !ready(err, c.minReady, n) {
 		c.logger.Errorf("[Health Check] Readiness failed: %v", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write([]byte(err.Error()))
@@ -102,12 +102,18 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("ok"))
 }
 
-func ready(err error, minReady uint64) bool {
+func ready(err error, minReady uint64, total int) bool {
 	mErr, ok := err.(proxy.MultiErr)
 	if !ok {
 		return false
 	}
-	return minReady != 0 && minReady <= uint64(len(mErr))
+	if minReady == 0 {
+		return false
+	}
+	notReady := len(mErr)
+	areReady := total - notReady
+	return areReady >= int(minReady)
+
 }
 
 // HandleLiveness indicates the process is up and responding to HTTP requests.
