@@ -101,6 +101,11 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 	}
 
 	n, err := c.proxy.CheckConnections(ctx)
+	if minReady > n {
+		c.logger.Errorf("[Health Check] min-ready was greater than registered instances")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	if err != nil && !ready(err, minReady, n) {
 		c.logger.Errorf("[Health Check] Readiness failed: %v", err)
 		w.WriteHeader(http.StatusServiceUnavailable)

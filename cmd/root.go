@@ -174,6 +174,27 @@ Instance Level Configuration
     	    my-project:us-central1:my-db-server \
     	    'my-project:us-central1:my-other-server?address=0.0.0.0&port=7000'
 
+Health checks
+
+    When enabling the --health-checks flag, the proxy will start an HTTP server
+    on localhost with three endpoints:
+
+    - /startup: Returns 200 status when the proxy has finished starting up.
+    Otherwise returns 503 status.
+
+    - /readiness: Returns 200 status when the proxy has started, has available
+    connections if max connections have been set with the --max-connections
+    flag, and when the proxy can connect to all registered instances. Otherwise,
+    returns a 503 status. Optionally supports a min-ready query param (e.g.,
+    /readiness?min-ready=3) where the proxy will return a 200 status if the
+    proxy can connect successfully to at least min-ready number of instances. If
+    min-ready exceeds the number of registered instances, returns a 400.
+
+    - /liveness: Always returns 200 status. If this endpoint is not responding,
+    the proxy is in a bad state and should be restarted.
+
+    To configure the address, use --http-server.
+
 Service Account Impersonation
 
     The proxy supports service account impersonation with the
@@ -620,6 +641,8 @@ func runSignalWrapper(cmd *Command) error {
 	notify := func() {}
 	if cmd.healthCheck {
 		needsHTTPServer = true
+		cmd.logger.Infof("Starting health check server at %s",
+			net.JoinHostPort(cmd.httpAddress, cmd.httpPort))
 		hc := healthcheck.NewCheck(p, cmd.logger)
 		mux.HandleFunc("/startup", hc.HandleStartup)
 		mux.HandleFunc("/readiness", hc.HandleReadiness)
@@ -630,7 +653,7 @@ func runSignalWrapper(cmd *Command) error {
 	// Start the HTTP server if anything requiring HTTP is specified.
 	if needsHTTPServer {
 		server := &http.Server{
-			Addr:    fmt.Sprintf("%s:%s", cmd.httpAddress, cmd.httpPort),
+			Addr:    net.JoinHostPort(cmd.httpAddress, cmd.httpPort),
 			Handler: mux,
 		}
 		// Start the HTTP server.
