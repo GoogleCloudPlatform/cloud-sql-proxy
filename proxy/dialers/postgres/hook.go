@@ -43,6 +43,11 @@ type dialer struct{}
 // lib/pq returns the format '[project:region:instance]:port'
 var instanceRegexp = regexp.MustCompile(`^\[(.+)\]:[0-9]+$`)
 
+// Dial connects to the provider Cloud SQL instance.
+//
+// Deprecated: Dial has been replaced by the Cloud SQL Go connector which has
+// better support for configuring the dialer's behavior. See
+// cloud.google.com/go/cloudsqlconn/postgres/pgxv4.RegisterDriver instead.
 func (d dialer) Dial(ntw, addr string) (net.Conn, error) {
 	matches := instanceRegexp.FindStringSubmatch(addr)
 	if len(matches) != 2 {
@@ -52,10 +57,19 @@ func (d dialer) Dial(ntw, addr string) (net.Conn, error) {
 	return proxy.Dial(instance)
 }
 
+// DialTimeout connects to the provider Cloud SQL instance using the provided
+// timeout.
+//
+// Deprecated: DialTimeout has been replaced by the Cloud SQL Go connector which
+// has better support for configuring the dialer's behavior. See
+// cloud.google.com/go/cloudsqlconn/postgres/pgxv4.RegisterDriver instead.
 func (d dialer) DialTimeout(ntw, addr string, timeout time.Duration) (net.Conn, error) {
 	return nil, fmt.Errorf("timeout is not currently supported for cloudsqlpostgres dialer")
 }
 
+// Deprecated: Open has been replaced by the Cloud SQL Go connector which has
+// better support for configuring the dialer's behavior. See
+// cloud.google.com/go/cloudsqlconn/postgres/pgxv4.RegisterDriver instead.
 func (d *Driver) Open(name string) (driver.Conn, error) {
 	return pq.DialOpen(dialer{}, name)
 }

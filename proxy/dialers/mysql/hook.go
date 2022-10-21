@@ -37,6 +37,10 @@ func init() {
 //
 // The returned *sql.DB may be valid even if there's also an error returned
 // (e.g. if there was a transient connection error).
+//
+// Deprecated: Dial has been replaced by the Cloud SQL Go connector which has
+// better support for configuring the dialer's behavior.
+// See cloud.google.com/go/cloudsqlconn/mysql/mysql.RegisterDriver instead.
 func Dial(instance, user string) (*sql.DB, error) {
 	cfg := mysql.NewConfig()
 	cfg.User = user
@@ -51,6 +55,10 @@ func Dial(instance, user string) (*sql.DB, error) {
 // information, see:
 //
 //	https://cloud.google.com/sql/docs/sql-proxy#user
+//
+// Deprecated: DialPassword has been replaced by the Cloud SQL Go connector
+// which has better support for configuring the dialer's behavior. See
+// cloud.google.com/go/cloudsqlconn/mysql/mysql.RegisterDriver instead.
 func DialPassword(instance, user, password string) (*sql.DB, error) {
 	cfg := mysql.NewConfig()
 	cfg.User = user
@@ -63,6 +71,10 @@ func DialPassword(instance, user, password string) (*sql.DB, error) {
 // provided instance via the given user and password. The config can be
 // modified and passed to DialCfg to connect. If you don't modify the returned
 // config before dialing, consider using Dial or DialPassword.
+//
+// Deprecated: Cfg has been replaced by the Cloud SQL Go connector which has
+// better support for configuring the dialer's behavior.
+// See cloud.google.com/go/cloudsqlconn/mysql/mysql.RegisterDriver instead.
 func Cfg(instance, user, password string) *mysql.Config {
 	cfg := mysql.NewConfig()
 	cfg.User = user
@@ -78,6 +90,10 @@ func Cfg(instance, user, password string) *mysql.Config {
 // The cfg.Addr should be the instance's connection string, in the format of:
 //
 //	project-name:region:instance-name.
+//
+// Deprecated: DialCfg has been replaced by the Cloud SQL Go connector which has
+// better support for configuring the dialer's behavior. See
+// cloud.google.com/go/cloudsqlconn/mysql/mysql.RegisterDriver instead.
 func DialCfg(cfg *mysql.Config) (*sql.DB, error) {
 	if cfg.TLSConfig != "" {
 		return nil, errors.New("do not specify TLS when using the Proxy")
