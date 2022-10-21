@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
@@ -29,21 +30,19 @@ import (
 // Check provides HTTP handlers for use as healthchecks typically in a
 // Kubernetes context.
 type Check struct {
-	once     *sync.Once
-	started  chan struct{}
-	proxy    *proxy.Client
-	logger   cloudsql.Logger
-	minReady uint64
+	once    *sync.Once
+	started chan struct{}
+	proxy   *proxy.Client
+	logger  cloudsql.Logger
 }
 
 // NewCheck is the initializer for Check.
-func NewCheck(p *proxy.Client, l cloudsql.Logger, minReady uint64) *Check {
+func NewCheck(p *proxy.Client, l cloudsql.Logger) *Check {
 	return &Check{
-		once:     &sync.Once{},
-		started:  make(chan struct{}),
-		proxy:    p,
-		logger:   l,
-		minReady: minReady,
+		once:    &sync.Once{},
+		started: make(chan struct{}),
+		proxy:   p,
+		logger:  l,
 	}
 }
 
@@ -69,7 +68,7 @@ var errNotStarted = errors.New("proxy is not started")
 // HandleReadiness ensures the Check has been notified of successful startup,
 // that the proxy has not reached maximum connections, and that all connections
 // are healthy.
-func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
+func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -90,8 +89,19 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
+	var minReady int
+	q := req.URL.Query()
+	if v := q.Get("min-ready"); v != "" {
+		n, err := strconv.Atoi(v)
+		// If the query value parsed correctly, set it to minReady. Otherwise,
+		// ignore it.
+		if err == nil {
+			minReady = n
+		}
+	}
+
 	n, err := c.proxy.CheckConnections(ctx)
-	if err != nil && !ready(err, c.minReady, n) {
+	if err != nil && !ready(err, minReady, n) {
 		c.logger.Errorf("[Health Check] Readiness failed: %v", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write([]byte(err.Error()))
@@ -102,7 +112,7 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("ok"))
 }
 
-func ready(err error, minReady uint64, total int) bool {
+func ready(err error, minReady, total int) bool {
 	mErr, ok := err.(proxy.MultiErr)
 	if !ok {
 		return false
@@ -112,7 +122,7 @@ func ready(err error, minReady uint64, total int) bool {
 	}
 	notReady := len(mErr)
 	areReady := total - notReady
-	return areReady >= int(minReady)
+	return areReady >= minReady
 
 }
 

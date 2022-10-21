@@ -22,6 +22,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -130,7 +131,7 @@ func TestHandleStartupWhenNotNotified(t *testing.T) {
 			t.Logf("failed to close proxy client: %v", err)
 		}
 	}()
-	check := healthcheck.NewCheck(p, logger, 0)
+	check := healthcheck.NewCheck(p, logger)
 
 	rec := httptest.NewRecorder()
 	check.HandleStartup(rec, &http.Request{})
@@ -150,7 +151,7 @@ func TestHandleStartupWhenNotified(t *testing.T) {
 			t.Logf("failed to close proxy client: %v", err)
 		}
 	}()
-	check := healthcheck.NewCheck(p, logger, 0)
+	check := healthcheck.NewCheck(p, logger)
 
 	check.NotifyStarted()
 
@@ -170,7 +171,7 @@ func TestHandleReadinessWhenNotNotified(t *testing.T) {
 			t.Logf("failed to close proxy client: %v", err)
 		}
 	}()
-	check := healthcheck.NewCheck(p, logger, 0)
+	check := healthcheck.NewCheck(p, logger)
 
 	rec := httptest.NewRecorder()
 	check.HandleReadiness(rec, &http.Request{})
@@ -189,7 +190,7 @@ func TestHandleReadinessForMaxConns(t *testing.T) {
 		}
 	}()
 	started := make(chan struct{})
-	check := healthcheck.NewCheck(p, logger, 0)
+	check := healthcheck.NewCheck(p, logger)
 	go p.Serve(context.Background(), func() {
 		check.NotifyStarted()
 		close(started)
@@ -216,6 +217,7 @@ func TestHandleReadinessForMaxConns(t *testing.T) {
 			}
 			time.Sleep(time.Second)
 		}
+		t.Fatalf("failed to receive status code = %v", wantCode)
 		return nil
 	}
 	resp := waitForConnect(t, http.StatusServiceUnavailable)
@@ -236,7 +238,7 @@ func TestHandleReadinessWithConnectionProblems(t *testing.T) {
 			t.Logf("failed to close proxy client: %v", err)
 		}
 	}()
-	check := healthcheck.NewCheck(p, logger, 0)
+	check := healthcheck.NewCheck(p, logger)
 	check.NotifyStarted()
 
 	rec := httptest.NewRecorder()
@@ -259,18 +261,28 @@ func TestHandleReadinessWithConnectionProblems(t *testing.T) {
 func TestReadinessWithMinReady(t *testing.T) {
 	tcs := []struct {
 		desc       string
-		minReady   uint64
+		minReady   string
 		wantStatus int
 	}{
 		{
 			desc:       "when all instances must be ready",
-			minReady:   2,
+			minReady:   "2",
 			wantStatus: http.StatusServiceUnavailable,
 		},
 		{
 			desc:       "when only one instance must be ready",
-			minReady:   1,
+			minReady:   "1",
 			wantStatus: http.StatusOK,
+		},
+		{
+			desc:       "when min ready is not configured",
+			minReady:   "0",
+			wantStatus: http.StatusServiceUnavailable,
+		},
+		{
+			desc:       "when min ready is bogus",
+			minReady:   "bogus",
+			wantStatus: http.StatusServiceUnavailable,
 		},
 	}
 	p := newProxyWithParams(t, 0,
@@ -290,11 +302,14 @@ func TestReadinessWithMinReady(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			check := healthcheck.NewCheck(p, logger, tc.minReady)
+			check := healthcheck.NewCheck(p, logger)
 			check.NotifyStarted()
-
+			u, err := url.Parse(fmt.Sprintf("/readiness?min-ready=%s", tc.minReady))
+			if err != nil {
+				t.Fatal(err)
+			}
 			rec := httptest.NewRecorder()
-			check.HandleReadiness(rec, &http.Request{})
+			check.HandleReadiness(rec, &http.Request{URL: u})
 
 			resp := rec.Result()
 			if got, want := resp.StatusCode, tc.wantStatus; got != want {
