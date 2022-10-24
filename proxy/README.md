@@ -1,5 +1,15 @@
 # Cloud SQL proxy dialer for Go
 
+## Note
+
+This package is deprecated. Instead use the [Cloud SQL Go
+Connector][go-connector] which has support for MySQL, Postgres, and SQL Server,
+in addition to better configurability, support for metrics and tracing, and a
+number of additional features. See the [migration guide][migration-guide] for
+how to switch.
+
+## Overview
+
 You can also use the Cloud SQL proxy directly from a Go program.
 
 These packages are primarily used as implementation for the Cloud SQL proxy
@@ -31,3 +41,5 @@ See [example usage](dialers/postgres/hook_test.go).
 [Python]: https://github.com/GoogleCloudPlatform/cloud-sql-python-connector
 [go-mysql]: https://github.com/go-sql-driver/mysql
 [mysql-godoc]: https://pkg.go.dev/github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/mysql
+[go-connector]: https://pkg.go.dev/cloud.google.com/go/cloudsqlconn
+[migration-guide]: https://github.com/GoogleCloudPlatform/cloud-sql-go-connector/blob/main/migration-guide.md
