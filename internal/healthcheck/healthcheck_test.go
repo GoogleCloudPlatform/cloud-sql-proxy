@@ -265,6 +265,11 @@ func TestReadinessWithMinReady(t *testing.T) {
 		wantStatus int
 	}{
 		{
+			desc:       "when min ready is not configured",
+			minReady:   "0",
+			wantStatus: http.StatusServiceUnavailable,
+		},
+		{
 			desc:       "when only one instance must be ready",
 			minReady:   "1",
 			wantStatus: http.StatusOK,
@@ -275,19 +280,14 @@ func TestReadinessWithMinReady(t *testing.T) {
 			wantStatus: http.StatusServiceUnavailable,
 		},
 		{
-			desc:       "when min ready is not configured",
-			minReady:   "0",
-			wantStatus: http.StatusServiceUnavailable,
-		},
-		{
 			desc:       "when min ready is bogus",
 			minReady:   "bogus",
 			wantStatus: http.StatusServiceUnavailable,
 		},
 		{
-			desc:       "when min ready is greater than registered instances",
-			minReady:   "100",
-			wantStatus: http.StatusBadRequest,
+			desc:       "when min ready is not set",
+			minReady:   "",
+			wantStatus: http.StatusServiceUnavailable,
 		},
 	}
 	p := newProxyWithParams(t, 0,

@@ -93,20 +93,16 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 	q := req.URL.Query()
 	if v := q.Get("min-ready"); v != "" {
 		n, err := strconv.Atoi(v)
-		// If the query value parsed correctly, set it to minReady. Otherwise,
-		// ignore it.
-		if err == nil {
-			minReady = n
+		if err != nil {
+			c.logger.Errorf("[Health Check] min-ready %q was not a valid integer", v)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
 		}
+		minReady = n
 	}
 
 	n, err := c.proxy.CheckConnections(ctx)
-	if minReady > n {
-		c.logger.Errorf("[Health Check] min-ready was greater than registered instances")
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if err != nil && !ready(err, minReady, n) {
+	if !ready(err, minReady, n) {
 		c.logger.Errorf("[Health Check] Readiness failed: %v", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write([]byte(err.Error()))
@@ -118,11 +114,16 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 }
 
 func ready(err error, minReady, total int) bool {
-	mErr, ok := err.(proxy.MultiErr)
-	if !ok {
+	// If err is nil, then the proxy is ready.
+	if err == nil {
+		return true
+	}
+	// When minReady is not configured, any error means the proxy is not ready.
+	if minReady == 0 {
 		return false
 	}
-	if minReady == 0 {
+	mErr, ok := err.(proxy.MultiErr)
+	if !ok {
 		return false
 	}
 	notReady := len(mErr)
