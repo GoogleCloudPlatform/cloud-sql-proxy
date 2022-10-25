@@ -442,7 +442,7 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 				return
 			}
 			cErr := conn.Close()
-			if err != nil {
+			if cErr != nil {
 				errCh <- fmt.Errorf("%v: %v", m.inst, cErr)
 			}
 		}(mnt)
