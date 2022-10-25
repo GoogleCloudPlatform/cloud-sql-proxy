@@ -9,6 +9,8 @@
 * add support for impersonation ([#1460](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1460)) ([d0f8e55](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/d0f8e55ccb390b9c1f803b3a6c4f2e7874f40337)), closes [#417](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/417)
 * add support for JSON credentials flag ([#1433](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1433)) ([2a9c8d8](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/2a9c8d8cb24e2c84e43620dab333677191d1dbd7))
 * bump to Go 1.19 ([#1411](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1411)) ([02e008a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/02e008a6d886a461a76ddc899c8891621ca2f58c))
+connector/commit/bd20b6bfe746cfea778b9e1a9702de28047e5950))
+* cloud.google.com/go/cloudsqlconn: Downscope OAuth2 token included in ephemeral certificate ([#​332](https://togithub.com/GoogleCloudPlatform/cloud-sql-go-connector/issues/332)) ([d13dd6f](https://togithub.com/GoogleCloudPlatform/cloud-sql-go-connector/commit/d13dd6f3e7db0179511539315dec1c2dc96f0e3e))
 
 
 ### Bug Fixes
@@ -16,6 +18,7 @@
 * don't build FUSE paths for Windows ([#1400](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1400)) ([be2d14f](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/be2d14f39fa88f17cf69cf338719f08d2f81143b))
 * restore openbsd and freebsd support ([#1442](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1442)) ([05dcdd4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/05dcdd4b48bc6fabba14ae41dcc5de7c1d0c3f2f))
 * set write permissions for group and other ([#1405](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1405)) ([f6b77d7](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f6b77d7b42633f689be877e469173fa42a6877a8))
+* cloud.google.com/go/cloudsqlconn: throw error when Auto IAM AuthN is unsupported ([#​310](https://togithub.com/GoogleCloudPlatform/cloud-sql-go-connector/issues/310)) ([652e196](https://togithub.com/GoogleCloudPlatform/cloud-sql-go-connector/commit/652e196b427ce9673676e214c6ad3905b21a68b0))
 
 
 ### Miscellaneous Chores
