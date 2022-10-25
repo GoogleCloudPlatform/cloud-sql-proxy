@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.33.0](https://github.com/googlecloudplatform/cloudsql-proxy/compare/v1.32.0...v1.33.0) (2022-10-25)
+
+
+### Features
+
+* add bullseye container image ([#1467](https://github.com/googlecloudplatform/cloudsql-proxy/issues/1467)) ([5a5d0a1](https://github.com/googlecloudplatform/cloudsql-proxy/commit/5a5d0a1c342ec57027921f43c4a40e02865a5b12))
+* add support for Go 1.19 ([#1441](https://github.com/googlecloudplatform/cloudsql-proxy/issues/1441)) ([1b16ff8](https://github.com/googlecloudplatform/cloudsql-proxy/commit/1b16ff8324b74a8d62f70286837d3b4a3af6d056))
+* deprecate proxy drivers ([#1500](https://github.com/googlecloudplatform/cloudsql-proxy/issues/1500)) ([2b460ea](https://github.com/googlecloudplatform/cloudsql-proxy/commit/2b460ea07ddfdc658b52f275c0e5550ce553c872))
+* Downscope OAuth2 token included in ephemeral certificate ([#1450](https://github.com/googlecloudplatform/cloudsql-proxy/issues/1450)) ([7557a35](https://github.com/googlecloudplatform/cloudsql-proxy/commit/7557a354ee26fa842025b0c2a811cb6175484e6d))
+
+
+### Bug Fixes
+
+* don't build fuse on freebsd ([#1439](https://github.com/googlecloudplatform/cloudsql-proxy/issues/1439)) ([87863a1](https://github.com/googlecloudplatform/cloudsql-proxy/commit/87863a1b326e31fb3d3f4474fb2223010c6207e9))
+* restore Go 1.16 support ([#1408](https://github.com/googlecloudplatform/cloudsql-proxy/issues/1408)) ([618cb12](https://github.com/googlecloudplatform/cloudsql-proxy/commit/618cb129e3591aba072a01b420d18cc7dce26a68))
+* update all direct deps to latest ([#1497](https://github.com/googlecloudplatform/cloudsql-proxy/issues/1497)) ([b15f78a](https://github.com/googlecloudplatform/cloudsql-proxy/commit/b15f78a569dc4bd7e113e9739a24240f5a7b4036))
+
 ## [1.32.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.31.2...v1.32.0) (2022-09-08)
 
 
