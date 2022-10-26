@@ -57,6 +57,22 @@ func pointer[T any](v T) *T {
 	return &v
 }
 
+func invokeProxyCommand(args []string) (*Command, error) {
+	c := NewCommand()
+	// Keep the test output quiet
+	c.SilenceUsage = true
+	c.SilenceErrors = true
+	// Disable execute behavior
+	c.RunE = func(*cobra.Command, []string) error {
+		return nil
+	}
+	c.SetArgs(args)
+
+	err := c.Execute()
+
+	return c, err
+}
+
 func TestNewCommandArguments(t *testing.T) {
 	tcs := []struct {
 		desc string
@@ -298,17 +314,7 @@ func TestNewCommandArguments(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error {
-				return nil
-			}
-			c.SetArgs(tc.args)
-
-			err := c.Execute()
+			c, err := invokeProxyCommand(tc.args)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -443,17 +449,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 			cleanup := tc.setEnv()
 			defer cleanup()
 
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error {
-				return nil
-			}
-			c.SetArgs([]string{"proj:region:inst"})
-
-			err := c.Execute()
+			c, err := invokeProxyCommand([]string{"proj:region:inst"})
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -559,17 +555,7 @@ func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
 			cleanup := tc.setEnv()
 			defer cleanup()
 
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error {
-				return nil
-			}
-			c.SetArgs(tc.args)
-
-			err := c.Execute()
+			c, err := invokeProxyCommand(tc.args)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -765,17 +751,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			cleanup := tc.setEnv()
 			defer cleanup()
 
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error {
-				return nil
-			}
-			c.SetArgs([]string{"proj:region:inst"})
-
-			err := c.Execute()
+			c, err := invokeProxyCommand([]string{"proj:region:inst"})
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -821,15 +797,7 @@ func TestAutoIAMAuthNQueryParams(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error { return nil }
-			c.SetArgs(tc.args)
-
-			err := c.Execute()
+			c, err := invokeProxyCommand(tc.args)
 			if err != nil {
 				t.Fatalf("command.Execute: %v", err)
 			}
@@ -902,15 +870,7 @@ func TestPrivateIPQueryParams(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error { return nil }
-			c.SetArgs(tc.args)
-
-			err := c.Execute()
+			c, err := invokeProxyCommand(tc.args)
 			if err != nil {
 				t.Fatalf("command.Execute: %v", err)
 			}
@@ -1041,17 +1001,7 @@ func TestNewCommandWithErrors(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error {
-				return nil
-			}
-			c.SetArgs(tc.args)
-
-			err := c.Execute()
+			_, err := invokeProxyCommand(tc.args)
 			if err == nil {
 				t.Fatal("want error != nil, got = nil")
 			}
