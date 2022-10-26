@@ -263,50 +263,62 @@ func TestReadinessWithMinReady(t *testing.T) {
 		desc       string
 		minReady   string
 		wantStatus int
+		dialer     cloudsql.Dialer
 	}{
 		{
-			desc:       "when min ready is not configured",
-			minReady:   "0",
-			wantStatus: http.StatusServiceUnavailable,
+			desc:     "when min ready is zero",
+			minReady: "0",
+			// Required 0 to be ready, so status OK
+			// even if all checks fail.
+			wantStatus: http.StatusOK,
+			dialer:     &errorDialer{},
 		},
 		{
 			desc:       "when only one instance must be ready",
 			minReady:   "1",
 			wantStatus: http.StatusOK,
+			dialer:     &flakeyDialer{}, // fails on first call, succeeds on second
 		},
 		{
 			desc:       "when all instances must be ready",
 			minReady:   "2",
 			wantStatus: http.StatusServiceUnavailable,
+			dialer:     &errorDialer{},
+		},
+		{
+			desc:       "when min ready is greater than the number of instances",
+			minReady:   "3",
+			wantStatus: http.StatusServiceUnavailable,
+			dialer:     &fakeDialer{},
 		},
 		{
 			desc:       "when min ready is bogus",
 			minReady:   "bogus",
-			wantStatus: http.StatusServiceUnavailable,
+			wantStatus: http.StatusBadRequest,
+			dialer:     &fakeDialer{},
 		},
 		{
 			desc:       "when min ready is not set",
 			minReady:   "",
-			wantStatus: http.StatusServiceUnavailable,
+			wantStatus: http.StatusOK,
+			dialer:     &fakeDialer{},
 		},
 	}
-	p := newProxyWithParams(t, 0,
-		// for every two calls, flaky dialer fails for the first, succeeds for
-		// the second
-		&flakeyDialer{},
-		[]proxy.InstanceConnConfig{
-			{Name: "p:r:instance-1"},
-			{Name: "p:r:instance-2"},
-		},
-	)
-	defer func() {
-		if err := p.Close(); err != nil {
-			t.Logf("failed to close proxy client: %v", err)
-		}
-	}()
-
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
+			p := newProxyWithParams(t, 0,
+				tc.dialer,
+				[]proxy.InstanceConnConfig{
+					{Name: "p:r:instance-1"},
+					{Name: "p:r:instance-2"},
+				},
+			)
+			defer func() {
+				if err := p.Close(); err != nil {
+					t.Logf("failed to close proxy client: %v", err)
+				}
+			}()
+
 			check := healthcheck.NewCheck(p, logger)
 			check.NotifyStarted()
 			u, err := url.Parse(fmt.Sprintf("/readiness?min-ready=%s", tc.minReady))
