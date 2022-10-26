@@ -94,7 +94,7 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 	if v := q.Get("min-ready"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil {
-			c.logger.Errorf("[Health Check] min-ready %q was not a valid integer", v)
+			c.logger.Errorf("[Health Check] min-ready must be a valid integer, got = %q", v)
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "min-query must be a valid integer, got = %q", v)
 			return
@@ -125,7 +125,7 @@ func ready(err error, minReady *int, total int) (int, error) {
 	if err == nil {
 		if minReady != nil && *minReady > total {
 			return http.StatusBadRequest, fmt.Errorf(
-				"min-ready (%v) is greater than registered instances (%v)",
+				"min-ready (%v) must be less than or equal to the number of registered instances (%v)",
 				*minReady, total,
 			)
 		}
