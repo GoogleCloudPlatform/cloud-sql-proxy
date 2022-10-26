@@ -99,6 +99,12 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(w, "min-query must be a valid integer, got = %q", v)
 			return
 		}
+		if n <= 0 {
+			c.logger.Errorf("[Health Check] min-ready %q must be greater than zero", v)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "min-query must be greater than zero", v)
+			return
+		}
 		minReady = &n
 	}
 

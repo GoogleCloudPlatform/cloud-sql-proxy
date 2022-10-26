@@ -266,12 +266,16 @@ func TestReadinessWithMinReady(t *testing.T) {
 		dialer     cloudsql.Dialer
 	}{
 		{
-			desc:     "when min ready is zero",
-			minReady: "0",
-			// Required 0 to be ready, so status OK
-			// even if all checks fail.
-			wantStatus: http.StatusOK,
-			dialer:     &errorDialer{},
+			desc:       "when min ready is zero",
+			minReady:   "0",
+			wantStatus: http.StatusBadRequest,
+			dialer:     &fakeDialer{},
+		},
+		{
+			desc:       "when min ready is less than zero",
+			minReady:   "-1",
+			wantStatus: http.StatusBadRequest,
+			dialer:     &fakeDialer{},
 		},
 		{
 			desc:       "when only one instance must be ready",
