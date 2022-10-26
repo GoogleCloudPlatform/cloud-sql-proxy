@@ -31,31 +31,33 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestNewCommandArguments(t *testing.T) {
-
-	// saving true in a variable so we can take its address.
-	trueValue := true
-
-	withDefaults := func(c *proxy.Config) *proxy.Config {
-		if c.UserAgent == "" {
-			c.UserAgent = userAgent
-		}
-		if c.Addr == "" {
-			c.Addr = "127.0.0.1"
-		}
-		if c.FUSEDir == "" {
-			if c.Instances == nil {
-				c.Instances = []proxy.InstanceConnConfig{{}}
-			}
-			if i := &c.Instances[0]; i.Name == "" {
-				i.Name = "proj:region:inst"
-			}
-		}
-		if c.FUSETempDir == "" {
-			c.FUSETempDir = filepath.Join(os.TempDir(), "csql-tmp")
-		}
-		return c
+func withDefaults(c *proxy.Config) *proxy.Config {
+	if c.UserAgent == "" {
+		c.UserAgent = userAgent
 	}
+	if c.Addr == "" {
+		c.Addr = "127.0.0.1"
+	}
+	if c.FUSEDir == "" {
+		if c.Instances == nil {
+			c.Instances = []proxy.InstanceConnConfig{{}}
+		}
+		if i := &c.Instances[0]; i.Name == "" {
+			i.Name = "proj:region:inst"
+		}
+	}
+	if c.FUSETempDir == "" {
+		c.FUSETempDir = filepath.Join(os.TempDir(), "csql-tmp")
+	}
+	return c
+}
+
+// pointer returns a pointer to v
+func pointer[T any](v T) *T {
+	return &v
+}
+
+func TestNewCommandArguments(t *testing.T) {
 	tcs := []struct {
 		desc string
 		args []string
@@ -231,7 +233,7 @@ func TestNewCommandArguments(t *testing.T) {
 			args: []string{"proj:region:inst?auto-iam-authn=true"},
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
-					IAMAuthN: &trueValue,
+					IAMAuthN: pointer(true),
 				}},
 			}),
 		},
@@ -268,7 +270,7 @@ func TestNewCommandArguments(t *testing.T) {
 			args: []string{"proj:region:inst?private-ip=true"},
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
-					PrivateIP: &trueValue,
+					PrivateIP: pointer(true),
 				}},
 			}),
 		},
@@ -280,7 +282,7 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
-			desc: "",
+			desc: "using the impersonate service account flag",
 			args: []string{"--impersonate-service-account",
 				"sv1@developer.gserviceaccount.com,sv2@developer.gserviceaccount.com,sv3@developer.gserviceaccount.com",
 				"proj:region:inst"},
@@ -318,11 +320,474 @@ func TestNewCommandArguments(t *testing.T) {
 	}
 }
 
-func TestAutoIAMAuthNQueryParams(t *testing.T) {
-	// saving true and false in a variable so we can take its address
-	trueValue := true
-	falseValue := false
+func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
+	tcs := []struct {
+		desc string
+		// sets an env var before the test, and returns a cleanup function
+		setEnv  func() func()
+		isValid func(cmd *Command) bool
+	}{
+		{
+			desc: "using the disable traces envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_DISABLE_TRACES"
+				os.Setenv(key, "true")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.disableTraces == true
+			},
+		},
+		{
+			desc: "using the telemetry sample rate envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_TELEMETRY_SAMPLE_RATE"
+				os.Setenv(key, "500")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.telemetryTracingSampleRate == 500
+			},
+		},
+		{
+			desc: "using the disable metrics envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_DISABLE_METRICS"
+				os.Setenv(key, "true")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.disableMetrics == true
+			},
+		},
+		{
+			desc: "using the telemetry project envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_TELEMETRY_PROJECT"
+				os.Setenv(key, "mycoolproject")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.telemetryProject == "mycoolproject"
+			},
+		},
+		{
+			desc: "using the telemetry prefix envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_TELEMETRY_PREFIX"
+				os.Setenv(key, "myprefix")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.telemetryPrefix == "myprefix"
+			},
+		},
+		{
+			desc: "using the prometheus envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_PROMETHEUS"
+				os.Setenv(key, "true")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.prometheus == true
+			},
+		},
+		{
+			desc: "using the prometheus namespace envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_PROMETHEUS_NAMESPACE"
+				os.Setenv(key, "myns")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.prometheusNamespace == "myns"
+			},
+		},
+		{
+			desc: "using the health check envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_HEALTH_CHECK"
+				os.Setenv(key, "true")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.healthCheck == true
+			},
+		},
+		{
+			desc: "using the http address envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_HTTP_ADDRESS"
+				os.Setenv(key, "0.0.0.0")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.httpAddress == "0.0.0.0"
+			},
+		},
+		{
+			desc: "using the http port envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_HTTP_PORT"
+				os.Setenv(key, "5555")
+				return func() { os.Unsetenv(key) }
+			},
+			isValid: func(cmd *Command) bool {
+				return cmd.httpPort == "5555"
+			},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			cleanup := tc.setEnv()
+			defer cleanup()
 
+			c := NewCommand()
+			// Keep the test output quiet
+			c.SilenceUsage = true
+			c.SilenceErrors = true
+			// Disable execute behavior
+			c.RunE = func(*cobra.Command, []string) error {
+				return nil
+			}
+			c.SetArgs([]string{"proj:region:inst"})
+
+			err := c.Execute()
+			if err != nil {
+				t.Fatalf("want error = nil, got = %v", err)
+			}
+
+			if !tc.isValid(c) {
+				t.Fatal("want valid, got invalid")
+			}
+		})
+	}
+}
+
+func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
+	tcs := []struct {
+		desc string
+		// sets an env var before the test, and returns a cleanup function
+		setEnv func() func()
+		args   []string
+		want   *proxy.Config
+	}{
+		{
+			desc: "with one instance connection name",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_INSTANCE_CONNECTION_NAME"
+				os.Setenv(key, "proj:reg:inst")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst"},
+			}}),
+		},
+		{
+			desc: "with multiple instance connection names",
+			setEnv: func() func() {
+				key0 := "CLOUD_SQL_INSTANCE_CONNECTION_NAME_0"
+				key1 := "CLOUD_SQL_INSTANCE_CONNECTION_NAME_1"
+				os.Setenv(key0, "proj:reg:inst0")
+				os.Setenv(key1, "proj:reg:inst1")
+				return func() {
+					os.Unsetenv(key0)
+					os.Unsetenv(key1)
+				}
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst0"},
+				{Name: "proj:reg:inst1"},
+			}}),
+		},
+		{
+			desc: "with query params",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_INSTANCE_CONNECTION_NAME_0"
+				os.Setenv(key, "proj:reg:inst0?auto-iam-authn=true")
+				return func() {
+					os.Unsetenv(key)
+				}
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst0", IAMAuthN: pointer(true)},
+			}}),
+		},
+		{
+			desc: "when the index skips a number",
+			setEnv: func() func() {
+				key0 := "CLOUD_SQL_INSTANCE_CONNECTION_NAME_0"
+				key1 := "CLOUD_SQL_INSTANCE_CONNECTION_NAME_2"
+				os.Setenv(key0, "proj:reg:inst0")
+				os.Setenv(key1, "proj:reg:inst1")
+				return func() {
+					os.Unsetenv(key0)
+					os.Unsetenv(key1)
+				}
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst0"},
+			}}),
+		},
+		{
+			desc: "when there are CLI args provided",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_INSTANCE_CONNECTION_NAME"
+				os.Setenv(key, "proj:reg:inst0")
+				return func() { os.Unsetenv(key) }
+			},
+			args: []string{"myotherproj:myreg:myinst"},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "myotherproj:myreg:myinst"},
+			}}),
+		},
+		{
+			desc: "when only an index instance connection name is defined",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_INSTANCE_CONNECTION_NAME_0"
+				os.Setenv(key, "proj:reg:inst0")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst0"},
+			}}),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			cleanup := tc.setEnv()
+			defer cleanup()
+
+			c := NewCommand()
+			// Keep the test output quiet
+			c.SilenceUsage = true
+			c.SilenceErrors = true
+			// Disable execute behavior
+			c.RunE = func(*cobra.Command, []string) error {
+				return nil
+			}
+			c.SetArgs(tc.args)
+
+			err := c.Execute()
+			if err != nil {
+				t.Fatalf("want error = nil, got = %v", err)
+			}
+
+			if got := c.conf; !cmp.Equal(tc.want, got) {
+				t.Fatalf("want = %#v\ngot = %#v\ndiff = %v", tc.want, got, cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestNewCommandWithEnvironmentConfig(t *testing.T) {
+	tcs := []struct {
+		desc string
+		// sets an env var before the test, and returns a cleanup function
+		setEnv func() func()
+		want   *proxy.Config
+	}{
+		{
+			desc: "using the address envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_ADDRESS"
+				os.Setenv(key, "0.0.0.0")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				Addr: "0.0.0.0",
+			}),
+		},
+		{
+			desc: "using the port envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_PORT"
+				os.Setenv(key, "6000")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				Port: 6000,
+			}),
+		},
+		{
+			desc: "using the token envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_TOKEN"
+				os.Setenv(key, "MYCOOLTOKEN")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				Token: "MYCOOLTOKEN",
+			}),
+		},
+		{
+			desc: "using the credentiale file envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_CREDENTIALS_FILE"
+				os.Setenv(key, "/path/to/file")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				CredentialsFile: "/path/to/file",
+			}),
+		},
+		{
+			desc: "using the JSON credentials",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_JSON_CREDENTIALS"
+				os.Setenv(key, `{"json":"goes-here"}`)
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				CredentialsJSON: `{"json":"goes-here"}`,
+			}),
+		},
+		{
+			desc: "using the gcloud auth envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_GCLOUD_AUTH"
+				os.Setenv(key, "true")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				GcloudAuth: true,
+			}),
+		},
+		{
+			desc: "using the api-endpoint envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_SQLADMIN_API_ENDPOINT"
+				os.Setenv(key, "https://test.googleapis.com/")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				APIEndpointURL: "https://test.googleapis.com/",
+			}),
+		},
+		{
+			desc: "using the unix socket envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_UNIX_SOCKET"
+				os.Setenv(key, "/path/to/dir/")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				UnixSocket: "/path/to/dir/",
+			}),
+		},
+		{
+			desc: "using the iam authn login envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_AUTO_IAM_AUTHN"
+				os.Setenv(key, "true")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				IAMAuthN: true,
+			}),
+		},
+		{
+			desc: "enabling structured logging",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_STRUCTURED_LOGS"
+				os.Setenv(key, "true")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				StructuredLogs: true,
+			}),
+		},
+		{
+			desc: "using the max connections envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_MAX_CONNECTIONS"
+				os.Setenv(key, "1")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				MaxConnections: 1,
+			}),
+		},
+		{
+			desc: "using wait after signterm envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_MAX_SIGTERM_DELAY"
+				os.Setenv(key, "10s")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				WaitOnClose: 10 * time.Second,
+			}),
+		},
+		{
+			desc: "using the private-ip envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_PRIVATE_IP"
+				os.Setenv(key, "true")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				PrivateIP: true,
+			}),
+		},
+		{
+			desc: "using the quota project envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_QUOTA_PROJECT"
+				os.Setenv(key, "proj")
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				QuotaProject: "proj",
+			}),
+		},
+		{
+			desc: "using the imopersonate service accounn envvar",
+			setEnv: func() func() {
+				key := "CLOUD_SQL_IMPERSONATE_SERVICE_ACCOUNT"
+				os.Setenv(key,
+					"sv1@developer.gserviceaccount.com,sv2@developer.gserviceaccount.com,sv3@developer.gserviceaccount.com",
+				)
+				return func() { os.Unsetenv(key) }
+			},
+			want: withDefaults(&proxy.Config{
+				ImpersonateTarget: "sv1@developer.gserviceaccount.com",
+				ImpersonateDelegates: []string{
+					"sv3@developer.gserviceaccount.com",
+					"sv2@developer.gserviceaccount.com",
+				},
+			}),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			cleanup := tc.setEnv()
+			defer cleanup()
+
+			c := NewCommand()
+			// Keep the test output quiet
+			c.SilenceUsage = true
+			c.SilenceErrors = true
+			// Disable execute behavior
+			c.RunE = func(*cobra.Command, []string) error {
+				return nil
+			}
+			c.SetArgs([]string{"proj:region:inst"})
+
+			err := c.Execute()
+			if err != nil {
+				t.Fatalf("want error = nil, got = %v", err)
+			}
+
+			if got := c.conf; !cmp.Equal(tc.want, got) {
+				t.Fatalf("want = %#v\ngot = %#v\ndiff = %v", tc.want, got, cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestAutoIAMAuthNQueryParams(t *testing.T) {
 	tcs := []struct {
 		desc string
 		args []string
@@ -336,22 +801,22 @@ func TestAutoIAMAuthNQueryParams(t *testing.T) {
 		{
 			desc: "when the query string is true",
 			args: []string{"proj:region:inst?auto-iam-authn=true"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is (short) t",
 			args: []string{"proj:region:inst?auto-iam-authn=t"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is false",
 			args: []string{"proj:region:inst?auto-iam-authn=false"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 		{
 			desc: "when the query string is (short) f",
 			args: []string{"proj:region:inst?auto-iam-authn=f"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 	}
 	for _, tc := range tcs {
@@ -379,10 +844,6 @@ func TestAutoIAMAuthNQueryParams(t *testing.T) {
 }
 
 func TestPrivateIPQueryParams(t *testing.T) {
-	// saving true and false in a variable so we can take its address
-	trueValue := true
-	falseValue := false
-
 	tcs := []struct {
 		desc string
 		args []string
@@ -396,47 +857,47 @@ func TestPrivateIPQueryParams(t *testing.T) {
 		{
 			desc: "when the query string has no value",
 			args: []string{"proj:region:inst?private-ip"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is true",
 			args: []string{"proj:region:inst?private-ip=true"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is True",
 			args: []string{"proj:region:inst?private-ip=True"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is (short) T",
 			args: []string{"proj:region:inst?private-ip=T"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is (short) t",
 			args: []string{"proj:region:inst?private-ip=t"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is false",
 			args: []string{"proj:region:inst?private-ip=false"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 		{
 			desc: "when the query string is (short) f",
 			args: []string{"proj:region:inst?private-ip=f"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 		{
 			desc: "when the query string is False",
 			args: []string{"proj:region:inst?private-ip=False"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 		{
 			desc: "when the query string is (short) F",
 			args: []string{"proj:region:inst?private-ip=F"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 	}
 	for _, tc := range tcs {
