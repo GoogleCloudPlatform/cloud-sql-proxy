@@ -388,9 +388,9 @@ is the target account.`)
 	v := viper.NewWithOptions(viper.EnvKeyReplacer(strings.NewReplacer("-", "_")))
 	v.SetEnvPrefix(envPrefix)
 	v.AutomaticEnv()
-	if err := v.BindPFlags(pflags); err != nil {
-		panic(err)
-	}
+	// Ignoring the error here since its only occurence is if one of the pflags
+	// is nil which is never the case here.
+	_ = v.BindPFlags(pflags)
 
 	pflags.VisitAll(func(f *pflag.Flag) {
 		// When the flag has not been set, but there is a Viper value, set the
