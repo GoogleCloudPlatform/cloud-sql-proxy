@@ -73,7 +73,6 @@ type Command struct {
 	conf   *proxy.Config
 	logger cloudsql.Logger
 	dialer cloudsql.Dialer
-	v      *viper.Viper
 
 	cleanup                    func() error
 	disableTraces              bool
