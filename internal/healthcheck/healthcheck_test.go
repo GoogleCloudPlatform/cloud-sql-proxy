@@ -288,7 +288,7 @@ func TestReadinessWithMinReady(t *testing.T) {
 		{
 			desc:       "when min ready is greater than the number of instances",
 			minReady:   "3",
-			wantStatus: http.StatusServiceUnavailable,
+			wantStatus: http.StatusBadRequest,
 			dialer:     &fakeDialer{},
 		},
 		{
