@@ -572,7 +572,6 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 
 	conf.Instances = ics
-	cmd.conf = conf
 	return nil
 }
 
