@@ -239,14 +239,13 @@ Configuration using environment variables
 
 `
 
-const envPrefix = "CLOUD_SQL"
+const envPrefix = "CSQL_PROXY"
 
-func instanceConnectionNames(args []string) []string {
-	// If args is already populated from a CLI invocation, ignore any instance
-	// connection name env vars and return the CLI args.
-	if len(args) > 0 {
-		return args
-	}
+func instanceFromEnv(args []string) []string {
+	// This supports naming the first instance first with:
+	//     INSTANCE_CONNECTION_NAME
+	// or if that's not defined, with:
+	//     INSTANCE_CONNECTION_NAME_0
 	inst := os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME", envPrefix))
 	if inst == "" {
 		inst = os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME_0", envPrefix))
@@ -293,7 +292,10 @@ func NewCommand(opts ...Option) *Command {
 	}
 
 	cmd.Args = func(cmd *cobra.Command, args []string) error {
-		args = instanceConnectionNames(args)
+		// If args is not already populated, try to read from the environment.
+		if len(args) == 0 {
+			args = instanceFromEnv(args)
+		}
 		// Handle logger separately from config
 		if c.conf.StructuredLogs {
 			c.logger, c.cleanup = log.NewStructuredLogger()
@@ -392,9 +394,8 @@ is the target account.`)
 	_ = v.BindPFlags(pflags)
 
 	pflags.VisitAll(func(f *pflag.Flag) {
-		// When the flag has not been set, but there is a Viper value, set the
-		// flag to the Viper value. This removes the need to manually assign
-		// Viper values into the proxy.Config for each value.
+		// Override any unset flags with Viper values to use the pflags
+		// object as a single source of truth.
 		if !f.Changed && v.IsSet(f.Name) {
 			val := v.Get(f.Name)
 			pflags.Set(f.Name, fmt.Sprintf("%v", val))

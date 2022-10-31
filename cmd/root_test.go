@@ -52,7 +52,15 @@ func withDefaults(c *proxy.Config) *proxy.Config {
 	return c
 }
 
-// pointer returns a pointer to v
+// pointer returns the address of v and makes it easy to take the address of a
+// predeclared identifier. Compare:
+//
+//	t := true
+//	pt := &t
+//
+// vs
+//
+//	pt := pointer(true)
 func pointer[T any](v T) *T {
 	return &v
 }
@@ -335,7 +343,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 	}{
 		{
 			desc:     "using the disable traces envvar",
-			envName:  "CLOUD_SQL_DISABLE_TRACES",
+			envName:  "CSQL_PROXY_DISABLE_TRACES",
 			envValue: "true",
 			isValid: func(cmd *Command) bool {
 				return cmd.disableTraces == true
@@ -343,7 +351,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the telemetry sample rate envvar",
-			envName:  "CLOUD_SQL_TELEMETRY_SAMPLE_RATE",
+			envName:  "CSQL_PROXY_TELEMETRY_SAMPLE_RATE",
 			envValue: "500",
 			isValid: func(cmd *Command) bool {
 				return cmd.telemetryTracingSampleRate == 500
@@ -351,7 +359,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the disable metrics envvar",
-			envName:  "CLOUD_SQL_DISABLE_METRICS",
+			envName:  "CSQL_PROXY_DISABLE_METRICS",
 			envValue: "true",
 			isValid: func(cmd *Command) bool {
 				return cmd.disableMetrics == true
@@ -359,7 +367,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the telemetry project envvar",
-			envName:  "CLOUD_SQL_TELEMETRY_PROJECT",
+			envName:  "CSQL_PROXY_TELEMETRY_PROJECT",
 			envValue: "mycoolproject",
 			isValid: func(cmd *Command) bool {
 				return cmd.telemetryProject == "mycoolproject"
@@ -367,7 +375,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the telemetry prefix envvar",
-			envName:  "CLOUD_SQL_TELEMETRY_PREFIX",
+			envName:  "CSQL_PROXY_TELEMETRY_PREFIX",
 			envValue: "myprefix",
 			isValid: func(cmd *Command) bool {
 				return cmd.telemetryPrefix == "myprefix"
@@ -375,7 +383,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the prometheus envvar",
-			envName:  "CLOUD_SQL_PROMETHEUS",
+			envName:  "CSQL_PROXY_PROMETHEUS",
 			envValue: "true",
 			isValid: func(cmd *Command) bool {
 				return cmd.prometheus == true
@@ -383,7 +391,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the prometheus namespace envvar",
-			envName:  "CLOUD_SQL_PROMETHEUS_NAMESPACE",
+			envName:  "CSQL_PROXY_PROMETHEUS_NAMESPACE",
 			envValue: "myns",
 			isValid: func(cmd *Command) bool {
 				return cmd.prometheusNamespace == "myns"
@@ -391,7 +399,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the health check envvar",
-			envName:  "CLOUD_SQL_HEALTH_CHECK",
+			envName:  "CSQL_PROXY_HEALTH_CHECK",
 			envValue: "true",
 			isValid: func(cmd *Command) bool {
 				return cmd.healthCheck == true
@@ -399,7 +407,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the http address envvar",
-			envName:  "CLOUD_SQL_HTTP_ADDRESS",
+			envName:  "CSQL_PROXY_HTTP_ADDRESS",
 			envValue: "0.0.0.0",
 			isValid: func(cmd *Command) bool {
 				return cmd.httpAddress == "0.0.0.0"
@@ -407,7 +415,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		},
 		{
 			desc:     "using the http port envvar",
-			envName:  "CLOUD_SQL_HTTP_PORT",
+			envName:  "CSQL_PROXY_HTTP_PORT",
 			envValue: "5555",
 			isValid: func(cmd *Command) bool {
 				return cmd.httpPort == "5555"
@@ -441,7 +449,7 @@ func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
 		{
 			desc: "with one instance connection name",
 			env: map[string]string{
-				"CLOUD_SQL_INSTANCE_CONNECTION_NAME": "proj:reg:inst",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME": "proj:reg:inst",
 			},
 			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
 				{Name: "proj:reg:inst"},
@@ -450,8 +458,8 @@ func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
 		{
 			desc: "with multiple instance connection names",
 			env: map[string]string{
-				"CLOUD_SQL_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
-				"CLOUD_SQL_INSTANCE_CONNECTION_NAME_1": "proj:reg:inst1",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_1": "proj:reg:inst1",
 			},
 			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
 				{Name: "proj:reg:inst0"},
@@ -462,7 +470,7 @@ func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
 			desc: "with query params",
 
 			env: map[string]string{
-				"CLOUD_SQL_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0?auto-iam-authn=true",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0?auto-iam-authn=true",
 			},
 			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
 				{Name: "proj:reg:inst0", IAMAuthN: pointer(true)},
@@ -471,8 +479,8 @@ func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
 		{
 			desc: "when the index skips a number",
 			env: map[string]string{
-				"CLOUD_SQL_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
-				"CLOUD_SQL_INSTANCE_CONNECTION_NAME_2": "proj:reg:inst1",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_2": "proj:reg:inst1",
 			},
 			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
 				{Name: "proj:reg:inst0"},
@@ -481,7 +489,7 @@ func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
 		{
 			desc: "when there are CLI args provided",
 			env: map[string]string{
-				"CLOUD_SQL_INSTANCE_CONNECTION_NAME": "proj:reg:inst0",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME": "proj:reg:inst0",
 			},
 			args: []string{"myotherproj:myreg:myinst"},
 			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
@@ -491,7 +499,7 @@ func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
 		{
 			desc: "when only an index instance connection name is defined",
 			env: map[string]string{
-				"CLOUD_SQL_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
 			},
 			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
 				{Name: "proj:reg:inst0"},
@@ -532,7 +540,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 	}{
 		{
 			desc:     "using the address envvar",
-			envName:  "CLOUD_SQL_ADDRESS",
+			envName:  "CSQL_PROXY_ADDRESS",
 			envValue: "0.0.0.0",
 			want: withDefaults(&proxy.Config{
 				Addr: "0.0.0.0",
@@ -540,7 +548,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the port envvar",
-			envName:  "CLOUD_SQL_PORT",
+			envName:  "CSQL_PROXY_PORT",
 			envValue: "6000",
 			want: withDefaults(&proxy.Config{
 				Port: 6000,
@@ -548,7 +556,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the token envvar",
-			envName:  "CLOUD_SQL_TOKEN",
+			envName:  "CSQL_PROXY_TOKEN",
 			envValue: "MYCOOLTOKEN",
 			want: withDefaults(&proxy.Config{
 				Token: "MYCOOLTOKEN",
@@ -556,7 +564,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the credentiale file envvar",
-			envName:  "CLOUD_SQL_CREDENTIALS_FILE",
+			envName:  "CSQL_PROXY_CREDENTIALS_FILE",
 			envValue: "/path/to/file",
 			want: withDefaults(&proxy.Config{
 				CredentialsFile: "/path/to/file",
@@ -564,7 +572,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the JSON credentials",
-			envName:  "CLOUD_SQL_JSON_CREDENTIALS",
+			envName:  "CSQL_PROXY_JSON_CREDENTIALS",
 			envValue: `{"json":"goes-here"}`,
 			want: withDefaults(&proxy.Config{
 				CredentialsJSON: `{"json":"goes-here"}`,
@@ -572,7 +580,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the gcloud auth envvar",
-			envName:  "CLOUD_SQL_GCLOUD_AUTH",
+			envName:  "CSQL_PROXY_GCLOUD_AUTH",
 			envValue: "true",
 			want: withDefaults(&proxy.Config{
 				GcloudAuth: true,
@@ -580,7 +588,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the api-endpoint envvar",
-			envName:  "CLOUD_SQL_SQLADMIN_API_ENDPOINT",
+			envName:  "CSQL_PROXY_SQLADMIN_API_ENDPOINT",
 			envValue: "https://test.googleapis.com/",
 			want: withDefaults(&proxy.Config{
 				APIEndpointURL: "https://test.googleapis.com/",
@@ -588,7 +596,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the unix socket envvar",
-			envName:  "CLOUD_SQL_UNIX_SOCKET",
+			envName:  "CSQL_PROXY_UNIX_SOCKET",
 			envValue: "/path/to/dir/",
 			want: withDefaults(&proxy.Config{
 				UnixSocket: "/path/to/dir/",
@@ -596,7 +604,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the iam authn login envvar",
-			envName:  "CLOUD_SQL_AUTO_IAM_AUTHN",
+			envName:  "CSQL_PROXY_AUTO_IAM_AUTHN",
 			envValue: "true",
 			want: withDefaults(&proxy.Config{
 				IAMAuthN: true,
@@ -604,7 +612,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "enabling structured logging",
-			envName:  "CLOUD_SQL_STRUCTURED_LOGS",
+			envName:  "CSQL_PROXY_STRUCTURED_LOGS",
 			envValue: "true",
 			want: withDefaults(&proxy.Config{
 				StructuredLogs: true,
@@ -612,7 +620,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the max connections envvar",
-			envName:  "CLOUD_SQL_MAX_CONNECTIONS",
+			envName:  "CSQL_PROXY_MAX_CONNECTIONS",
 			envValue: "1",
 			want: withDefaults(&proxy.Config{
 				MaxConnections: 1,
@@ -620,7 +628,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using wait after signterm envvar",
-			envName:  "CLOUD_SQL_MAX_SIGTERM_DELAY",
+			envName:  "CSQL_PROXY_MAX_SIGTERM_DELAY",
 			envValue: "10s",
 			want: withDefaults(&proxy.Config{
 				WaitOnClose: 10 * time.Second,
@@ -628,7 +636,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the private-ip envvar",
-			envName:  "CLOUD_SQL_PRIVATE_IP",
+			envName:  "CSQL_PROXY_PRIVATE_IP",
 			envValue: "true",
 			want: withDefaults(&proxy.Config{
 				PrivateIP: true,
@@ -636,7 +644,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the quota project envvar",
-			envName:  "CLOUD_SQL_QUOTA_PROJECT",
+			envName:  "CSQL_PROXY_QUOTA_PROJECT",
 			envValue: "proj",
 			want: withDefaults(&proxy.Config{
 				QuotaProject: "proj",
@@ -644,7 +652,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		},
 		{
 			desc:     "using the imopersonate service accounn envvar",
-			envName:  "CLOUD_SQL_IMPERSONATE_SERVICE_ACCOUNT",
+			envName:  "CSQL_PROXY_IMPERSONATE_SERVICE_ACCOUNT",
 			envValue: "sv1@developer.gserviceaccount.com,sv2@developer.gserviceaccount.com,sv3@developer.gserviceaccount.com",
 			want: withDefaults(&proxy.Config{
 				ImpersonateTarget: "sv1@developer.gserviceaccount.com",
