@@ -19,6 +19,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -82,6 +83,7 @@ type Command struct {
 	healthCheck                bool
 	httpAddress                string
 	httpPort                   string
+	quiet                      bool
 
 	// impersonationChain is a comma separated list of one or more service
 	// accounts. The first entry in the chain is the impersonation target. Any
@@ -257,6 +259,9 @@ func NewCommand(opts ...Option) *Command {
 		if c.conf.StructuredLogs {
 			c.logger, c.cleanup = log.NewStructuredLogger()
 		}
+		if c.quiet {
+			c.logger = log.NewStdLogger(io.Discard, os.Stderr)
+		}
 		err := parseConfig(c, c.conf, args)
 		if err != nil {
 			return err
@@ -324,6 +329,7 @@ https://cloud.google.com/storage/docs/requester-pays`)
 	cmd.PersistentFlags().StringVar(&c.impersonationChain, "impersonate-service-account", "",
 		`Comma separated list of service accounts to impersonate. Last value
 is the target account.`)
+	cmd.PersistentFlags().BoolVar(&c.quiet, "quiet", false, "Log error messages only")
 
 	// Global and per instance flags
 	cmd.PersistentFlags().StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
