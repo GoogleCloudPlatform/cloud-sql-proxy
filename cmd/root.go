@@ -212,27 +212,27 @@ Service Account Impersonation
 Configuration using environment variables
 
     Instead of using CLI flags, the proxy may be configured using environment
-    variables. Each environment variable uses "CLOUD_SQL" as a prefix and is the
-    uppercase version of the flag using underscores as word delimiters. For
+    variables. Each environment variable uses "CSQL_PROXY" as a prefix and is
+    the uppercase version of the flag using underscores as word delimiters. For
     example, the --auto-iam-authn flag may be set with the environment variable
-    CLOUD_SQL_AUTO_IAM_AUTHN. An invocation of the proxy using environment
+    CSQL_PROXY_AUTO_IAM_AUTHN. An invocation of the proxy using environment
     variables would look like the following:
 
-        CLOUD_SQL_AUTO_IAM_AUTHN=true \
+        CSQL_PROXY_AUTO_IAM_AUTHN=true \
             ./cloud-sql-proxy my-project:us-central1:my-db-server
 
     In addition to CLI flags, instance connection names may also be specified
     with environment variables. If invoking the proxy with only one instance
-    connection name, use CLOUD_SQL_INSTANCE_CONNECTION_NAME. For example:
+    connection name, use CSQL_PROXY_INSTANCE_CONNECTION_NAME. For example:
 
-        CLOUD_SQL_INSTANCE_CONNECTION_NAME=my-project:us-central1:my-db-server \
+        CSQL_PROXY_INSTANCE_CONNECTION_NAME=my-project:us-central1:my-db-server \
             ./cloud-sql-proxy
 
     If multiple instance connection names are used, add the index of the
     instance connection name as a suffix. For example:
 
-        CLOUD_SQL_INSTANCE_CONNECTION_NAME_0=my-project:us-central1:my-db-server \
-        CLOUD_SQL_INSTANCE_CONNECTION_NAME_1=my-other-project:us-central1:my-other-server \
+        CSQL_PROXY_INSTANCE_CONNECTION_NAME_0=my-project:us-central1:my-db-server \
+        CSQL_PROXY_INSTANCE_CONNECTION_NAME_1=my-other-project:us-central1:my-other-server \
             ./cloud-sql-proxy
 
 (*) indicates a flag that may be used as a query parameter
