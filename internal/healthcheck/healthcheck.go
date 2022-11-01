@@ -121,6 +121,7 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(mErr.Error()))
+		return
 	case err != nil && minReady != nil:
 		// When there's an error and min ready is set, AND min ready instances
 		// are not ready, 503 status.
