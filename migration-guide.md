@@ -86,7 +86,7 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | log_debug_stdout            | ❌                    | v2 logs to stdout, errors to stderr by default                                       |
 | max_connections             | max-connections       |                                                                                      |
 | projects                    | ❌                    | v2 prefers explicit connection configuration to avoid user error                     |
-| quiet                       | ❌                    |                                                                                      |
+| quiet                       | quiet                 | quiet disables all logging except errors                                             |
 | quota_project               | quota-project         |                                                                                      |
 | refresh_config_throttle     | ❌                    |                                                                                      |
 | skip_failed_instance_config | ❌                    |                                                                                      |
