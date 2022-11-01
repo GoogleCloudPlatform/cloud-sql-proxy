@@ -108,43 +108,49 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 		minReady = &n
 	}
 
-	n, err := c.proxy.CheckConnections(ctx)
-	if status, rErr := ready(err, minReady, n); rErr != nil {
-		c.logger.Errorf("[Health Check] Readiness failed: %v", rErr)
-		w.WriteHeader(status)
-		w.Write([]byte(rErr.Error()))
+	total, err := c.proxy.CheckConnections(ctx)
+
+	switch {
+	case minReady != nil && *minReady > total:
+		// When min ready is set and exceeds total instances, 400 status.
+		mErr := fmt.Errorf(
+			"min-ready (%v) must be less than or equal to the number of registered instances (%v)",
+			*minReady, total,
+		)
+		c.logger.Errorf("[Health Check] Readiness failed: %v", mErr)
+
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(mErr.Error()))
+	case err != nil && minReady != nil:
+		// When there's an error and min ready is set, AND min ready instances
+		// are not ready, 503 status.
+		c.logger.Errorf("[Health Check] Readiness failed: %v", err)
+
+		mErr, ok := err.(proxy.MultiErr)
+		if !ok {
+			// If the err is not a MultiErr, just return it as is.
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		areReady := total - len(mErr)
+		if areReady < *minReady {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(err.Error()))
+			return
+		}
+	case err != nil:
+		// When there's just an error without min-ready: 503 status.
+		c.logger.Errorf("[Health Check] Readiness failed: %v", err)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
+	// No error cases apply, 200 status.
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
-}
-
-func ready(err error, minReady *int, total int) (int, error) {
-	// If err is nil, then the proxy is ready.
-	if err == nil {
-		if minReady != nil && *minReady > total {
-			return http.StatusBadRequest, fmt.Errorf(
-				"min-ready (%v) must be less than or equal to the number of registered instances (%v)",
-				*minReady, total,
-			)
-		}
-		return http.StatusOK, nil
-	}
-	// When minReady is not configured, any error means the proxy is not ready.
-	if minReady == nil {
-		return http.StatusServiceUnavailable, err
-	}
-	mErr, ok := err.(proxy.MultiErr)
-	if !ok {
-		return http.StatusServiceUnavailable, err
-	}
-	notReady := len(mErr)
-	areReady := total - notReady
-	if areReady < *minReady {
-		return http.StatusServiceUnavailable, err
-	}
-	return http.StatusOK, nil
 }
 
 // HandleLiveness indicates the process is up and responding to HTTP requests.
