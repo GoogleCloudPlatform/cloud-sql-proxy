@@ -16,11 +16,12 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/oauth2 v0.1.0
 	golang.org/x/sys v0.1.0
-	google.golang.org/api v0.101.0
+	google.golang.org/api v0.102.0
 )
 
 require (
-	cloud.google.com/go/compute v1.10.0 // indirect
+	cloud.google.com/go/compute v1.12.1 // indirect
+	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	cloud.google.com/go/monitoring v1.7.0 // indirect
 	cloud.google.com/go/trace v1.3.0 // indirect
 	github.com/aws/aws-sdk-go v1.43.31 // indirect
