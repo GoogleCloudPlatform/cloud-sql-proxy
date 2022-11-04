@@ -50,6 +50,10 @@
   color: ffffc7
   description: Desirable enhancement or fix. May not be included in next release.
 
+- name: 'v1'
+  color: d93f0b
+  description: Functionality for v1 of the proxy.
+
 - name: automerge
   color: 00ff00
   description: Merge the pull request once unit tests and other checks pass.
