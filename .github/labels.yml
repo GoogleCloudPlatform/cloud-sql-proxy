@@ -69,7 +69,7 @@
 - name: 'autorelease: pending'
   color: ededed
   description: Release please needs to do its work on this.
-- name: 'autorelease:triggered'
+- name: 'autorelease: triggered'
   color: ededed
   description: Release please has triggered a release for this.
 - name: 'autorelease: tagged'
