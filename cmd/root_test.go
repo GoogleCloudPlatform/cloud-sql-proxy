@@ -31,31 +31,57 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestNewCommandArguments(t *testing.T) {
-
-	// saving true in a variable so we can take its address.
-	trueValue := true
-
-	withDefaults := func(c *proxy.Config) *proxy.Config {
-		if c.UserAgent == "" {
-			c.UserAgent = userAgent
-		}
-		if c.Addr == "" {
-			c.Addr = "127.0.0.1"
-		}
-		if c.FUSEDir == "" {
-			if c.Instances == nil {
-				c.Instances = []proxy.InstanceConnConfig{{}}
-			}
-			if i := &c.Instances[0]; i.Name == "" {
-				i.Name = "proj:region:inst"
-			}
-		}
-		if c.FUSETempDir == "" {
-			c.FUSETempDir = filepath.Join(os.TempDir(), "csql-tmp")
-		}
-		return c
+func withDefaults(c *proxy.Config) *proxy.Config {
+	if c.UserAgent == "" {
+		c.UserAgent = userAgent
 	}
+	if c.Addr == "" {
+		c.Addr = "127.0.0.1"
+	}
+	if c.FUSEDir == "" {
+		if c.Instances == nil {
+			c.Instances = []proxy.InstanceConnConfig{{}}
+		}
+		if i := &c.Instances[0]; i.Name == "" {
+			i.Name = "proj:region:inst"
+		}
+	}
+	if c.FUSETempDir == "" {
+		c.FUSETempDir = filepath.Join(os.TempDir(), "csql-tmp")
+	}
+	return c
+}
+
+// pointer returns the address of v and makes it easy to take the address of a
+// predeclared identifier. Compare:
+//
+//	t := true
+//	pt := &t
+//
+// vs
+//
+//	pt := pointer(true)
+func pointer[T any](v T) *T {
+	return &v
+}
+
+func invokeProxyCommand(args []string) (*Command, error) {
+	c := NewCommand()
+	// Keep the test output quiet
+	c.SilenceUsage = true
+	c.SilenceErrors = true
+	// Disable execute behavior
+	c.RunE = func(*cobra.Command, []string) error {
+		return nil
+	}
+	c.SetArgs(args)
+
+	err := c.Execute()
+
+	return c, err
+}
+
+func TestNewCommandArguments(t *testing.T) {
 	tcs := []struct {
 		desc string
 		args []string
@@ -231,7 +257,7 @@ func TestNewCommandArguments(t *testing.T) {
 			args: []string{"proj:region:inst?auto-iam-authn=true"},
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
-					IAMAuthN: &trueValue,
+					IAMAuthN: pointer(true),
 				}},
 			}),
 		},
@@ -268,7 +294,7 @@ func TestNewCommandArguments(t *testing.T) {
 			args: []string{"proj:region:inst?private-ip=true"},
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
-					PrivateIP: &trueValue,
+					PrivateIP: pointer(true),
 				}},
 			}),
 		},
@@ -280,7 +306,7 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
-			desc: "",
+			desc: "using the impersonate service account flag",
 			args: []string{"--impersonate-service-account",
 				"sv1@developer.gserviceaccount.com,sv2@developer.gserviceaccount.com,sv3@developer.gserviceaccount.com",
 				"proj:region:inst"},
@@ -296,17 +322,353 @@ func TestNewCommandArguments(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error {
-				return nil
+			c, err := invokeProxyCommand(tc.args)
+			if err != nil {
+				t.Fatalf("want error = nil, got = %v", err)
 			}
-			c.SetArgs(tc.args)
 
-			err := c.Execute()
+			if got := c.conf; !cmp.Equal(tc.want, got) {
+				t.Fatalf("want = %#v\ngot = %#v\ndiff = %v", tc.want, got, cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
+	tcs := []struct {
+		desc     string
+		envName  string
+		envValue string
+		isValid  func(cmd *Command) bool
+	}{
+		{
+			desc:     "using the disable traces envvar",
+			envName:  "CSQL_PROXY_DISABLE_TRACES",
+			envValue: "true",
+			isValid: func(cmd *Command) bool {
+				return cmd.disableTraces == true
+			},
+		},
+		{
+			desc:     "using the telemetry sample rate envvar",
+			envName:  "CSQL_PROXY_TELEMETRY_SAMPLE_RATE",
+			envValue: "500",
+			isValid: func(cmd *Command) bool {
+				return cmd.telemetryTracingSampleRate == 500
+			},
+		},
+		{
+			desc:     "using the disable metrics envvar",
+			envName:  "CSQL_PROXY_DISABLE_METRICS",
+			envValue: "true",
+			isValid: func(cmd *Command) bool {
+				return cmd.disableMetrics == true
+			},
+		},
+		{
+			desc:     "using the telemetry project envvar",
+			envName:  "CSQL_PROXY_TELEMETRY_PROJECT",
+			envValue: "mycoolproject",
+			isValid: func(cmd *Command) bool {
+				return cmd.telemetryProject == "mycoolproject"
+			},
+		},
+		{
+			desc:     "using the telemetry prefix envvar",
+			envName:  "CSQL_PROXY_TELEMETRY_PREFIX",
+			envValue: "myprefix",
+			isValid: func(cmd *Command) bool {
+				return cmd.telemetryPrefix == "myprefix"
+			},
+		},
+		{
+			desc:     "using the prometheus envvar",
+			envName:  "CSQL_PROXY_PROMETHEUS",
+			envValue: "true",
+			isValid: func(cmd *Command) bool {
+				return cmd.prometheus == true
+			},
+		},
+		{
+			desc:     "using the prometheus namespace envvar",
+			envName:  "CSQL_PROXY_PROMETHEUS_NAMESPACE",
+			envValue: "myns",
+			isValid: func(cmd *Command) bool {
+				return cmd.prometheusNamespace == "myns"
+			},
+		},
+		{
+			desc:     "using the health check envvar",
+			envName:  "CSQL_PROXY_HEALTH_CHECK",
+			envValue: "true",
+			isValid: func(cmd *Command) bool {
+				return cmd.healthCheck == true
+			},
+		},
+		{
+			desc:     "using the http address envvar",
+			envName:  "CSQL_PROXY_HTTP_ADDRESS",
+			envValue: "0.0.0.0",
+			isValid: func(cmd *Command) bool {
+				return cmd.httpAddress == "0.0.0.0"
+			},
+		},
+		{
+			desc:     "using the http port envvar",
+			envName:  "CSQL_PROXY_HTTP_PORT",
+			envValue: "5555",
+			isValid: func(cmd *Command) bool {
+				return cmd.httpPort == "5555"
+			},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			os.Setenv(tc.envName, tc.envValue)
+			defer os.Unsetenv(tc.envName)
+
+			c, err := invokeProxyCommand([]string{"proj:region:inst"})
+			if err != nil {
+				t.Fatalf("want error = nil, got = %v", err)
+			}
+
+			if !tc.isValid(c) {
+				t.Fatal("want valid, got invalid")
+			}
+		})
+	}
+}
+
+func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
+	tcs := []struct {
+		desc string
+		env  map[string]string
+		args []string
+		want *proxy.Config
+	}{
+		{
+			desc: "with one instance connection name",
+			env: map[string]string{
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME": "proj:reg:inst",
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst"},
+			}}),
+		},
+		{
+			desc: "with multiple instance connection names",
+			env: map[string]string{
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_1": "proj:reg:inst1",
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst0"},
+				{Name: "proj:reg:inst1"},
+			}}),
+		},
+		{
+			desc: "with query params",
+
+			env: map[string]string{
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0?auto-iam-authn=true",
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst0", IAMAuthN: pointer(true)},
+			}}),
+		},
+		{
+			desc: "when the index skips a number",
+			env: map[string]string{
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_2": "proj:reg:inst1",
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst0"},
+			}}),
+		},
+		{
+			desc: "when there are CLI args provided",
+			env: map[string]string{
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME": "proj:reg:inst0",
+			},
+			args: []string{"myotherproj:myreg:myinst"},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "myotherproj:myreg:myinst"},
+			}}),
+		},
+		{
+			desc: "when only an index instance connection name is defined",
+			env: map[string]string{
+				"CSQL_PROXY_INSTANCE_CONNECTION_NAME_0": "proj:reg:inst0",
+			},
+			want: withDefaults(&proxy.Config{Instances: []proxy.InstanceConnConfig{
+				{Name: "proj:reg:inst0"},
+			}}),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			var cleanup []string
+			for k, v := range tc.env {
+				os.Setenv(k, v)
+				cleanup = append(cleanup, k)
+			}
+			defer func() {
+				for _, k := range cleanup {
+					os.Unsetenv(k)
+				}
+			}()
+
+			c, err := invokeProxyCommand(tc.args)
+			if err != nil {
+				t.Fatalf("want error = nil, got = %v", err)
+			}
+
+			if got := c.conf; !cmp.Equal(tc.want, got) {
+				t.Fatalf("want = %#v\ngot = %#v\ndiff = %v", tc.want, got, cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestNewCommandWithEnvironmentConfig(t *testing.T) {
+	tcs := []struct {
+		desc     string
+		envName  string
+		envValue string
+		want     *proxy.Config
+	}{
+		{
+			desc:     "using the address envvar",
+			envName:  "CSQL_PROXY_ADDRESS",
+			envValue: "0.0.0.0",
+			want: withDefaults(&proxy.Config{
+				Addr: "0.0.0.0",
+			}),
+		},
+		{
+			desc:     "using the port envvar",
+			envName:  "CSQL_PROXY_PORT",
+			envValue: "6000",
+			want: withDefaults(&proxy.Config{
+				Port: 6000,
+			}),
+		},
+		{
+			desc:     "using the token envvar",
+			envName:  "CSQL_PROXY_TOKEN",
+			envValue: "MYCOOLTOKEN",
+			want: withDefaults(&proxy.Config{
+				Token: "MYCOOLTOKEN",
+			}),
+		},
+		{
+			desc:     "using the credentiale file envvar",
+			envName:  "CSQL_PROXY_CREDENTIALS_FILE",
+			envValue: "/path/to/file",
+			want: withDefaults(&proxy.Config{
+				CredentialsFile: "/path/to/file",
+			}),
+		},
+		{
+			desc:     "using the JSON credentials",
+			envName:  "CSQL_PROXY_JSON_CREDENTIALS",
+			envValue: `{"json":"goes-here"}`,
+			want: withDefaults(&proxy.Config{
+				CredentialsJSON: `{"json":"goes-here"}`,
+			}),
+		},
+		{
+			desc:     "using the gcloud auth envvar",
+			envName:  "CSQL_PROXY_GCLOUD_AUTH",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				GcloudAuth: true,
+			}),
+		},
+		{
+			desc:     "using the api-endpoint envvar",
+			envName:  "CSQL_PROXY_SQLADMIN_API_ENDPOINT",
+			envValue: "https://test.googleapis.com/",
+			want: withDefaults(&proxy.Config{
+				APIEndpointURL: "https://test.googleapis.com/",
+			}),
+		},
+		{
+			desc:     "using the unix socket envvar",
+			envName:  "CSQL_PROXY_UNIX_SOCKET",
+			envValue: "/path/to/dir/",
+			want: withDefaults(&proxy.Config{
+				UnixSocket: "/path/to/dir/",
+			}),
+		},
+		{
+			desc:     "using the iam authn login envvar",
+			envName:  "CSQL_PROXY_AUTO_IAM_AUTHN",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				IAMAuthN: true,
+			}),
+		},
+		{
+			desc:     "enabling structured logging",
+			envName:  "CSQL_PROXY_STRUCTURED_LOGS",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				StructuredLogs: true,
+			}),
+		},
+		{
+			desc:     "using the max connections envvar",
+			envName:  "CSQL_PROXY_MAX_CONNECTIONS",
+			envValue: "1",
+			want: withDefaults(&proxy.Config{
+				MaxConnections: 1,
+			}),
+		},
+		{
+			desc:     "using wait after signterm envvar",
+			envName:  "CSQL_PROXY_MAX_SIGTERM_DELAY",
+			envValue: "10s",
+			want: withDefaults(&proxy.Config{
+				WaitOnClose: 10 * time.Second,
+			}),
+		},
+		{
+			desc:     "using the private-ip envvar",
+			envName:  "CSQL_PROXY_PRIVATE_IP",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				PrivateIP: true,
+			}),
+		},
+		{
+			desc:     "using the quota project envvar",
+			envName:  "CSQL_PROXY_QUOTA_PROJECT",
+			envValue: "proj",
+			want: withDefaults(&proxy.Config{
+				QuotaProject: "proj",
+			}),
+		},
+		{
+			desc:     "using the imopersonate service accounn envvar",
+			envName:  "CSQL_PROXY_IMPERSONATE_SERVICE_ACCOUNT",
+			envValue: "sv1@developer.gserviceaccount.com,sv2@developer.gserviceaccount.com,sv3@developer.gserviceaccount.com",
+			want: withDefaults(&proxy.Config{
+				ImpersonateTarget: "sv1@developer.gserviceaccount.com",
+				ImpersonateDelegates: []string{
+					"sv3@developer.gserviceaccount.com",
+					"sv2@developer.gserviceaccount.com",
+				},
+			}),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			os.Setenv(tc.envName, tc.envValue)
+			defer os.Unsetenv(tc.envName)
+
+			c, err := invokeProxyCommand([]string{"proj:region:inst"})
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -319,10 +681,6 @@ func TestNewCommandArguments(t *testing.T) {
 }
 
 func TestAutoIAMAuthNQueryParams(t *testing.T) {
-	// saving true and false in a variable so we can take its address
-	trueValue := true
-	falseValue := false
-
 	tcs := []struct {
 		desc string
 		args []string
@@ -336,35 +694,27 @@ func TestAutoIAMAuthNQueryParams(t *testing.T) {
 		{
 			desc: "when the query string is true",
 			args: []string{"proj:region:inst?auto-iam-authn=true"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is (short) t",
 			args: []string{"proj:region:inst?auto-iam-authn=t"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is false",
 			args: []string{"proj:region:inst?auto-iam-authn=false"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 		{
 			desc: "when the query string is (short) f",
 			args: []string{"proj:region:inst?auto-iam-authn=f"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error { return nil }
-			c.SetArgs(tc.args)
-
-			err := c.Execute()
+			c, err := invokeProxyCommand(tc.args)
 			if err != nil {
 				t.Fatalf("command.Execute: %v", err)
 			}
@@ -379,10 +729,6 @@ func TestAutoIAMAuthNQueryParams(t *testing.T) {
 }
 
 func TestPrivateIPQueryParams(t *testing.T) {
-	// saving true and false in a variable so we can take its address
-	trueValue := true
-	falseValue := false
-
 	tcs := []struct {
 		desc string
 		args []string
@@ -396,60 +742,52 @@ func TestPrivateIPQueryParams(t *testing.T) {
 		{
 			desc: "when the query string has no value",
 			args: []string{"proj:region:inst?private-ip"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is true",
 			args: []string{"proj:region:inst?private-ip=true"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is True",
 			args: []string{"proj:region:inst?private-ip=True"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is (short) T",
 			args: []string{"proj:region:inst?private-ip=T"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is (short) t",
 			args: []string{"proj:region:inst?private-ip=t"},
-			want: &trueValue,
+			want: pointer(true),
 		},
 		{
 			desc: "when the query string is false",
 			args: []string{"proj:region:inst?private-ip=false"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 		{
 			desc: "when the query string is (short) f",
 			args: []string{"proj:region:inst?private-ip=f"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 		{
 			desc: "when the query string is False",
 			args: []string{"proj:region:inst?private-ip=False"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 		{
 			desc: "when the query string is (short) F",
 			args: []string{"proj:region:inst?private-ip=F"},
-			want: &falseValue,
+			want: pointer(false),
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error { return nil }
-			c.SetArgs(tc.args)
-
-			err := c.Execute()
+			c, err := invokeProxyCommand(tc.args)
 			if err != nil {
 				t.Fatalf("command.Execute: %v", err)
 			}
@@ -580,17 +918,7 @@ func TestNewCommandWithErrors(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c := NewCommand()
-			// Keep the test output quiet
-			c.SilenceUsage = true
-			c.SilenceErrors = true
-			// Disable execute behavior
-			c.RunE = func(*cobra.Command, []string) error {
-				return nil
-			}
-			c.SetArgs(tc.args)
-
-			err := c.Execute()
+			_, err := invokeProxyCommand(tc.args)
 			if err == nil {
 				t.Fatal("want error != nil, got = nil")
 			}

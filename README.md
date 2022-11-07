@@ -18,6 +18,7 @@ The Cloud SQL Auth proxy has support for:
 - [HTTP Healthchecks][health-check-example]
 - Service account impersonation
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
+- Configuration with environment variables
 - Fully POSIX-compliant flags
 
 If you're using Go, Java, or Python, consider using the corresponding Cloud SQL
