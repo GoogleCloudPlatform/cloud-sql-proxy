@@ -199,6 +199,8 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	return opts
 }
 
+const iamLoginScope = "https://www.googleapis.com/auth/sqlservice.login"
+
 func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 	// If service account impersonation is configured, set up an impersonated
 	// credentials token source.
@@ -237,6 +239,21 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 		)
 		if err != nil {
 			return nil, err
+		}
+		if c.IAMAuthN {
+			iamLoginTS, err := impersonate.CredentialsTokenSource(
+				context.Background(),
+				impersonate.CredentialsConfig{
+					TargetPrincipal: c.ImpersonateTarget,
+					Delegates:       c.ImpersonateDelegates,
+					Scopes:          []string{iamLoginScope},
+				},
+				iopts...,
+			)
+			if err != nil {
+				return nil, err
+			}
+			return cloudsqlconn.WithIAMAuthNTokenSources(ts, iamLoginTS), nil
 		}
 		return cloudsqlconn.WithTokenSource(ts), nil
 	}
