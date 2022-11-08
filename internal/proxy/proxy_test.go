@@ -586,8 +586,12 @@ func TestCheckConnections(t *testing.T) {
 	defer c.Close()
 	go c.Serve(context.Background(), func() {})
 
-	if err = c.CheckConnections(context.Background()); err != nil {
+	n, err := c.CheckConnections(context.Background())
+	if err != nil {
 		t.Fatalf("CheckConnections failed: %v", err)
+	}
+	if want, got := len(in.Instances), n; want != got {
+		t.Fatalf("CheckConnections number of connections: want = %v, got = %v", want, got)
 	}
 
 	if want, got := 1, d.dialAttempts(); want != got {
@@ -610,8 +614,11 @@ func TestCheckConnections(t *testing.T) {
 	defer c.Close()
 	go c.Serve(context.Background(), func() {})
 
-	err = c.CheckConnections(context.Background())
+	n, err = c.CheckConnections(context.Background())
 	if err == nil {
 		t.Fatal("CheckConnections should have failed, but did not")
+	}
+	if want, got := len(in.Instances), n; want != got {
+		t.Fatalf("CheckConnections number of connections: want = %v, got = %v", want, got)
 	}
 }

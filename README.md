@@ -18,6 +18,7 @@ The Cloud SQL Auth proxy has support for:
 - [HTTP Healthchecks][health-check-example]
 - Service account impersonation
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
+- Configuration with environment variables
 - Fully POSIX-compliant flags
 
 If you're using Go, Java, or Python, consider using the corresponding Cloud SQL
@@ -53,7 +54,7 @@ following instructions for your OS and CPU architecture.
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.2"
 
 wget "$URL/cloud-sql-proxy.linux.amd64" -O cloud-sql-proxy
 
@@ -67,7 +68,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.2"
 
 wget "$URL/cloud-sql-proxy.linux.386" -O cloud-sql-proxy
 
@@ -81,7 +82,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.2"
 
 wget "$URL/cloud-sql-proxy.linux.arm64" -O cloud-sql-proxy
 
@@ -95,7 +96,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.2"
 
 wget "$URL/cloud-sql-proxy.linux.arm" -O cloud-sql-proxy
 
@@ -109,7 +110,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.2"
 
 wget "$URL/cloud-sql-proxy.darwin.amd64" -O cloud-sql-proxy
 
@@ -123,7 +124,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.2"
 
 wget "$URL/cloud-sql-proxy.darwin.arm64" -O cloud-sql-proxy
 
@@ -137,7 +138,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0/cloud-sql-proxy-x64.exe -O cloud-sql-proxy.exe
+wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.2/cloud-sql-proxy-x64.exe -O cloud-sql-proxy.exe
 ```
 
 </details>
@@ -147,7 +148,7 @@ wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-
 
 ```sh
 # see Releases for other versions
-wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.0/cloud-sql-proxy-x86.exe -O cloud-sql-proxy.exe
+wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.2/cloud-sql-proxy-x86.exe -O cloud-sql-proxy.exe
 ```
 
 </details>

@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
@@ -196,16 +197,40 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 		t.Fatal("'postgres_user_iam' not set")
 	}
 
-	dsn := fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
+	defaultDSN := fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
 		*postgresIAMUser, *postgresDB)
-	// using the global flag
-	proxyConnTest(t,
-		[]string{"--auto-iam-authn", *postgresConnName},
-		"pgx", dsn)
-	// using the instance-level query param
-	proxyConnTest(t,
-		[]string{fmt.Sprintf("%s?auto-iam-authn=true", *postgresConnName)},
-		"pgx", dsn)
+	impersonatedIAMUser := strings.ReplaceAll(*impersonatedUser, ".gserviceaccount.com", "")
+
+	tcs := []struct {
+		desc string
+		dsn  string
+		args []string
+	}{
+		{
+			desc: "using default flag",
+			args: []string{"--auto-iam-authn", *postgresConnName},
+			dsn:  defaultDSN,
+		},
+		{
+			desc: "using query param",
+			args: []string{fmt.Sprintf("%s?auto-iam-authn=true", *postgresConnName)},
+			dsn:  defaultDSN,
+		},
+		{
+			desc: "using impersonation",
+			args: []string{
+				"--auto-iam-authn",
+				"--impersonate-service-account", *impersonatedUser,
+				*postgresConnName},
+			dsn: fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
+				impersonatedIAMUser, *postgresDB),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "pgx", tc.dsn)
+		})
+	}
 }
 
 func TestPostgresHealthCheck(t *testing.T) {
