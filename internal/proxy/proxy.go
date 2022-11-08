@@ -199,6 +199,8 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	return opts
 }
 
+const iamLoginScope = "https://www.googleapis.com/auth/sqlservice.login"
+
 func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 	// If service account impersonation is configured, set up an impersonated
 	// credentials token source.
@@ -237,6 +239,21 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 		)
 		if err != nil {
 			return nil, err
+		}
+		if c.IAMAuthN {
+			iamLoginTS, err := impersonate.CredentialsTokenSource(
+				context.Background(),
+				impersonate.CredentialsConfig{
+					TargetPrincipal: c.ImpersonateTarget,
+					Delegates:       c.ImpersonateDelegates,
+					Scopes:          []string{iamLoginScope},
+				},
+				iopts...,
+			)
+			if err != nil {
+				return nil, err
+			}
+			return cloudsqlconn.WithIAMAuthNTokenSources(ts, iamLoginTS), nil
 		}
 		return cloudsqlconn.WithTokenSource(ts), nil
 	}
@@ -421,9 +438,9 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	return c, nil
 }
 
-// CheckConnections dials each registered instance and reports any errors that
-// may have occurred.
-func (c *Client) CheckConnections(ctx context.Context) error {
+// CheckConnections dials each registered instance and reports the number of
+// connections checked and any errors that may have occurred.
+func (c *Client) CheckConnections(ctx context.Context) (int, error) {
 	var (
 		wg    sync.WaitGroup
 		errCh = make(chan error, len(c.mnts))
@@ -443,14 +460,17 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 			}
 			cErr := conn.Close()
 			if cErr != nil {
-				errCh <- fmt.Errorf("%v: %v", m.inst, cErr)
+				c.logger.Errorf(
+					"connection check failed to close connection for %v: %v",
+					m.inst, cErr,
+				)
 			}
 		}(mnt)
 	}
 	wg.Wait()
 
 	var mErr MultiErr
-	for i := 0; i < len(c.mnts); i++ {
+	for i := 0; i < len(mnts); i++ {
 		select {
 		case err := <-errCh:
 			mErr = append(mErr, err)
@@ -458,10 +478,11 @@ func (c *Client) CheckConnections(ctx context.Context) error {
 			continue
 		}
 	}
+	mLen := len(mnts)
 	if len(mErr) > 0 {
-		return mErr
+		return mLen, mErr
 	}
-	return nil
+	return mLen, nil
 }
 
 // ConnCount returns the number of open connections and the maximum allowed
