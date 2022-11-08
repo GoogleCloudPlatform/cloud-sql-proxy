@@ -718,6 +718,11 @@ func runSignalWrapper(cmd *Command) error {
 	case p = <-startCh:
 		cmd.logger.Infof("The proxy has started successfully and is ready for new connections!")
 	}
+	defer func() {
+		if cErr := p.Close(); cErr != nil {
+			cmd.logger.Errorf("error during shutdown: %v", cErr)
+		}
+	}()
 
 	notify := func() {}
 	if cmd.healthCheck {
@@ -769,15 +774,6 @@ func runSignalWrapper(cmd *Command) error {
 		cmd.logger.Errorf("SIGTERM signal received. Shutting down...")
 	default:
 		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
-	}
-	cErr := p.Close()
-	if cErr != nil {
-		cmd.logger.Errorf("error during shutdown: %v", cErr)
-	}
-	// If Close succeeded and WaitOnClose is enabled, return no error to get a 0
-	// exit status.
-	if cErr == nil && cmd.conf.WaitOnClose != 0 {
-		return nil
 	}
 	return err
 }
