@@ -48,3 +48,4 @@ Any relevant stacktrace here. Be sure to filter sensitive information.
 
 1. OS type and version: <YOUR_OS_HERE>
 2. Cloud SQL Proxy version (`./cloud-sql-proxy --version`): <YOUR_VERSION_HERE>
+3. Proxy invocation (for example, `./cloud-sql-proxy --enable_iam_login --dir /path/to/dir INSTANCE_CONNECTION_NAME`): <INVOCATION_HERE>
