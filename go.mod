@@ -18,7 +18,7 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/oauth2 v0.2.0
 	golang.org/x/sys v0.2.0
-	google.golang.org/api v0.102.0
+	google.golang.org/api v0.103.0
 )
 
 require (
@@ -39,7 +39,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
-	github.com/googleapis/gax-go/v2 v2.6.0 // indirect
+	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
