@@ -26,7 +26,7 @@ var (
 
 	errSigTerm = &exitError{
 		Err:  errors.New("SIGTERM signal received"),
-		Code: 137,
+		Code: 143,
 	}
 )
 
