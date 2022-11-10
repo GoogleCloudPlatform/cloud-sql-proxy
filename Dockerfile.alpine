@@ -26,7 +26,7 @@ RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags "-X main.metadataString=container.alpine"
 
 # Final stage
-FROM alpine:3
+FROM alpine:20221110
 RUN apk add --no-cache \
     ca-certificates \
     libc6-compat
