@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -79,6 +80,18 @@ func invokeProxyCommand(args []string) (*Command, error) {
 	err := c.Execute()
 
 	return c, err
+}
+
+func Test_UserAgentWithOperatorVersion(t *testing.T) {
+	os.Setenv("CLOUD_SQL_PROXY_OPERATOR_VERSION", "0.0.1")
+    defer os.Unsetenv("CLOUD_SQL_PROXY_OPERATOR_VERSION")
+
+	expected := "cloud-sql-proxy-operator/0.0.1"
+	userAgentString := getUserAgentString()
+	if !strings.Contains(userAgentString, expected) {
+		t.Errorf("expected userAgent to contain: %v; got: %v", expected, userAgentString)
+	}
+
 }
 
 func TestNewCommandArguments(t *testing.T) {
