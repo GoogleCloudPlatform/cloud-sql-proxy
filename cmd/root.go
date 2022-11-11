@@ -53,6 +53,10 @@ var (
 func init() {
 	versionString = strings.TrimSpace(versionString)
 	userAgent = "cloud-sql-proxy/" + versionString
+	operatorVersion, isSet := os.LookupEnv("CLOUD_SQL_PROXY_OPERATOR_VERSION")
+	if isSet {
+		userAgent = userAgent + " cloud-sql-proxy-operator/" + operatorVersion
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
