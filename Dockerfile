@@ -30,4 +30,5 @@ FROM gcr.io/distroless/static:nonroot
 COPY --from=build --chown=nonroot /go/src/cloud-sql-proxy/cloud-sql-proxy /cloud-sql-proxy
 # set the uid as an integer for compatibility with runAsNonRoot in Kubernetes
 USER 65532
+EXPOSE 5432 3306 1433
 ENTRYPOINT ["/cloud-sql-proxy"]

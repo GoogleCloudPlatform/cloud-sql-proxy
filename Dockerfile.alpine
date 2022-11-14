@@ -37,5 +37,7 @@ RUN addgroup -g 65532 -S nonroot && adduser -u 65532 -S nonroot -G nonroot
 # Set the uid as an integer for compatibility with runAsNonRoot in Kubernetes
 USER 65532
 
+EXPOSE 5432 3306 1433
+
 COPY --from=build --chown=nonroot /go/src/cloud-sql-proxy/cloud-sql-proxy /cloud-sql-proxy
 ENTRYPOINT ["/cloud-sql-proxy"]
