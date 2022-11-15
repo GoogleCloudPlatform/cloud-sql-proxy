@@ -61,7 +61,7 @@ tag_latest() {
     for registry in "gcr.io" "us.gcr.io" "eu.gcr.io" "asia.gcr.io"
     do
         local base_image="$registry/cloud-sql-connectors/cloud-sql-proxy"
-        echo "Tagging latest container image in $registry"
+        echo "Tagging $new_version as latest in $registry"
         gcloud container images add-tag --quiet "$base_image:$new_version" "$base_image:latest"
     done
 }
