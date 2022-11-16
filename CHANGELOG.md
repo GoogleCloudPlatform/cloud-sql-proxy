@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.0.0-preview.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0-preview.2...v2.0.0-preview.3) (2022-11-15)
+
+
+### Features
+
+* add quiet flag ([#1515](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1515)) ([93d9a40](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/93d9a40cf8736bfce2d3cc6bc20b2defafa0413f)), closes [#1452](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1452)
+* add support for min ready instances ([#1496](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1496)) ([73e2999](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/73e2999f3f3da32a63149a2d0cc08750038f721f))
+* configure the proxy with environment variables ([#1514](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1514)) ([2a9d9a2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/2a9d9a2cd93804818a5659ee554c56336969d861))
+
+
+### Bug Fixes
+
+* correct bullseye Dockerfile ([#1504](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1504)) ([15a97e7](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/15a97e7f8287098232719cfae2a2ad6242a7a92a))
+* correct error check in check connections ([#1505](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1505)) ([776a86b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/776a86b15f14d1c0846f9813845829ffb9642bb8))
+* impersonated user uses downscoped token ([#1520](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1520)) ([b08c71d](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/b08c71d02ea7c33c587a0a75c30e06242029028b))
+* return correct exit code on SIGTERM ([#1530](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1530)) ([7bb15aa](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/7bb15aa482c2278f6e49a3a0f4a7baf4a2f4b511))
+
+
+### Miscellaneous Chores
+
+* release 2.0.0-preview.3 ([#1548](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1548)) ([024963b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/024963b9b8b38fbb8b2d7043be5a5658a77689c0))
+
 ## [2.0.0-preview.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0-preview.1...v2.0.0-preview.2) (2022-10-25)
 
 
