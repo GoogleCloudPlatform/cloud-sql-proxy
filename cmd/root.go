@@ -52,16 +52,16 @@ var (
 
 func init() {
 	versionString = strings.TrimSpace(versionString)
-	userAgent = getUserAgentString()
+	userAgent = userAgentString()
 }
 
-func getUserAgentString() string {
-	userAgentString := "cloud-sql-proxy/" + versionString
-	operatorVersion, isSet := os.LookupEnv("CLOUD_SQL_PROXY_OPERATOR_VERSION")
-	if !isSet {
-		return userAgentString
+func userAgentString() string {
+	ua := "cloud-sql-proxy/" + versionString
+	ov, ok := os.LookupEnv("CLOUD_SQL_PROXY_OPERATOR_VERSION")
+	if !ok {
+		return ua
 	}
-	return userAgentString + " cloud-sql-proxy-operator/" + operatorVersion
+	return ua + " cloud-sql-proxy-operator/" + ov
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

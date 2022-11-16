@@ -84,12 +84,12 @@ func invokeProxyCommand(args []string) (*Command, error) {
 
 func Test_UserAgentWithOperatorVersion(t *testing.T) {
 	os.Setenv("CLOUD_SQL_PROXY_OPERATOR_VERSION", "0.0.1")
-    defer os.Unsetenv("CLOUD_SQL_PROXY_OPERATOR_VERSION")
+	defer os.Unsetenv("CLOUD_SQL_PROXY_OPERATOR_VERSION")
 
-	expected := "cloud-sql-proxy-operator/0.0.1"
-	userAgentString := getUserAgentString()
-	if !strings.Contains(userAgentString, expected) {
-		t.Errorf("expected userAgent to contain: %v; got: %v", expected, userAgentString)
+	want := "cloud-sql-proxy-operator/0.0.1"
+	got := userAgentString()
+	if !strings.Contains(got, want) {
+		t.Errorf("expected userAgent to contain: %v; got: %v", want, got)
 	}
 
 }
