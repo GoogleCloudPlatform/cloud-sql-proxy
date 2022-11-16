@@ -82,7 +82,7 @@ func invokeProxyCommand(args []string) (*Command, error) {
 	return c, err
 }
 
-func Test_UserAgentWithOperatorVersion(t *testing.T) {
+func TestUserAgentWithOperatorVersion(t *testing.T) {
 	os.Setenv("CLOUD_SQL_PROXY_RUNTIME", "cloud-sql-proxy-operator/0.0.1")
 	defer os.Unsetenv("CLOUD_SQL_PROXY_RUNTIME")
 
