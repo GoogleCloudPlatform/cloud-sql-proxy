@@ -57,11 +57,15 @@ func init() {
 
 func userAgentString() string {
 	ua := "cloud-sql-proxy/" + versionString
-	ov, ok := os.LookupEnv("CLOUD_SQL_PROXY_OPERATOR_VERSION")
+	runtime, ok := os.LookupEnv("CLOUD_SQL_PROXY_RUNTIME")
 	if !ok {
 		return ua
 	}
-	return ua + " cloud-sql-proxy-operator/" + ov
+	rv, ok := os.LookupEnv("CLOUD_SQL_PROXY_RUNTIME_VERSION")
+	if !ok {
+		return ua
+	}
+	return fmt.Sprintf("%v %v/%v", ua, runtime, rv)
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
