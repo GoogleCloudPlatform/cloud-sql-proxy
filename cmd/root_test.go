@@ -83,10 +83,8 @@ func invokeProxyCommand(args []string) (*Command, error) {
 }
 
 func Test_UserAgentWithOperatorVersion(t *testing.T) {
-	os.Setenv("CLOUD_SQL_PROXY_RUNTIME", "cloud-sql-proxy-operator")
+	os.Setenv("CLOUD_SQL_PROXY_RUNTIME", "cloud-sql-proxy-operator/0.0.1")
 	defer os.Unsetenv("CLOUD_SQL_PROXY_RUNTIME")
-	os.Setenv("CLOUD_SQL_PROXY_RUNTIME_VERSION", "0.0.1")
-	defer os.Unsetenv("CLOUD_SQL_PROXY_OPERATOR_VERSION")
 
 	want := "cloud-sql-proxy-operator/0.0.1"
 	got := userAgentString()
