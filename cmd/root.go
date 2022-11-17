@@ -346,7 +346,7 @@ func NewCommand(opts ...Option) *Command {
 
 	// Global-only flags
 	pflags.StringVar(&c.runtime, "runtime", "",
-		"Runtime and version, e.g. cloud-sql-proxy-operator/0.0.1")
+		"(for internal use only) Runtime and version, e.g. cloud-sql-proxy-operator/0.0.1")
 	pflags.StringVarP(&c.conf.Token, "token", "t", "",
 		"Use bearer token as a source of IAM credentials.")
 	pflags.StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
