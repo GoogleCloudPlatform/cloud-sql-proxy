@@ -47,17 +47,15 @@ var (
 	// versionString indicates the version of this library.
 	//go:embed version.txt
 	versionString string
-	userAgents     []string
+	userAgent     string
 )
 
 func init() {
 	versionString = strings.TrimSpace(versionString)
-	userAgents = append(userAgents, "cloud-sql-proxy/" + versionString)
+	userAgent =  "cloud-sql-proxy/" + versionString
 }
 
-func userAgentString() string {
-	return strings.Join(userAgents, " ")
-}
+
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -90,6 +88,7 @@ type Command struct {
 	httpAddress                string
 	httpPort                   string
 	quiet                      bool
+	runtime 				   string
 
 	// impersonationChain is a comma separated list of one or more service
 	// accounts. The first entry in the chain is the impersonation target. Any
@@ -348,7 +347,7 @@ func NewCommand(opts ...Option) *Command {
 	pflags.BoolP("version", "v", false, "Print the cloud-sql-proxy version")
 
 	// Global-only flags
-	pflags.StringVar(&c.conf.Runtime, "runtime", "",
+	pflags.StringVar(&c.runtime, "runtime", "",
 		"Runtime and version, e.g. cloud-sql-proxy-operator/0.0.1")
 	pflags.StringVarP(&c.conf.Token, "token", "t", "",
 		"Use bearer token as a source of IAM credentials.")
@@ -499,8 +498,8 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 
 	if userHasSet("runtime") {
-		userAgents = append(userAgents, conf.Runtime)
-		conf.UserAgent = userAgentString()
+		userAgent += " " + cmd.runtime
+		conf.UserAgent = userAgent
 	}
 
 	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {

@@ -82,16 +82,40 @@ func invokeProxyCommand(args []string) (*Command, error) {
 	return c, err
 }
 
-func TestUserAgentWithOperatorVersion(t *testing.T) {
+func TestUserAgentWithOperatorVersionEnvVar(t *testing.T) {
 	os.Setenv("CSQL_PROXY_RUNTIME", "cloud-sql-proxy-operator/0.0.1")
 	defer os.Unsetenv("CSQL_PROXY_RUNTIME")
 
+	cmd, err := invokeProxyCommand([]string{"proj:region:inst"})
+	if err != nil {
+		t.Fatalf("want error = nil, got = %v", err)
+	}
+
 	want := "cloud-sql-proxy-operator/0.0.1"
-	got := userAgentString()
+	got := cmd.conf.UserAgent
 	if !strings.Contains(got, want) {
 		t.Errorf("expected userAgent to contain: %v; got: %v", want, got)
 	}
+}
 
+func TestUserAgentWithOperatorVersionFlag(t *testing.T) {
+
+	cmd, err := invokeProxyCommand(
+		[]string{
+			"--runtime",
+			"cloud-sql-proxy-operator/0.0.1",
+			"proj:region:inst"
+		}
+	)
+	if err != nil {
+		t.Fatalf("want error = nil, got = %v", err)
+	}
+
+	want := "cloud-sql-proxy-operator/0.0.1"
+	got := cmd.conf.UserAgent
+	if !strings.Contains(got, want) {
+		t.Errorf("expected userAgent to contain: %v; got: %v", want, got)
+	}
 }
 
 func TestNewCommandArguments(t *testing.T) {
