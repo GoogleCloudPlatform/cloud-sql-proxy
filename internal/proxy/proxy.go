@@ -100,6 +100,10 @@ type Config struct {
 	// UserAgent is the user agent to use when connecting to the cloudsql instance
 	UserAgent string
 
+	// Runtime is the runtime environment (i.e gcloud, proxy operator) that starts
+	// up the proxy, and its version, for example: cloud-sql-proxy-operator/0.0.1
+	Runtime string
+
 	// Token is the Bearer token used for authorization.
 	Token string
 

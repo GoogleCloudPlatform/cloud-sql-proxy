@@ -47,22 +47,16 @@ var (
 	// versionString indicates the version of this library.
 	//go:embed version.txt
 	versionString string
-	userAgent     string
+	userAgents     []string
 )
 
 func init() {
 	versionString = strings.TrimSpace(versionString)
-	userAgent = userAgentString()
+	userAgents = append(userAgents, "cloud-sql-proxy/" + versionString)
 }
 
 func userAgentString() string {
-	ua := "cloud-sql-proxy/" + versionString
-	runtime, ok := os.LookupEnv("CLOUD_SQL_PROXY_RUNTIME")
-	if !ok {
-		return ua
-	}
-
-	return fmt.Sprintf("%v %v", ua, runtime)
+	return strings.Join(userAgents, " ")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -354,6 +348,8 @@ func NewCommand(opts ...Option) *Command {
 	pflags.BoolP("version", "v", false, "Print the cloud-sql-proxy version")
 
 	// Global-only flags
+	pflags.StringVar(&c.conf.Runtime, "runtime", "",
+		"Runtime and version, e.g. cloud-sql-proxy-operator/0.0.1")
 	pflags.StringVarP(&c.conf.Token, "token", "t", "",
 		"Use bearer token as a source of IAM credentials.")
 	pflags.StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
@@ -500,6 +496,11 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
 		cmd.logger.Infof("Ignoring --disable-traces because --telemetry-project was not set")
+	}
+
+	if userHasSet("runtime") {
+		userAgents = append(userAgents, conf.Runtime)
+		conf.UserAgent = userAgentString()
 	}
 
 	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
