@@ -86,6 +86,7 @@ type Command struct {
 	httpAddress                string
 	httpPort                   string
 	quiet                      bool
+	runtime                    string
 
 	// impersonationChain is a comma separated list of one or more service
 	// accounts. The first entry in the chain is the impersonation target. Any
@@ -344,6 +345,8 @@ func NewCommand(opts ...Option) *Command {
 	pflags.BoolP("version", "v", false, "Print the cloud-sql-proxy version")
 
 	// Global-only flags
+	pflags.StringVar(&c.runtime, "runtime", "",
+		"(for internal use only) Runtime and version, e.g. cloud-sql-proxy-operator/0.0.1")
 	pflags.StringVarP(&c.conf.Token, "token", "t", "",
 		"Use bearer token as a source of IAM credentials.")
 	pflags.StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
@@ -490,6 +493,11 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 	if !userHasSet("telemetry-project") && userHasSet("disable-traces") {
 		cmd.logger.Infof("Ignoring --disable-traces because --telemetry-project was not set")
+	}
+
+	if userHasSet("runtime") {
+		userAgent += " " + cmd.runtime
+		conf.UserAgent = userAgent
 	}
 
 	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
