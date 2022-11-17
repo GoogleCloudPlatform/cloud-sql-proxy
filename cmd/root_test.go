@@ -104,8 +104,8 @@ func TestUserAgentWithOperatorVersionFlag(t *testing.T) {
 		[]string{
 			"--runtime",
 			"cloud-sql-proxy-operator/0.0.1",
-			"proj:region:inst"
-		}
+			"proj:region:inst",
+		},
 	)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
