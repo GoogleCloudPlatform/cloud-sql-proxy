@@ -89,3 +89,7 @@
 - name: 'flakybot: issue'
   color: a9f9f7
   description: An issue filed by the Flaky Bot. Should not be added manually.
+
+- name: 'k8s'
+  color: 1D76DB
+  description: Kubernetes related issue or functionality.
