@@ -87,7 +87,7 @@ args:
   - "--health-check"
 
   # Listen on all addresses so the kubelet can reach the endpoints
-  - "--http-addresss 0.0.0.0"
+  - "--http-address 0.0.0.0"
 
   # Set the port where the HTTP server listens
   # - "--http-port 9090"
