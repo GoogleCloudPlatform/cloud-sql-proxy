@@ -56,7 +56,7 @@ spec:
           # - "--private-ip"
 
           # Enable HTTP health checks
-          - "--health-checks"
+          - "--health-check"
 
           # Listen on all addresses so the kubelet can reach the endpoints
           - "--http-addresss 0.0.0.0"

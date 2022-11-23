@@ -12,7 +12,7 @@ Kubernetes supports [three types of health checks][k8s-docs]:
 
 [k8s-docs]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 
-When enabling the `--health-checks` flag, the proxy will start an HTTP server on
+When enabling the `--health-check` flag, the proxy will start an HTTP server on
 localhost with three endpoints:
 
 - `/startup`: Returns 200 status when the proxy has finished starting up.
@@ -84,7 +84,7 @@ args:
   # - "--private-ip"
 
   # Enable HTTP health checks
-  - "--health-checks"
+  - "--health-check"
 
   # Listen on all addresses so the kubelet can reach the endpoints
   - "--http-addresss 0.0.0.0"
