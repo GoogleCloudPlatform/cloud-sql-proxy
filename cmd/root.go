@@ -198,7 +198,8 @@ Health checks
     - /liveness: Always returns 200 status. If this endpoint is not responding,
     the proxy is in a bad state and should be restarted.
 
-    To configure the address, use --http-server.
+    To configure the address, use --http-address. To configure the port, use
+    --http-port.
 
 Service Account Impersonation
 
