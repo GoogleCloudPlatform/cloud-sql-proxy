@@ -181,7 +181,7 @@ Instance Level Configuration
 
 Health checks
 
-    When enabling the --health-checks flag, the proxy will start an HTTP server
+    When enabling the --health-check flag, the proxy will start an HTTP server
     on localhost with three endpoints:
 
     - /startup: Returns 200 status when the proxy has finished starting up.
@@ -198,7 +198,8 @@ Health checks
     - /liveness: Always returns 200 status. If this endpoint is not responding,
     the proxy is in a bad state and should be restarted.
 
-    To configure the address, use --http-server.
+    To configure the address, use --http-address. To configure the port, use
+    --http-port.
 
 Service Account Impersonation
 
