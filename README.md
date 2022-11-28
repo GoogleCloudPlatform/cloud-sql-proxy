@@ -303,7 +303,7 @@ replaces colons with periods:
 To see a full list of flags, use:
 
 ```shell
-./cloud-sql-proxy -h
+./cloud-sql-proxy --help
 ```
 
 ## Credentials
