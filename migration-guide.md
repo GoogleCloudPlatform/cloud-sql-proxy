@@ -77,9 +77,9 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | dir                         | unix-socket           |                                                                                      |
 | enable_iam_login            | auto-iam-authn        |                                                                                      |
 | fd_rlimit                   | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258) |
-| fuse                        | fuse                  |                                                                                    |
+| fuse                        | fuse                  |                                                                                      |
 | fuse_tmp                    | fuse-temp-dir         |                                                                                      |
-| health_check_port           | http-port             |                                                                                      |
+| health_check_port           | http-port             |  Use --http-address=0.0.0.0 when using a health check in Kubernetes                  |
 | host                        | sqladmin-api-endpoint |                                                                                      |
 | instances_metadata          | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259) |
 | ip_address_types            | private-ip            | Defaults to public                                                                   |
