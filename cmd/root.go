@@ -498,7 +498,6 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 
 	if userHasSet("user-agent") {
 		defaultUserAgent += " " + cmd.otherUserAgents
-		fmt.Println(defaultUserAgent)
 		conf.UserAgent = defaultUserAgent
 	}
 
