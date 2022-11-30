@@ -50,6 +50,15 @@ func withDefaults(c *proxy.Config) *proxy.Config {
 	if c.FUSETempDir == "" {
 		c.FUSETempDir = filepath.Join(os.TempDir(), "csql-tmp")
 	}
+	if c.HTTPAddress == "" {
+		c.HTTPAddress = "localhost"
+	}
+	if c.HTTPPort == "" {
+		c.HTTPPort = "9090"
+	}
+	if c.TelemetryTracingSampleRate == 0 {
+		c.TelemetryTracingSampleRate = 10_000
+	}
 	return c
 }
 
@@ -376,88 +385,7 @@ func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
 		envName  string
 		envValue string
 		isValid  func(cmd *Command) bool
-	}{
-		{
-			desc:     "using the disable traces envvar",
-			envName:  "CSQL_PROXY_DISABLE_TRACES",
-			envValue: "true",
-			isValid: func(cmd *Command) bool {
-				return cmd.disableTraces == true
-			},
-		},
-		{
-			desc:     "using the telemetry sample rate envvar",
-			envName:  "CSQL_PROXY_TELEMETRY_SAMPLE_RATE",
-			envValue: "500",
-			isValid: func(cmd *Command) bool {
-				return cmd.telemetryTracingSampleRate == 500
-			},
-		},
-		{
-			desc:     "using the disable metrics envvar",
-			envName:  "CSQL_PROXY_DISABLE_METRICS",
-			envValue: "true",
-			isValid: func(cmd *Command) bool {
-				return cmd.disableMetrics == true
-			},
-		},
-		{
-			desc:     "using the telemetry project envvar",
-			envName:  "CSQL_PROXY_TELEMETRY_PROJECT",
-			envValue: "mycoolproject",
-			isValid: func(cmd *Command) bool {
-				return cmd.telemetryProject == "mycoolproject"
-			},
-		},
-		{
-			desc:     "using the telemetry prefix envvar",
-			envName:  "CSQL_PROXY_TELEMETRY_PREFIX",
-			envValue: "myprefix",
-			isValid: func(cmd *Command) bool {
-				return cmd.telemetryPrefix == "myprefix"
-			},
-		},
-		{
-			desc:     "using the prometheus envvar",
-			envName:  "CSQL_PROXY_PROMETHEUS",
-			envValue: "true",
-			isValid: func(cmd *Command) bool {
-				return cmd.prometheus == true
-			},
-		},
-		{
-			desc:     "using the prometheus namespace envvar",
-			envName:  "CSQL_PROXY_PROMETHEUS_NAMESPACE",
-			envValue: "myns",
-			isValid: func(cmd *Command) bool {
-				return cmd.prometheusNamespace == "myns"
-			},
-		},
-		{
-			desc:     "using the health check envvar",
-			envName:  "CSQL_PROXY_HEALTH_CHECK",
-			envValue: "true",
-			isValid: func(cmd *Command) bool {
-				return cmd.healthCheck == true
-			},
-		},
-		{
-			desc:     "using the http address envvar",
-			envName:  "CSQL_PROXY_HTTP_ADDRESS",
-			envValue: "0.0.0.0",
-			isValid: func(cmd *Command) bool {
-				return cmd.httpAddress == "0.0.0.0"
-			},
-		},
-		{
-			desc:     "using the http port envvar",
-			envName:  "CSQL_PROXY_HTTP_PORT",
-			envValue: "5555",
-			isValid: func(cmd *Command) bool {
-				return cmd.httpPort == "5555"
-			},
-		},
-	}
+	}{}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
 			os.Setenv(tc.envName, tc.envValue)
@@ -696,6 +624,86 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 					"sv3@developer.gserviceaccount.com",
 					"sv2@developer.gserviceaccount.com",
 				},
+			}),
+		},
+		{
+			desc:     "using the disable traces envvar",
+			envName:  "CSQL_PROXY_DISABLE_TRACES",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				DisableTraces: true,
+			}),
+		},
+		{
+			desc:     "using the telemetry sample rate envvar",
+			envName:  "CSQL_PROXY_TELEMETRY_SAMPLE_RATE",
+			envValue: "500",
+			want: withDefaults(&proxy.Config{
+				TelemetryTracingSampleRate: 500,
+			}),
+		},
+		{
+			desc:     "using the disable metrics envvar",
+			envName:  "CSQL_PROXY_DISABLE_METRICS",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				DisableMetrics: true,
+			}),
+		},
+		{
+			desc:     "using the telemetry project envvar",
+			envName:  "CSQL_PROXY_TELEMETRY_PROJECT",
+			envValue: "mycoolproject",
+			want: withDefaults(&proxy.Config{
+				TelemetryProject: "mycoolproject",
+			}),
+		},
+		{
+			desc:     "using the telemetry prefix envvar",
+			envName:  "CSQL_PROXY_TELEMETRY_PREFIX",
+			envValue: "myprefix",
+			want: withDefaults(&proxy.Config{
+				TelemetryPrefix: "myprefix",
+			}),
+		},
+		{
+			desc:     "using the prometheus envvar",
+			envName:  "CSQL_PROXY_PROMETHEUS",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				Prometheus: true,
+			}),
+		},
+		{
+			desc:     "using the prometheus namespace envvar",
+			envName:  "CSQL_PROXY_PROMETHEUS_NAMESPACE",
+			envValue: "myns",
+			want: withDefaults(&proxy.Config{
+				PrometheusNamespace: "myns",
+			}),
+		},
+		{
+			desc:     "using the health check envvar",
+			envName:  "CSQL_PROXY_HEALTH_CHECK",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				HealthCheck: true,
+			}),
+		},
+		{
+			desc:     "using the http address envvar",
+			envName:  "CSQL_PROXY_HTTP_ADDRESS",
+			envValue: "0.0.0.0",
+			want: withDefaults(&proxy.Config{
+				HTTPAddress: "0.0.0.0",
+			}),
+		},
+		{
+			desc:     "using the http port envvar",
+			envName:  "CSQL_PROXY_HTTP_PORT",
+			envValue: "5555",
+			want: withDefaults(&proxy.Config{
+				HTTPPort: "5555",
 			}),
 		},
 	}

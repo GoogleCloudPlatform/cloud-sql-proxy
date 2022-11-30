@@ -175,10 +175,39 @@ type Config struct {
 	// StructuredLogs sets all output to use JSON in the LogEntry format.
 	// See https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 	StructuredLogs bool
+	// Quiet controls whether only error messages are logged.
+	Quiet bool
 
-	// Dialer specifies the dialer to use when connecting to Cloud SQL
-	// instances.
-	Dialer cloudsql.Dialer
+	// TelemetryProject enables sending metrics and traces to the specified project.
+	TelemetryProject string
+	// TelemetryPrefix sets a prefix for all emitted metrics.
+	TelemetryPrefix string
+	// TelemetryTracingSampleRate sets the rate at which traces are
+	// samples. A higher value means fewer traces.
+	TelemetryTracingSampleRate int
+	// DisableTraces disables tracing when TelemetryProject is set.
+	DisableTraces bool
+	// DisableMetrics disables metrics when TelemetryProject is set.
+	DisableMetrics bool
+
+	// Prometheus enables a Prometheus endpoint served at the address and
+	// port specified by HTTPAddress and HTTPPort.
+	Prometheus bool
+	// PrometheusNamespace configures the namespace underwhich metrics are written.
+	PrometheusNamespace string
+
+	// HealthCheck enables a health check server. It's address and port are
+	// specified by HTTPAddress and HTTPPort.
+	HealthCheck bool
+
+	// HTTPAddress sets the address for the health check and prometheus server.
+	HTTPAddress string
+	// HTTPPort sets the port for the health check and prometheus server.
+	HTTPPort string
+
+	// OtherUserAgents is a list of space separate user agents that will be
+	// appended to the default user agent.
+	OtherUserAgents string
 }
 
 // dialOptions interprets appropriate dial options for a particular instance

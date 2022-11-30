@@ -70,23 +70,10 @@ func Execute() {
 // Command represents an invocation of the Cloud SQL Auth Proxy.
 type Command struct {
 	*cobra.Command
-	conf   *proxy.Config
-	logger cloudsql.Logger
-	dialer cloudsql.Dialer
-
-	cleanup                    func() error
-	disableTraces              bool
-	telemetryTracingSampleRate int
-	disableMetrics             bool
-	telemetryProject           string
-	telemetryPrefix            string
-	prometheus                 bool
-	prometheusNamespace        string
-	healthCheck                bool
-	httpAddress                string
-	httpPort                   string
-	quiet                      bool
-	otherUserAgents            string
+	conf    *proxy.Config
+	logger  cloudsql.Logger
+	dialer  cloudsql.Dialer
+	cleanup func() error
 
 	// impersonationChain is a comma separated list of one or more service
 	// accounts. The first entry in the chain is the impersonation target. Any
@@ -323,7 +310,7 @@ func NewCommand(opts ...Option) *Command {
 		if c.conf.StructuredLogs {
 			c.logger, c.cleanup = log.NewStructuredLogger()
 		}
-		if c.quiet {
+		if c.conf.Quiet {
 			c.logger = log.NewStdLogger(io.Discard, os.Stderr)
 		}
 		err := parseConfig(c, c.conf, args)
@@ -346,7 +333,7 @@ func NewCommand(opts ...Option) *Command {
 	pflags.BoolP("version", "v", false, "Print the cloud-sql-proxy version")
 
 	// Global-only flags
-	pflags.StringVar(&c.otherUserAgents, "user-agent", "",
+	pflags.StringVar(&c.conf.OtherUserAgents, "user-agent", "",
 		"Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1")
 	pflags.StringVarP(&c.conf.Token, "token", "t", "",
 		"Use bearer token as a source of IAM credentials.")
@@ -362,25 +349,25 @@ func NewCommand(opts ...Option) *Command {
 		"Limit the number of connections. Default is no limit.")
 	pflags.DurationVar(&c.conf.WaitOnClose, "max-sigterm-delay", 0,
 		"Maximum number of seconds to wait for connections to close after receiving a TERM signal.")
-	pflags.StringVar(&c.telemetryProject, "telemetry-project", "",
+	pflags.StringVar(&c.conf.TelemetryProject, "telemetry-project", "",
 		"Enable Cloud Monitoring and Cloud Trace with the provided project ID.")
-	pflags.BoolVar(&c.disableTraces, "disable-traces", false,
+	pflags.BoolVar(&c.conf.DisableTraces, "disable-traces", false,
 		"Disable Cloud Trace integration (used with --telemetry-project)")
-	pflags.IntVar(&c.telemetryTracingSampleRate, "telemetry-sample-rate", 10_000,
+	pflags.IntVar(&c.conf.TelemetryTracingSampleRate, "telemetry-sample-rate", 10_000,
 		"Set the Cloud Trace sample rate. A smaller number means more traces.")
-	pflags.BoolVar(&c.disableMetrics, "disable-metrics", false,
+	pflags.BoolVar(&c.conf.DisableMetrics, "disable-metrics", false,
 		"Disable Cloud Monitoring integration (used with --telemetry-project)")
-	pflags.StringVar(&c.telemetryPrefix, "telemetry-prefix", "",
+	pflags.StringVar(&c.conf.TelemetryPrefix, "telemetry-prefix", "",
 		"Prefix for Cloud Monitoring metrics.")
-	pflags.BoolVar(&c.prometheus, "prometheus", false,
+	pflags.BoolVar(&c.conf.Prometheus, "prometheus", false,
 		"Enable Prometheus HTTP endpoint /metrics on localhost")
-	pflags.StringVar(&c.prometheusNamespace, "prometheus-namespace", "",
+	pflags.StringVar(&c.conf.PrometheusNamespace, "prometheus-namespace", "",
 		"Use the provided Prometheus namespace for metrics")
-	pflags.StringVar(&c.httpAddress, "http-address", "localhost",
+	pflags.StringVar(&c.conf.HTTPAddress, "http-address", "localhost",
 		"Address for Prometheus and health check server")
-	pflags.StringVar(&c.httpPort, "http-port", "9090",
+	pflags.StringVar(&c.conf.HTTPPort, "http-port", "9090",
 		"Port for Prometheus and health check server")
-	pflags.BoolVar(&c.healthCheck, "health-check", false,
+	pflags.BoolVar(&c.conf.HealthCheck, "health-check", false,
 		"Enables health check endpoints /startup, /liveness, and /readiness on localhost.")
 	pflags.StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
 		"API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)")
@@ -397,7 +384,7 @@ https://cloud.google.com/storage/docs/requester-pays`)
 	pflags.StringVar(&c.impersonationChain, "impersonate-service-account", "",
 		`Comma separated list of service accounts to impersonate. Last value
 is the target account.`)
-	cmd.PersistentFlags().BoolVar(&c.quiet, "quiet", false, "Log error messages only")
+	cmd.PersistentFlags().BoolVar(&c.conf.Quiet, "quiet", false, "Log error messages only")
 
 	// Global and per instance flags
 	pflags.StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -497,7 +484,7 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 
 	if userHasSet("user-agent") {
-		defaultUserAgent += " " + cmd.otherUserAgents
+		defaultUserAgent += " " + cmd.conf.OtherUserAgents
 		conf.UserAgent = defaultUserAgent
 	}
 
@@ -645,12 +632,12 @@ func runSignalWrapper(cmd *Command) error {
 
 	// Configure collectors before the proxy has started to ensure we are
 	// collecting metrics before *ANY* Cloud SQL Admin API calls are made.
-	enableMetrics := !cmd.disableMetrics
-	enableTraces := !cmd.disableTraces
-	if cmd.telemetryProject != "" && (enableMetrics || enableTraces) {
+	enableMetrics := !cmd.conf.DisableMetrics
+	enableTraces := !cmd.conf.DisableTraces
+	if cmd.conf.TelemetryProject != "" && (enableMetrics || enableTraces) {
 		sd, err := stackdriver.NewExporter(stackdriver.Options{
-			ProjectID:    cmd.telemetryProject,
-			MetricPrefix: cmd.telemetryPrefix,
+			ProjectID:    cmd.conf.TelemetryProject,
+			MetricPrefix: cmd.conf.TelemetryPrefix,
 		})
 		if err != nil {
 			return err
@@ -662,7 +649,7 @@ func runSignalWrapper(cmd *Command) error {
 			}
 		}
 		if enableTraces {
-			s := trace.ProbabilitySampler(1 / float64(cmd.telemetryTracingSampleRate))
+			s := trace.ProbabilitySampler(1 / float64(cmd.conf.TelemetryTracingSampleRate))
 			trace.ApplyConfig(trace.Config{DefaultSampler: s})
 			trace.RegisterExporter(sd)
 		}
@@ -676,10 +663,10 @@ func runSignalWrapper(cmd *Command) error {
 		needsHTTPServer bool
 		mux             = http.NewServeMux()
 	)
-	if cmd.prometheus {
+	if cmd.conf.Prometheus {
 		needsHTTPServer = true
 		e, err := prometheus.NewExporter(prometheus.Options{
-			Namespace: cmd.prometheusNamespace,
+			Namespace: cmd.conf.PrometheusNamespace,
 		})
 		if err != nil {
 			return err
@@ -734,10 +721,10 @@ func runSignalWrapper(cmd *Command) error {
 	}()
 
 	notify := func() {}
-	if cmd.healthCheck {
+	if cmd.conf.HealthCheck {
 		needsHTTPServer = true
 		cmd.logger.Infof("Starting health check server at %s",
-			net.JoinHostPort(cmd.httpAddress, cmd.httpPort))
+			net.JoinHostPort(cmd.conf.HTTPAddress, cmd.conf.HTTPPort))
 		hc := healthcheck.NewCheck(p, cmd.logger)
 		mux.HandleFunc("/startup", hc.HandleStartup)
 		mux.HandleFunc("/readiness", hc.HandleReadiness)
@@ -748,7 +735,7 @@ func runSignalWrapper(cmd *Command) error {
 	// Start the HTTP server if anything requiring HTTP is specified.
 	if needsHTTPServer {
 		server := &http.Server{
-			Addr:    net.JoinHostPort(cmd.httpAddress, cmd.httpPort),
+			Addr:    net.JoinHostPort(cmd.conf.HTTPAddress, cmd.conf.HTTPPort),
 			Handler: mux,
 		}
 		// Start the HTTP server.
