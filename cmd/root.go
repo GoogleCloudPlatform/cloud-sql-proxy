@@ -347,7 +347,7 @@ func NewCommand(opts ...Option) *Command {
 
 	// Global-only flags
 	pflags.StringVar(&c.otherUserAgents, "user-agent", "",
-		"Space separate list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1")
+		"Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1")
 	pflags.StringVarP(&c.conf.Token, "token", "t", "",
 		"Use bearer token as a source of IAM credentials.")
 	pflags.StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
