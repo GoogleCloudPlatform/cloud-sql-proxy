@@ -46,13 +46,13 @@ import (
 var (
 	// versionString indicates the version of this library.
 	//go:embed version.txt
-	versionString string
-	userAgent     string
+	versionString    string
+	defaultUserAgent string
 )
 
 func init() {
 	versionString = strings.TrimSpace(versionString)
-	userAgent = "cloud-sql-proxy/" + versionString
+	defaultUserAgent = "cloud-sql-proxy/" + versionString
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -86,7 +86,7 @@ type Command struct {
 	httpAddress                string
 	httpPort                   string
 	quiet                      bool
-	runtime                    string
+	otherUserAgents            string
 
 	// impersonationChain is a comma separated list of one or more service
 	// accounts. The first entry in the chain is the impersonation target. Any
@@ -307,7 +307,7 @@ func NewCommand(opts ...Option) *Command {
 		logger:  logger,
 		cleanup: func() error { return nil },
 		conf: &proxy.Config{
-			UserAgent: userAgent,
+			UserAgent: defaultUserAgent,
 		},
 	}
 	for _, o := range opts {
@@ -346,8 +346,8 @@ func NewCommand(opts ...Option) *Command {
 	pflags.BoolP("version", "v", false, "Print the cloud-sql-proxy version")
 
 	// Global-only flags
-	pflags.StringVar(&c.runtime, "runtime", "",
-		"(for internal use only) Runtime and version, e.g. cloud-sql-proxy-operator/0.0.1")
+	pflags.StringVar(&c.otherUserAgents, "user-agent", "",
+		"Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1")
 	pflags.StringVarP(&c.conf.Token, "token", "t", "",
 		"Use bearer token as a source of IAM credentials.")
 	pflags.StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
@@ -496,9 +496,9 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		cmd.logger.Infof("Ignoring --disable-traces because --telemetry-project was not set")
 	}
 
-	if userHasSet("runtime") {
-		userAgent += " " + cmd.runtime
-		conf.UserAgent = userAgent
+	if userHasSet("user-agent") {
+		defaultUserAgent += " " + cmd.otherUserAgents
+		conf.UserAgent = defaultUserAgent
 	}
 
 	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {

@@ -34,7 +34,7 @@ import (
 
 func withDefaults(c *proxy.Config) *proxy.Config {
 	if c.UserAgent == "" {
-		c.UserAgent = userAgent
+		c.UserAgent = defaultUserAgent
 	}
 	if c.Addr == "" {
 		c.Addr = "127.0.0.1"
@@ -82,9 +82,9 @@ func invokeProxyCommand(args []string) (*Command, error) {
 	return c, err
 }
 
-func TestUserAgentWithOperatorVersionEnvVar(t *testing.T) {
-	os.Setenv("CSQL_PROXY_RUNTIME", "cloud-sql-proxy-operator/0.0.1")
-	defer os.Unsetenv("CSQL_PROXY_RUNTIME")
+func TestUserAgentWithVersionEnvVar(t *testing.T) {
+	os.Setenv("CSQL_PROXY_USER_AGENT", "cloud-sql-proxy-operator/0.0.1")
+	defer os.Unsetenv("CSQL_PROXY_USER_AGENT")
 
 	cmd, err := invokeProxyCommand([]string{"proj:region:inst"})
 	if err != nil {
@@ -94,15 +94,14 @@ func TestUserAgentWithOperatorVersionEnvVar(t *testing.T) {
 	want := "cloud-sql-proxy-operator/0.0.1"
 	got := cmd.conf.UserAgent
 	if !strings.Contains(got, want) {
-		t.Errorf("expected userAgent to contain: %v; got: %v", want, got)
+		t.Errorf("expected user agent to contain: %v; got: %v", want, got)
 	}
 }
 
-func TestUserAgentWithOperatorVersionFlag(t *testing.T) {
-
+func TestUserAgent(t *testing.T) {
 	cmd, err := invokeProxyCommand(
 		[]string{
-			"--runtime",
+			"--user-agent",
 			"cloud-sql-proxy-operator/0.0.1",
 			"proj:region:inst",
 		},
