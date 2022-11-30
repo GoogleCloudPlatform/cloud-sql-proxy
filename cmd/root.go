@@ -74,13 +74,6 @@ type Command struct {
 	logger  cloudsql.Logger
 	dialer  cloudsql.Dialer
 	cleanup func() error
-
-	// impersonationChain is a comma separated list of one or more service
-	// accounts. The first entry in the chain is the impersonation target. Any
-	// additional service accounts after the target are delegates. The
-	// roles/iam.serviceAccountTokenCreator must be configured for each account
-	// that will be impersonated.
-	impersonationChain string
 }
 
 // Option is a function that configures a Command.
@@ -381,7 +374,7 @@ https://cloud.google.com/storage/docs/requester-pays`)
 	pflags.StringVar(&c.conf.FUSETempDir, "fuse-tmp-dir",
 		filepath.Join(os.TempDir(), "csql-tmp"),
 		"Temp dir for Unix sockets created with FUSE")
-	pflags.StringVar(&c.impersonationChain, "impersonate-service-account", "",
+	pflags.StringVar(&c.conf.ImpersonationChain, "impersonate-service-account", "",
 		`Comma separated list of service accounts to impersonate. Last value
 is the target account.`)
 	cmd.PersistentFlags().BoolVar(&c.conf.Quiet, "quiet", false, "Log error messages only")
@@ -500,19 +493,6 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		// add a trailing '/' if omitted
 		if !strings.HasSuffix(conf.APIEndpointURL, "/") {
 			conf.APIEndpointURL = conf.APIEndpointURL + "/"
-		}
-	}
-
-	if cmd.impersonationChain != "" {
-		accts := strings.Split(cmd.impersonationChain, ",")
-		conf.ImpersonateTarget = accts[0]
-		// Assign delegates if the chain is more than one account. Delegation
-		// goes from last back towards target, e.g., With sa1,sa2,sa3, sa3
-		// delegates to sa2, which impersonates the target sa1.
-		if l := len(accts); l > 1 {
-			for i := l - 1; i > 0; i-- {
-				conf.ImpersonateDelegates = append(conf.ImpersonateDelegates, accts[i])
-			}
 		}
 	}
 

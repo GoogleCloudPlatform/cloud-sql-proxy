@@ -353,14 +353,10 @@ func TestNewCommandArguments(t *testing.T) {
 		{
 			desc: "using the impersonate service account flag",
 			args: []string{"--impersonate-service-account",
-				"sv1@developer.gserviceaccount.com,sv2@developer.gserviceaccount.com,sv3@developer.gserviceaccount.com",
+				"sv1@developer.gserviceaccount.com",
 				"proj:region:inst"},
 			want: withDefaults(&proxy.Config{
-				ImpersonateTarget: "sv1@developer.gserviceaccount.com",
-				ImpersonateDelegates: []string{
-					"sv3@developer.gserviceaccount.com",
-					"sv2@developer.gserviceaccount.com",
-				},
+				ImpersonationChain: "sv1@developer.gserviceaccount.com",
 			}),
 		},
 	}
@@ -617,13 +613,9 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		{
 			desc:     "using the imopersonate service accounn envvar",
 			envName:  "CSQL_PROXY_IMPERSONATE_SERVICE_ACCOUNT",
-			envValue: "sv1@developer.gserviceaccount.com,sv2@developer.gserviceaccount.com,sv3@developer.gserviceaccount.com",
+			envValue: "sv1@developer.gserviceaccount.com",
 			want: withDefaults(&proxy.Config{
-				ImpersonateTarget: "sv1@developer.gserviceaccount.com",
-				ImpersonateDelegates: []string{
-					"sv3@developer.gserviceaccount.com",
-					"sv2@developer.gserviceaccount.com",
-				},
+				ImpersonationChain: "sv1@developer.gserviceaccount.com",
 			}),
 		},
 		{

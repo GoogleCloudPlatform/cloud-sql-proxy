@@ -163,14 +163,12 @@ type Config struct {
 	// API request quotas.
 	QuotaProject string
 
-	// ImpersonateTarget is the service account to impersonate. The IAM
-	// principal doing the impersonation must have the
-	// roles/iam.serviceAccountTokenCreator role.
-	ImpersonateTarget string
-	// ImpersonateDelegates are the intermediate service accounts through which
-	// the impersonation is achieved. Each delegate must have the
-	// roles/iam.serviceAccountTokenCreator role.
-	ImpersonateDelegates []string
+	// ImpersonationChain is a comma separated list of one or more service
+	// accounts. The first entry in the chain is the impersonation target. Any
+	// additional service accounts after the target are delegates. The
+	// roles/iam.serviceAccountTokenCreator must be configured for each account
+	// that will be impersonated.
+	ImpersonationChain string
 
 	// StructuredLogs sets all output to use JSON in the LogEntry format.
 	// See https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
@@ -228,12 +226,27 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	return opts
 }
 
+func parseImpersonationChain(chain string) (string, []string) {
+	accts := strings.Split(chain, ",")
+	target := accts[0]
+	// Assign delegates if the chain is more than one account. Delegation
+	// goes from last back towards target, e.g., With sa1,sa2,sa3, sa3
+	// delegates to sa2, which impersonates the target sa1.
+	var delegates []string
+	if l := len(accts); l > 1 {
+		for i := l - 1; i > 0; i-- {
+			delegates = append(delegates, accts[i])
+		}
+	}
+	return target, delegates
+}
+
 const iamLoginScope = "https://www.googleapis.com/auth/sqlservice.login"
 
 func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 	// If service account impersonation is configured, set up an impersonated
 	// credentials token source.
-	if c.ImpersonateTarget != "" {
+	if c.ImpersonationChain != "" {
 		var iopts []option.ClientOption
 		switch {
 		case c.Token != "":
@@ -257,11 +270,12 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 		default:
 			l.Infof("Impersonating service account with Application Default Credentials")
 		}
+		target, delegates := parseImpersonationChain(c.ImpersonationChain)
 		ts, err := impersonate.CredentialsTokenSource(
 			context.Background(),
 			impersonate.CredentialsConfig{
-				TargetPrincipal: c.ImpersonateTarget,
-				Delegates:       c.ImpersonateDelegates,
+				TargetPrincipal: target,
+				Delegates:       delegates,
 				Scopes:          []string{sqladmin.SqlserviceAdminScope},
 			},
 			iopts...,
@@ -273,8 +287,8 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 			iamLoginTS, err := impersonate.CredentialsTokenSource(
 				context.Background(),
 				impersonate.CredentialsConfig{
-					TargetPrincipal: c.ImpersonateTarget,
-					Delegates:       c.ImpersonateDelegates,
+					TargetPrincipal: target,
+					Delegates:       delegates,
 					Scopes:          []string{iamLoginScope},
 				},
 				iopts...,
