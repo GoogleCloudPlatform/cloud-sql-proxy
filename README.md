@@ -434,6 +434,16 @@ To enable Prometheus, use the `--prometheus` flag. This will start an HTTP
 server on localhost with a `/metrics` endpoint. The Prometheus namespace may
 optionally be set with `--prometheus-namespace`.
 
+## Debug server
+
+The Proxy runs a localhost-only debug server at port 9191 by default. The port
+may be changed with the `--debug-port` flag.
+
+The debug server includes Go's pprof endpoints available at `/debug/pprof/`.
+See the [documentation on pprof][pprof] for details on how to use the profiler.
+
+[pprof]: https://pkg.go.dev/net/http/pprof
+
 ## Frequently Asked Questions
 
 ### Why would I use the proxy?

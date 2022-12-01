@@ -203,6 +203,9 @@ type Config struct {
 	// HTTPPort sets the port for the health check and prometheus server.
 	HTTPPort string
 
+	// DebugPort configures the port for the localhost-only debug server.
+	DebugPort string
+
 	// OtherUserAgents is a list of space separate user agents that will be
 	// appended to the default user agent.
 	OtherUserAgents string

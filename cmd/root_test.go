@@ -56,6 +56,9 @@ func withDefaults(c *proxy.Config) *proxy.Config {
 	if c.HTTPPort == "" {
 		c.HTTPPort = "9090"
 	}
+	if c.DebugPort == "" {
+		c.DebugPort = "9191"
+	}
 	if c.TelemetryTracingSampleRate == 0 {
 		c.TelemetryTracingSampleRate = 10_000
 	}
@@ -357,6 +360,13 @@ func TestNewCommandArguments(t *testing.T) {
 				"proj:region:inst"},
 			want: withDefaults(&proxy.Config{
 				ImpersonationChain: "sv1@developer.gserviceaccount.com",
+			}),
+		},
+		{
+			desc: "using the debug port flag",
+			args: []string{"--debug-port", "7777", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				DebugPort: "7777",
 			}),
 		},
 	}
@@ -698,6 +708,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 				HTTPPort: "5555",
 			}),
 		},
+		{
+			desc:     "using the debug port envvar",
+			envName:  "CSQL_PROXY_DEBUG_PORT",
+			envValue: "7777",
+			want: withDefaults(&proxy.Config{
+				DebugPort: "7777",
+			}),
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -1010,6 +1028,26 @@ func TestCommandWithCustomDialer(t *testing.T) {
 	}
 }
 
+func tryDial(addr string) (*http.Response, error) {
+	var (
+		resp     *http.Response
+		attempts int
+		err      error
+	)
+	for {
+		if attempts > 10 {
+			return resp, err
+		}
+		resp, err = http.Get(addr)
+		if err != nil {
+			attempts++
+			time.Sleep(time.Second)
+			continue
+		}
+		return resp, err
+	}
+}
+
 func TestPrometheusMetricsEndpoint(t *testing.T) {
 	c := NewCommand(WithDialer(&spyDialer{}))
 	// Keep the test output quiet
@@ -1024,28 +1062,27 @@ func TestPrometheusMetricsEndpoint(t *testing.T) {
 
 	// try to dial metrics server for a max of ~10s to give the proxy time to
 	// start up.
-	tryDial := func(addr string) (*http.Response, error) {
-		var (
-			resp     *http.Response
-			attempts int
-			err      error
-		)
-		for {
-			if attempts > 10 {
-				return resp, err
-			}
-			resp, err = http.Get(addr)
-			if err != nil {
-				attempts++
-				time.Sleep(time.Second)
-				continue
-			}
-			return resp, err
-		}
-	}
 	resp, err := tryDial("http://localhost:9090/metrics") // default port set by http-port flag
 	if err != nil {
 		t.Fatalf("failed to dial metrics endpoint: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
+	}
+}
+
+func TestPProfServer(t *testing.T) {
+	c := NewCommand(WithDialer(&spyDialer{}))
+	c.SilenceUsage = true
+	c.SilenceErrors = true
+	c.SetArgs([]string{"--prometheus", "my-project:my-region:my-instance"})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go c.ExecuteContext(ctx)
+	resp, err := tryDial("http://localhost:9191/debug/pprof/")
+	if err != nil {
+		t.Fatalf("failed to dial endpoint: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)

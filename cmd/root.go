@@ -22,6 +22,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
@@ -238,6 +239,21 @@ Configuration using environment variables
         CSQL_PROXY_INSTANCE_CONNECTION_NAME_1=my-other-project:us-central1:my-other-server \
             ./cloud-sql-proxy
 
+Localhost Debug Server
+
+    By default, the Proxy starts a localhost-only server that supports the
+    pprof visualization tool. The server is only active when requests are sent
+    to it. Pprof can be used to take CPU and Heap profiles among other things
+    and is useful when trying to understand the Proxy's performance. By
+    default, the server is started on port 9191.
+
+    If you would like to change the port, use the --debug-port flag.
+
+    See the following links for details on pprof:
+
+    - https://pkg.go.dev/net/http/pprof
+    - https://go.dev/blog/pprof
+
 (*) indicates a flag that may be used as a query parameter
 
 `
@@ -360,6 +376,8 @@ func NewCommand(opts ...Option) *Command {
 		"Address for Prometheus and health check server")
 	pflags.StringVar(&c.conf.HTTPPort, "http-port", "9090",
 		"Port for Prometheus and health check server")
+	pflags.StringVar(&c.conf.DebugPort, "debug-port", "9191",
+		"Port for localhost-only debug server")
 	pflags.BoolVar(&c.conf.HealthCheck, "health-check", false,
 		"Enables health check endpoints /startup, /liveness, and /readiness on localhost.")
 	pflags.StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
@@ -712,6 +730,18 @@ func runSignalWrapper(cmd *Command) error {
 		notify = hc.NotifyStarted
 	}
 
+	go func() {
+		m := http.NewServeMux()
+		m.HandleFunc("/debug/pprof/", pprof.Index)
+		m.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		m.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		m.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		m.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		addr := net.JoinHostPort("localhost", cmd.conf.DebugPort)
+		if lErr := http.ListenAndServe(addr, m); lErr != nil {
+			cmd.logger.Errorf("failed to start debug HTTP server: %v", lErr)
+		}
+	}()
 	// Start the HTTP server if anything requiring HTTP is specified.
 	if needsHTTPServer {
 		server := &http.Server{
