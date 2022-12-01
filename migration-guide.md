@@ -89,7 +89,7 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | quiet                       | quiet                 | quiet disables all logging except errors                                             |
 | quota_project               | quota-project         |                                                                                      |
 | refresh_config_throttle     | ❌                    |                                                                                      |
-| skip_failed_instance_config | ❌                    |                                                                                      |
+| skip_failed_instance_config | ❌                    | This flag was only necessary with Unix sockets. Use TCP sockets to avoid failed startup. |
 | structured_logs             | structured-logs       |                                                                                      |
 | term_timeout                | max-sigterm-delay     |                                                                                      |
 | token                       | token                 |                                                                                      |
