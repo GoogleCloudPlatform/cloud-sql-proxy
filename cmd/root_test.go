@@ -363,6 +363,13 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the debug flag",
+			args: []string{"--debug", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				Debug: true,
+			}),
+		},
+		{
 			desc: "using the debug port flag",
 			args: []string{"--debug-port", "7777", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -706,6 +713,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			envValue: "5555",
 			want: withDefaults(&proxy.Config{
 				HTTPPort: "5555",
+			}),
+		},
+		{
+			desc:     "using the debug envvar",
+			envName:  "CSQL_PROXY_DEBUG",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				Debug: true,
 			}),
 		},
 		{
@@ -1075,7 +1090,7 @@ func TestPProfServer(t *testing.T) {
 	c := NewCommand(WithDialer(&spyDialer{}))
 	c.SilenceUsage = true
 	c.SilenceErrors = true
-	c.SetArgs([]string{"--prometheus", "my-project:my-region:my-instance"})
+	c.SetArgs([]string{"--debug", "--debug-port", "9191", "my-project:my-region:my-instance"})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

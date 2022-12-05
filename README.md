@@ -436,13 +436,18 @@ optionally be set with `--prometheus-namespace`.
 
 ## Debug server
 
-The Proxy runs a localhost-only debug server at port 9191 by default. The port
-may be changed with the `--debug-port` flag.
+The Proxy includes support for a debug server on localhost. By default, the
+debug server is not enabled. To enable the server, pass the `--debug` flag.
+This will start the server on localhost at port 9191. To change the port,
+use the `--debug-port` flag.
 
-The debug server includes Go's pprof endpoints available at `/debug/pprof/`.
-See the [documentation on pprof][pprof] for details on how to use the profiler.
+The debug server includes Go's pprof tool and is available at
+`/debug/pprof/`.
 
-[pprof]: https://pkg.go.dev/net/http/pprof
+See the [documentation on pprof][pprof] for details on how to use the
+profiler.
+
+[pprof]: https://pkg.go.dev/net/http/pprof.
 
 ## Frequently Asked Questions
 

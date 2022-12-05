@@ -241,18 +241,16 @@ Configuration using environment variables
 
 Localhost Debug Server
 
-    By default, the Proxy starts a localhost-only server that supports the
-    pprof visualization tool. The server is only active when requests are sent
-    to it. Pprof can be used to take CPU and Heap profiles among other things
-    and is useful when trying to understand the Proxy's performance. By
-    default, the server is started on port 9191.
+    The Proxy includes support for a debug server on localhost. By default, the
+    debug server is not enabled. To enable the server, pass the --debug flag.
+    This will start the server on localhost at port 9191. To change the port,
+    use the --debug-port flag.
 
-    If you would like to change the port, use the --debug-port flag.
+    The debug server includes Go's pprof tool and is available at
+    /debug/pprof/.
 
-    See the following links for details on pprof:
-
-    - https://pkg.go.dev/net/http/pprof
-    - https://go.dev/blog/pprof
+    See the documentation on pprof for details on how to use the
+    profiler at https://pkg.go.dev/net/http/pprof.
 
 (*) indicates a flag that may be used as a query parameter
 
@@ -376,6 +374,8 @@ func NewCommand(opts ...Option) *Command {
 		"Address for Prometheus and health check server")
 	pflags.StringVar(&c.conf.HTTPPort, "http-port", "9090",
 		"Port for Prometheus and health check server")
+	pflags.BoolVar(&c.conf.Debug, "debug", false,
+		"Enable the debug sever on localhost")
 	pflags.StringVar(&c.conf.DebugPort, "debug-port", "9191",
 		"Port for localhost-only debug server")
 	pflags.BoolVar(&c.conf.HealthCheck, "health-check", false,
@@ -731,6 +731,9 @@ func runSignalWrapper(cmd *Command) error {
 	}
 
 	go func() {
+		if !cmd.conf.Debug {
+			return
+		}
 		m := http.NewServeMux()
 		m.HandleFunc("/debug/pprof/", pprof.Index)
 		m.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -738,6 +741,7 @@ func runSignalWrapper(cmd *Command) error {
 		m.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		m.HandleFunc("/debug/pprof/trace", pprof.Trace)
 		addr := net.JoinHostPort("localhost", cmd.conf.DebugPort)
+		cmd.logger.Infof("Starting debug server on %v", addr)
 		if lErr := http.ListenAndServe(addr, m); lErr != nil {
 			cmd.logger.Errorf("failed to start debug HTTP server: %v", lErr)
 		}

@@ -203,6 +203,8 @@ type Config struct {
 	// HTTPPort sets the port for the health check and prometheus server.
 	HTTPPort string
 
+	// Debug enables a debug server on localhost.
+	Debug bool
 	// DebugPort configures the port for the localhost-only debug server.
 	DebugPort string
 
