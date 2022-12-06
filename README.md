@@ -434,6 +434,20 @@ To enable Prometheus, use the `--prometheus` flag. This will start an HTTP
 server on localhost with a `/metrics` endpoint. The Prometheus namespace may
 optionally be set with `--prometheus-namespace`.
 
+## Localhost Admin Server
+
+The Proxy includes support for an admin server on localhost. By default, the
+admin server is not enabled. To enable the server, pass the `--debug` flag.
+This will start the server on localhost at port 9091. To change the port, use
+the `--admin-port` flag.
+
+The admin server includes Go's pprof tool and is available at `/debug/pprof/`.
+
+See the [documentation on pprof][pprof] for details on how to use the
+profiler.
+
+[pprof]: https://pkg.go.dev/net/http/pprof.
+
 ## Frequently Asked Questions
 
 ### Why would I use the proxy?
