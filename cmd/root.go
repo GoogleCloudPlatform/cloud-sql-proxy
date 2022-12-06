@@ -239,14 +239,14 @@ Configuration using environment variables
         CSQL_PROXY_INSTANCE_CONNECTION_NAME_1=my-other-project:us-central1:my-other-server \
             ./cloud-sql-proxy
 
-Localhost Debug Server
+Localhost Admin Server
 
-    The Proxy includes support for a debug server on localhost. By default, the
-    debug server is not enabled. To enable the server, pass the --debug flag.
-    This will start the server on localhost at port 9191. To change the port,
-    use the --admin-port flag.
+    The Proxy includes support for an admin server on localhost. By default,
+    the admin server is not enabled. To enable the server, pass the --debug
+    flag. This will start the server on localhost at port 9091. To change the
+    port, use the --admin-port flag.
 
-    The debug server includes Go's pprof tool and is available at
+    The admin server includes Go's pprof tool and is available at
     /debug/pprof/.
 
     See the documentation on pprof for details on how to use the
@@ -375,7 +375,7 @@ func NewCommand(opts ...Option) *Command {
 	pflags.StringVar(&c.conf.HTTPPort, "http-port", "9090",
 		"Port for Prometheus and health check server")
 	pflags.BoolVar(&c.conf.Debug, "debug", false,
-		"Enable the debug sever on localhost")
+		"Enable the admin server on localhost")
 	pflags.StringVar(&c.conf.AdminPort, "admin-port", "9091",
 		"Port for localhost-only admin server")
 	pflags.BoolVar(&c.conf.HealthCheck, "health-check", false,
@@ -741,9 +741,9 @@ func runSignalWrapper(cmd *Command) error {
 		m.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		m.HandleFunc("/debug/pprof/trace", pprof.Trace)
 		addr := net.JoinHostPort("localhost", cmd.conf.AdminPort)
-		cmd.logger.Infof("Starting debug server on %v", addr)
+		cmd.logger.Infof("Starting admin server on %v", addr)
 		if lErr := http.ListenAndServe(addr, m); lErr != nil {
-			cmd.logger.Errorf("failed to start debug HTTP server: %v", lErr)
+			cmd.logger.Errorf("Failed to start admin HTTP server: %v", lErr)
 		}
 	}()
 	// Start the HTTP server if anything requiring HTTP is specified.
