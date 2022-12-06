@@ -244,7 +244,7 @@ Localhost Debug Server
     The Proxy includes support for a debug server on localhost. By default, the
     debug server is not enabled. To enable the server, pass the --debug flag.
     This will start the server on localhost at port 9191. To change the port,
-    use the --debug-port flag.
+    use the --admin-port flag.
 
     The debug server includes Go's pprof tool and is available at
     /debug/pprof/.
@@ -376,8 +376,8 @@ func NewCommand(opts ...Option) *Command {
 		"Port for Prometheus and health check server")
 	pflags.BoolVar(&c.conf.Debug, "debug", false,
 		"Enable the debug sever on localhost")
-	pflags.StringVar(&c.conf.DebugPort, "debug-port", "9191",
-		"Port for localhost-only debug server")
+	pflags.StringVar(&c.conf.AdminPort, "admin-port", "9091",
+		"Port for localhost-only admin server")
 	pflags.BoolVar(&c.conf.HealthCheck, "health-check", false,
 		"Enables health check endpoints /startup, /liveness, and /readiness on localhost.")
 	pflags.StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
@@ -740,7 +740,7 @@ func runSignalWrapper(cmd *Command) error {
 		m.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		m.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		m.HandleFunc("/debug/pprof/trace", pprof.Trace)
-		addr := net.JoinHostPort("localhost", cmd.conf.DebugPort)
+		addr := net.JoinHostPort("localhost", cmd.conf.AdminPort)
 		cmd.logger.Infof("Starting debug server on %v", addr)
 		if lErr := http.ListenAndServe(addr, m); lErr != nil {
 			cmd.logger.Errorf("failed to start debug HTTP server: %v", lErr)

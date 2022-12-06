@@ -56,8 +56,8 @@ func withDefaults(c *proxy.Config) *proxy.Config {
 	if c.HTTPPort == "" {
 		c.HTTPPort = "9090"
 	}
-	if c.DebugPort == "" {
-		c.DebugPort = "9191"
+	if c.AdminPort == "" {
+		c.AdminPort = "9091"
 	}
 	if c.TelemetryTracingSampleRate == 0 {
 		c.TelemetryTracingSampleRate = 10_000
@@ -370,10 +370,10 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
-			desc: "using the debug port flag",
-			args: []string{"--debug-port", "7777", "proj:region:inst"},
+			desc: "using the admin port flag",
+			args: []string{"--admin-port", "7777", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
-				DebugPort: "7777",
+				AdminPort: "7777",
 			}),
 		},
 	}
@@ -724,11 +724,11 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			}),
 		},
 		{
-			desc:     "using the debug port envvar",
-			envName:  "CSQL_PROXY_DEBUG_PORT",
+			desc:     "using the admin port envvar",
+			envName:  "CSQL_PROXY_ADMIN_PORT",
 			envValue: "7777",
 			want: withDefaults(&proxy.Config{
-				DebugPort: "7777",
+				AdminPort: "7777",
 			}),
 		},
 	}
@@ -1090,7 +1090,7 @@ func TestPProfServer(t *testing.T) {
 	c := NewCommand(WithDialer(&spyDialer{}))
 	c.SilenceUsage = true
 	c.SilenceErrors = true
-	c.SetArgs([]string{"--debug", "--debug-port", "9191", "my-project:my-region:my-instance"})
+	c.SetArgs([]string{"--debug", "--admin-port", "9191", "my-project:my-region:my-instance"})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
