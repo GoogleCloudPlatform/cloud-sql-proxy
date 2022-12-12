@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.0-preview.4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0-preview.3...v2.0.0-preview.4) (2022-12-12)
+
+
+### Features
+
+* add admin server with pprof ([#1564](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1564)) ([d022c56](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/d022c5683a301722e55692ae3ca1d62cf0e6d017))
+
+
+### Bug Fixes
+
+* add runtime version to user agent if present ([#1542](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1542)) ([a6b689b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/a6b689b05aa6f1e11ede8a1dd6fdec3cfc3c8c8e))
+* use user-agent as flag name ([#1561](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1561)) ([e1b2f7e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e1b2f7eb4e9552a1124b7aab3a1bca4366797b53))
+
+
+### Miscellaneous Chores
+
+* release 2.0.0-preview.4 ([#1576](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1576)) ([04fcf88](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/04fcf88d35a1da7e623b763829a02e79431fb74e))
+
 ## [2.0.0-preview.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0-preview.2...v2.0.0-preview.3) (2022-11-15)
 
 
