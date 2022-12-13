@@ -8,7 +8,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/google/go-cmp v0.5.9
-	github.com/hanwen/go-fuse/v2 v2.1.0
+	github.com/hanwen/go-fuse/v2 v2.2.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/microsoft/go-mssqldb v0.18.0
 	github.com/spf13/cobra v1.6.1
