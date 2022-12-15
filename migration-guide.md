@@ -14,7 +14,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ```shell
 # v1
-./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5432
+./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5432
 
 # v2
 # Using automatic database port selection (MySQL 3306, Postgres 5432, SQL Server 1433)
@@ -25,7 +25,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ```shell
 # v1
-./cloud-sql-proxy -dir /cloudsql -instances=<INSTANCE_CONNECTION_NAME>
+./cloud_sql_proxy -dir /cloudsql -instances=<INSTANCE_CONNECTION_NAME>
 
 # v2
 ./cloud-sql-proxy --unix-socket /cloudsql <INSTANCE_CONNECTION_NAME>
@@ -35,7 +35,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ```shell
 # v1
-./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5000,<INSTANCE_CONNECTION_NAME2>=tcp:5001
+./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:5000,<INSTANCE_CONNECTION_NAME2>=tcp:5001
 
 # v2
 # starts listener on port 5000, increments for additional listeners
@@ -46,7 +46,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ```shell
 # v1
-./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:6000,<INSTANCE_CONNECTION_NAME2>=tcp:7000
+./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:6000,<INSTANCE_CONNECTION_NAME2>=tcp:7000
 
 # v2
 ./cloud-sql-proxy '<INSTANCE_CONNECTION_NAME>?port=6000' '<INSTANCE_CONNECTION_NAME2>?port=7000'
@@ -56,7 +56,7 @@ your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
 ```shell
 # v1
-./cloud-sql-proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:0.0.0.0:6000
+./cloud_sql_proxy -instances=<INSTANCE_CONNECTION_NAME>=tcp:0.0.0.0:6000
 
 # v2
 ./cloud-sql-proxy --address 0.0.0.0 --port 6000 <INSTANCE_CONNECTION_NAME>
