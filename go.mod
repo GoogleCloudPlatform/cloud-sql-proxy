@@ -10,7 +10,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/hanwen/go-fuse/v2 v2.2.0
 	github.com/jackc/pgx/v4 v4.17.2
-	github.com/microsoft/go-mssqldb v0.18.0
+	github.com/microsoft/go-mssqldb v0.19.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.14.0
