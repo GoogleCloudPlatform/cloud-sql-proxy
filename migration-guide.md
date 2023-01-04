@@ -82,7 +82,7 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | health_check_port           | http-port             |  Use --http-address=0.0.0.0 when using a health check in Kubernetes                  |
 | host                        | sqladmin-api-endpoint |                                                                                      |
 | instances_metadata          | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259) |
-| ip_address_types            | private-ip            | Defaults to public                                                                   |
+| ip_address_types            | private-ip            | Defaults to public. To connect to a private IP, you must add the --private-ip flag   |
 | log_debug_stdout            | ❌                    | v2 logs to stdout, errors to stderr by default                                       |
 | max_connections             | max-connections       |                                                                                      |
 | projects                    | ❌                    | v2 prefers explicit connection configuration to avoid user error                     |
