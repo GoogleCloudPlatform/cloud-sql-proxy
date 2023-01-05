@@ -34,7 +34,7 @@ import (
 
 func withDefaults(c *proxy.Config) *proxy.Config {
 	if c.UserAgent == "" {
-		c.UserAgent = defaultUserAgent
+		c.UserAgent = userAgent
 	}
 	if c.Addr == "" {
 		c.Addr = "127.0.0.1"

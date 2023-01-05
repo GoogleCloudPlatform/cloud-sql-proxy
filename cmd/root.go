@@ -47,13 +47,25 @@ import (
 var (
 	// versionString indicates the version of this library.
 	//go:embed version.txt
-	versionString    string
-	defaultUserAgent string
+	versionString string
+	// metadataString indiciates additional build or distribution metadata.
+	metadataString string
+	userAgent      string
 )
 
 func init() {
-	versionString = strings.TrimSpace(versionString)
-	defaultUserAgent = "cloud-sql-proxy/" + versionString
+	versionString = semanticVersion()
+	userAgent = "cloud-sql-proxy/" + versionString
+}
+
+// semanticVersion returns the version of the proxy including an compile-time
+// metadata.
+func semanticVersion() string {
+	v := strings.TrimSpace(versionString)
+	if metadataString != "" {
+		v += "+" + metadataString
+	}
+	return v
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -301,7 +313,7 @@ func NewCommand(opts ...Option) *Command {
 		logger:  logger,
 		cleanup: func() error { return nil },
 		conf: &proxy.Config{
-			UserAgent: defaultUserAgent,
+			UserAgent: userAgent,
 		},
 	}
 	for _, o := range opts {
@@ -495,8 +507,8 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 
 	if userHasSet("user-agent") {
-		defaultUserAgent += " " + cmd.conf.OtherUserAgents
-		conf.UserAgent = defaultUserAgent
+		userAgent += " " + cmd.conf.OtherUserAgents
+		conf.UserAgent = userAgent
 	}
 
 	if userHasSet("sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
