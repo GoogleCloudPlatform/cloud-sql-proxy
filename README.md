@@ -177,6 +177,38 @@ page of your Cloud SQL instance in the console, or use `gcloud` with:
 gcloud sql instances describe <INSTANCE_NAME> --format='value(connectionName)'
 ```
 
+### Credentials
+
+The Cloud SQL proxy uses a Cloud IAM principal to authorize connections against
+a Cloud SQL instance. The proxy sources the credentials using
+[Application Default Credentials](https://cloud.google.com/docs/authentication/production).
+
+Note: Any IAM principal connecting to a Cloud SQL database will need one of the
+following IAM roles:
+
+- Cloud SQL Client (preferred)
+- Cloud SQL Editor
+- Cloud SQL Admin
+
+Or one may manually assign the following IAM permissions:
+
+- `cloudsql.instances.connect`
+- `cloudsql.instances.get`
+
+See [Roles and Permissions in Cloud SQL][roles-and-permissions] for details.
+
+When the proxy authenticates under the Compute Engine VM's default service
+account, the VM must have at least the `sqlservice.admin` API scope (i.e.,
+"https://www.googleapis.com/auth/sqlservice.admin") and the associated project
+must have the SQL Admin API enabled. The default service account must also have
+at least writer or editor privileges to any projects of target SQL instances.
+
+The proxy also supports three flags related to credentials:
+
+- `--token` to use an OAuth2 token
+- `--credentials-file` to use a service account key file
+- `--gcloud-auth` to use the Gcloud user's credentials (local development only)
+
 ### Basic Usage
 
 To start the proxy, use:
@@ -302,37 +334,6 @@ To see a full list of flags, use:
 ./cloud-sql-proxy --help
 ```
 
-## Credentials
-
-The Cloud SQL proxy uses a Cloud IAM principal to authorize connections against
-a Cloud SQL instance. The proxy sources the credentials using
-[Application Default Credentials](https://cloud.google.com/docs/authentication/production).
-
-Note: Any IAM principal connecting to a Cloud SQL database will need one of the
-following IAM roles:
-
-- Cloud SQL Client (preferred)
-- Cloud SQL Editor
-- Cloud SQL Admin
-
-Or one may manually assign the following IAM permissions:
-
-- `cloudsql.instances.connect`
-- `cloudsql.instances.get`
-
-See [Roles and Permissions in Cloud SQL][roles-and-permissions] for details.
-
-When the proxy authenticates under the Compute Engine VM's default service
-account, the VM must have at least the `sqlservice.admin` API scope (i.e.,
-"https://www.googleapis.com/auth/sqlservice.admin") and the associated project
-must have the SQL Admin API enabled. The default service account must also have
-at least writer or editor privileges to any projects of target SQL instances.
-
-The proxy also supports three flags related to credentials:
-
-- `--token` to use an OAuth2 token
-- `--credentials-file` to use a service account key file
-- `--gcloud-auth` to use the Gcloud user's credentials (local development only)
 
 ## Container Images
 
