@@ -392,30 +392,6 @@ func TestNewCommandArguments(t *testing.T) {
 	}
 }
 
-func TestNewCommandWithEnvironmentConfigPrivateFields(t *testing.T) {
-	tcs := []struct {
-		desc     string
-		envName  string
-		envValue string
-		isValid  func(cmd *Command) bool
-	}{}
-	for _, tc := range tcs {
-		t.Run(tc.desc, func(t *testing.T) {
-			os.Setenv(tc.envName, tc.envValue)
-			defer os.Unsetenv(tc.envName)
-
-			c, err := invokeProxyCommand([]string{"proj:region:inst"})
-			if err != nil {
-				t.Fatalf("want error = nil, got = %v", err)
-			}
-
-			if !tc.isValid(c) {
-				t.Fatal("want valid, got invalid")
-			}
-		})
-	}
-}
-
 func TestNewCommandWithEnvironmentConfigInstanceConnectionName(t *testing.T) {
 	tcs := []struct {
 		desc string
