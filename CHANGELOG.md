@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0-preview.4...v2.0.0) (2023-01-17)
+
+
+### Bug Fixes
+
+* correctly apply metadata to user agent ([#1606](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1606)) ([1ca9902](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1ca9902fb949ea2a75fcdc5ed9930877db6ff600))
+
+
+### Miscellaneous Chores
+
+* release 2.0.0 ([#1615](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1615)) ([4a6283b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4a6283b70b49f97a5b60ebb68c9e01d6add2dff0))
+
 ## [2.0.0-preview.4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0-preview.3...v2.0.0-preview.4) (2022-12-12)
 
 
