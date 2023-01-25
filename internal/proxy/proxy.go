@@ -742,7 +742,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 
 		address = net.JoinHostPort(a, fmt.Sprint(np))
 
-	case inst.UnixSocketPath != "" && strings.HasPrefix(version, "POSTGRES") :
+	case inst.UnixSocketPath != "" && strings.HasPrefix(version, "POSTGRES"):
 		// When UnixSocketPath is set for a Postgres database...
 		network = "unix"
 
@@ -771,7 +771,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 		}
 		address = UnixAddress(address, ".s.PGSQL.5432")
 
-	case inst.UnixSocketPath != "" :
+	case inst.UnixSocketPath != "":
 		network = "unix"
 		address = inst.UnixSocketPath
 		dir := path.Dir(address)
