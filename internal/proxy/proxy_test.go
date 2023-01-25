@@ -20,6 +20,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -114,6 +115,9 @@ func createTempDir(t *testing.T) (string, func()) {
 func TestClientInitialization(t *testing.T) {
 	ctx := context.Background()
 	testDir, cleanup := createTempDir(t)
+	testUnixSocketPath := path.Join(testDir, "db")
+	testUnixSocketPathPg := path.Join(testDir, "db", ".s.PGSQL.5432")
+
 	defer cleanup()
 
 	tcs := []struct {
@@ -255,6 +259,39 @@ func TestClientInitialization(t *testing.T) {
 			},
 			wantUnixAddrs: []string{
 				filepath.Join(testDir, pg, ".s.PGSQL.5432"),
+			},
+		},
+		{
+			desc: "with a Unix socket path per instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: mysql, UnixSocketPath: testUnixSocketPath},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testUnixSocketPath),
+			},
+		},
+		{
+			desc: "with a Unix socket path per pg instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: pg, UnixSocketPath: testUnixSocketPath},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testUnixSocketPathPg),
+			},
+		},
+		{
+			desc: "with a Unix socket path per pg instance and explicit pg path suffix",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: pg, UnixSocketPath: testUnixSocketPathPg},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testUnixSocketPathPg),
 			},
 		},
 	}

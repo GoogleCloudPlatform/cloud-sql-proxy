@@ -20,6 +20,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -83,9 +84,13 @@ type InstanceConnConfig struct {
 	// Port is the port on which to bind a listener for the instance.
 	Port int
 	// UnixSocket is the directory where a Unix socket will be created,
-	// connected to the Cloud SQL instance. If set, takes precedence over Addr
-	// and Port.
+	// connected to the Cloud SQL instance. The full path to the socket will be
+	// UnixSocket + "/" + Name. If set, takes precedence over Addr and Port.
 	UnixSocket string
+	// UnixSocketPath is the directory where a Unix socket will be created,
+	// connected to the Cloud SQL instance. The full path to the socket will be
+	// UnixSocketPath. If set, takes precedence over UnixSocket, Addr and Port.
+	UnixSocketPath string
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
 	IAMAuthN *bool
@@ -714,8 +719,10 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	//   instance)
 	// use a TCP listener.
 	// Otherwise, use a Unix socket.
-	if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
-		(inst.Addr != "" || inst.Port != 0) {
+	switch {
+
+	case (conf.UnixSocket == "" && inst.UnixSocket == "" && inst.UnixSocketPath == "") ||
+		(inst.Addr != "" || inst.Port != 0):
 		network = "tcp"
 
 		a := conf.Addr
@@ -734,7 +741,47 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 		}
 
 		address = net.JoinHostPort(a, fmt.Sprint(np))
-	} else {
+
+	case inst.UnixSocketPath != "" && strings.HasPrefix(version, "POSTGRES") :
+		// When UnixSocketPath is set for a Postgres database...
+		network = "unix"
+
+		address = inst.UnixSocketPath
+		// If UnixSocketPath ends .s.PGSQL.5432, remove it to make directory
+		// handling code consistent.
+		if path.Base(address) == ".s.PGSQL.5432" {
+			address = path.Dir(address)
+		}
+
+		dir := path.Dir(address)
+
+		// if base directory does not exist, fail
+		if _, err := os.Stat(dir); err != nil {
+			return nil, err
+		}
+
+		// When setting up a listener for Postgres, create address as a
+		// directory, and use the Postgres-specific socket name
+		// .s.PGSQL.5432.
+		// Make the directory only if it hasn't already been created.
+		if _, err := os.Stat(address); err != nil {
+			if err = os.Mkdir(address, 0777); err != nil {
+				return nil, err
+			}
+		}
+		address = UnixAddress(address, ".s.PGSQL.5432")
+
+	case inst.UnixSocketPath != "" :
+		network = "unix"
+		address = inst.UnixSocketPath
+		dir := path.Dir(address)
+
+		// if base directory does not exist, fail
+		if _, err := os.Stat(dir); err != nil {
+			return nil, err
+		}
+
+	default:
 		network = "unix"
 
 		dir := conf.UnixSocket
