@@ -543,12 +543,22 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 			a, aok := q["address"]
 			p, pok := q["port"]
 			u, uok := q["unix-socket"]
+			up, upok := q["unix-socket-path"]
 
 			if aok && uok {
 				return newBadCommandError("cannot specify both address and unix-socket query params")
 			}
 			if pok && uok {
 				return newBadCommandError("cannot specify both port and unix-socket query params")
+			}
+			if aok && upok {
+				return newBadCommandError("cannot specify both address and unix-socket-path query params")
+			}
+			if pok && upok {
+				return newBadCommandError("cannot specify both port and unix-socket-path query params")
+			}
+			if uok && upok {
+				return newBadCommandError("cannot specify both unix-socket-path and unix-socket query params")
 			}
 
 			if aok {
@@ -583,6 +593,13 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 					return newBadCommandError(fmt.Sprintf("unix query param should be only one value: %q", a))
 				}
 				ic.UnixSocket = u[0]
+			}
+
+			if upok {
+				if len(up) != 1 {
+					return newBadCommandError(fmt.Sprintf("unix-socket-path query param should be only one value: %q", a))
+				}
+				ic.UnixSocketPath = up[0]
 			}
 
 			ic.IAMAuthN, err = parseBoolOpt(q, "auto-iam-authn")

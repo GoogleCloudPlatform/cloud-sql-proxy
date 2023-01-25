@@ -287,6 +287,15 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the unix socket path query param",
+			args: []string{"proj:region:inst?unix-socket-path=/path/to/dir/"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					UnixSocketPath: "/path/to/dir/",
+				}},
+			}),
+		},
+		{
 			desc: "using the iam authn login flag",
 			args: []string{"--auto-iam-authn", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
