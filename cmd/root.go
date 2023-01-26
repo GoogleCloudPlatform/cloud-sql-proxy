@@ -178,7 +178,7 @@ Instance Level Configuration Parameters:
     a corresponding global parameter.
 
     - unix-socket-path - UnixSocketPath is the path where a Unix socket will be
-    created for a Cloud SQL instance. If this is a Postgres database, the proxy
+    created for a Cloud SQL instance. If set on a Postgres instance, the proxy
     will ensure that the last path element is '.s.PGSQL.5432', appending this
 		path element if necessary. unix-socket-path takes precedence over
     the global parameter --unix-socket when both are set.
