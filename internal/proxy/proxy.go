@@ -779,7 +779,7 @@ func newUnixSocketMount(inst InstanceConnConfig, unixSocketDir, version string) 
 	)
 
 	if inst.UnixSocketPath != "" {
-		// When UnixSocketPath is set...
+		// When UnixSocketPath is set
 		address = inst.UnixSocketPath
 
 		// If UnixSocketPath ends .s.PGSQL.5432, remove it for consistency
@@ -789,7 +789,7 @@ func newUnixSocketMount(inst InstanceConnConfig, unixSocketDir, version string) 
 
 		dir = path.Dir(address)
 	} else {
-		// when UnixSocket is set
+		// When UnixSocket is set
 		dir = unixSocketDir
 		if dir == "" {
 			dir = inst.UnixSocket
