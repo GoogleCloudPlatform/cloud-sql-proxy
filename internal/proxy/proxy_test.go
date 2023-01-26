@@ -273,6 +273,18 @@ func TestClientInitialization(t *testing.T) {
 			},
 		},
 		{
+			desc: "with a Unix socket path overriding Unix socket",
+			in: &proxy.Config{
+				UnixSocket: testDir,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: mysql, UnixSocketPath: testUnixSocketPath},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testUnixSocketPath),
+			},
+		},
+		{
 			desc: "with a Unix socket path per pg instance",
 			in: &proxy.Config{
 				Instances: []proxy.InstanceConnConfig{

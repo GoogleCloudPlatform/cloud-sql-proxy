@@ -288,10 +288,10 @@ func TestNewCommandArguments(t *testing.T) {
 		},
 		{
 			desc: "using the unix socket path query param",
-			args: []string{"proj:region:inst?unix-socket-path=/path/to/dir/"},
+			args: []string{"proj:region:inst?unix-socket-path=/path/to/file"},
 			want: withDefaults(&proxy.Config{
 				Instances: []proxy.InstanceConnConfig{{
-					UnixSocketPath: "/path/to/dir/",
+					UnixSocketPath: "/path/to/file",
 				}},
 			}),
 		},
@@ -969,12 +969,24 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{"-u", "/path/to/dir/", "-p", "5432", "proj:region:inst"},
 		},
 		{
+			desc: "using the unix socket and unix-socket-path",
+			args: []string{"proj:region:inst?unix-socket=/path&unix-socket-path=/another/path"},
+		},
+		{
 			desc: "using the unix socket and addr query params",
 			args: []string{"proj:region:inst?unix-socket=/path&address=127.0.0.1"},
 		},
 		{
+			desc: "using the unix socket path and addr query params",
+			args: []string{"proj:region:inst?unix-socket-path=/path&address=127.0.0.1"},
+		},
+		{
 			desc: "using the unix socket and port query params",
 			args: []string{"proj:region:inst?unix-socket=/path&port=5000"},
+		},
+		{
+			desc: "using the unix socket path and port query params",
+			args: []string{"proj:region:inst?unix-socket-path=/path&port=5000"},
 		},
 		{
 			desc: "when the iam authn login query param contains multiple values",
