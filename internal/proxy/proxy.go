@@ -87,7 +87,7 @@ type InstanceConnConfig struct {
 	// connected to the Cloud SQL instance. The full path to the socket will be
 	// UnixSocket + os.PathSeparator + Name. If set, takes precedence over Addr and Port.
 	UnixSocket string
-	// UnixSocketPath is the directory where a Unix socket will be created,
+	// UnixSocketPath is the path where a Unix socket will be created,
 	// connected to the Cloud SQL instance. The full path to the socket will be
 	// UnixSocketPath. If this is a Postgres database, the proxy will ensure that
 	// the last path element is `.s.PGSQL.5432`, appending this path element if
