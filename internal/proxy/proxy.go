@@ -207,6 +207,9 @@ type Config struct {
 
 	// Debug enables a debug handler on localhost.
 	Debug bool
+	// QuitQuitQuit enables a handler that will shut the Proxy down upon
+	// receiving a POST request.
+	QuitQuitQuit bool
 
 	// OtherUserAgents is a list of space separate user agents that will be
 	// appended to the default user agent.

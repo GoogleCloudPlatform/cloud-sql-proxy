@@ -376,6 +376,13 @@ func TestNewCommandArguments(t *testing.T) {
 				AdminPort: "7777",
 			}),
 		},
+		{
+			desc: "using the quitquitquit flag",
+			args: []string{"--quitquitquit", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				QuitQuitQuit: true,
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -729,6 +736,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			envValue: "7777",
 			want: withDefaults(&proxy.Config{
 				AdminPort: "7777",
+			}),
+		},
+		{
+			desc:     "using the quitquitquit envvar",
+			envName:  "CSQL_PROXY_QUITQUITQUIT",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				QuitQuitQuit: true,
 			}),
 		},
 	}
@@ -1101,5 +1116,37 @@ func TestPProfServer(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
+	}
+}
+
+func TestQuitQuitQuit(t *testing.T) {
+	c := NewCommand(WithDialer(&spyDialer{}))
+	c.SilenceUsage = true
+	c.SilenceErrors = true
+	c.SetArgs([]string{"--quitquitquit", "--admin-port", "9192", "my-project:my-region:my-instance"})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error)
+	go func() {
+		err := c.ExecuteContext(ctx)
+		errCh <- err
+	}()
+	resp, err := tryDial("http://localhost:9192/quitquitquit")
+	if err != nil {
+		t.Fatalf("failed to dial endpoint: %v", err)
+	}
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected a 400 status, got = %v", resp.StatusCode)
+	}
+	resp, err = http.Post("http://localhost:9192/quitquitquit", "", nil)
+	if err != nil {
+		t.Fatalf("failed to dial endpoint: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
+	}
+	if want, got := errQuitQuitQuit, <-errCh; !errors.Is(got, want) {
+		t.Fatalf("want = %v, got = %v", want, got)
 	}
 }
