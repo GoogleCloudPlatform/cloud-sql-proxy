@@ -85,13 +85,15 @@ type InstanceConnConfig struct {
 	Port int
 	// UnixSocket is the directory where a Unix socket will be created,
 	// connected to the Cloud SQL instance. The full path to the socket will be
-	// UnixSocket + os.PathSeparator + Name. If set, takes precedence over Addr and Port.
+	// UnixSocket + os.PathSeparator + Name. If set, takes precedence over Addr
+	// and Port.
 	UnixSocket string
 	// UnixSocketPath is the path where a Unix socket will be created,
 	// connected to the Cloud SQL instance. The full path to the socket will be
 	// UnixSocketPath. If this is a Postgres database, the proxy will ensure that
 	// the last path element is `.s.PGSQL.5432`, appending this path element if
-	// necessary. If set, UnixSocketPath takes precedence over UnixSocket, Addr and Port.
+	// necessary. If set, UnixSocketPath takes precedence over UnixSocket, Addr
+	// and Port.
 	UnixSocketPath string
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
@@ -745,7 +747,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	} else {
 		network = "unix"
 
-		address, err = newUnixSocketMount(inst, conf.UnixSocket, version)
+		address, err = newUnixSocketMount(inst, conf.UnixSocket, strings.HasPrefix(version, "POSTGRES"))
 		if err != nil {
 			return nil, err
 		}
@@ -769,7 +771,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 
 // newUnixSocketMount parses the configuration and returns the path to the unix
 // socket, or an error if that path is not valid.
-func newUnixSocketMount(inst InstanceConnConfig, unixSocketDir, version string) (string, error) {
+func newUnixSocketMount(inst InstanceConnConfig, unixSocketDir string, postgres bool) (string, error) {
 
 	var (
 		// the path to the unix socket
@@ -783,7 +785,7 @@ func newUnixSocketMount(inst InstanceConnConfig, unixSocketDir, version string) 
 		address = inst.UnixSocketPath
 
 		// If UnixSocketPath ends .s.PGSQL.5432, remove it for consistency
-		if strings.HasPrefix(version, "POSTGRES") && path.Base(address) == ".s.PGSQL.5432" {
+		if postgres && path.Base(address) == ".s.PGSQL.5432" {
 			address = path.Dir(address)
 		}
 
@@ -805,7 +807,7 @@ func newUnixSocketMount(inst InstanceConnConfig, unixSocketDir, version string) 
 	// When setting up a listener for Postgres, create address as a
 	// directory, and use the Postgres-specific socket name
 	// .s.PGSQL.5432.
-	if strings.HasPrefix(version, "POSTGRES") {
+	if postgres {
 		// Make the directory only if it hasn't already been created.
 		if _, err := os.Stat(address); err != nil {
 			if err = os.Mkdir(address, 0777); err != nil {

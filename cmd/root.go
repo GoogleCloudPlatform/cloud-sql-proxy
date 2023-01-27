@@ -172,16 +172,15 @@ Instance Level Configuration
     	    my-project:us-central1:my-db-server \
     	    'my-project:us-central1:my-other-server?address=0.0.0.0&port=7000'
 
-Instance Level Configuration Parameters:
+    When necessary, you may specify the full path to a Unix socket. Set the
+    unix-socket-path query parameter to the absolute path of the unix socket for
+    the database instance. The parent directory of the unix-socket-path must 
+    exist when the proxy starts or else socket creation will fail. For Postgres
+    instances, the proxy will ensure that the last path element is 
+		'.s.PGSQL.5432' appending it if necessary. For example,
 
-    There is a parameter that may only be set at the instance, and does not have
-    a corresponding global parameter.
-
-    - unix-socket-path - UnixSocketPath is the path where a Unix socket will be
-    created for a Cloud SQL instance. If set on a Postgres instance, the proxy
-    will ensure that the last path element is '.s.PGSQL.5432', appending this
-		path element if necessary. unix-socket-path takes precedence over
-    the global parameter --unix-socket when both are set.
+        ./cloud-sql-proxy \
+          'my-project:us-central1:my-db-server?unix-socket-path=/path/to/socket'
 
 Health checks
 
