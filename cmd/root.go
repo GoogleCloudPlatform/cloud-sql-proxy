@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -258,15 +259,15 @@ Localhost Admin Server
     --quitquitquit flag. This will start the server on localhost at port 9091.
     To change the port, use the --admin-port flag.
 
-    When --debug is passed, the admin server enables Go's profiler available at
+    When --debug is set, the admin server enables Go's profiler available at
     /debug/pprof/.
 
     See the documentation on pprof for details on how to use the
     profiler at https://pkg.go.dev/net/http/pprof.
 
-    When --quitquitquit is passed, the admin server adds an endpoint for
-    /quitquitquit. When a client sends a POST request to the endpoint, the Proxy
-    will shut down with a 0 exit code.
+    When --quitquitquit is set, the admin server adds an endpoint at
+    /quitquitquit. The admin server exits gracefully when it receives a POST
+    request at /quitquitquit.
 
 (*) indicates a flag that may be used as a query parameter
 
@@ -641,7 +642,7 @@ func parseBoolOpt(q url.Values, name string) (*bool, error) {
 }
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
-func runSignalWrapper(cmd *Command) error {
+func runSignalWrapper(cmd *Command) (err error) {
 	defer cmd.cleanup()
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
@@ -718,6 +719,8 @@ func runSignalWrapper(cmd *Command) error {
 	defer func() {
 		if cErr := p.Close(); cErr != nil {
 			cmd.logger.Errorf("error during shutdown: %v", cErr)
+			// Capture error from close to propagate it to the caller.
+			err = cErr
 		}
 	}()
 
@@ -764,11 +767,14 @@ func runSignalWrapper(cmd *Command) error {
 	)
 	if cmd.conf.QuitQuitQuit {
 		needsAdminServer = true
+		cmd.logger.Infof("Enabling quitquitquit endpoint at localhost:%v", cmd.conf.AdminPort)
 		// quitquitquit allows for shutdown on localhost only.
-		m.HandleFunc("/quitquitquit", quitquitquit(shutdownCh))
+		var quitOnce sync.Once
+		m.HandleFunc("/quitquitquit", quitquitquit(&quitOnce, shutdownCh))
 	}
 	if cmd.conf.Debug {
 		needsAdminServer = true
+		cmd.logger.Infof("Enabling pprof endpoints at localhost:%v", cmd.conf.AdminPort)
 		// pprof standard endpoints
 		m.HandleFunc("/debug/pprof/", pprof.Index)
 		m.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -788,7 +794,7 @@ func runSignalWrapper(cmd *Command) error {
 
 	go func() { shutdownCh <- p.Serve(ctx, notify) }()
 
-	err := <-shutdownCh
+	err = <-shutdownCh
 	switch {
 	case errors.Is(err, errSigInt):
 		cmd.logger.Errorf("SIGINT signal received. Shutting down...")
@@ -800,13 +806,20 @@ func runSignalWrapper(cmd *Command) error {
 	return err
 }
 
-func quitquitquit(shutdownCh chan<- error) http.HandlerFunc {
+func quitquitquit(quitOnce *sync.Once, shutdownCh chan<- error) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
 			rw.WriteHeader(400)
 			return
 		}
-		shutdownCh <- errQuitQuitQuit
+		quitOnce.Do(func() {
+			select {
+			case shutdownCh <- errQuitQuitQuit:
+			default:
+				// The write attempt to shutdownCh failed and
+				// the proxy is already exiting.
+			}
+		})
 	})
 }
 
