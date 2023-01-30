@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 var (
