@@ -20,6 +20,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -83,9 +84,17 @@ type InstanceConnConfig struct {
 	// Port is the port on which to bind a listener for the instance.
 	Port int
 	// UnixSocket is the directory where a Unix socket will be created,
-	// connected to the Cloud SQL instance. If set, takes precedence over Addr
+	// connected to the Cloud SQL instance. The full path to the socket will be
+	// UnixSocket + os.PathSeparator + Name. If set, takes precedence over Addr
 	// and Port.
 	UnixSocket string
+	// UnixSocketPath is the path where a Unix socket will be created,
+	// connected to the Cloud SQL instance. The full path to the socket will be
+	// UnixSocketPath. If this is a Postgres database, the proxy will ensure that
+	// the last path element is `.s.PGSQL.5432`, appending this path element if
+	// necessary. If set, UnixSocketPath takes precedence over UnixSocket, Addr
+	// and Port.
+	UnixSocketPath string
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
 	IAMAuthN *bool
@@ -703,6 +712,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 		network string
 		// address is either a TCP host port, or a Unix socket
 		address string
+		err     error
 	)
 	// IF
 	//   a global Unix socket directory is NOT set AND
@@ -714,7 +724,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	//   instance)
 	// use a TCP listener.
 	// Otherwise, use a Unix socket.
-	if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
+	if (conf.UnixSocket == "" && inst.UnixSocket == "" && inst.UnixSocketPath == "") ||
 		(inst.Addr != "" || inst.Port != 0) {
 		network = "tcp"
 
@@ -737,25 +747,9 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	} else {
 		network = "unix"
 
-		dir := conf.UnixSocket
-		if dir == "" {
-			dir = inst.UnixSocket
-		}
-		if _, err := os.Stat(dir); err != nil {
+		address, err = newUnixSocketMount(inst, conf.UnixSocket, strings.HasPrefix(version, "POSTGRES"))
+		if err != nil {
 			return nil, err
-		}
-		address = UnixAddress(dir, inst.Name)
-		// When setting up a listener for Postgres, create address as a
-		// directory, and use the Postgres-specific socket name
-		// .s.PGSQL.5432.
-		if strings.HasPrefix(version, "POSTGRES") {
-			// Make the directory only if it hasn't already been created.
-			if _, err := os.Stat(address); err != nil {
-				if err = os.Mkdir(address, 0777); err != nil {
-					return nil, err
-				}
-			}
-			address = UnixAddress(address, ".s.PGSQL.5432")
 		}
 	}
 
@@ -773,6 +767,58 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	opts := dialOptions(*conf, inst)
 	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
 	return m, nil
+}
+
+// newUnixSocketMount parses the configuration and returns the path to the unix
+// socket, or an error if that path is not valid.
+func newUnixSocketMount(inst InstanceConnConfig, unixSocketDir string, postgres bool) (string, error) {
+
+	var (
+		// the path to the unix socket
+		address string
+		// the parent directory of the unix socket
+		dir string
+	)
+
+	if inst.UnixSocketPath != "" {
+		// When UnixSocketPath is set
+		address = inst.UnixSocketPath
+
+		// If UnixSocketPath ends .s.PGSQL.5432, remove it for consistency
+		if postgres && path.Base(address) == ".s.PGSQL.5432" {
+			address = path.Dir(address)
+		}
+
+		dir = path.Dir(address)
+	} else {
+		// When UnixSocket is set
+		dir = unixSocketDir
+		if dir == "" {
+			dir = inst.UnixSocket
+		}
+		address = UnixAddress(dir, inst.Name)
+	}
+
+	// if base directory does not exist, fail
+	if _, err := os.Stat(dir); err != nil {
+		return "", err
+	}
+
+	// When setting up a listener for Postgres, create address as a
+	// directory, and use the Postgres-specific socket name
+	// .s.PGSQL.5432.
+	if postgres {
+		// Make the directory only if it hasn't already been created.
+		if _, err := os.Stat(address); err != nil {
+			if err = os.Mkdir(address, 0777); err != nil {
+				return "", err
+			}
+		}
+		address = UnixAddress(address, ".s.PGSQL.5432")
+	}
+
+	return address, nil
+
 }
 
 func (s *socketMount) Addr() net.Addr {
