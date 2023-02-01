@@ -13,7 +13,7 @@ for details on how the Cloud SQL proxy works.
 
 The Cloud SQL Auth proxy has support for:
 
-- [Automatic IAM Authentication][iam-auth] (Postgres only)
+- [Automatic IAM Authentication][iam-auth] (Postgres and MySQL only)
 - Metrics ([Cloud Monitoring][], [Cloud Trace][], and [Prometheus][])
 - [HTTP Healthchecks][health-check-example]
 - Service account impersonation
