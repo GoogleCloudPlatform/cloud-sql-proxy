@@ -1,6 +1,6 @@
 module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 
-go 1.19
+go 1.20
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.1.1
