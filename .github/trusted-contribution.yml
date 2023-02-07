@@ -15,3 +15,5 @@
 annotations:
   - type: label
     text: "tests: run"
+
+trustedContributors: ['renovate-bot', 'gcf-merge-on-green[bot]']
