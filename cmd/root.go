@@ -520,8 +520,6 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError("cannot specify --login-token without --token and --auto-iam-authn")
 	}
 
-	// if login token is set, but token is not error
-
 	if userHasSet("http-port") && !userHasSet("prometheus") && !userHasSet("health-check") {
 		cmd.logger.Infof("Ignoring --http-port because --prometheus or --health-check was not set")
 	}
