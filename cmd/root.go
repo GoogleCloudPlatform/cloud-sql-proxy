@@ -175,9 +175,9 @@ Instance Level Configuration
 
     When necessary, you may specify the full path to a Unix socket. Set the
     unix-socket-path query parameter to the absolute path of the Unix socket for
-    the database instance. The parent directory of the unix-socket-path must 
+    the database instance. The parent directory of the unix-socket-path must
     exist when the proxy starts or else socket creation will fail. For Postgres
-    instances, the proxy will ensure that the last path element is 
+    instances, the proxy will ensure that the last path element is
     '.s.PGSQL.5432' appending it if necessary. For example,
 
         ./cloud-sql-proxy \
@@ -371,6 +371,8 @@ func NewCommand(opts ...Option) *Command {
 		"Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1")
 	pflags.StringVarP(&c.conf.Token, "token", "t", "",
 		"Use bearer token as a source of IAM credentials.")
+	pflags.StringVar(&c.conf.LoginToken, "login-token", "",
+		"Use bearer token as a database password (used with token and auto-iam-authn only)")
 	pflags.StringVarP(&c.conf.CredentialsFile, "credentials-file", "c", "",
 		"Use service account key file as a source of IAM credentials.")
 	pflags.StringVarP(&c.conf.CredentialsJSON, "json-credentials", "j", "",
@@ -507,6 +509,15 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 	if conf.CredentialsJSON != "" && conf.GcloudAuth {
 		return newBadCommandError("cannot specify --json-credentials and --gcloud-auth flags at the same time")
+	}
+
+	// When using token with auto-iam-authn, login-token must also be set.
+	// All three are required together.
+	if conf.IAMAuthN && conf.Token != "" && conf.LoginToken == "" {
+		return newBadCommandError("cannot specify --auto-iam-authn and --token without --login-token")
+	}
+	if conf.LoginToken != "" && (conf.Token == "" || !conf.IAMAuthN) {
+		return newBadCommandError("cannot specify --login-token without --token and --auto-iam-authn")
 	}
 
 	if userHasSet("http-port") && !userHasSet("prometheus") && !userHasSet("health-check") {

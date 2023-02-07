@@ -393,6 +393,18 @@ func TestNewCommandArguments(t *testing.T) {
 				QuitQuitQuit: true,
 			}),
 		},
+		{
+			desc: "using the login-token flag",
+			args: []string{
+				"--auto-iam-authn",
+				"--token", "MYTOK",
+				"--login-token", "MYLOGINTOKEN", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				IAMAuthN:   true,
+				Token:      "MYTOK",
+				LoginToken: "MYLOGINTOKEN",
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -1019,6 +1031,20 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "using fuse-tmp-dir without fuse",
 			args: []string{"--fuse-tmp-dir", "/mydir"},
+		},
+		{
+			desc: "using --auto-iam-authn with just token flag",
+			args: []string{"--auto-iam-authn", "--token", "MYTOKEN", "p:r:i"},
+		},
+		{
+			desc: "using the --login-token without --token and --auto-iam-authn",
+			args: []string{"--login-token", "MYTOKEN", "p:r:i"},
+		},
+		{
+			desc: "using --token and --login-token without --auto-iam-authn",
+			args: []string{
+				"--token", "MYTOKEN",
+				"--login-token", "MYLOGINTOKEN", "p:r:i"},
 		},
 	}
 

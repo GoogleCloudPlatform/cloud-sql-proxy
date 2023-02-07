@@ -112,6 +112,10 @@ type Config struct {
 	// Token is the Bearer token used for authorization.
 	Token string
 
+	// LoginToken is the Bearer token used for Auto IAM AuthN. Used only in
+	// conjunction with Token.
+	LoginToken string
+
 	// CredentialsFile is the path to a service account key.
 	CredentialsFile string
 
@@ -319,30 +323,36 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 	}
 
 	// Otherwise, configure credentials as usual.
+	var opt cloudsqlconn.Option
 	switch {
 	case c.Token != "":
 		l.Infof("Authorizing with OAuth2 token")
-		return cloudsqlconn.WithTokenSource(
-			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
-		), nil
+		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token})
+		if c.IAMAuthN {
+			lts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.LoginToken})
+			opt = cloudsqlconn.WithIAMAuthNTokenSources(ts, lts)
+		} else {
+			opt = cloudsqlconn.WithTokenSource(ts)
+		}
 	case c.CredentialsFile != "":
 		l.Infof("Authorizing with the credentials file at %q", c.CredentialsFile)
-		return cloudsqlconn.WithCredentialsFile(c.CredentialsFile), nil
+		opt = cloudsqlconn.WithCredentialsFile(c.CredentialsFile)
 	case c.CredentialsJSON != "":
 		l.Infof("Authorizing with JSON credentials environment variable")
-		return cloudsqlconn.WithCredentialsJSON([]byte(c.CredentialsJSON)), nil
+		opt = cloudsqlconn.WithCredentialsJSON([]byte(c.CredentialsJSON))
 	case c.GcloudAuth:
 		l.Infof("Authorizing with gcloud user credentials")
 		ts, err := gcloud.TokenSource()
 		if err != nil {
 			return nil, err
 		}
-		return cloudsqlconn.WithTokenSource(ts), nil
+		opt = cloudsqlconn.WithTokenSource(ts)
 	default:
 		l.Infof("Authorizing with Application Default Credentials")
 		// Return no-op options to avoid having to handle nil in caller code
-		return cloudsqlconn.WithOptions(), nil
+		opt = cloudsqlconn.WithOptions()
 	}
+	return opt, nil
 }
 
 // DialerOptions builds appropriate list of options from the Config
