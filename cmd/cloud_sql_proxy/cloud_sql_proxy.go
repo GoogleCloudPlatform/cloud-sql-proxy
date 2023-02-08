@@ -101,8 +101,9 @@ dropped`,
 	)
 
 	// Settings for authentication.
-	token     = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
-	tokenFile = flag.String("credential_file", "",
+	token      = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
+	loginToken = flag.String("login_token", "", "Used in conjuction with --token and --enable_iam_login only")
+	tokenFile  = flag.String("credential_file", "",
 		`If provided, this json file will be used to retrieve Service Account
 credentials.  You may set the GOOGLE_APPLICATION_CREDENTIALS environment
 variable for the same effect.`,
@@ -381,13 +382,29 @@ func authenticatedClientFromPath(ctx context.Context, f string) (*http.Client, o
 	return oauth2.NewClient(ctx, cred.TokenSource), scoped.TokenSource, nil
 }
 
+var errLoginToken = errors.New("login_token must be used with token and enable_iam_login")
+
 func authenticatedClient(ctx context.Context) (*http.Client, oauth2.TokenSource, error) {
 	if *tokenFile != "" {
 		return authenticatedClientFromPath(ctx, *tokenFile)
 	}
+	// If login token has been set, but there is no token or
+	// enable_iam_login has not be set, error.
+	if *loginToken != "" && (*token == "" || !(*enableIAMLogin)) {
+		return nil, nil, errLoginToken
+	}
+
 	if tok := *token; tok != "" {
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: tok})
-		return oauth2.NewClient(ctx, src), src, nil
+		cl := oauth2.NewClient(ctx, src)
+		if *enableIAMLogin {
+			if *loginToken == "" {
+				return nil, nil, errLoginToken
+			}
+			lts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: *loginToken})
+			return cl, lts, nil
+		}
+		return cl, src, nil
 	}
 	if f := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); f != "" {
 		return authenticatedClientFromPath(ctx, f)
