@@ -102,7 +102,7 @@ dropped`,
 
 	// Settings for authentication.
 	token      = flag.String("token", "", "When set, the proxy uses this Bearer token for authorization.")
-	loginToken = flag.String("login_token", "", "Used in conjuction with --token and --enable_iam_login only")
+	loginToken = flag.String("login_token", "", "Used in conjunction with --token and --enable_iam_login only")
 	tokenFile  = flag.String("credential_file", "",
 		`If provided, this json file will be used to retrieve Service Account
 credentials.  You may set the GOOGLE_APPLICATION_CREDENTIALS environment
@@ -389,7 +389,7 @@ func authenticatedClient(ctx context.Context) (*http.Client, oauth2.TokenSource,
 		return authenticatedClientFromPath(ctx, *tokenFile)
 	}
 	// If login token has been set, but there is no token or
-	// enable_iam_login has not be set, error.
+	// enable_iam_login has not been set, error.
 	if *loginToken != "" && (*token == "" || !(*enableIAMLogin)) {
 		return nil, nil, errLoginToken
 	}
