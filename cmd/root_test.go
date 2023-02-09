@@ -19,6 +19,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -287,6 +288,15 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the unix socket path query param",
+			args: []string{"proj:region:inst?unix-socket-path=/path/to/file"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					UnixSocketPath: "/path/to/file",
+				}},
+			}),
+		},
+		{
 			desc: "using the iam authn login flag",
 			args: []string{"--auto-iam-authn", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -374,6 +384,25 @@ func TestNewCommandArguments(t *testing.T) {
 			args: []string{"--admin-port", "7777", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
 				AdminPort: "7777",
+			}),
+		},
+		{
+			desc: "using the quitquitquit flag",
+			args: []string{"--quitquitquit", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				QuitQuitQuit: true,
+			}),
+		},
+		{
+			desc: "using the login-token flag",
+			args: []string{
+				"--auto-iam-authn",
+				"--token", "MYTOK",
+				"--login-token", "MYLOGINTOKEN", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				IAMAuthN:   true,
+				Token:      "MYTOK",
+				LoginToken: "MYLOGINTOKEN",
 			}),
 		},
 	}
@@ -707,6 +736,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 				AdminPort: "7777",
 			}),
 		},
+		{
+			desc:     "using the quitquitquit envvar",
+			envName:  "CSQL_PROXY_QUITQUITQUIT",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				QuitQuitQuit: true,
+			}),
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -936,12 +973,24 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{"-u", "/path/to/dir/", "-p", "5432", "proj:region:inst"},
 		},
 		{
+			desc: "using the unix socket and unix-socket-path",
+			args: []string{"proj:region:inst?unix-socket=/path&unix-socket-path=/another/path"},
+		},
+		{
 			desc: "using the unix socket and addr query params",
 			args: []string{"proj:region:inst?unix-socket=/path&address=127.0.0.1"},
 		},
 		{
+			desc: "using the unix socket path and addr query params",
+			args: []string{"proj:region:inst?unix-socket-path=/path&address=127.0.0.1"},
+		},
+		{
 			desc: "using the unix socket and port query params",
 			args: []string{"proj:region:inst?unix-socket=/path&port=5000"},
+		},
+		{
+			desc: "using the unix socket path and port query params",
+			args: []string{"proj:region:inst?unix-socket-path=/path&port=5000"},
 		},
 		{
 			desc: "when the iam authn login query param contains multiple values",
@@ -958,6 +1007,20 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "using fuse-tmp-dir without fuse",
 			args: []string{"--fuse-tmp-dir", "/mydir"},
+		},
+		{
+			desc: "using --auto-iam-authn with just token flag",
+			args: []string{"--auto-iam-authn", "--token", "MYTOKEN", "p:r:i"},
+		},
+		{
+			desc: "using the --login-token without --token and --auto-iam-authn",
+			args: []string{"--login-token", "MYTOKEN", "p:r:i"},
+		},
+		{
+			desc: "using --token and --login-token without --auto-iam-authn",
+			args: []string{
+				"--token", "MYTOKEN",
+				"--login-token", "MYLOGINTOKEN", "p:r:i"},
 		},
 	}
 
@@ -1019,17 +1082,22 @@ func TestCommandWithCustomDialer(t *testing.T) {
 	}
 }
 
-func tryDial(addr string) (*http.Response, error) {
+func tryDial(method, addr string) (*http.Response, error) {
 	var (
 		resp     *http.Response
 		attempts int
 		err      error
 	)
+	u, err := url.Parse(addr)
+	if err != nil {
+		return nil, err
+	}
+	req := &http.Request{Method: method, URL: u}
 	for {
 		if attempts > 10 {
 			return resp, err
 		}
-		resp, err = http.Get(addr)
+		resp, err = http.DefaultClient.Do(req)
 		if err != nil {
 			attempts++
 			time.Sleep(time.Second)
@@ -1053,7 +1121,7 @@ func TestPrometheusMetricsEndpoint(t *testing.T) {
 
 	// try to dial metrics server for a max of ~10s to give the proxy time to
 	// start up.
-	resp, err := tryDial("http://localhost:9090/metrics") // default port set by http-port flag
+	resp, err := tryDial("GET", "http://localhost:9090/metrics") // default port set by http-port flag
 	if err != nil {
 		t.Fatalf("failed to dial metrics endpoint: %v", err)
 	}
@@ -1071,11 +1139,83 @@ func TestPProfServer(t *testing.T) {
 	defer cancel()
 
 	go c.ExecuteContext(ctx)
-	resp, err := tryDial("http://localhost:9191/debug/pprof/")
+	resp, err := tryDial("GET", "http://localhost:9191/debug/pprof/")
 	if err != nil {
 		t.Fatalf("failed to dial endpoint: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
+	}
+}
+
+func TestQuitQuitQuit(t *testing.T) {
+	c := NewCommand(WithDialer(&spyDialer{}))
+	c.SilenceUsage = true
+	c.SilenceErrors = true
+	c.SetArgs([]string{"--quitquitquit", "--admin-port", "9192", "my-project:my-region:my-instance"})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error)
+	go func() {
+		err := c.ExecuteContext(ctx)
+		errCh <- err
+	}()
+	resp, err := tryDial("GET", "http://localhost:9192/quitquitquit")
+	if err != nil {
+		t.Fatalf("failed to dial endpoint: %v", err)
+	}
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected a 400 status, got = %v", resp.StatusCode)
+	}
+	resp, err = http.Post("http://localhost:9192/quitquitquit", "", nil)
+	if err != nil {
+		t.Fatalf("failed to dial endpoint: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
+	}
+	if want, got := errQuitQuitQuit, <-errCh; !errors.Is(got, want) {
+		t.Fatalf("want = %v, got = %v", want, got)
+	}
+}
+
+type errorDialer struct {
+	spyDialer
+}
+
+var errCloseFailed = errors.New("close failed")
+
+func (*errorDialer) Close() error {
+	return errCloseFailed
+}
+
+func TestQuitQuitQuitWithErrors(t *testing.T) {
+	c := NewCommand(WithDialer(&errorDialer{}))
+	c.SilenceUsage = true
+	c.SilenceErrors = true
+	c.SetArgs([]string{
+		"--quitquitquit", "--admin-port", "9193",
+		"my-project:my-region:my-instance",
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error)
+	go func() {
+		err := c.ExecuteContext(ctx)
+		errCh <- err
+	}()
+	resp, err := tryDial("POST", "http://localhost:9193/quitquitquit")
+	if err != nil {
+		t.Fatalf("failed to dial endpoint: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
+	}
+	// The returned error is the error from closing the dialer.
+	got := <-errCh
+	if !strings.Contains(got.Error(), "close failed") {
+		t.Fatalf("want = %v, got = %v", errCloseFailed, got)
 	}
 }

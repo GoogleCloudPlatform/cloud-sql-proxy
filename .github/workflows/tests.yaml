@@ -77,7 +77,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19
+          go-version: "1.20"
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
@@ -88,7 +88,7 @@ jobs:
           access_token_lifetime: 600s
 
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1.0.1'
+        uses: 'google-github-actions/setup-gcloud@v1.1.0'
 
       - id: 'secrets'
         name: Get secrets

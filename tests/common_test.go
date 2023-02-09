@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tests contains end to end tests meant to verify the Cloud SQL Auth proxy
-// works as expected when executed as a binary.
+// Package tests contains end to end tests meant to verify the Cloud SQL Auth
+// proxy works as expected when executed as a binary.
 //
 // Required flags:
 //
@@ -22,7 +22,6 @@ package tests
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"flag"
@@ -118,49 +117,27 @@ func (p *ProxyExec) Close() {
 	}
 }
 
-// WaitForServe waits until the proxy ready to serve traffic. Returns any output from
-// the proxy while starting or any errors experienced before the proxy was ready to
-// server.
-func (p *ProxyExec) WaitForServe(ctx context.Context) (output string, err error) {
-	// Watch for the "Ready for new connections" to indicate the proxy is listening
-	buf, in, errCh := new(bytes.Buffer), bufio.NewReader(p.Out), make(chan error, 1)
-	go func() {
-		defer close(errCh)
-		for {
-			// if ctx is finished, stop processing
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-			s, err := in.ReadString('\n')
-			if err != nil {
-				errCh <- err
-				return
-			}
-			if _, err = buf.WriteString(s); err != nil {
-				errCh <- err
-				return
-			}
-			// Check for an unrecognized flag
-			if strings.Contains(s, "Error") {
-				errCh <- errors.New(s)
-				return
-			}
-			if strings.Contains(s, "ready for new connections") {
-				errCh <- nil
-				return
-			}
+// WaitForServe waits until the proxy ready to serve traffic by waiting for a
+// known log message (i.e. "ready for new connections"). Returns any output
+// from the proxy while starting or any errors experienced before the proxy was
+// ready to server.
+func (p *ProxyExec) WaitForServe(ctx context.Context) (string, error) {
+	in := bufio.NewReader(p.Out)
+	for {
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		default:
 		}
-	}()
-	// Wait for either the background thread of the context to complete
-	select {
-	case <-ctx.Done():
-		return buf.String(), ctx.Err()
-	case err := <-errCh:
+		s, err := in.ReadString('\n')
 		if err != nil {
-			return buf.String(), err
+			return "", err
+		}
+		if strings.Contains(s, "Error") {
+			return "", errors.New(s)
+		}
+		if strings.Contains(s, "ready for new connections") {
+			return s, nil
 		}
 	}
-	return buf.String(), nil
 }

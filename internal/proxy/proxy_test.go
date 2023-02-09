@@ -20,6 +20,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -114,6 +115,9 @@ func createTempDir(t *testing.T) (string, func()) {
 func TestClientInitialization(t *testing.T) {
 	ctx := context.Background()
 	testDir, cleanup := createTempDir(t)
+	testUnixSocketPath := path.Join(testDir, "db")
+	testUnixSocketPathPg := path.Join(testDir, "db", ".s.PGSQL.5432")
+
 	defer cleanup()
 
 	tcs := []struct {
@@ -257,6 +261,51 @@ func TestClientInitialization(t *testing.T) {
 				filepath.Join(testDir, pg, ".s.PGSQL.5432"),
 			},
 		},
+		{
+			desc: "with a Unix socket path per instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: mysql, UnixSocketPath: testUnixSocketPath},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testUnixSocketPath),
+			},
+		},
+		{
+			desc: "with a Unix socket path overriding Unix socket",
+			in: &proxy.Config{
+				UnixSocket: testDir,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: mysql, UnixSocketPath: testUnixSocketPath},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testUnixSocketPath),
+			},
+		},
+		{
+			desc: "with a Unix socket path per pg instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: pg, UnixSocketPath: testUnixSocketPath},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testUnixSocketPathPg),
+			},
+		},
+		{
+			desc: "with a Unix socket path per pg instance and explicit pg path suffix",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: pg, UnixSocketPath: testUnixSocketPathPg},
+				},
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testUnixSocketPathPg),
+			},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -361,6 +410,8 @@ func tryTCPDial(t *testing.T, addr string) net.Conn {
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
+		// Give the socket some time to finish the connection.
+		time.Sleep(100 * time.Millisecond)
 		return conn
 	}
 
@@ -375,7 +426,7 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
-		WaitOnClose: 5 * time.Second,
+		WaitOnClose: 1 * time.Second,
 	}
 	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, in)
 	if err != nil {
@@ -383,16 +434,8 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 	}
 	go c.Serve(context.Background(), func() {})
 
-	var open []net.Conn
-	for i := 0; i < 5; i++ {
-		conn := tryTCPDial(t, "127.0.0.1:5000")
-		open = append(open, conn)
-	}
-	defer func() {
-		for _, o := range open {
-			o.Close()
-		}
-	}()
+	conn := tryTCPDial(t, "127.0.0.1:5000")
+	defer conn.Close()
 
 	if err := c.Close(); err == nil {
 		t.Fatal("c.Close should error, got = nil")

@@ -13,7 +13,7 @@ for details on how the Cloud SQL proxy works.
 
 The Cloud SQL Auth proxy has support for:
 
-- [Automatic IAM Authentication][iam-auth] (Postgres only)
+- [Automatic IAM Authentication][iam-auth] (Postgres and MySQL only)
 - Metrics ([Cloud Monitoring][], [Cloud Trace][], and [Prometheus][])
 - [HTTP Healthchecks][health-check-example]
 - Service account impersonation
@@ -54,7 +54,7 @@ following instructions for your OS and CPU architecture.
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
 
 wget "$URL/cloud-sql-proxy.linux.amd64" -O cloud-sql-proxy
 
@@ -68,7 +68,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
 
 wget "$URL/cloud-sql-proxy.linux.386" -O cloud-sql-proxy
 
@@ -82,7 +82,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
 
 wget "$URL/cloud-sql-proxy.linux.arm64" -O cloud-sql-proxy
 
@@ -96,7 +96,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
 
 wget "$URL/cloud-sql-proxy.linux.arm" -O cloud-sql-proxy
 
@@ -110,7 +110,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
 
 wget "$URL/cloud-sql-proxy.darwin.amd64" -O cloud-sql-proxy
 
@@ -124,7 +124,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
 
 wget "$URL/cloud-sql-proxy.darwin.arm64" -O cloud-sql-proxy
 
@@ -138,7 +138,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.3/cloud-sql-proxy.x64.exe -O cloud-sql-proxy.exe
+wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0/cloud-sql-proxy.x64.exe -O cloud-sql-proxy.exe
 ```
 
 </details>
@@ -148,7 +148,7 @@ wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-
 
 ```sh
 # see Releases for other versions
-wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0-preview.3/cloud-sql-proxy.x86.exe -O cloud-sql-proxy.exe
+wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0/cloud-sql-proxy.x86.exe -O cloud-sql-proxy.exe
 ```
 
 </details>
@@ -354,13 +354,13 @@ currently supported:
 - `$VERSION-bullseye`
 
 The `$VERSION` is the proxy version without the leading "v" (e.g.,
-`2.0.0-preview.3`).
+`2.0.0`).
 
 For example, to pull a particular version, use a command like:
 
 ``` shell
-# $VERSION is 2.0.0-preview.3
-docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0-preview.3
+# $VERSION is 2.0.0
+docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0
 ```
 
 We recommend pinning to a specific version tag and using automation with a CI pipeline
@@ -438,14 +438,19 @@ optionally be set with `--prometheus-namespace`.
 ## Localhost Admin Server
 
 The Proxy includes support for an admin server on localhost. By default, the
-admin server is not enabled. To enable the server, pass the `--debug` flag.
-This will start the server on localhost at port 9091. To change the port, use
-the `--admin-port` flag.
+the admin server is not enabled. To enable the server, pass the --debug or
+--quitquitquit flag. This will start the server on localhost at port 9091.
+To change the port, use the --admin-port flag.
 
-The admin server includes Go's pprof tool and is available at `/debug/pprof/`.
+When --debug is set, the admin server enables Go's profiler available at
+/debug/pprof/.
 
 See the [documentation on pprof][pprof] for details on how to use the
 profiler.
+
+When --quitquitquit is set, the admin server adds an endpoint at
+/quitquitquit. The admin server exits gracefully when it receives a POST
+request at /quitquitquit.
 
 [pprof]: https://pkg.go.dev/net/http/pprof.
 
@@ -513,7 +518,7 @@ Instead of using a single proxy across multiple applications, we recommend using
 one proxy instance for every application process. The proxy uses the context's
 IAM principal and so have a 1-to-1 mapping between application and IAM principal
 is best. If multiple applications use the same proxy instance, then it becomes
-unclear from an IAM perspective which principal is doing what.\*\*\*\*
+unclear from an IAM perspective which principal is doing what.
 
 [pgbouncer]: https://www.pgbouncer.org/
 [proxysql]: https://www.proxysql.com/
@@ -533,13 +538,15 @@ unclear from an IAM perspective which principal is doing what.\*\*\*\*
 This project uses [semantic versioning](https://semver.org/), and uses the
 following lifecycle regarding support for a major version:
 
-**Active** - Active versions get all new features and security fixes (that
+- **Active** - Active versions get all new features and security fixes (that
 wouldn’t otherwise introduce a breaking change). New major versions are
 guaranteed to be "active" for a minimum of 1 year.
-**Deprecated** - Deprecated versions continue to receive security and critical
+
+- **Deprecated** - Deprecated versions continue to receive security and critical
 bug fixes, but do not receive new features. Deprecated versions will be publicly
 supported for 1 year.
-**Unsupported** - Any major version that has been deprecated for >=1 year is
+
+- **Unsupported** - Any major version that has been deprecated for >=1 year is
 considered publicly unsupported.
 
 ### Release cadence

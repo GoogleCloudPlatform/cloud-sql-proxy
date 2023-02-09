@@ -20,6 +20,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -83,9 +84,17 @@ type InstanceConnConfig struct {
 	// Port is the port on which to bind a listener for the instance.
 	Port int
 	// UnixSocket is the directory where a Unix socket will be created,
-	// connected to the Cloud SQL instance. If set, takes precedence over Addr
+	// connected to the Cloud SQL instance. The full path to the socket will be
+	// UnixSocket + os.PathSeparator + Name. If set, takes precedence over Addr
 	// and Port.
 	UnixSocket string
+	// UnixSocketPath is the path where a Unix socket will be created,
+	// connected to the Cloud SQL instance. The full path to the socket will be
+	// UnixSocketPath. If this is a Postgres database, the proxy will ensure that
+	// the last path element is `.s.PGSQL.5432`, appending this path element if
+	// necessary. If set, UnixSocketPath takes precedence over UnixSocket, Addr
+	// and Port.
+	UnixSocketPath string
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// Postgres-only. If it is nil, the value was not specified.
 	IAMAuthN *bool
@@ -102,6 +111,10 @@ type Config struct {
 
 	// Token is the Bearer token used for authorization.
 	Token string
+
+	// LoginToken is the Bearer token used for Auto IAM AuthN. Used only in
+	// conjunction with Token.
+	LoginToken string
 
 	// CredentialsFile is the path to a service account key.
 	CredentialsFile string
@@ -207,6 +220,9 @@ type Config struct {
 
 	// Debug enables a debug handler on localhost.
 	Debug bool
+	// QuitQuitQuit enables a handler that will shut the Proxy down upon
+	// receiving a POST request.
+	QuitQuitQuit bool
 
 	// OtherUserAgents is a list of space separate user agents that will be
 	// appended to the default user agent.
@@ -307,30 +323,36 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 	}
 
 	// Otherwise, configure credentials as usual.
+	var opt cloudsqlconn.Option
 	switch {
 	case c.Token != "":
 		l.Infof("Authorizing with OAuth2 token")
-		return cloudsqlconn.WithTokenSource(
-			oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token}),
-		), nil
+		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.Token})
+		if c.IAMAuthN {
+			lts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: c.LoginToken})
+			opt = cloudsqlconn.WithIAMAuthNTokenSources(ts, lts)
+		} else {
+			opt = cloudsqlconn.WithTokenSource(ts)
+		}
 	case c.CredentialsFile != "":
 		l.Infof("Authorizing with the credentials file at %q", c.CredentialsFile)
-		return cloudsqlconn.WithCredentialsFile(c.CredentialsFile), nil
+		opt = cloudsqlconn.WithCredentialsFile(c.CredentialsFile)
 	case c.CredentialsJSON != "":
 		l.Infof("Authorizing with JSON credentials environment variable")
-		return cloudsqlconn.WithCredentialsJSON([]byte(c.CredentialsJSON)), nil
+		opt = cloudsqlconn.WithCredentialsJSON([]byte(c.CredentialsJSON))
 	case c.GcloudAuth:
 		l.Infof("Authorizing with gcloud user credentials")
 		ts, err := gcloud.TokenSource()
 		if err != nil {
 			return nil, err
 		}
-		return cloudsqlconn.WithTokenSource(ts), nil
+		opt = cloudsqlconn.WithTokenSource(ts)
 	default:
 		l.Infof("Authorizing with Application Default Credentials")
 		// Return no-op options to avoid having to handle nil in caller code
-		return cloudsqlconn.WithOptions(), nil
+		opt = cloudsqlconn.WithOptions()
 	}
+	return opt, nil
 }
 
 // DialerOptions builds appropriate list of options from the Config
@@ -703,6 +725,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 		network string
 		// address is either a TCP host port, or a Unix socket
 		address string
+		err     error
 	)
 	// IF
 	//   a global Unix socket directory is NOT set AND
@@ -714,7 +737,7 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	//   instance)
 	// use a TCP listener.
 	// Otherwise, use a Unix socket.
-	if (conf.UnixSocket == "" && inst.UnixSocket == "") ||
+	if (conf.UnixSocket == "" && inst.UnixSocket == "" && inst.UnixSocketPath == "") ||
 		(inst.Addr != "" || inst.Port != 0) {
 		network = "tcp"
 
@@ -737,25 +760,9 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	} else {
 		network = "unix"
 
-		dir := conf.UnixSocket
-		if dir == "" {
-			dir = inst.UnixSocket
-		}
-		if _, err := os.Stat(dir); err != nil {
+		address, err = newUnixSocketMount(inst, conf.UnixSocket, strings.HasPrefix(version, "POSTGRES"))
+		if err != nil {
 			return nil, err
-		}
-		address = UnixAddress(dir, inst.Name)
-		// When setting up a listener for Postgres, create address as a
-		// directory, and use the Postgres-specific socket name
-		// .s.PGSQL.5432.
-		if strings.HasPrefix(version, "POSTGRES") {
-			// Make the directory only if it hasn't already been created.
-			if _, err := os.Stat(address); err != nil {
-				if err = os.Mkdir(address, 0777); err != nil {
-					return nil, err
-				}
-			}
-			address = UnixAddress(address, ".s.PGSQL.5432")
 		}
 	}
 
@@ -773,6 +780,58 @@ func newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst Inst
 	opts := dialOptions(*conf, inst)
 	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
 	return m, nil
+}
+
+// newUnixSocketMount parses the configuration and returns the path to the unix
+// socket, or an error if that path is not valid.
+func newUnixSocketMount(inst InstanceConnConfig, unixSocketDir string, postgres bool) (string, error) {
+
+	var (
+		// the path to the unix socket
+		address string
+		// the parent directory of the unix socket
+		dir string
+	)
+
+	if inst.UnixSocketPath != "" {
+		// When UnixSocketPath is set
+		address = inst.UnixSocketPath
+
+		// If UnixSocketPath ends .s.PGSQL.5432, remove it for consistency
+		if postgres && path.Base(address) == ".s.PGSQL.5432" {
+			address = path.Dir(address)
+		}
+
+		dir = path.Dir(address)
+	} else {
+		// When UnixSocket is set
+		dir = unixSocketDir
+		if dir == "" {
+			dir = inst.UnixSocket
+		}
+		address = UnixAddress(dir, inst.Name)
+	}
+
+	// if base directory does not exist, fail
+	if _, err := os.Stat(dir); err != nil {
+		return "", err
+	}
+
+	// When setting up a listener for Postgres, create address as a
+	// directory, and use the Postgres-specific socket name
+	// .s.PGSQL.5432.
+	if postgres {
+		// Make the directory only if it hasn't already been created.
+		if _, err := os.Stat(address); err != nil {
+			if err = os.Mkdir(address, 0777); err != nil {
+				return "", err
+			}
+		}
+		address = UnixAddress(address, ".s.PGSQL.5432")
+	}
+
+	return address, nil
+
 }
 
 func (s *socketMount) Addr() net.Addr {
