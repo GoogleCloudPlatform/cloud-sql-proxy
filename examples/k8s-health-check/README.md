@@ -42,7 +42,7 @@ To configure the address, use `--http-address`. To configure the port, use
 livenessProbe:
   httpGet:
     path: /liveness
-    port: 8090
+    port: 9090
   # Number of seconds after the container has started before the first probe is scheduled. Defaults to 0.
   # Not necessary when the startup probe is in use.
   initialDelaySeconds: 0
@@ -56,7 +56,7 @@ livenessProbe:
 readinessProbe:
   httpGet:
     path: /readiness
-    port: 8090
+    port: 9090
   initialDelaySeconds: 0
   periodSeconds: 10
   timeoutSeconds: 5
@@ -67,7 +67,7 @@ readinessProbe:
 startupProbe:
   httpGet:
     path: /startup
-    port: 8090
+    port: 9090
   periodSeconds: 1
   timeoutSeconds: 5
   failureThreshold: 20
