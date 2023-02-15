@@ -125,29 +125,44 @@ const waitTimeout = time.Minute
 // from the proxy while starting or any errors experienced before the proxy was
 // ready to server.
 func (p *ProxyExec) WaitForServe(ctx context.Context) (string, error) {
-	in := bufio.NewReader(p.Out)
-	timeout := time.After(waitTimeout)
-	for {
-		select {
-		case <-ctx.Done():
-			return "", ctx.Err()
-		case <-timeout:
-			data, err := io.ReadAll(in)
+	type result struct {
+		err    error
+		output string
+	}
+	resCh := make(chan result)
+	go func(in io.Reader) {
+		buf := bufio.NewReader(in)
+		for {
+			s, err := buf.ReadString('\n')
 			if err != nil {
-				return "", err
+				resCh <- result{err: err}
+				return
 			}
-			return "", errors.New(string(data))
-		default:
+			if strings.Contains(s, "Error") {
+				resCh <- result{err: errors.New(s)}
+				return
+			}
+			if strings.Contains(s, "ready for new connections") {
+				resCh <- result{output: s}
+				return
+			}
 		}
-		s, err := in.ReadString('\n')
+
+	}(p.Out)
+
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case <-time.After(waitTimeout):
+		data, err := io.ReadAll(p.Out)
 		if err != nil {
 			return "", err
 		}
-		if strings.Contains(s, "Error") {
-			return "", errors.New(s)
+		return "", errors.New(string(data))
+	case res := <-resCh:
+		if res.err != nil {
+			return "", res.err
 		}
-		if strings.Contains(s, "ready for new connections") {
-			return s, nil
-		}
+		return res.output, nil
 	}
 }
