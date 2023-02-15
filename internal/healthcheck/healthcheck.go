@@ -69,7 +69,7 @@ var errNotStarted = errors.New("proxy is not started")
 // that the proxy has not reached maximum connections, and that all connections
 // are healthy.
 func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(req.Context())
 	defer cancel()
 
 	select {
