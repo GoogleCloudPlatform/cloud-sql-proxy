@@ -681,6 +681,7 @@ func parseBoolOpt(q url.Values, name string) (*bool, error) {
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
 func runSignalWrapper(cmd *Command) (err error) {
+	fmt.Println("1===========================")
 	defer cmd.cleanup()
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
@@ -734,6 +735,7 @@ func runSignalWrapper(cmd *Command) (err error) {
 		}
 	}()
 
+	fmt.Println("2===========================")
 	// Start the proxy asynchronously, so we can exit early if a shutdown signal is sent
 	startCh := make(chan *proxy.Client)
 	go func() {

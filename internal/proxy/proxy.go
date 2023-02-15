@@ -482,6 +482,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 		go func(name string) { d.EngineVersion(ctx, name) }(inst.Name)
 	}
 
+	fmt.Println("3===========================")
 	var mnts []*socketMount
 	pc := newPortConfig(conf.Port)
 	for _, inst := range conf.Instances {
@@ -504,6 +505,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 		l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
 		mnts = append(mnts, m)
 	}
+	fmt.Println("4===========================")
 	c.mnts = mnts
 	return c, nil
 }
