@@ -138,8 +138,7 @@ func (p *ProxyExec) WaitForServe(ctx context.Context) (string, error) {
 				resCh <- result{err: err}
 				return
 			}
-			fmt.Println("==============", s)
-			if strings.Contains(s, "Error") {
+			if strings.Contains(s, "Error") || strings.Contains(s, "error") {
 				resCh <- result{err: errors.New(s)}
 				return
 			}
