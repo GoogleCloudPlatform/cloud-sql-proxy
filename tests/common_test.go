@@ -29,6 +29,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
@@ -117,16 +118,25 @@ func (p *ProxyExec) Close() {
 	}
 }
 
+const waitTimeout = time.Minute
+
 // WaitForServe waits until the proxy ready to serve traffic by waiting for a
 // known log message (i.e. "ready for new connections"). Returns any output
 // from the proxy while starting or any errors experienced before the proxy was
 // ready to server.
 func (p *ProxyExec) WaitForServe(ctx context.Context) (string, error) {
 	in := bufio.NewReader(p.Out)
+	timeout := time.After(waitTimeout)
 	for {
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err()
+		case <-timeout:
+			data, err := io.ReadAll(in)
+			if err != nil {
+				return "", err
+			}
+			return "", errors.New(string(data))
 		default:
 		}
 		s, err := in.ReadString('\n')
