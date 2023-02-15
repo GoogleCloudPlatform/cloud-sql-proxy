@@ -126,14 +126,19 @@ func (p *ProxyExec) WaitForServe(ctx context.Context) (string, error) {
 	for {
 		select {
 		case <-ctx.Done():
-			return "", ctx.Err()
+			// dump all output and return it as an error
+			all, err := io.ReadAll(in)
+			if err != nil {
+				return "", err
+			}
+			return "", errors.New(string(all))
 		default:
 		}
 		s, err := in.ReadString('\n')
 		if err != nil {
 			return "", err
 		}
-		if strings.Contains(s, "Error") {
+		if strings.Contains(s, "Error") || strings.Contains(s, "error") {
 			return "", errors.New(s)
 		}
 		if strings.Contains(s, "ready for new connections") {
