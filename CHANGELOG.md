@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0...v2.1.0) (2023-02-16)
+
+
+### Features
+
+* add support for Go 1.20 ([#1630](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1630)) ([72df17d](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/72df17d9a1992d51faf3a9f4ecd3960f680b7ef3))
+* add support for quitquitquit endpoint ([#1624](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1624)) ([43f9857](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/43f98574de06211581779a67806b01d5518cdd62))
+* Add unix-socket-path to instance command arguments. ([#1623](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1623)) ([f42f3d1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f42f3d1ce9fc81b78d9e8bd68b147cae20516fae)), closes [#1573](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1573)
+
+
+### Bug Fixes
+
+* ensure separate token source with auto-iam-authn ([#1637](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1637)) ([325a487](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/325a487187c9a9cb1864b8f387b1b06369e1ca25))
+* honor request context in readiness check ([#1657](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1657)) ([0934739](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/09347395eddd8b4942a1cfb77344b014c8bdc90b))
+
 ## [2.0.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0-preview.4...v2.0.0) (2023-01-17)
 
 
