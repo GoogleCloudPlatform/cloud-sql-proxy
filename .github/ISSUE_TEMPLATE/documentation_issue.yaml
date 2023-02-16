@@ -1,0 +1,42 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 📝 Documentation Issue
+description: Report wrong or missing information with the documentation in this repo.
+title: "Brief summary of what is missing or incorrect"
+labels: ["type: docs"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for stopping by to let us know something could be better! :smile:
+        
+        Please explain below how we can improve our documentation.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: "Provide a short description of what is missing or incorrect, as well as a link to the specific location of the issue."
+    validations:
+      required: true
+  - type: textarea
+    id: potential-solution
+    attributes:
+      label: Potential Solution
+      description: "What would you prefer the documentation say? Why would this information be more accurate or helpful?"
+  - type: textarea
+    id: additional-details
+    attributes:
+      label: Additional Details
+      description: "Please reference any other relevant issues, PRs, descriptions, or screenshots here."
