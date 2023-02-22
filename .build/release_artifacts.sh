@@ -55,3 +55,15 @@ for f in $(gsutil ls "gs://cloudsql-proxy/v$VERSION/cloud_sql_proxy*"); do
     sha=$(gsutil cat $f | sha256sum --binary | head -c 64)
     echo "| [$file](https://storage.googleapis.com/cloudsql-proxy/v$VERSION/$file) | $sha |"
 done
+
+
+tag_latest() {
+    local new_version=$1
+    for registry in "gcr.io" "us.gcr.io" "eu.gcr.io" "asia.gcr.io"
+    do
+        local base_image="$registry/cloudsql-docker/gce-proxy"
+        gcloud container images add-tag --quiet "$base_image:$new_version" "$base_image:latest"
+    done
+}
+
+tag_latest "$VERSION"
