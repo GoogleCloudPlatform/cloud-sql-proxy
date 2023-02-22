@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.33.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.2...v1.33.3) (2023-02-22)
+
+
+### Bug Fixes
+
+* add support for Go 1.20 ([#1668](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1668)) ([c3d0c6b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/c3d0c6b9c483140b316d22aafa5bef39e0ad235d))
+* bump deps to latest ([#1671](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1671)) ([084b72e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/084b72ed77379003039cb87df6f7d374505b6f69))
+* require login_token with token and enable_iam_login ([#1641](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1641)) ([48a2fe5](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/48a2fe5f2c0e5487d3d5ccfa29023ac7d4a77600))
+
 ## [1.33.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.1...v1.33.2) (2022-12-19)
 
 
