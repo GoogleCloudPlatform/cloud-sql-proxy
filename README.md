@@ -520,6 +520,28 @@ IAM principal and so have a 1-to-1 mapping between application and IAM principal
 is best. If multiple applications use the same proxy instance, then it becomes
 unclear from an IAM perspective which principal is doing what.
 
+### How do I verify the shasum of a downloaded Proxy binary?
+
+After downloading a binary from the releases page, copy the sha256sum value
+that corresponds with the binary you chose.
+
+Then run this command (make sure to add the asterix before the file name):
+
+``` shell
+echo '<RELEASE_PAGE_SHA_HERE> *<NAME_OF_FILE_HERE>' | shasum -c
+```
+
+For example, after downloading the v2.1.0 release of the Linux AMD64 Proxy, you
+would run:
+
+``` shell
+$ echo "547b24faf0dfe5e3d16bbc9f751dfa6b34dfd5e83f618f43a2988283de5208f2 *cloud-sql-proxy" | shasum -c
+cloud-sql-proxy: OK
+```
+
+If you see `OK`, the binary is a verified match.
+
+
 [pgbouncer]: https://www.pgbouncer.org/
 [proxysql]: https://www.proxysql.com/
 
