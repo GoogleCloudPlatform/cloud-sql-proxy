@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.1.0...v2.1.1) (2023-02-23)
+
+
+### Bug Fixes
+
+* build statically linked binaries ([#1680](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1680)) ([49308c5](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/49308c5c3c2372e4cb7e26f58c1e0dba7953f663))
+
 ## [2.1.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.0.0...v2.1.0) (2023-02-16)
 
 

@@ -49,7 +49,7 @@ spec:
       - name: cloud-sql-proxy
         # It is recommended to use the latest version of the Cloud SQL proxy
         # Make sure to update on a regular schedule!
-        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0  # make sure to use the latest version
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
         args:
           # If connecting from a VPC-native GKE cluster, you can use the
           # following flag to have the proxy connect over private IP
@@ -59,7 +59,7 @@ spec:
           - "--health-check"
 
           # Listen on all addresses so the kubelet can reach the endpoints
-          - "--http-address 0.0.0.0"
+          - "--http-address=0.0.0.0"
 
           # Set the port where the HTTP server listens
           # - "--http-port 9090"
