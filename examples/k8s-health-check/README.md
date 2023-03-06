@@ -1,4 +1,4 @@
-# Cloud SQL proxy health checks
+# Cloud SQL Auth Proxy health checks
 
 Kubernetes supports [three types of health checks][k8s-docs]:
 
@@ -32,8 +32,8 @@ the proxy is in a bad state and should be restarted.
 To configure the address, use `--http-address`. To configure the port, use
 `--http-port`.
 
-## Running Cloud SQL proxy with health checks in Kubernetes
-1. Configure your Cloud SQL proxy container to include health check probes.
+## Running Cloud SQL Auth Proxy with health checks in Kubernetes
+1. Configure your Cloud SQL Auth Proxy container to include health check probes.
     > [proxy_with_http_health_check.yaml](proxy_with_http_health_check.yaml#L77-L111)
 ```yaml
 # Recommended configurations for health check probes.

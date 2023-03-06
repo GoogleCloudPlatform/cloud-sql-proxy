@@ -1,6 +1,6 @@
 # Migrating from v1 to v2
 
-The Cloud SQL Auth proxy v2 CLI interface maintains a close match to the v1
+The Cloud SQL Auth Proxy v2 CLI interface maintains a close match to the v1
 interface. Migrating to v2 will require minimal changes. Below are a number
 of examples of v1 vs v2 invocations covering the most common uses. See
 [Flag Changes](#flag-changes) for details.

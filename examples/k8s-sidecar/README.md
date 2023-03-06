@@ -1,6 +1,6 @@
-# Using the Cloud SQL proxy on Kubernetes
+# Using the Cloud SQL Auth Proxy on Kubernetes
 
-The Cloud SQL proxy is the recommended way to connect to Cloud SQL, even when
+The Cloud SQL Auth Proxy is the recommended way to connect to Cloud SQL, even when
 using private IP. This is because the proxy provides strong encryption and
 authentication using IAM, which help keep your database secure.
 
@@ -47,7 +47,7 @@ above, the values will be in the env vars `DB_USER`, `DB_PASS`, and `DB_NAME`.
 
 ## Setting up a service account
 
-The first step to running the Cloud SQL proxy in Kubernetes is creating a
+The first step to running the Cloud SQL Auth Proxy in Kubernetes is creating a
 service account to represent your application. It is recommended that you create
 a service account unique to each application, instead of using the same service
 account everywhere. This model is more secure since it allows your to limit
@@ -70,7 +70,7 @@ The service account for your application needs to meet the following criteria:
 ## Providing the service account to the proxy
 
 Next, you need to configure Kubernetes to provide the service account to the
-Cloud SQL Auth proxy. There are two recommended ways to do this.
+Cloud SQL Auth Proxy. There are two recommended ways to do this.
 
 ### Workload Identity
 
@@ -131,7 +131,7 @@ bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account
 ### Service account key file
 
 Alternatively, if your can't use Workload Identity, the recommended pattern is
-to mount a service account key file into the Cloud SQL proxy pod and use the
+to mount a service account key file into the Cloud SQL Auth Proxy pod and use the
 `-credential_file` flag.
 
 1. Create a credential file for your service account key:
@@ -158,7 +158,7 @@ to mount a service account key file into the Cloud SQL proxy pod and use the
 
 [k8s-secret]: https://kubernetes.io/docs/concepts/configuration/secret/
 
-## Run the Cloud SQL proxy as a sidecar
+## Run the Cloud SQL Auth Proxy as a sidecar
 
 We recommend running the proxy in a "sidecar" pattern (as an additional
 container sharing a pod with your application). We recommend this over running
@@ -176,11 +176,11 @@ as a separate service for several reasons:
   accurately scope and request resources to match your applications as it
   scales
 
-1. Add the Cloud SQL proxy to the pod configuration under `containers`:
+1. Add the Cloud SQL Auth Proxy to the pod configuration under `containers`:
     > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L39-L69)
     ```yaml
     - name: cloud-sql-proxy
-      # It is recommended to use the latest version of the Cloud SQL proxy
+      # It is recommended to use the latest version of the Cloud SQL Auth Proxy
       # Make sure to update on a regular schedule!
       image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0  # make sure to use the latest version
       args:
@@ -192,7 +192,7 @@ as a separate service for several reasons:
         - "--port=<DB_PORT>"
         - "<INSTANCE_CONNECTION_NAME>"
       securityContext:
-        # The default Cloud SQL proxy image runs as the
+        # The default Cloud SQL Auth Proxy image runs as the
         # "nonroot" user and group (uid: 65532) by default.
         runAsNonRoot: true
       # Resource configuration depends on an application's requirements. You
@@ -217,7 +217,7 @@ as a separate service for several reasons:
       # This flag specifies where the service account key can be found
       - "-credential_file=/secrets/service_account.json"
     securityContext:
-      # The default Cloud SQL proxy image runs as the
+      # The default Cloud SQL Auth Proxy image runs as the
       # "nonroot" user and group (uid: 65532) by default.
       runAsNonRoot: true
     volumeMounts:
@@ -230,7 +230,7 @@ as a separate service for several reasons:
    `<DB_PORT>` you specified in the command section.
 
 
-## Connecting without the Cloud SQL proxy
+## Connecting without the Cloud SQL Auth Proxy
 
 While not as secure, it is possible to connect from a VPC-native GKE cluster to
 a Cloud SQL instance on the same VPC using private IP without the proxy.

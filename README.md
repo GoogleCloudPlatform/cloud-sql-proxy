@@ -1,17 +1,17 @@
-# Cloud SQL Auth proxy
+# Cloud SQL Auth Proxy
 
 [![CI][ci-badge]][ci-build]
 
-The Cloud SQL Auth proxy is a utility for ensuring secure connections to your
+The Cloud SQL Auth Proxy is a utility for ensuring secure connections to your
 Cloud SQL instances. It provides IAM authorization, allowing you to control who
 can connect to your instance through IAM permissions, and TLS 1.3 encryption,
 without having to manage certificates.
 
 See the [Connecting Overview][connection-overview] page for more information on
-connecting to a Cloud SQL instance, or the [About the proxy][about-proxy] page
-for details on how the Cloud SQL proxy works.
+connecting to a Cloud SQL instance, or the [About the Proxy][about-proxy] page
+for details on how the Cloud SQL Proxy works.
 
-The Cloud SQL Auth proxy has support for:
+The Cloud SQL Auth Proxy has support for:
 
 - [Automatic IAM Authentication][iam-auth] (Postgres and MySQL only)
 - Metrics ([Cloud Monitoring][], [Cloud Trace][], and [Prometheus][])
@@ -22,7 +22,7 @@ The Cloud SQL Auth proxy has support for:
 - Fully POSIX-compliant flags
 
 If you're using Go, Java, or Python, consider using the corresponding Cloud SQL
-connector which does everything the proxy does, but in process:
+connector which does everything the Proxy does, but in process:
 
 - [Cloud SQL Go connector][go connector]
 - [Cloud SQL Java connector][java connector]
@@ -31,8 +31,8 @@ connector which does everything the proxy does, but in process:
 For users migrating from v1, see the [Migration Guide](migration-guide.md).
 The [v1 README][v1 readme] is still available.
 
-NOTE: The proxy does not configure the network between the VM it's running on
-and the Cloud SQL instance. You MUST ensure the proxy can reach your Cloud SQL
+NOTE: The Proxy does not configure the network between the VM it's running on
+and the Cloud SQL instance. You MUST ensure the Proxy can reach your Cloud SQL
 instance, either by deploying it in a VPC that has access to your Private IP
 instance, or by configuring Public IP.
 
@@ -179,8 +179,8 @@ gcloud sql instances describe <INSTANCE_NAME> --format='value(connectionName)'
 
 ### Credentials
 
-The Cloud SQL proxy uses a Cloud IAM principal to authorize connections against
-a Cloud SQL instance. The proxy sources the credentials using
+The Cloud SQL Proxy uses a Cloud IAM principal to authorize connections against
+a Cloud SQL instance. The Proxy sources the credentials using
 [Application Default Credentials](https://cloud.google.com/docs/authentication/production).
 
 Note: Any IAM principal connecting to a Cloud SQL database will need one of the
@@ -197,13 +197,13 @@ Or one may manually assign the following IAM permissions:
 
 See [Roles and Permissions in Cloud SQL][roles-and-permissions] for details.
 
-When the proxy authenticates under the Compute Engine VM's default service
+When the Proxy authenticates under the Compute Engine VM's default service
 account, the VM must have at least the `sqlservice.admin` API scope (i.e.,
 "https://www.googleapis.com/auth/sqlservice.admin") and the associated project
 must have the SQL Admin API enabled. The default service account must also have
 at least writer or editor privileges to any projects of target SQL instances.
 
-The proxy also supports three flags related to credentials:
+The Proxy also supports three flags related to credentials:
 
 - `--token` to use an OAuth2 token
 - `--credentials-file` to use a service account key file
@@ -211,10 +211,10 @@ The proxy also supports three flags related to credentials:
 
 ### Basic Usage
 
-To start the proxy, use:
+To start the Proxy, use:
 
 ```shell
-# starts the proxy listening on localhost with the default database engine port
+# starts the Proxy listening on localhost with the default database engine port
 # For example:
 #   MySQL      localhost:3306
 #   Postgres   localhost:5432
@@ -222,11 +222,11 @@ To start the proxy, use:
 ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME>
 ```
 
-The proxy will automatically detect the default database engine's port and start
+The Proxy will automatically detect the default database engine's port and start
 a corresponding listener. Production deployments should use the --port flag to
 reduce startup time.
 
-The proxy supports multiple instances:
+The Proxy supports multiple instances:
 
 ```shell
 ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME_1> <INSTANCE_CONNECTION_NAME_2>
@@ -280,7 +280,7 @@ To override address on a per-instance basis, use the `address` query param:
 
 ### Configuring Private IP
 
-By default, the proxy attempts to connect to an instance's public IP. To enable
+By default, the Proxy attempts to connect to an instance's public IP. To enable
 private IP, use:
 
 ```shell
@@ -289,14 +289,14 @@ private IP, use:
 ./cloud-sql-proxy --private-ip <INSTANCE_CONNECTION_NAME>
 ```
 
-NOTE: The proxy does not configure the network. You MUST ensure the proxy can
+NOTE: The Proxy does not configure the network. You MUST ensure the Proxy can
 reach your Cloud SQL instance, either by deploying it in a VPC that has access
 to your Private IP instance, or by configuring Public IP.
 
 ### Configuring Unix domain sockets
 
-The proxy also supports [Unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
-To start the proxy with Unix sockets, run:
+The Proxy also supports [Unix domain sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
+To start the Proxy with Unix sockets, run:
 
 ```shell
 # Uses the directory "/mycooldir" to create a Unix socket
@@ -317,7 +317,7 @@ query param:
     'myproject:my-region:mysql?unix-socket=/cloudsql'
 ```
 
-NOTE: The proxy supports Unix domain sockets on recent versions of Windows, but
+NOTE: The Proxy supports Unix domain sockets on recent versions of Windows, but
 replaces colons with periods:
 
 ```shell
@@ -337,7 +337,7 @@ To see a full list of flags, use:
 
 ## Container Images
 
-There are containerized versions of the proxy available from the following
+There are containerized versions of the Proxy available from the following
 Google Cloud Container Registry repositories:
 
 - `gcr.io/cloud-sql-connectors/cloud-sql-proxy`
@@ -345,7 +345,7 @@ Google Cloud Container Registry repositories:
 - `eu.gcr.io/cloud-sql-connectors/cloud-sql-proxy`
 - `asia.gcr.io/cloud-sql-connectors/cloud-sql-proxy`
 
-Each image is tagged with the associated proxy version. The following tags are
+Each image is tagged with the associated Proxy version. The following tags are
 currently supported:
 
 - `$VERSION` (default)
@@ -353,7 +353,7 @@ currently supported:
 - `$VERSION-buster`
 - `$VERSION-bullseye`
 
-The `$VERSION` is the proxy version without the leading "v" (e.g.,
+The `$VERSION` is the Proxy version without the leading "v" (e.g.,
 `2.0.0`).
 
 For example, to pull a particular version, use a command like:
@@ -378,7 +378,7 @@ Kubernetes Engine][connect-to-k8s].
 
 ## Running behind a Socks5 proxy
 
-The Cloud SQL Auth proxy includes support for sending requests through a SOCKS5
+The Cloud SQL Auth Proxy includes support for sending requests through a SOCKS5
 proxy. If a SOCKS5 proxy is running on `localhost:8000`, the command to start
 the Cloud SQL Auth Proxy would look like:
 
@@ -401,7 +401,7 @@ for possible values.
 
 ## Support for Metrics and Tracing
 
-The proxy supports [Cloud Monitoring][], [Cloud Trace][], and [Prometheus][].
+The Proxy supports [Cloud Monitoring][], [Cloud Trace][], and [Prometheus][].
 
 Supported metrics include:
 
@@ -456,28 +456,28 @@ request at /quitquitquit.
 
 ## Frequently Asked Questions
 
-### Why would I use the proxy?
+### Why would I use the Proxy?
 
-The proxy is a convenient way to control access to your database using IAM
+The Proxy is a convenient way to control access to your database using IAM
 permissions while ensuring a secure connection to your Cloud SQL instance. When
-using the proxy, you do not have to manage database client certificates,
-configured Authorized Networks, or ensure clients connect securely. The proxy
+using the Proxy, you do not have to manage database client certificates,
+configured Authorized Networks, or ensure clients connect securely. The Proxy
 handles all of this for you.
 
-### How should I use the proxy?
+### How should I use the Proxy?
 
-The proxy is a gateway to your Cloud SQL instance. Clients connect to the proxy
+The Proxy is a gateway to your Cloud SQL instance. Clients connect to the Proxy
 over an unencrypted connection and are authorized using the environment's IAM
-principal. The proxy then encrypts the connection to your Cloud SQL instance.
+principal. The Proxy then encrypts the connection to your Cloud SQL instance.
 
 Because client connections are not encrypted and authorized using the
-environment's IAM principal, we recommend running the proxy on the same VM or
-Kubernetes pod as your application and using the proxy's default behavior of
+environment's IAM principal, we recommend running the Proxy on the same VM or
+Kubernetes pod as your application and using the Proxy's default behavior of
 allowing connections from only the local network interface. This is the most
 secure configuration: unencrypted traffic does not leave the VM, and only
 connections from applications on the VM are allowed.
 
-Here are some common examples of how to run the proxy in different environments:
+Here are some common examples of how to run the Proxy in different environments:
 
 - [Connect to Cloud SQL for MySQL from your local computer][local-quickstart]
 - [Connect to Cloud SQL for MySQL from Google Kubernetes Engine][gke-quickstart]
@@ -485,14 +485,14 @@ Here are some common examples of how to run the proxy in different environments:
 [local-quickstart]: https://cloud.google.com/sql/docs/mysql/connect-instance-local-computer
 [gke-quickstart]: https://cloud.google.com/sql/docs/mysql/connect-instance-kubernetes
 
-### Why can't the proxy connect to my private IP instance?
+### Why can't the Proxy connect to my private IP instance?
 
-The proxy does not configure the network between the VM it's running on and the
-Cloud SQL instance. You MUST ensure the proxy can reach your Cloud SQL
+The Proxy does not configure the network between the VM it's running on and the
+Cloud SQL instance. You MUST ensure the Proxy can reach your Cloud SQL
 instance, either by deploying it in a VPC that has access to your Private IP
 instance, or by configuring Public IP.
 
-### Is there a library version of the proxy that I can use?
+### Is there a library version of the Proxy that I can use?
 
 Yes. Cloud SQL supports three language connectors:
 
@@ -501,23 +501,23 @@ Yes. Cloud SQL supports three language connectors:
 - [Cloud SQL Python Connector](https://github.com/GoogleCloudPlatform/cloud-sql-python-connector)
 
 The connectors for Go, Java, and Python offer the best experience when you are
-writing an application in those languages. Use the proxy when your application
+writing an application in those languages. Use the Proxy when your application
 uses another language.
 
-### Should I use the proxy for large deployments?
+### Should I use the Proxy for large deployments?
 
-We recommend deploying the proxy on the host machines that are running the
+We recommend deploying the Proxy on the host machines that are running the
 application. However, large deployments may exceed the request quota for the SQL
-Admin API . If your proxy reports request quota errors, we recommend deploying
-the proxy with a connection pooler like [pgbouncer][] or [ProxySQL][]. For
+Admin API . If your Proxy reports request quota errors, we recommend deploying
+the Proxy with a connection pooler like [pgbouncer][] or [ProxySQL][]. For
 details, see [Running the Cloud SQL Proxy as a Service][service-example].
 
-### Can I share the proxy across mulitple applications?
+### Can I share the Proxy across mulitple applications?
 
-Instead of using a single proxy across multiple applications, we recommend using
-one proxy instance for every application process. The proxy uses the context's
+Instead of using a single Proxy across multiple applications, we recommend using
+one Proxy instance for every application process. The Proxy uses the context's
 IAM principal and so have a 1-to-1 mapping between application and IAM principal
-is best. If multiple applications use the same proxy instance, then it becomes
+is best. If multiple applications use the same Proxy instance, then it becomes
 unclear from an IAM perspective which principal is doing what.
 
 ### How do I verify the shasum of a downloaded Proxy binary?
@@ -548,10 +548,10 @@ If you see `OK`, the binary is a verified match.
 ## Reference Documentation
 
 - [Cloud SQL][cloud-sql]
-- [Cloud SQL Auth proxy Documentation][proxy-page]
-- [Cloud SQL Auth proxy Quickstarts][quickstarts]
+- [Cloud SQL Auth Proxy Documentation][proxy-page]
+- [Cloud SQL Auth Proxy Quickstarts][quickstarts]
 - [Cloud SQL Code Samples][code-samples]
-- [Cloud SQL Auth proxy Package Documentation][pkg-docs]
+- [Cloud SQL Auth Proxy Package Documentation][pkg-docs]
 
 ## Support policy
 
@@ -573,7 +573,7 @@ considered publicly unsupported.
 
 ### Release cadence
 
-The Cloud SQL Auth proxy aims for a minimum monthly release cadence. If no new
+The Cloud SQL Auth Proxy aims for a minimum monthly release cadence. If no new
 features or fixes have been added, a new PATCH version with the latest
 dependencies is released.
 

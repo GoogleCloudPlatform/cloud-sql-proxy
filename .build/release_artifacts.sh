@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script distributes the artifacts for the Cloud SQL proxy to their different channels.
+# This script distributes the artifacts for the Cloud SQL Auth Proxy to their different channels.
 
 set -e # exit immediatly if any step fails
 
@@ -28,7 +28,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 
-read -p "This will release new Cloud SQL proxy artifacts for \"$VERSION\", even if they already exist. Are you sure (y/Y)? " -n 1 -r
+read -p "This will release new Cloud SQL Auth Proxy artifacts for \"$VERSION\", even if they already exist. Are you sure (y/Y)? " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then

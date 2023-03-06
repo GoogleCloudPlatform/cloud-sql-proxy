@@ -111,39 +111,39 @@ func WithDialer(d cloudsql.Dialer) Option {
 var longHelp = `
 Overview
 
-    The Cloud SQL Auth proxy is a utility for ensuring secure connections to
+    The Cloud SQL Auth Proxy is a utility for ensuring secure connections to
     your Cloud SQL instances. It provides IAM authorization, allowing you to
     control who can connect to your instance through IAM permissions, and TLS
     1.3 encryption, without having to manage certificates.
 
-    NOTE: The proxy does not configure the network. You MUST ensure the proxy
+    NOTE: The Proxy does not configure the network. You MUST ensure the Proxy
     can reach your Cloud SQL instance, either by deploying it in a VPC that has
     access to your Private IP instance, or by configuring Public IP.
 
-    For every provided instance connection name, the proxy creates:
+    For every provided instance connection name, the Proxy creates:
 
     - a socket that mimics a database running locally, and
     - an encrypted connection using TLS 1.3 back to your Cloud SQL instance.
 
-    The proxy uses an ephemeral certificate to establish a secure connection to
-    your Cloud SQL instance. The proxy will refresh those certificates on an
+    The Proxy uses an ephemeral certificate to establish a secure connection to
+    your Cloud SQL instance. The Proxy will refresh those certificates on an
     hourly basis. Existing client connections are unaffected by the refresh
     cycle.
 
 Starting the Proxy
 
-    To start the proxy, you will need your instance connection name, which may
+    To start the Proxy, you will need your instance connection name, which may
     be found in the Cloud SQL instance overview page or by using gcloud with the
     following command:
 
         gcloud sql instances describe INSTANCE --format='value(connectionName)'
 
     For example, if your instance connection name is
-    "my-project:us-central1:my-db-server", starting the proxy will be:
+    "my-project:us-central1:my-db-server", starting the Proxy will be:
 
         ./cloud-sql-proxy my-project:us-central1:my-db-server
 
-    By default, the proxy will determine the database engine and start a
+    By default, the Proxy will determine the database engine and start a
     listener on localhost using the default database engine's port, i.e., MySQL
     is 3306, Postgres is 5432, SQL Server is 1433. If multiple instances are
     specified which all use the same database engine, the first will be started
@@ -157,7 +157,7 @@ Starting the Proxy
 
 Instance Level Configuration
 
-    The proxy supports overriding configuration on an instance-level with an
+    The Proxy supports overriding configuration on an instance-level with an
     optional query string syntax using the corresponding full flag name. The
     query string takes the form of a URL query string and should be appended to
     the INSTANCE_CONNECTION_NAME, e.g.,
@@ -176,8 +176,8 @@ Instance Level Configuration
     When necessary, you may specify the full path to a Unix socket. Set the
     unix-socket-path query parameter to the absolute path of the Unix socket for
     the database instance. The parent directory of the unix-socket-path must
-    exist when the proxy starts or else socket creation will fail. For Postgres
-    instances, the proxy will ensure that the last path element is
+    exist when the Proxy starts or else socket creation will fail. For Postgres
+    instances, the Proxy will ensure that the last path element is
     '.s.PGSQL.5432' appending it if necessary. For example,
 
         ./cloud-sql-proxy \
@@ -185,29 +185,29 @@ Instance Level Configuration
 
 Health checks
 
-    When enabling the --health-check flag, the proxy will start an HTTP server
+    When enabling the --health-check flag, the Proxy will start an HTTP server
     on localhost with three endpoints:
 
-    - /startup: Returns 200 status when the proxy has finished starting up.
+    - /startup: Returns 200 status when the Proxy has finished starting up.
     Otherwise returns 503 status.
 
-    - /readiness: Returns 200 status when the proxy has started, has available
+    - /readiness: Returns 200 status when the Proxy has started, has available
     connections if max connections have been set with the --max-connections
-    flag, and when the proxy can connect to all registered instances. Otherwise,
+    flag, and when the Proxy can connect to all registered instances. Otherwise,
     returns a 503 status. Optionally supports a min-ready query param (e.g.,
-    /readiness?min-ready=3) where the proxy will return a 200 status if the
-    proxy can connect successfully to at least min-ready number of instances. If
+    /readiness?min-ready=3) where the Proxy will return a 200 status if the
+    Proxy can connect successfully to at least min-ready number of instances. If
     min-ready exceeds the number of registered instances, returns a 400.
 
     - /liveness: Always returns 200 status. If this endpoint is not responding,
-    the proxy is in a bad state and should be restarted.
+    the Proxy is in a bad state and should be restarted.
 
     To configure the address, use --http-address. To configure the port, use
     --http-port.
 
 Service Account Impersonation
 
-    The proxy supports service account impersonation with the
+    The Proxy supports service account impersonation with the
     --impersonate-service-account flag and matches gcloud's flag. When enabled,
     all API requests are made impersonating the supplied service account. The
     IAM principal must have the iam.serviceAccounts.getAccessToken permission or
@@ -238,18 +238,18 @@ Service Account Impersonation
 
 Configuration using environment variables
 
-    Instead of using CLI flags, the proxy may be configured using environment
+    Instead of using CLI flags, the Proxy may be configured using environment
     variables. Each environment variable uses "CSQL_PROXY" as a prefix and is
     the uppercase version of the flag using underscores as word delimiters. For
     example, the --auto-iam-authn flag may be set with the environment variable
-    CSQL_PROXY_AUTO_IAM_AUTHN. An invocation of the proxy using environment
+    CSQL_PROXY_AUTO_IAM_AUTHN. An invocation of the Proxy using environment
     variables would look like the following:
 
         CSQL_PROXY_AUTO_IAM_AUTHN=true \
             ./cloud-sql-proxy my-project:us-central1:my-db-server
 
     In addition to CLI flags, instance connection names may also be specified
-    with environment variables. If invoking the proxy with only one instance
+    with environment variables. If invoking the Proxy with only one instance
     connection name, use CSQL_PROXY_INSTANCE_CONNECTION_NAME. For example:
 
         CSQL_PROXY_INSTANCE_CONNECTION_NAME=my-project:us-central1:my-db-server \
