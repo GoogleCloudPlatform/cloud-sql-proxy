@@ -42,7 +42,7 @@ var (
 	)
 )
 
-// ProxyExec represents an execution of the Cloud SQL proxy.
+// ProxyExec represents an execution of the Cloud SQL Auth Proxy.
 type ProxyExec struct {
 	Out io.ReadCloser
 
