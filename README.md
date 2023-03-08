@@ -405,13 +405,13 @@ The Proxy supports [Cloud Monitoring][], [Cloud Trace][], and [Prometheus][].
 
 Supported metrics include:
 
-- `/cloudsqlconn/dial_latency`: The distribution of dialer latencies (ms)
-- `/cloudsqlconn/open_connections`: The current number of open Cloud SQL
+- `cloudsqlconn/dial_latency`: The distribution of dialer latencies (ms)
+- `cloudsqlconn/open_connections`: The current number of open Cloud SQL
   connections
-- `/cloudsqlconn/dial_failure_count`: The number of failed dial attempts
-- `/cloudsqlconn/refresh_success_count`: The number of successful certificate
+- `cloudsqlconn/dial_failure_count`: The number of failed dial attempts
+- `cloudsqlconn/refresh_success_count`: The number of successful certificate
   refresh operations
-- `/cloudsqlconn/refresh_failure_count`: The number of failed refresh
+- `cloudsqlconn/refresh_failure_count`: The number of failed refresh
   operations.
 
 Supported traces include:
