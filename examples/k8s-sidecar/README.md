@@ -132,7 +132,7 @@ bind a [Kubernetes Service Account (KSA)][ksa] to a Google Service Account
 
 Alternatively, if your can't use Workload Identity, the recommended pattern is
 to mount a service account key file into the Cloud SQL Auth Proxy pod and use the
-`-credential_file` flag.
+`--credentials-file` flag.
 
 1. Create a credential file for your service account key:
     ```sh
@@ -182,7 +182,7 @@ as a separate service for several reasons:
     - name: cloud-sql-proxy
       # It is recommended to use the latest version of the Cloud SQL Auth Proxy
       # Make sure to update on a regular schedule!
-      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0  # make sure to use the latest version
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0  # make sure to use the latest version
       args:
         # If connecting from a VPC-native GKE cluster, you can use the
         # following flag to have the proxy connect over private IP
@@ -210,12 +210,12 @@ as a separate service for several reasons:
           cpu:    "1"
     ```
    If you are using a service account key, specify your secret volume and add
-   the `-credential_file` flag to the command:
+   the `--credentials-file` flag to the command:
 
    > [proxy_with_sa_key.yaml](proxy_with_sa_key.yaml#L49-L58)
     ```yaml
       # This flag specifies where the service account key can be found
-      - "-credential_file=/secrets/service_account.json"
+      - "--credentials-file=/secrets/service_account.json"
     securityContext:
       # The default Cloud SQL Auth Proxy image runs as the
       # "nonroot" user and group (uid: 65532) by default.
