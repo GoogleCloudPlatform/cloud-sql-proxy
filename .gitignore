@@ -6,5 +6,7 @@
 .vscode/
 
 /cloud-sql-proxy
+/cloud-sql-proxy.exe
 
 /key.json
+/logs/
