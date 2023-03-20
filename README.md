@@ -54,9 +54,9 @@ following instructions for your OS and CPU architecture.
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1"
 
-wget "$URL/cloud-sql-proxy.linux.amd64" -O cloud-sql-proxy
+curl "$URL/cloud-sql-proxy.linux.amd64" -o cloud-sql-proxy
 
 chmod +x cloud-sql-proxy
 ```
@@ -68,9 +68,9 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1"
 
-wget "$URL/cloud-sql-proxy.linux.386" -O cloud-sql-proxy
+curl "$URL/cloud-sql-proxy.linux.386" -o cloud-sql-proxy
 
 chmod +x cloud-sql-proxy
 ```
@@ -82,9 +82,9 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1"
 
-wget "$URL/cloud-sql-proxy.linux.arm64" -O cloud-sql-proxy
+curl "$URL/cloud-sql-proxy.linux.arm64" -o cloud-sql-proxy
 
 chmod +x cloud-sql-proxy
 ```
@@ -96,9 +96,9 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1"
 
-wget "$URL/cloud-sql-proxy.linux.arm" -O cloud-sql-proxy
+curl "$URL/cloud-sql-proxy.linux.arm" -o cloud-sql-proxy
 
 chmod +x cloud-sql-proxy
 ```
@@ -110,9 +110,9 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1"
 
-wget "$URL/cloud-sql-proxy.darwin.amd64" -O cloud-sql-proxy
+curl "$URL/cloud-sql-proxy.darwin.amd64" -o cloud-sql-proxy
 
 chmod +x cloud-sql-proxy
 ```
@@ -124,9 +124,9 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1"
 
-wget "$URL/cloud-sql-proxy.darwin.arm64" -O cloud-sql-proxy
+curl "$URL/cloud-sql-proxy.darwin.arm64" -o cloud-sql-proxy
 
 chmod +x cloud-sql-proxy
 ```
@@ -138,7 +138,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0/cloud-sql-proxy.x64.exe -O cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -148,7 +148,7 @@ wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0/
 
 ```sh
 # see Releases for other versions
-wget https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.0.0/cloud-sql-proxy.x86.exe -O cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
