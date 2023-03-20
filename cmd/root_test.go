@@ -633,7 +633,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			}),
 		},
 		{
-			desc:     "using the imopersonate service accounn envvar",
+			desc:     "using the impersonate service account envvar",
 			envName:  "CSQL_PROXY_IMPERSONATE_SERVICE_ACCOUNT",
 			envValue: "sv1@developer.gserviceaccount.com",
 			want: withDefaults(&proxy.Config{
