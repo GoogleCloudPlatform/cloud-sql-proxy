@@ -148,7 +148,7 @@ curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1/
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1/cloud-sql-proxy.x86.exe -O cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.1.1/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
