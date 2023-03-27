@@ -7,12 +7,14 @@ It was originally built and tested using Go 1.20.2 on Windows Server 2019.
 
 ## Install the Windows Service
 
+Prerequisites: A built binary for Windows of the Cloud SQL Auth Proxy is required. Either build it from source or [download a release](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/releases) of a Windows pre-built version, e.g. `cloud-sql-proxy.x64.exe`. 
+
 First, install the binary by:
 
-1. Create a new empty folder e.g. `C:\Program Files\cloud-sql-proxy`
+1. Create a new empty folder, e.g. `C:\Program Files\cloud-sql-proxy`
 2. Copy the binary and helper batch files
 3. Grant *read & execute* access to the `Network Service` user
-4. Create a `logs` sub-folder
+4. Create a `logs` sub-folder, e.g. `C:\Program Files\cloud-sql-proxy\logs`
 5. Grant *modify* access to the `Network Service` user
 
 After that, perform the setup:
