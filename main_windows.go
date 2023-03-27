@@ -17,13 +17,14 @@ package main
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
 	"golang.org/x/sys/windows/svc"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 type windowsService struct{}
