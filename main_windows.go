@@ -80,7 +80,7 @@ loop:
 			switch c.Cmd {
 			case svc.Interrogate:
 				changes <- c.CurrentStatus
-				// testing deadlock from https://code.google.com/p/winsvc/issues/detail?id=4
+				// testing deadlock from https://code.google.com/archive/p/winsvc/issues/4
 				time.Sleep(100 * time.Millisecond)
 				changes <- c.CurrentStatus
 
