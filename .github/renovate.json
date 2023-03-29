@@ -2,5 +2,8 @@
   "extends": [
     "config:base",
   ],
-  "commitMessagePrefix": "deps: "
+  "commitMessagePrefix": "deps: ",
+  "postUpdateOptions": [
+    "gomodTidy"
+  ]
 }
