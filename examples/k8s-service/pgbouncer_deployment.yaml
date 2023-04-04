@@ -82,7 +82,9 @@ spec:
         - name: CLIENT_TLS_CERT_FILE
           value: "/etc/server/cert.pem"
       - name: cloud-sql-proxy
-        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0.preview.0  # make sure to use the latest version
+        # It is recommended to use the latest version of the Cloud SQL Auth Proxy
+        # Make sure to update on a regular schedule!
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
         args:
           - "--port=5431"
           - "<INSTANCE_CONNECTION_NAME>"

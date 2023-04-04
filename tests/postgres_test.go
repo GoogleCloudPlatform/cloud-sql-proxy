@@ -18,12 +18,12 @@ package tests
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 var (
@@ -31,8 +31,7 @@ var (
 	postgresUser     = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
 	postgresPass     = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
 	postgresDB       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
-
-	postgresIAMUser = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
+	postgresIAMUser  = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
 )
 
 func requirePostgresVars(t *testing.T) {
@@ -48,15 +47,18 @@ func requirePostgresVars(t *testing.T) {
 	}
 }
 
+func postgresDSN() string {
+	return fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresPass, *postgresDB)
+}
+
 func TestPostgresTCP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
-		*postgresUser, *postgresPass, *postgresDB)
-	proxyConnTest(t, []string{*postgresConnName}, "pgx", dsn)
+	proxyConnTest(t, []string{*postgresConnName}, "pgx", postgresDSN())
 }
 
 func TestPostgresUnix(t *testing.T) {
@@ -78,7 +80,7 @@ func TestPostgresUnix(t *testing.T) {
 }
 
 func createTempDir(t *testing.T) (string, func()) {
-	testDir, err := ioutil.TempDir("", "*")
+	testDir, err := os.MkdirTemp("", "*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -89,63 +91,101 @@ func createTempDir(t *testing.T) (string, func()) {
 	}
 }
 
-func TestPostgresAuthWithToken(t *testing.T) {
+func TestPostgresImpersonation(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
-	tok, _, cleanup := removeAuthEnvVar(t)
-	defer cleanup()
 
-	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
-		*postgresUser, *postgresPass, *postgresDB)
-	proxyConnTest(t,
-		[]string{"--token", tok.AccessToken, *postgresConnName},
-		"pgx", dsn)
+	proxyConnTest(t, []string{
+		"--impersonate-service-account", *impersonatedUser,
+		*postgresConnName},
+		"pgx", postgresDSN())
 }
 
-func TestPostgresAuthWithCredentialsFile(t *testing.T) {
+func TestPostgresAuthentication(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
-	_, path, cleanup := removeAuthEnvVar(t)
-	defer cleanup()
 
-	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
-		*postgresUser, *postgresPass, *postgresDB)
-	proxyConnTest(t,
-		[]string{"--credentials-file", path, *postgresConnName},
-		"pgx", dsn)
-}
-
-func TestPostgresAuthWithCredentialsJSON(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping Postgres integration tests")
-	}
-	requirePostgresVars(t)
 	creds := keyfile(t)
-	_, _, cleanup := removeAuthEnvVar(t)
+	tok, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
-	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
-		*postgresUser, *postgresPass, *postgresDB)
-	proxyConnTest(t,
-		[]string{"--json-credentials", string(creds), *postgresConnName},
-		"pgx", dsn)
+	tcs := []struct {
+		desc string
+		args []string
+	}{
+		{
+			desc: "with token",
+			args: []string{"--token", tok.AccessToken, *postgresConnName},
+		},
+		{
+			desc: "with token and impersonation",
+			args: []string{
+				"--token", tok.AccessToken,
+				"--impersonate-service-account", *impersonatedUser,
+				*postgresConnName},
+		},
+		{
+			desc: "with credentials file",
+			args: []string{"--credentials-file", path, *postgresConnName},
+		},
+		{
+			desc: "with credentials file and impersonation",
+			args: []string{
+				"--credentials-file", path,
+				"--impersonate-service-account", *impersonatedUser,
+				*postgresConnName},
+		},
+		{
+			desc: "with credentials JSON",
+			args: []string{"--json-credentials", string(creds), *postgresConnName},
+		},
+		{
+			desc: "with credentials JSON and impersonation",
+			args: []string{
+				"--json-credentials", string(creds),
+				"--impersonate-service-account", *impersonatedUser,
+				*postgresConnName},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "pgx", postgresDSN())
+		})
+	}
 }
 
-func TestAuthWithGcloudAuth(t *testing.T) {
+func TestPostgresGcloudAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
 
-	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
-		*postgresUser, *postgresPass, *postgresDB)
-	proxyConnTest(t,
-		[]string{"--gcloud-auth", *postgresConnName},
-		"pgx", dsn)
+	tcs := []struct {
+		desc string
+		args []string
+	}{
+		{
+			desc: "gcloud user authentication",
+			args: []string{"--gcloud-auth", *postgresConnName},
+		},
+		{
+			desc: "gcloud user authentication with impersonation",
+			args: []string{
+				"--gcloud-auth",
+				"--impersonate-service-account", *impersonatedUser,
+				*postgresConnName},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "pgx", postgresDSN())
+		})
+	}
+
 }
 
 func TestPostgresIAMDBAuthn(t *testing.T) {
@@ -157,16 +197,40 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 		t.Fatal("'postgres_user_iam' not set")
 	}
 
-	dsn := fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
+	defaultDSN := fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
 		*postgresIAMUser, *postgresDB)
-	// using the global flag
-	proxyConnTest(t,
-		[]string{"--auto-iam-authn", *postgresConnName},
-		"pgx", dsn)
-	// using the instance-level query param
-	proxyConnTest(t,
-		[]string{fmt.Sprintf("%s?auto-iam-authn=true", *postgresConnName)},
-		"pgx", dsn)
+	impersonatedIAMUser := strings.ReplaceAll(*impersonatedUser, ".gserviceaccount.com", "")
+
+	tcs := []struct {
+		desc string
+		dsn  string
+		args []string
+	}{
+		{
+			desc: "using default flag",
+			args: []string{"--auto-iam-authn", *postgresConnName},
+			dsn:  defaultDSN,
+		},
+		{
+			desc: "using query param",
+			args: []string{fmt.Sprintf("%s?auto-iam-authn=true", *postgresConnName)},
+			dsn:  defaultDSN,
+		},
+		{
+			desc: "using impersonation",
+			args: []string{
+				"--auto-iam-authn",
+				"--impersonate-service-account", *impersonatedUser,
+				*postgresConnName},
+			dsn: fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
+				impersonatedIAMUser, *postgresDB),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "pgx", tc.dsn)
+		})
+	}
 }
 
 func TestPostgresHealthCheck(t *testing.T) {

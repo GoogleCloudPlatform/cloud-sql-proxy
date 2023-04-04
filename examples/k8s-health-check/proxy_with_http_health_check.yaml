@@ -47,13 +47,22 @@ spec:
               name: <YOUR-DB-SECRET>
               key: database
       - name: cloud-sql-proxy
-        # It is recommended to use the latest version of the Cloud SQL proxy
+        # It is recommended to use the latest version of the Cloud SQL Auth Proxy
         # Make sure to update on a regular schedule!
-        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0.preview.0  # make sure the use the latest version
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
         args:
           # If connecting from a VPC-native GKE cluster, you can use the
           # following flag to have the proxy connect over private IP
           # - "--private-ip"
+
+          # Enable HTTP health checks
+          - "--health-check"
+
+          # Listen on all addresses so the kubelet can reach the endpoints
+          - "--http-address=0.0.0.0"
+
+          # Set the port where the HTTP server listens
+          # - "--http-port 9090"
 
           # Enable structured logging with LogEntry format:
           - "--structured-logs"
@@ -67,7 +76,7 @@ spec:
           - "<INSTANCE_CONNECTION_NAME>"
 
         securityContext:
-          # The default Cloud SQL proxy image runs as the
+          # The default Cloud SQL Auth Proxy image runs as the
           # "nonroot" user and group (uid: 65532) by default.
           runAsNonRoot: true
         volumeMounts:
@@ -93,7 +102,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /liveness
-            port: 8090
+            port: 9090
           # Number of seconds after the container has started before the first probe is scheduled. Defaults to 0.
           # Not necessary when the startup probe is in use.
           initialDelaySeconds: 0
@@ -113,7 +122,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /readiness
-            port: 8090
+            port: 9090
           initialDelaySeconds: 0
           periodSeconds: 10
           timeoutSeconds: 5
@@ -124,7 +133,7 @@ spec:
         startupProbe:
           httpGet:
             path: /startup
-            port: 8090
+            port: 9090
           periodSeconds: 1
           timeoutSeconds: 5
           failureThreshold: 20

@@ -15,15 +15,15 @@
 # Use the latest stable golang 1.x to compile to a binary
 FROM --platform=$BUILDPLATFORM golang:1 as build
 
-WORKDIR /go/src/cloudsql-proxy
+WORKDIR /go/src/cloud-sql-proxy
 COPY . .
 
 ARG TARGETOS
 ARG TARGETARCH
 
 RUN go get ./...
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-X main.metadataString=container.bullseye" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container.bullseye"
 
 # Final stage
 FROM debian:bullseye
@@ -35,4 +35,5 @@ RUN groupadd -g 65532 -r nonroot && useradd -u 65532 -g 65532 -r nonroot
 # Set the uid as an integer for compatibility with runAsNonRoot in Kubernetes
 USER 65532
 
-COPY --from=build --chown=nonroot /go/src/cloudsql-proxy/cloud_sql_proxy /cloud_sql_proxy
+COPY --from=build --chown=nonroot /go/src/cloud-sql-proxy/cloud-sql-proxy /cloud-sql-proxy
+ENTRYPOINT ["/cloud-sql-proxy"]

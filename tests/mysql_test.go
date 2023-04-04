@@ -44,11 +44,7 @@ func requireMySQLVars(t *testing.T) {
 	}
 }
 
-func TestMySQLTCP(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping MySQL integration tests")
-	}
-	requireMySQLVars(t)
+func mysqlDSN() string {
 	cfg := mysql.Config{
 		User:                 *mysqlUser,
 		Passwd:               *mysqlPass,
@@ -57,7 +53,15 @@ func TestMySQLTCP(t *testing.T) {
 		Addr:                 "127.0.0.1:3306",
 		Net:                  "tcp",
 	}
-	proxyConnTest(t, []string{*mysqlConnName}, "mysql", cfg.FormatDSN())
+	return cfg.FormatDSN()
+}
+
+func TestMySQLTCP(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
+	requireMySQLVars(t)
+	proxyConnTest(t, []string{*mysqlConnName}, "mysql", mysqlDSN())
 }
 
 func TestMySQLUnix(t *testing.T) {
@@ -82,66 +86,102 @@ func TestMySQLUnix(t *testing.T) {
 		[]string{"--unix-socket", tmpDir, *mysqlConnName}, "mysql", cfg.FormatDSN())
 }
 
-func TestMySQLAuthWithToken(t *testing.T) {
+func TestMySQLImpersonation(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping MySQL integration tests")
 	}
 	requireMySQLVars(t)
-	tok, _, cleanup := removeAuthEnvVar(t)
-	defer cleanup()
 
-	cfg := mysql.Config{
-		User:                 *mysqlUser,
-		Passwd:               *mysqlPass,
-		DBName:               *mysqlDB,
-		AllowNativePasswords: true,
-		Addr:                 "127.0.0.1:3306",
-		Net:                  "tcp",
-	}
-	proxyConnTest(t,
-		[]string{"--token", tok.AccessToken, *mysqlConnName},
-		"mysql", cfg.FormatDSN())
+	proxyConnTest(t, []string{
+		"--impersonate-service-account", *impersonatedUser,
+		*mysqlConnName},
+		"mysql", mysqlDSN())
 }
 
-func TestMySQLAuthWithCredentialsFile(t *testing.T) {
+func TestMySQLAuthentication(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping MySQL integration tests")
 	}
 	requireMySQLVars(t)
-	_, path, cleanup := removeAuthEnvVar(t)
-	defer cleanup()
 
-	cfg := mysql.Config{
-		User:                 *mysqlUser,
-		Passwd:               *mysqlPass,
-		DBName:               *mysqlDB,
-		AllowNativePasswords: true,
-		Addr:                 "127.0.0.1:3306",
-		Net:                  "tcp",
-	}
-	proxyConnTest(t,
-		[]string{"--credentials-file", path, *mysqlConnName},
-		"mysql", cfg.FormatDSN())
-}
-
-func TestMySQLAuthWithCredentialsJSON(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping MySQL integration tests")
-	}
-	requireMySQLVars(t)
 	creds := keyfile(t)
-	_, _, cleanup := removeAuthEnvVar(t)
+	tok, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
-	cfg := mysql.Config{
-		User:                 *mysqlUser,
-		Passwd:               *mysqlPass,
-		DBName:               *mysqlDB,
-		AllowNativePasswords: true,
-		Addr:                 "127.0.0.1:3306",
-		Net:                  "tcp",
+	tcs := []struct {
+		desc string
+		args []string
+	}{
+		{
+			desc: "with token",
+			args: []string{"--token", tok.AccessToken, *mysqlConnName},
+		},
+		{
+			desc: "with token and impersonation",
+			args: []string{
+				"--token", tok.AccessToken,
+				"--impersonate-service-account", *impersonatedUser,
+				*mysqlConnName},
+		},
+		{
+			desc: "with credentials file",
+			args: []string{"--credentials-file", path, *mysqlConnName},
+		},
+		{
+			desc: "with credentials file and impersonation",
+			args: []string{
+				"--credentials-file", path,
+				"--impersonate-service-account", *impersonatedUser,
+				*mysqlConnName},
+		},
+		{
+			desc: "with credentials JSON",
+			args: []string{"--json-credentials", string(creds), *mysqlConnName},
+		},
+		{
+			desc: "with credentials JSON and impersonation",
+			args: []string{
+				"--json-credentials", string(creds),
+				"--impersonate-service-account", *impersonatedUser,
+				*mysqlConnName},
+		},
 	}
-	proxyConnTest(t,
-		[]string{"--json-credentials", creds, *mysqlConnName},
-		"mysql", cfg.FormatDSN())
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "mysql", mysqlDSN())
+		})
+	}
+}
+
+func TestMySQLGcloudAuth(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
+	requireMySQLVars(t)
+
+	tcs := []struct {
+		desc string
+		args []string
+	}{
+		{
+			desc: "gcloud user authentication",
+			args: []string{"--gcloud-auth", *mysqlConnName},
+		},
+		{
+			desc: "gcloud user authentication with impersonation",
+			args: []string{
+				"--gcloud-auth",
+				"--impersonate-service-account", *impersonatedUser,
+				*mysqlConnName},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "mysql", mysqlDSN())
+		})
+	}
+}
+
+func TestMySQLHealthCheck(t *testing.T) {
+	testHealthCheck(t, *mysqlConnName)
 }

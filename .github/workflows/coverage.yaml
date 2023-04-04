@@ -15,17 +15,20 @@
 name: code coverage
 on: [pull_request]
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
-          go-version: "1.19"
+          go-version: "1.20"
 
       - name: Checkout base branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
         with:
           ref: ${{ github.base_ref }}
       - name: Calculate base code coverage
@@ -35,7 +38,7 @@ jobs:
           echo "CUR_COVER=$CUR_COVER" >> $GITHUB_ENV
 
       - name: Checkout PR branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
       - name: Calculate PR code coverage
         run: |
           go test -short -coverprofile pr_cover.out ./... || true

@@ -24,13 +24,16 @@ on:
   schedule:
   - cron:  '0 2 * * *'
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   compilation:
     name: FreeBSD and OpenBSD compilation check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
 
       - name: Verify FreeBSD and OpenBSD Builds
         run: |
@@ -50,10 +53,12 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
+      issues: write
+      pull-requests: write
     steps:
       - name: Remove PR label
         if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
-        uses: actions/github-script@v6
+        uses: actions/github-script@98814c53be79b1d30f795b907e553d8679345975 # v6.4.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -69,30 +74,30 @@ jobs:
             }
 
       - name: Checkout code
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
-          go-version: 1.19
+          go-version: "1.20"
 
       - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0.8.1'
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@ef5d53e30bbcd8d0836f4288f5e50ff3e086997d # v1.0.0
         with:
           workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
 
-      - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v0.6.0'
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@62d4898025f6041e16b1068643bfc5a696863587 # v1.1.0
 
       - id: 'secrets'
         name: Get secrets
-        uses: 'google-github-actions/get-secretmanager-secrets@v0.5.0'
+        uses: google-github-actions/get-secretmanager-secrets@7fced8b6579c75d7c465165b38ec29175d9a469c # v1.0.0
         with:
           secrets: |-
             MYSQL_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_CONNECTION_NAME
@@ -108,6 +113,7 @@ jobs:
             SQLSERVER_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_USER
             SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
             SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
+            IMPERSONATED_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/IMPERSONATED_USER
 
       - name: Enable fuse config (Linux)
         if: runner.os == 'Linux'
@@ -130,6 +136,7 @@ jobs:
           SQLSERVER_USER: '${{ steps.secrets.outputs.SQLSERVER_USER }}'
           SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
           SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
+          IMPERSONATED_USER: '${{ steps.secrets.outputs.IMPERSONATED_USER }}'
           TMPDIR: "/tmp"
           TMP: '${{ runner.temp }}'
         # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`

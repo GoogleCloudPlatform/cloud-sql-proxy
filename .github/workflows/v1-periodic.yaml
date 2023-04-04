@@ -17,6 +17,9 @@ on:
   schedule:
     - cron:  '0 2 * * *'
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   integration:
     name: integration tests
@@ -30,18 +33,18 @@ jobs:
       id-token: 'write'
     steps:
       - name: Checkout code
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
         with:
           ref: v1
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: 1.19
 
       - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0.8.1'
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@ef5d53e30bbcd8d0836f4288f5e50ff3e086997d # v1.0.0
         with:
           workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
@@ -49,7 +52,7 @@ jobs:
 
       - id: 'secrets'
         name: Get secrets
-        uses: 'google-github-actions/get-secretmanager-secrets@v0.5.0'
+        uses: google-github-actions/get-secretmanager-secrets@7fced8b6579c75d7c465165b38ec29175d9a469c # v1.0.0
         with:
           secrets: |-
             MYSQL_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_CONNECTION_NAME

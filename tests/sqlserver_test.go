@@ -44,61 +44,114 @@ func requireSQLServerVars(t *testing.T) {
 	}
 }
 
+func sqlserverDSN() string {
+	return fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
+		*sqlserverUser, *sqlserverPass, *sqlserverDB)
+}
+
 func TestSQLServerTCP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SQL Server integration tests")
 	}
 	requireSQLServerVars(t)
 
-	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
-		*sqlserverUser, *sqlserverPass, *sqlserverDB)
-	proxyConnTest(t, []string{*sqlserverConnName}, "sqlserver", dsn)
+	proxyConnTest(t, []string{*sqlserverConnName}, "sqlserver", sqlserverDSN())
 }
 
-func TestSQLServerAuthWithToken(t *testing.T) {
+func TestSQLServerImpersonation(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SQL Server integration tests")
 	}
 	requireSQLServerVars(t)
-	tok, _, cleanup := removeAuthEnvVar(t)
-	defer cleanup()
 
-	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
-		*sqlserverUser, *sqlserverPass, *sqlserverDB)
-	proxyConnTest(t,
-		[]string{"--token", tok.AccessToken, *sqlserverConnName},
-		"sqlserver", dsn)
+	proxyConnTest(t, []string{
+		"--impersonate-service-account", *impersonatedUser,
+		*sqlserverConnName},
+		"sqlserver", sqlserverDSN())
 }
 
-func TestSQLServerAuthWithCredentialsFile(t *testing.T) {
+func TestSQLServerAuthentication(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SQL Server integration tests")
 	}
 	requireSQLServerVars(t)
-	_, path, cleanup := removeAuthEnvVar(t)
-	defer cleanup()
 
-	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
-		*sqlserverUser, *sqlserverPass, *sqlserverDB)
-	proxyConnTest(t,
-		[]string{"--credentials-file", path, *sqlserverConnName},
-		"sqlserver", dsn)
-}
-
-func TestSQLServerAuthWithCredentialsJSON(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping SQL Server integration tests")
-	}
-	requireSQLServerVars(t)
 	creds := keyfile(t)
-	_, _, cleanup := removeAuthEnvVar(t)
+	tok, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
-	dsn := fmt.Sprintf("sqlserver://%s:%s@127.0.0.1?database=%s",
-		*sqlserverUser, *sqlserverPass, *sqlserverDB)
-	proxyConnTest(t,
-		[]string{"--json-credentials", creds, *sqlserverConnName},
-		"sqlserver", dsn)
+	tcs := []struct {
+		desc string
+		args []string
+	}{
+		{
+			desc: "with token",
+			args: []string{"--token", tok.AccessToken, *sqlserverConnName},
+		},
+		{
+			desc: "with token and impersonation",
+			args: []string{
+				"--token", tok.AccessToken,
+				"--impersonate-service-account", *impersonatedUser,
+				*sqlserverConnName},
+		},
+		{
+			desc: "with credentials file",
+			args: []string{"--credentials-file", path, *sqlserverConnName},
+		},
+		{
+			desc: "with credentials file and impersonation",
+			args: []string{
+				"--credentials-file", path,
+				"--impersonate-service-account", *impersonatedUser,
+				*sqlserverConnName},
+		},
+		{
+			desc: "with credentials JSON",
+			args: []string{"--json-credentials", string(creds), *sqlserverConnName},
+		},
+		{
+			desc: "with credentials JSON and impersonation",
+			args: []string{
+				"--json-credentials", string(creds),
+				"--impersonate-service-account", *impersonatedUser,
+				*sqlserverConnName},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "sqlserver", sqlserverDSN())
+		})
+	}
+}
+
+func TestSQLServerGcloudAuth(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping SQL Server integration tests")
+	}
+	requireSQLServerVars(t)
+
+	tcs := []struct {
+		desc string
+		args []string
+	}{
+		{
+			desc: "gcloud user authentication",
+			args: []string{"--gcloud-auth", *sqlserverConnName},
+		},
+		{
+			desc: "gcloud user authentication with impersonation",
+			args: []string{
+				"--gcloud-auth",
+				"--impersonate-service-account", *impersonatedUser,
+				*sqlserverConnName},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "sqlserver", sqlserverDSN())
+		})
+	}
 }
 
 func TestSQLServerHealthCheck(t *testing.T) {
