@@ -405,6 +405,13 @@ func TestNewCommandArguments(t *testing.T) {
 				LoginToken: "MYLOGINTOKEN",
 			}),
 		},
+		{
+			desc: "using the auto-ip flag",
+			args: []string{"--auto-ip", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				AutoIP: true,
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -744,6 +751,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 				QuitQuitQuit: true,
 			}),
 		},
+		{
+			desc:     "using the auto-ip envvar",
+			envName:  "CSQL_PROXY_AUTO_IP",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				AutoIP: true,
+			}),
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -1021,6 +1036,20 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{
 				"--token", "MYTOKEN",
 				"--login-token", "MYLOGINTOKEN", "p:r:i"},
+		},
+		{
+			desc: "using --private-ip with --auto-ip",
+			args: []string{
+				"--private-ip", "--auto-ip",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using private-ip query param with --auto-ip",
+			args: []string{
+				"--auto-ip",
+				"p:r:i?private-ip=true",
+			},
 		},
 	}
 

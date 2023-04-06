@@ -427,6 +427,10 @@ https://cloud.google.com/storage/docs/requester-pays`)
 		`Comma separated list of service accounts to impersonate. Last value
 is the target account.`)
 	cmd.PersistentFlags().BoolVar(&c.conf.Quiet, "quiet", false, "Log error messages only")
+	pflags.BoolVar(&c.conf.AutoIP, "auto-ip", false,
+		`Supports legacy behavior of v1 and will try to connect to first IP
+address returned by the SQL Admin API. In most cases, this flag should not be used.
+Prefer default of public IP or use --private-ip instead.`)
 
 	// Global and per instance flags
 	pflags.StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -452,7 +456,7 @@ is the target account.`)
 		// object as a single source of truth.
 		if !f.Changed && v.IsSet(f.Name) {
 			val := v.Get(f.Name)
-			pflags.Set(f.Name, fmt.Sprintf("%v", val))
+			_ = pflags.Set(f.Name, fmt.Sprintf("%v", val))
 		}
 	})
 
@@ -489,6 +493,9 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 	if ip := net.ParseIP(conf.Addr); ip == nil {
 		return newBadCommandError(fmt.Sprintf("not a valid IP address: %q", conf.Addr))
+	}
+	if userHasSet("private-ip") && userHasSet("auto-ip") {
+		return newBadCommandError("cannot specify --private-ip and --auto-ip together")
 	}
 
 	// If more than one auth method is set, error.
@@ -639,6 +646,9 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 			if err != nil {
 				return err
 			}
+			if ic.PrivateIP != nil && *ic.PrivateIP && conf.AutoIP {
+				return newBadCommandError("cannot use --auto-ip with private-ip")
+			}
 
 		}
 		ics = append(ics, ic)
@@ -653,16 +663,16 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 //	true if the value is "t" or "true" case-insensitive
 //	false if the value is "f" or "false" case-insensitive
 func parseBoolOpt(q url.Values, name string) (*bool, error) {
-	iam, ok := q[name]
+	v, ok := q[name]
 	if !ok {
 		return nil, nil
 	}
 
-	if len(iam) != 1 {
-		return nil, newBadCommandError(fmt.Sprintf("%v param should be only one value: %q", name, iam))
+	if len(v) != 1 {
+		return nil, newBadCommandError(fmt.Sprintf("%v param should be only one value: %q", name, v))
 	}
 
-	switch strings.ToLower(iam[0]) {
+	switch strings.ToLower(v[0]) {
 	case "true", "t", "":
 		enable := true
 		return &enable, nil
@@ -673,7 +683,7 @@ func parseBoolOpt(q url.Values, name string) (*bool, error) {
 		// value is not recognized
 		return nil, newBadCommandError(
 			fmt.Sprintf("%v query param should be true or false, got: %q",
-				name, iam[0],
+				name, v[0],
 			))
 	}
 
@@ -681,7 +691,7 @@ func parseBoolOpt(q url.Values, name string) (*bool, error) {
 
 // runSignalWrapper watches for SIGTERM and SIGINT and interupts execution if necessary.
 func runSignalWrapper(cmd *Command) (err error) {
-	defer cmd.cleanup()
+	defer func() { _ = cmd.cleanup() }()
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
@@ -845,7 +855,7 @@ func runSignalWrapper(cmd *Command) (err error) {
 }
 
 func quitquitquit(quitOnce *sync.Once, shutdownCh chan<- error) http.HandlerFunc {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	return func(rw http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
 			rw.WriteHeader(400)
 			return
@@ -858,7 +868,7 @@ func quitquitquit(quitOnce *sync.Once, shutdownCh chan<- error) http.HandlerFunc
 				// the proxy is already exiting.
 			}
 		})
-	})
+	}
 }
 
 func startHTTPServer(ctx context.Context, l cloudsql.Logger, addr string, mux *http.ServeMux, shutdownCh chan<- error) {
