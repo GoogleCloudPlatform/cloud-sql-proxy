@@ -66,9 +66,7 @@ func keyfile(t *testing.T) string {
 	}
 	return string(creds)
 }
-
-// proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
-func proxyConnTest(t *testing.T, args []string, driver, dsn string) {
+func proxyConnTestWithReady(t *testing.T, args []string, driver, dsn string, ready func() error) {
 	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
 	defer cancel()
 	// Start the proxy
@@ -81,6 +79,9 @@ func proxyConnTest(t *testing.T, args []string, driver, dsn string) {
 	if err != nil {
 		t.Fatalf("unable to verify proxy was serving: %s \n %s", err, output)
 	}
+	if err := ready(); err != nil {
+		t.Fatalf("proxy was not ready: %v", err)
+	}
 
 	// Connect to the instance
 	db, err := sql.Open(driver, dsn)
@@ -92,6 +93,11 @@ func proxyConnTest(t *testing.T, args []string, driver, dsn string) {
 	if err != nil {
 		t.Fatalf("unable to exec on db: %s", err)
 	}
+}
+
+// proxyConnTest is a test helper to verify the proxy works with a basic connectivity test.
+func proxyConnTest(t *testing.T, args []string, driver, dsn string) {
+	proxyConnTestWithReady(t, args, driver, dsn, func() error { return nil })
 }
 
 // testHealthCheck verifies that when a proxy client serves the given instance,

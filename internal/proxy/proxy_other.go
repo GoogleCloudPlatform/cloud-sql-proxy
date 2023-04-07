@@ -115,7 +115,7 @@ func (c *Client) Lookup(ctx context.Context, instance string, _ *fuse.EntryOut) 
 	}
 
 	s, err := c.newSocketMount(
-		ctx, &Config{UnixSocket: c.fuseTempDir},
+		ctx, withUnixSocket(*c.conf, c.fuseTempDir),
 		nil, InstanceConnConfig{Name: instance},
 	)
 	if err != nil {
@@ -145,6 +145,11 @@ func (c *Client) Lookup(ctx context.Context, instance string, _ *fuse.EntryOut) 
 	return c.NewInode(ctx, sl, fs.StableAttr{
 		Mode: 0777 | fuse.S_IFLNK},
 	), fs.OK
+}
+
+func withUnixSocket(c Config, tmpDir string) *Config {
+	c.UnixSocket = tmpDir
+	return &c
 }
 
 func (c *Client) serveFuse(ctx context.Context, notify func()) error {
