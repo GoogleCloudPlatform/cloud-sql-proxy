@@ -168,6 +168,12 @@ type Config struct {
 	// for all instances.
 	PrivateIP bool
 
+	// AutoIP supports a legacy behavior where the Proxy will connect to
+	// the first IP address returned from the SQL ADmin API response. This
+	// setting should be avoided and used only to support legacy Proxy
+	// users.
+	AutoIP bool
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
@@ -238,10 +244,15 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*i.IAMAuthN))
 	}
 
-	if i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP {
+	switch {
+	// If private IP is enabled at the instance level, or private IP is enabled globally
+	// add the option.
+	case i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP:
 		opts = append(opts, cloudsqlconn.WithPrivateIP())
-	} else {
-		opts = append(opts, cloudsqlconn.WithPublicIP())
+	case c.AutoIP:
+		opts = append(opts, cloudsqlconn.WithAutoIP())
+	default:
+		// assume public IP by default
 	}
 
 	return opts
