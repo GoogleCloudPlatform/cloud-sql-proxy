@@ -8,6 +8,17 @@ of examples of v1 vs v2 invocations covering the most common uses. See
 All the examples below use `<INSTANCE_CONNECTION_NAME>` as a placeholder for
 your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
+## Behavior Differences
+
+In v1, when a client connected, the Proxy would first try to use a public IP
+and then attempt to use a private IP. In v2, the Proxy now defaults to public
+IP without trying private IP. If you want to use private IP, you must pass
+either the `--private-ip` flag or the query parameter. See the README for details.
+
+In some cases, the v1 behavior may be preferrable. Use the `--auto-ip` flag to
+mimic v1 behavior. We generally recommend using deterministic IP address selection,
+but recognize in some legacy environments `--auto-ip` may be necessary.
+
 ## Sample Invocations
 
 ### Listen on TCP socket
