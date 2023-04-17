@@ -76,7 +76,7 @@ func (l *StructuredLogger) Debugf(format string, v ...interface{}) {
 }
 
 // NewStructuredLogger creates a Logger that logs messages using JSON.
-func NewStructuredLogger() (cloudsql.Logger, func() error) {
+func NewStructuredLogger(quiet bool) (cloudsql.Logger, func() error) {
 	// Configure structured logs to adhere to LogEntry format
 	// https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 	c := zap.NewProductionEncoderConfig()
@@ -87,8 +87,16 @@ func NewStructuredLogger() (cloudsql.Logger, func() error) {
 	c.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	enc := zapcore.NewJSONEncoder(c)
+
+	var syncer zapcore.WriteSyncer
+	// quiet disables writing to the info log
+	if quiet {
+		syncer = zapcore.AddSync(io.Discard)
+	} else {
+		syncer = zapcore.Lock(os.Stdout)
+	}
 	core := zapcore.NewTee(
-		zapcore.NewCore(enc, zapcore.Lock(os.Stdout), zap.LevelEnablerFunc(func(l zapcore.Level) bool {
+		zapcore.NewCore(enc, syncer, zap.LevelEnablerFunc(func(l zapcore.Level) bool {
 			// Anything below error, goes to the info log.
 			return l < zapcore.ErrorLevel
 		})),

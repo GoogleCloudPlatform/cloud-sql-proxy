@@ -342,9 +342,8 @@ func NewCommand(opts ...Option) *Command {
 		}
 		// Handle logger separately from config
 		if c.conf.StructuredLogs {
-			c.logger, c.cleanup = log.NewStructuredLogger()
-		}
-		if c.conf.Quiet {
+			c.logger, c.cleanup = log.NewStructuredLogger(c.conf.Quiet)
+		} else if c.conf.Quiet {
 			c.logger = log.NewStdLogger(io.Discard, os.Stderr)
 		}
 		err := parseConfig(c, c.conf, args)
@@ -845,9 +844,9 @@ func runSignalWrapper(cmd *Command) (err error) {
 	err = <-shutdownCh
 	switch {
 	case errors.Is(err, errSigInt):
-		cmd.logger.Errorf("SIGINT signal received. Shutting down...")
+		cmd.logger.Infof("SIGINT signal received. Shutting down...")
 	case errors.Is(err, errSigTerm):
-		cmd.logger.Errorf("SIGTERM signal received. Shutting down...")
+		cmd.logger.Infof("SIGTERM signal received. Shutting down...")
 	default:
 		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 	}
