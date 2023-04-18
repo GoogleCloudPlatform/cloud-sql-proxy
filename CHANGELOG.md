@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.2.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.1.2...v2.2.0) (2023-04-18)
+
+
+### Features
+
+* add support for Auto IP ([#1735](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1735)) ([83c8a64](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/83c8a6444e9e1305922550bd5b6ac373babb0ffc))
+
+
+### Bug Fixes
+
+* allow `--structured-logs` and `--quiet` flags together ([#1750](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1750)) ([0aff60e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/0aff60e5daf7995890ebc750080032bed543c9ea))
+* limit calls to SQL Admin API on startup ([#1723](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1723)) ([e1a03df](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e1a03df61120e26c7bffe86a1f971cca8bb77562))
+* pass dial options to FUSE mounts ([#1737](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1737)) ([7ecf6ac](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/7ecf6ac013760a1e775db4a8da6a99a1e1817330))
+
 ## [2.1.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.1.1...v2.1.2) (2023-03-22)
 
 
