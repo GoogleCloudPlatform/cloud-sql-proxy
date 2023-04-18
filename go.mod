@@ -6,7 +6,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/go-sql-driver/mysql v1.7.0
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/hanwen/go-fuse/v2 v2.2.0
 	github.com/jackc/pgx/v4 v4.18.1
