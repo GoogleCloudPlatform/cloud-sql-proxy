@@ -135,9 +135,9 @@ transient failures.
 
 ### Readiness Health Check Examples
 
-The DBA team performs database fail-overs drills without notice, and a
-batch job needs to restart if it cannot connect the database for 3 minutes. 
-Set the readiness check so that the pod will be restarted after 3 minutes
+The DBA team performs database fail-overs drills without notice. A
+batch job should fail if it cannot connect the database for 3 minutes. 
+Set the readiness check so that the pod will be terminated after 3 minutes
 of consecutive readiness check failures. (6 failed readiness checks taken every 30
 seconds, 6 x 30sec = 3 minutes.)
 
@@ -147,7 +147,7 @@ readinessProbe:
     path: /readiness
     port: 9090
   initialDelaySeconds: 30
-  # 300 sec period x 6 failures = 60 seconds
+  # 30 sec period x 6 failures = 3 min until the pod is terminated
   periodSeconds: 30
   failureThreshold: 6
   timeoutSeconds: 10
@@ -178,8 +178,9 @@ for more than 1 minute.
             path: /readiness
             port: 9090
         initialDelaySeconds: 10
+        # 5 sec period x 12 failures = 60 sec until the pod is terminated
         periodSeconds: 5
-        failureThreshold: 12 # restart the pod after 12 failed attempts every 5 sec = 60 sec
+        failureThreshold: 12 
         timeoutSeconds: 5
         successThreshold: 1
 ```
