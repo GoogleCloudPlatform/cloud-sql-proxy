@@ -36,7 +36,7 @@ application's availability.
 This readiness probe will fail when (1) the proxy used all its available
 concurrent connections to a database or (2) the network connection
 to the database is interrupted. These are transient states
-that usually resolve within a few seconds. If the application is resilliant to
+that usually resolve within a few seconds. If the application is resilient to
 transient database connection failures, then it should recover without requiring
 k8s to restart the pod. 
 
