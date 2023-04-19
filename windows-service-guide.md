@@ -12,10 +12,17 @@ Prerequisites: A built binary for Windows of the Cloud SQL Auth Proxy is require
 First, install the binary by:
 
 1. Create a new empty folder, e.g. `C:\Program Files\cloud-sql-proxy`
-2. Copy the binary and helper batch files
-3. Grant *read & execute* access to the `Network Service` user
-4. Create a `logs` sub-folder, e.g. `C:\Program Files\cloud-sql-proxy\logs`
-5. Grant *modify* access to the `Network Service` user
+2. Copy the binary and helper batch files 
+3. Modify the batch files as needed:
+    - `SERVICE` is the Windows internal service name (as shown in the Task Manager)
+    - `DISPLAYNAME` is the service name (as shown in the Windows Administration Console (MMC))
+    - `CREDENTIALSFILE` is the *full* path to the credentials file, where `%~dp0` points to the full path of the script file folder.
+    - `CONNECTIONNAME` is the Google SQL connection name in the format of `project-id:region:db-instance`
+    - Please note that the `--credentials-file \"%CREDENTIALSFILE%\"` argument is optional and is not needed if the local machine runs within the Google Cloud Compute Engine and "defaults" to the VM instance service account.
+4. Grant *read & execute* access to the `Network Service` user
+5. Create a `logs` sub-folder, e.g. `C:\Program Files\cloud-sql-proxy\logs`
+6. Grant *modify* access to the `Network Service` user
+7. Run the `windows_install_service.bat` batch file within an *elevated* command line prompt (read: *Run as Administrator*).
 
 After that, perform the setup:
 
