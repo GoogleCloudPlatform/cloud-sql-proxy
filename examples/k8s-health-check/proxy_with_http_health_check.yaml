@@ -99,7 +99,26 @@ spec:
         # Recommended configurations for health check probes.
         # Probe parameters can be adjusted to best fit the requirements of your application.
         # For details, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+        startupProbe:
+          # The /startup probe returns OK when the proxy is ready to receive
+          # connections from the application. In this example, k8s will check
+          # once a second for 20 seconds.
+          #
+          # We strongly recommend adding a startup probe to the proxy sidecar
+          # container. This will ensure that service traffic will be routed to
+          # the pod only after the proxy has successfully started.
+          httpGet:
+            path: /startup
+            port: 9090
+          periodSeconds: 1
+          timeoutSeconds: 5
+          failureThreshold: 20
         livenessProbe:
+          # The /liveness probe returns OK as soon as the proxy application has
+          # begun its startup process and continues to return OK until the
+          # process stops.
+          #
+          # We recommend adding a liveness probe to the proxy sidecar container.
           httpGet:
             path: /liveness
             port: 9090
@@ -120,23 +139,31 @@ spec:
           # restarted.
           failureThreshold: 5
         readinessProbe:
+          # The /readiness probe returns OK when the proxy can establish
+          # a new connections to its databases.
+          #
+          # We do not recommend adding a readiness probe to the proxy sidecar
+          # container because it may cause unnecessary interruption to the
+          # application.
+          #
+          # This probe will fail when (1) the proxy used all its available
+          # concurrent connections to a database or (2) the network connection
+          # to the database is interrupted. These are transient states
+          # that resolve within a few seconds. However, if the readiness check
+          # fails too many times, k8s will kill the pod application container
+          # and the proxy container to be shut down. This is an undesirable
+          # result if the application is using a database connection
+          # pool with built-in resilience to transient failed connections.
           httpGet:
             path: /readiness
             port: 9090
-          initialDelaySeconds: 0
+          initialDelaySeconds: 10
           periodSeconds: 10
-          timeoutSeconds: 5
+          timeoutSeconds: 10
           # Number of times the probe must report success to transition from failure to healthy state.
           # Defaults to 1 for readiness probe.
           successThreshold: 1
-          failureThreshold: 1
-        startupProbe:
-          httpGet:
-            path: /startup
-            port: 9090
-          periodSeconds: 1
-          timeoutSeconds: 5
-          failureThreshold: 20
+          failureThreshold: 6
       volumes:
       - name: <YOUR-SA-SECRET-VOLUME>
         secret:
