@@ -29,24 +29,6 @@ the proxy is in a bad state and should be restarted.
   proxy can connect successfully to at least min-ready number of instances. If
   min-ready exceeds the number of registered instances, returns a 400.
 
-For most common usage, we do not recommend adding a readiness probe to the 
-proxy sidecar container because it may cause unnecessary interruption to the
-application's availability.
-
-This readiness probe will fail when (1) the proxy used all its available
-concurrent connections to a database or (2) the network connection
-to the database is interrupted. These are transient states
-that usually resolve within a few seconds. If the application is resilient to
-transient database connection failures, then it should recover without requiring
-k8s to restart the pod. 
-
-However, if the readiness check fails, k8s will kill the pod: both application
-container and the proxy container. If your application would otherwise be able
-to recover from a transient failure, this is an unnecessary interruption which
-degrades the availability of the application.
-
-We recommend adding a readiness check to the application container instead of
-the proxy container.
 
 To configure the address, use `--http-address`. To configure the port, use
 `--http-port`.
@@ -121,4 +103,83 @@ args:
   # Replace DB_PORT with the port the proxy should listen on
   - "--port=<DB_PORT>"
   - "<INSTANCE_CONNECTION_NAME>"
+```
+
+### Readiness Health Check Configuration
+
+For most common usage, adding a readiness healthcheck to the proxy sidecar 
+container is unnecessary. An improperly configured readiness check can degrade 
+the application's availability.
+
+The proxy readiness probe fails when (1) the proxy used all its available
+concurrent connections to a database, (2) the network connection
+to the database is interrupted, (3) the database server is unavailable due
+to a maintenance operation. These are transient states that usually resolve
+within a few seconds.
+
+Most applications are resilient to transient database connection failures, and
+do not need to be restarted. We recommend adding a readiness check to the
+application container instead of the proxy container. The application can be
+programmed to report whether it is ready to receive requests, and the healthcheck
+can be tuned to restart the pod when the application is permanently stuck. 
+
+You should use the proxy container's readiness probe when these circumstances
+should cause k8s to terminate the entire pod:
+
+- The proxy can't connect to the database instances.
+- The max number of connections are in use.
+
+When you do use the proxy pod's readiness probe, be sure to set the 
+`failureThreshold` and `periodSeconds` to avoid restarting the pod on frequent
+transient failures.
+
+### Readiness Health Check Examples
+
+The DBA team performs database fail-overs drills without notice, and a
+batch job needs to restart if it cannot connect the database for 3 minutes. 
+Set the readiness check so that the pod will be restarted after 3 minutes
+of consecutive readiness check failures. (6 failed readiness checks taken every 30
+seconds, 6 x 30sec = 3 minutes.)
+
+```yaml
+readinessProbe:
+  httpGet:
+    path: /readiness
+    port: 9090
+  initialDelaySeconds: 30
+  # 300 sec period x 6 failures = 60 seconds
+  periodSeconds: 30
+  failureThreshold: 6
+  timeoutSeconds: 10
+  successThreshold: 1
+```
+
+
+A web application has a database connection pool leak and the 
+engineering team can't find the root cause. To keep the system running, 
+the application should be automatically restarted if it consumes 50 connections 
+for more than 1 minute.
+
+```yaml
+    containers:
+    - name: my-application
+      image: gcr.io/my-container/my-application:1.1
+    - name: cloud-sql-proxy
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0
+      args:
+        # Set the --max-connections flag to 50
+        - "--max-connections"
+        - "50"
+        - "--port=<DB_PORT>"
+        - "<INSTANCE_CONNECTION_NAME>"
+# ...
+    readinessProbe:
+        httpGet:
+            path: /readiness
+            port: 9090
+        initialDelaySeconds: 10
+        periodSeconds: 5
+        failureThreshold: 12 # restart the pod after 12 failed attempts every 5 sec = 60 sec
+        timeoutSeconds: 5
+        successThreshold: 1
 ```

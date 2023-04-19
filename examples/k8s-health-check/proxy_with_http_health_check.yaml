@@ -142,18 +142,9 @@ spec:
           # The /readiness probe returns OK when the proxy can establish
           # a new connections to its databases.
           #
-          # We do not recommend adding a readiness probe to the proxy sidecar
-          # container because it may cause unnecessary interruption to the
-          # application.
-          #
-          # This probe will fail when (1) the proxy used all its available
-          # concurrent connections to a database or (2) the network connection
-          # to the database is interrupted. These are transient states
-          # that resolve within a few seconds. However, if the readiness check
-          # fails too many times, k8s will kill the pod application container
-          # and the proxy container to be shut down. This is an undesirable
-          # result if the application is using a database connection
-          # pool with built-in resilience to transient failed connections.
+          # Please use the readiness probe to the proxy sidecar with caution.
+          # An improperly configured readiness probe can cause unnecessary
+          # interruption to the application. See README.md for more detail.
           httpGet:
             path: /readiness
             port: 9090
