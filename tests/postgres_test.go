@@ -234,5 +234,8 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 }
 
 func TestPostgresHealthCheck(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
 	testHealthCheck(t, *postgresConnName)
 }
