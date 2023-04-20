@@ -155,5 +155,8 @@ func TestSQLServerGcloudAuth(t *testing.T) {
 }
 
 func TestSQLServerHealthCheck(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping SQL Server integration tests")
+	}
 	testHealthCheck(t, *sqlserverConnName)
 }
