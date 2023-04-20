@@ -103,6 +103,7 @@ func proxyConnTest(t *testing.T, args []string, driver, dsn string) {
 // testHealthCheck verifies that when a proxy client serves the given instance,
 // the readiness endpoint serves http.StatusOK.
 func testHealthCheck(t *testing.T, connName string) {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), connTestTimeout)
 	defer cancel()
 
