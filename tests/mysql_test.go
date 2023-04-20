@@ -183,5 +183,8 @@ func TestMySQLGcloudAuth(t *testing.T) {
 }
 
 func TestMySQLHealthCheck(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
 	testHealthCheck(t, *mysqlConnName)
 }
