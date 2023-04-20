@@ -79,6 +79,10 @@ spec:
           # The default Cloud SQL Auth Proxy image runs as the
           # "nonroot" user and group (uid: 65532) by default.
           runAsNonRoot: true
+          # Use a read-only filesystem
+          readOnlyRootFilesystem: true
+          # Do not allow privilege escalation
+          allowPrivilegeEscalation : false
         volumeMounts:
         - name: <YOUR-SA-SECRET-VOLUME>
           mountPath: /secrets/
