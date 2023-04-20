@@ -952,6 +952,12 @@ func TestNewCommandWithErrors(t *testing.T) {
 				"--gcloud-auth", "proj:region:inst"},
 		},
 		{
+			desc: "when both gcloud auth and auto-iam-authn are set",
+			args: []string{
+				"--auto-iam-authn",
+				"--gcloud-auth", "proj:region:inst"},
+		},
+		{
 			desc: "when both gcloud auth and credentials file are set",
 			args: []string{
 				"--gcloud-auth",

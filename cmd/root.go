@@ -377,7 +377,11 @@ func NewCommand(opts ...Option) *Command {
 	pflags.StringVarP(&c.conf.CredentialsJSON, "json-credentials", "j", "",
 		"Use service account key JSON as a source of IAM credentials.")
 	pflags.BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
-		"Use gcloud's user credentials as a source of IAM credentials.")
+		`Use gcloud's user credentials as a source of IAM credentials.
+NOTE: this flag is a legacy feature and generally should not be used.
+Instead prefer Application Default Credentials
+(enabled with: gcloud auth application-default login) which
+the Proxy will then pick-up automatically.`)
 	pflags.BoolVarP(&c.conf.StructuredLogs, "structured-logs", "l", false,
 		"Enable structured logging with LogEntry format")
 	pflags.Uint64Var(&c.conf.MaxConnections, "max-connections", 0,
@@ -522,7 +526,12 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	if conf.IAMAuthN && conf.Token != "" && conf.LoginToken == "" {
 		return newBadCommandError("cannot specify --auto-iam-authn and --token without --login-token")
 	}
-	if conf.LoginToken != "" && (conf.Token == "" || !conf.IAMAuthN) {
+	if conf.IAMAuthN && conf.GcloudAuth {
+		return newBadCommandError(`cannot use --auto-iam-authn with --gcloud-auth.
+Instead use Application Default Credentials (enabled with: gcloud auth application-default login)
+and re-try with just --auto-iam-authn`)
+	}
+	if conf.LoginToken != "" && !conf.GcloudAuth && (conf.Token == "" || !conf.IAMAuthN) {
 		return newBadCommandError("cannot specify --login-token without --token and --auto-iam-authn")
 	}
 
