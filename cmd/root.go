@@ -531,7 +531,7 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 Instead use Application Default Credentials (enabled with: gcloud auth application-default login)
 and re-try with just --auto-iam-authn`)
 	}
-	if conf.LoginToken != "" && !conf.GcloudAuth && (conf.Token == "" || !conf.IAMAuthN) {
+	if conf.LoginToken != "" && (conf.Token == "" || !conf.IAMAuthN) {
 		return newBadCommandError("cannot specify --login-token without --token and --auto-iam-authn")
 	}
 
