@@ -97,7 +97,7 @@ jobs:
 
       - id: 'secrets'
         name: Get secrets
-        uses: google-github-actions/get-secretmanager-secrets@7fced8b6579c75d7c465165b38ec29175d9a469c # v1.0.0
+        uses: google-github-actions/get-secretmanager-secrets@4d6d3dfd94110800dda8d84109cb6da0f6a5919d # v1.0.1
         with:
           secrets: |-
             MYSQL_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_CONNECTION_NAME
