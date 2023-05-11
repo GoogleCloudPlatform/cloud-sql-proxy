@@ -71,7 +71,7 @@ body:
       value: |
         1. OS type and version:
         2. Cloud SQL Proxy version (`./cloud-sql-proxy --version`):
-        3. Proxy invocation command (for example, `./cloud-sql-proxy --enable_iam_login --dir /path/to/dir INSTANCE_CONNECTION_NAME`):
+        3. Proxy invocation command (for example, `./cloud-sql-proxy --port 5432 INSTANCE_CONNECTION_NAME`):
     validations:
       required: true
   - type: textarea
