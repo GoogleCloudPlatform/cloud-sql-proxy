@@ -25,10 +25,13 @@ spec:
           - name: INSTANCE_HOST
             value: "127.0.0.1"
           - name: DB_PORT
-            value: "5432"
-      - name: alloydb-auth-proxy
-        image: gcr.io/cloud-sql-connectors/alloydb-auth-proxy:latest
+            value: "3306"
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
+             # If connecting from within a VPC network, you can use the
+             # following flag to have the proxy connect over private IP
+             # - "--private-ip"
 
              # Replace DB_PORT with the port the proxy should listen on
              - "--port=5432"
