@@ -32,4 +32,4 @@ spec:
 
              # Replace DB_PORT with the port the proxy should listen on
              - "--port=5432"
-             - "<INSTANCE_URI>"
+             - "<INSTANCE_CONNECTION_NAME>"
