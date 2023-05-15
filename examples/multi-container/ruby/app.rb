@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'sinatra'
+require 'json'
 require 'sequel'
+require 'sinatra'
+
 
 set :bind, '0.0.0.0'
 set :port, 8080
@@ -35,6 +37,7 @@ DB = connect_tcp()
 
 
 get '/' do
+    content_type :json
     # Connect to the database and get the current time
-    DB["SELECT NOW()"].all
+    return DB["SELECT NOW()"].all.to_json
 end
