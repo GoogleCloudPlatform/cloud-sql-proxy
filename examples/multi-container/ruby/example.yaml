@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: gcr.io/<YOUR_PROJECT_ID>/run-cloudsql
+        image: gcr.io/<YOUR_PROJECT_ID>/run-cloudsql:latest
         ports:
           - containerPort: 8080
         env:

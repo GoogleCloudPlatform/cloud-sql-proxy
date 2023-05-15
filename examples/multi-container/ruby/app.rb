@@ -21,7 +21,7 @@ set :port, 8080
 # Configure a connection pool that connects to the proxy via TCP
 def connect_tcp
     Sequel.connect(
-        adapter: 'postgres',
+        adapter: :postgres,
         host: ENV["INSTANCE_HOST"],
         database: ENV["DB_NAME"],
         user: ENV["DB_USER"],
