@@ -54,9 +54,9 @@ Next, build the container image for the main application and deploy it:
 gcloud builds submit --tag gcr.io/<YOUR_PROJECT_ID>/run-cloudsql
 ```
 
-Finally, create a revision YAML file (multicontainers.yaml), using the `example.yaml`
-file as a reference for the deployment, listing the Cloud SQL container image as
-a sidecar:
+Finally, update the `multicontainers.yaml` file with the correct values for your
+deployment for `YOUR_PROJECT_ID`, `DB_USER`, `DB_PASS`, `DB_NAME`, and `INSTANCE_CONNECTION_NAME`
+listing the Cloud SQL container image as a sidecar:
 
 ```yaml
 apiVersion: serving.knative.dev/v1
@@ -99,7 +99,8 @@ spec:
 ```
 
 Before deploying, you will need to make sure that the service account associated
-with the Cloud Run deployment (defaults to compute engine service account) has the Cloud SQL Client role.
+with the Cloud Run deployment (defaults to compute engine service account) has the
+Cloud SQL Client role.
 See [this documentation](https://cloud.google.com/sql/docs/postgres/roles-and-permissions)
 for more details.
 
