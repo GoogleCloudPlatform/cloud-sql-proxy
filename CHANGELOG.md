@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.3.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.2.0...v2.3.0) (2023-05-16)
+
+
+### Features
+
+* Add Windows Service support ([#1696](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1696)) ([ec56eba](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ec56ebab683804885edd95365e099de7a0de578f)), closes [#277](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/277)
+
+
+### Bug Fixes
+
+* disallow auto-iam-authn with gcloud-auth ([#1762](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1762)) ([8200abe](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/8200abe467bdf9f5b458f108e5f086bdfbfa2dd9)), closes [#1754](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1754)
+
 ## [2.2.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.1.2...v2.2.0) (2023-04-18)
 
 
