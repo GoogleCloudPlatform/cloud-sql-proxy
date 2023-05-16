@@ -7,7 +7,7 @@ existing application which connects to a Cloud SQL instance.
 
 1. If you haven't already, [create a project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
 
-1. Create a 2nd Gen Cloud SQL Instance by following these
+1. Create a 2nd Gen Cloud SQL Postgres Instance by following these
 [instructions](https://cloud.google.com/sql/docs/postgres/create-instance).
 Note the connection string, database user, and database password that you create.
 
@@ -70,7 +70,6 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen1 #or gen2
-        # run.googleapis.com/vpc-access-connector: <CONNECTOR_NAME>
 
     spec:
       containers:
@@ -92,11 +91,8 @@ spec:
       - name: cloud-sql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
-             # If connecting from within a VPC network, you can use the
-             # following flag to have the proxy connect over private IP
-             # - "--private-ip"
-
-             # Ensure the port number on the --port argument matches the value of the DB_PORT env var on the my-app container.
+             # Ensure the port number on the --port argument matches the value of
+             # the DB_PORT env var on the my-app container.
              - "--port=5432"
              - "<INSTANCE_CONNECTION_NAME>"
 

@@ -23,6 +23,8 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen1 #or gen2
+        # Uncomment the following line if connecting to Cloud SQL using Private IP
+        # via a VPC access connector
         # run.googleapis.com/vpc-access-connector: <CONNECTOR_NAME>
     spec:
       containers:
@@ -44,7 +46,7 @@ spec:
       - name: cloud-sql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
-             # If connecting from within a VPC network, you can use the
+             # If connecting to a Cloud SQL instance within a VPC network, you can use the
              # following flag to have the proxy connect over private IP
              # - "--private-ip"
 
