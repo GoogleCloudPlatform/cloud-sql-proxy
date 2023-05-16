@@ -1,7 +1,8 @@
 # Cloud SQL Auth Proxy Sidecar
+
 In the following example, we will deploy the Cloud SQL Proxy as a sidecar to an existing application which connects to a Cloud SQL instance. Before starting, make sure you have a working Cloud SQL instance. Make note of the Instance Connection Name, and the database name, username, and password needed for authentication.
 
- The application you will be deploying should connect to the Cloud SQL Proxy using TCP mode (for example, using the address "127.0.0.1:3306"). Follow the examples on the [Connect Auth Proxy documentation](https://cloud.google.com/sql/docs/mysql/connect-auth-proxy#expandable-1) page to correctly configure your application. 
+The application you will be deploying should connect to the Cloud SQL Proxy using TCP mode (for example, using the address "127.0.0.1:5432"). Follow the examples on the [Connect Auth Proxy documentation](https://cloud.google.com/sql/docs/postgres/connect-auth-proxy#expandable-1) page to correctly configure your application.
 
 The connection pool is configured in the following sample:
 
@@ -28,7 +29,7 @@ end
 DB = connect_tcp()
 ```
 
- Next, build the container image for the main application and deploy it:
+Next, build the container image for the main application and deploy it:
 
 ```bash
 gcloud builds submit --tag gcr.io/<YOUR_PROJECT_ID>/run-alloydb
@@ -40,7 +41,7 @@ Finally, create a revision YAML file (multicontainers.yaml), using the `example.
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
-  annotations: 
+  annotations:
      run.googleapis.com/launch-stage: ALPHA
   name: multicontainer-service
 spec:
@@ -64,7 +65,7 @@ spec:
           - name: INSTANCE_HOST
             value: "127.0.0.1"
           - name: DB_PORT
-            value: "3306"
+            value: "5432"
       - name: cloud-sql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
@@ -72,7 +73,6 @@ spec:
              # following flag to have the proxy connect over private IP
              # - "--private-ip"
 
-             # Replace DB_PORT with the port the proxy should listen on
              - "--port=5432"
              - "<INSTANCE_CONNECTION_NAME>"
 

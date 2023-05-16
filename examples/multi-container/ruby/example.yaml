@@ -39,7 +39,7 @@ spec:
           - name: INSTANCE_HOST
             value: "127.0.0.1"
           - name: DB_PORT
-            value: "3306"
+            value: "5432"
       - name: cloud-sql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
@@ -47,6 +47,5 @@ spec:
              # following flag to have the proxy connect over private IP
              # - "--private-ip"
 
-             # Replace DB_PORT with the port the proxy should listen on
              - "--port=5432"
              - "<INSTANCE_CONNECTION_NAME>"
