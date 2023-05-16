@@ -24,8 +24,8 @@ set :port, 8080
 def connect_tcp
     Sequel.connect(
         adapter: :postgres,
-        host: ENV["INSTANCE_HOST"],
-        port: ENV["DB_PORT"],
+        host: ENV.fetch("INSTANCE_HOST") { "127.0.0.1" },
+        port: ENV.fetch("DB_PORT") { 5432 },
         database: ENV["DB_NAME"],
         user: ENV["DB_USER"],
         password: ENV["DB_PASS"],
