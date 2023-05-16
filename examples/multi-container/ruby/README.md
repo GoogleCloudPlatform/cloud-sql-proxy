@@ -98,3 +98,12 @@ Finally, you can deploy the service using:
 ```bash
 gcloud run services replace multicontainers.yaml
 ```
+
+Once the service is deployed, the console should print out a URL. You can test
+the service by sending a curl request with your gcloud identity token in the headers:
+
+```bash
+curl -H \
+"Authorization: Bearer $(gcloud auth print-identity-token)" \
+<SERVICE_URL>
+```
