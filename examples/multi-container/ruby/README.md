@@ -103,7 +103,7 @@ spec:
 ```
 
 Before deploying, you will need to make sure that the service account associated
-with the Cloud Run Deployment has the Cloud SQL Client role.
+with the Cloud Run deployment (defaults to compute engine service account) has the Cloud SQL Client role.
 See [this documentation](https://cloud.google.com/sql/docs/postgres/roles-and-permissions)
 for more details.
 
