@@ -1,8 +1,15 @@
 # Cloud SQL Auth Proxy Sidecar
 
-In the following example, we will deploy the Cloud SQL Proxy as a sidecar to an existing application which connects to a Cloud SQL instance. Before starting, make sure you have a working Cloud SQL instance. Make note of the Instance Connection Name, and the database name, username, and password needed for authentication.
+In the following example, we will deploy the Cloud SQL Proxy as a sidecar to an
+existing application which connects to a Cloud SQL instance.
+Before starting, make sure you have a working Cloud SQL instance. Make note of the
+Instance Connection Name, and the database name, username, and password needed for
+authentication.
 
-The application you will be deploying should connect to the Cloud SQL Proxy using TCP mode (for example, using the address "127.0.0.1:5432"). Follow the examples on the [Connect Auth Proxy documentation](https://cloud.google.com/sql/docs/postgres/connect-auth-proxy#expandable-1) page to correctly configure your application.
+The application you will be deploying should connect to the Cloud SQL Proxy using
+TCP mode (for example, using the address "127.0.0.1:5432"). Follow the examples
+on the [Connect Auth Proxy documentation](https://cloud.google.com/sql/docs/postgres/connect-auth-proxy#expandable-1)
+page to correctly configure your application.
 
 The connection pool is configured in the following sample:
 
@@ -32,10 +39,12 @@ DB = connect_tcp()
 Next, build the container image for the main application and deploy it:
 
 ```bash
-gcloud builds submit --tag gcr.io/<YOUR_PROJECT_ID>/run-alloydb
+gcloud builds submit --tag gcr.io/<YOUR_PROJECT_ID>/run-cloudsql
 ```
 
-Finally, create a revision YAML file (multicontainers.yaml), using the `example.yaml` file as a referece for the deployment, listing the AlloyDB container image as a sidecar:
+Finally, create a revision YAML file (multicontainers.yaml), using the `example.yaml`
+file as a reference for the deployment, listing the Cloud SQL container image as
+a sidecar:
 
 ```yaml
 apiVersion: serving.knative.dev/v1
@@ -78,7 +87,10 @@ spec:
 
 ```
 
-Before deploying, you will need to make sure that the service account associated with the Cloud Run Deployment has the Cloud SQL Client role. See [this documentation](https://cloud.google.com/sql/docs/mysql/roles-and-permissions) for more details.
+Before deploying, you will need to make sure that the service account associated
+with the Cloud Run Deployment has the Cloud SQL Client role.
+See [this documentation](https://cloud.google.com/sql/docs/postgres/roles-and-permissions)
+for more details.
 
 Finally, you can deploy the service using:
 
