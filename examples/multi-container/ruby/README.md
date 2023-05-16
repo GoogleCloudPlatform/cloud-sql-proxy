@@ -2,9 +2,20 @@
 
 In the following example, we will deploy the Cloud SQL Proxy as a sidecar to an
 existing application which connects to a Cloud SQL instance.
-Before starting, make sure you have a working Cloud SQL instance. Make note of the
-Instance Connection Name, and the database name, username, and password needed for
-authentication.
+
+## Before you begin
+
+1. If you haven't already, [create a project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
+
+1. Create a 2nd Gen Cloud SQL Instance by following these
+[instructions](https://cloud.google.com/sql/docs/postgres/create-instance).
+Note the connection string, database user, and database password that you create.
+
+1. Create a database for your application by following these
+[instructions](https://cloud.google.com/sql/docs/postgres/create-manage-databases).
+Note the database name.
+
+## Deploying the Application
 
 The application you will be deploying should connect to the Cloud SQL Proxy using
 TCP mode (for example, using the address "127.0.0.1:5432"). Follow the examples
