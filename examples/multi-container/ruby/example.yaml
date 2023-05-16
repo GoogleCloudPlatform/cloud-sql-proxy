@@ -48,4 +48,5 @@ spec:
              # - "--private-ip"
 
              - "--port=5432"
+             # instance connection name takes format "PROJECT:REGION:INSTANCE_NAME"
              - "<INSTANCE_CONNECTION_NAME>"
