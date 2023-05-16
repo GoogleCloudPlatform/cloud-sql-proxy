@@ -94,6 +94,7 @@ spec:
              # following flag to have the proxy connect over private IP
              # - "--private-ip"
 
+             # Ensure the port number on the --port argument matches the value of the DB_PORT env var on the my-app container.
              - "--port=5432"
              - "<INSTANCE_CONNECTION_NAME>"
 
