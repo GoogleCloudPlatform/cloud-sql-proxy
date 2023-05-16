@@ -23,6 +23,7 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen1 #or gen2
+        # run.googleapis.com/vpc-access-connector: <CONNECTOR_NAME>
     spec:
       containers:
       - name: my-app
