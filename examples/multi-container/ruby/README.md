@@ -54,7 +54,7 @@ Next, build the container image for the main application and deploy it:
 gcloud builds submit --tag gcr.io/<YOUR_PROJECT_ID>/run-cloudsql
 ```
 
-Finally, update the `multicontainers.yaml` file with the correct values for your
+Finally, update the `multicontainer.yaml` file with the correct values for your
 deployment for `YOUR_PROJECT_ID`, `DB_USER`, `DB_PASS`, `DB_NAME`, and `INSTANCE_CONNECTION_NAME`
 listing the Cloud SQL container image as a sidecar:
 
