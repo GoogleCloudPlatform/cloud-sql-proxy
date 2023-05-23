@@ -612,9 +612,10 @@ func (m MultiErr) Error() string {
 // Close triggers the proxyClient to shut down.
 func (c *Client) Close() error {
 	mnts := c.mnts
-
 	var mErr MultiErr
 
+	// If FUSE is enabled, unmount it and save a reference to any existing
+	// socket mounts.
 	if c.fuseDir != "" {
 		if err := c.unmountFUSE(); err != nil {
 			mErr = append(mErr, err)
@@ -622,27 +623,14 @@ func (c *Client) Close() error {
 		mnts = c.fuseMounts()
 	}
 
-	// First, close all open socket listeners to prevent additional connections.
-	for _, m := range mnts {
-		err := m.Close()
-		if err != nil {
-			mErr = append(mErr, err)
-		}
-	}
-	if c.fuseDir != "" {
-		c.waitForFUSEMounts()
-	}
-	// Next, close the dialer to prevent any additional refreshes.
+	// Close the dialer to prevent any additional refreshes.
 	cErr := c.dialer.Close()
 	if cErr != nil {
 		mErr = append(mErr, cErr)
 	}
-	if c.conf.WaitOnClose == 0 {
-		if len(mErr) > 0 {
-			return mErr
-		}
-		return nil
-	}
+
+	// Start a timer for clean shutdown (where all connections are closed).
+	// While the timer runs, additional connections will be accepted.
 	timeout := time.After(c.conf.WaitOnClose)
 	t := time.NewTicker(100 * time.Millisecond)
 	defer t.Stop()
@@ -656,9 +644,22 @@ func (c *Client) Close() error {
 		}
 		break
 	}
+	// Close all open socket listeners. Time to complete shutdown.
+	for _, m := range mnts {
+		err := m.Close()
+		if err != nil {
+			mErr = append(mErr, err)
+		}
+	}
+	if c.fuseDir != "" {
+		c.waitForFUSEMounts()
+	}
+	// Verify that all connections are closed.
 	open := atomic.LoadUint64(&c.connCount)
-	if open > 0 {
-		mErr = append(mErr, fmt.Errorf("%d connection(s) still open after waiting %v", open, c.conf.WaitOnClose))
+	if c.conf.WaitOnClose > 0 && open > 0 {
+		openErr := fmt.Errorf(
+			"%d connection(s) still open after waiting %v", open, c.conf.WaitOnClose)
+		mErr = append(mErr, openErr)
 	}
 	if len(mErr) > 0 {
 		return mErr
