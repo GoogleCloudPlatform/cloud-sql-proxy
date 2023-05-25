@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-FROM ruby:2.7.4
+FROM ruby:3.2.2
 
 # Copy local code to the container image.
 ENV APP_HOME /app
