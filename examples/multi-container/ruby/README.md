@@ -7,13 +7,23 @@ existing application which connects to a Cloud SQL instance.
 
 1. If you haven't already, [create a project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
 
-1. Create a 2nd Gen Cloud SQL Postgres Instance by following these
+1. [Enable the APIs](https://console.cloud.google.com/flows/enableapi?apiid=run.googleapis.com,sqladmin.googleapis.com,run.googleapis.com) that will be used during this tutorial:
+
+  * Cloud SQL Admin
+  * Cloud Build
+  * Cloud Run
+  
+1. Create a Cloud SQL Postgres Instance by following these
 [instructions](https://cloud.google.com/sql/docs/postgres/create-instance).
-Note the connection string, database user, and database password that you create.
+Note the connection string and default password that you create.
 
 1. Create a database for your application by following these
 [instructions](https://cloud.google.com/sql/docs/postgres/create-manage-databases).
 Note the database name.
+
+1. Optionally, create a database user for your instance following these
+[instructions](https://cloud.google.com/sql/docs/postgres/create-manage-users).
+Otherwise, use the username "postgres".
 
 ## Deploying the Application
 
@@ -98,16 +108,18 @@ spec:
 
 ```
 
+You can optionally use Secret Manager to store the database password. See
+[this documentation](https://cloud.google.com/run/docs/deploying#yaml) for more details.
+
 Before deploying, you will need to make sure that the service account associated
-with the Cloud Run deployment (defaults to compute engine service account) has the
-Cloud SQL Client role.
+with the Cloud Run deployment has the Cloud SQL Client role.
 See [this documentation](https://cloud.google.com/sql/docs/postgres/roles-and-permissions)
-for more details.
+for more details. The default service account will already have these permissions.
 
 Finally, you can deploy the service using:
 
 ```bash
-gcloud run services replace multicontainers.yaml
+gcloud run services replace multicontainer.yaml
 ```
 
 Once the service is deployed, the console should print out a URL. You can test
