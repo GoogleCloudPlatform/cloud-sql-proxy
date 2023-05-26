@@ -13,7 +13,7 @@ existing application which connects to a Cloud SQL instance.
   * Cloud Build
   * Cloud Run
   
-3. Create a Cloud SQL Postgres Instance by following these
+1. Create a Cloud SQL Postgres Instance by following these
 [instructions](https://cloud.google.com/sql/docs/postgres/create-instance).
 Note the connection string and default password that you create.
 
