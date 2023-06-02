@@ -233,6 +233,10 @@ type Config struct {
 	// OtherUserAgents is a list of space separate user agents that will be
 	// appended to the default user agent.
 	OtherUserAgents string
+
+	// RunConnectionTest determines whether the Proxy should attempt a connection
+	// to all specified instances to verify the network path is valid.
+	RunConnectionTest bool
 }
 
 // dialOptions interprets appropriate dial options for a particular instance
@@ -569,6 +573,15 @@ func (c *Client) Serve(ctx context.Context, notify func()) error {
 
 	if c.fuseDir != "" {
 		return c.serveFuse(ctx, notify)
+	}
+
+	if c.conf.RunConnectionTest {
+		c.logger.Infof("Connection test started")
+		if _, err := c.CheckConnections(ctx); err != nil {
+			c.logger.Errorf("Connection test failed")
+			return err
+		}
+		c.logger.Infof("Connection test passed")
 	}
 
 	exitCh := make(chan error)

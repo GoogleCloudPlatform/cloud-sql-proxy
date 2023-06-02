@@ -665,3 +665,52 @@ func TestCheckConnections(t *testing.T) {
 		t.Fatalf("CheckConnections number of connections: want = %v, got = %v", want, got)
 	}
 }
+
+func TestRunConnectionCheck(t *testing.T) {
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 50002,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:region:pg"},
+		},
+		RunConnectionTest: true,
+	}
+	d := &fakeDialer{}
+	c, err := proxy.NewClient(context.Background(), d, testLogger, in)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error: %v", err)
+	}
+	defer func(c *proxy.Client) {
+		err := c.Close()
+		if err != nil {
+			t.Log(err)
+		}
+	}(c)
+	go func() {
+		// Serve alone without any connections will still verify that the
+		// provided instances are reachable.
+		err := c.Serve(context.Background(), func() {})
+		if err != nil {
+			t.Log(err)
+		}
+	}()
+
+	verifyDialAttempts := func() error {
+		var tries int
+		for {
+			tries++
+			if tries == 10 {
+				return errors.New("failed to verify dial tries after 10 tries")
+			}
+			if got := d.dialAttempts(); got > 0 {
+				return nil
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
+	if err := verifyDialAttempts(); err != nil {
+		t.Fatal(err)
+	}
+
+}
