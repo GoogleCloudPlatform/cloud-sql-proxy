@@ -1,9 +1,12 @@
 {
   "extends": [
-    "config:base",
+    "config:base"
   ],
   "commitMessagePrefix": "deps: ",
   "postUpdateOptions": [
     "gomodTidy"
+  ],
+  "schedule": [
+    "before 4am on the first day of the month"
   ]
 }
