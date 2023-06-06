@@ -111,7 +111,6 @@ func main() {
 	inService, err := svc.IsWindowsService()
 	if err != nil {
 		os.Exit(99) // failed to determine service status
-		return
 	}
 
 	// running as service?
@@ -119,8 +118,8 @@ func main() {
 		err := svc.Run("cloud-sql-proxy", &windowsService{})
 		if err != nil {
 			os.Exit(100) // failed to execute service
-			return
 		}
+		return
 	}
 
 	// run as commandline
