@@ -689,10 +689,7 @@ func TestRunConnectionCheck(t *testing.T) {
 	go func() {
 		// Serve alone without any connections will still verify that the
 		// provided instances are reachable.
-		err := c.Serve(context.Background(), func() {})
-		if err != nil {
-			t.Log(err)
-		}
+		_ = c.Serve(context.Background(), func() {})
 	}()
 
 	verifyDialAttempts := func() error {
