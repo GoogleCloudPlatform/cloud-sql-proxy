@@ -412,6 +412,13 @@ func TestNewCommandArguments(t *testing.T) {
 				AutoIP: true,
 			}),
 		},
+		{
+			desc: "using the run-connection-test flag",
+			args: []string{"--run-connection-test", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				RunConnectionTest: true,
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -1055,6 +1062,13 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{
 				"--auto-ip",
 				"p:r:i?private-ip=true",
+			},
+		},
+		{
+			desc: "run-connection-test with fuse",
+			args: []string{
+				"--run-connection-test",
+				"--fuse", "myfusedir",
 			},
 		},
 	}

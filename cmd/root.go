@@ -435,6 +435,10 @@ is the target account.`)
 address returned by the SQL Admin API. In most cases, this flag should not be used.
 Prefer default of public IP or use --private-ip instead.`)
 
+	pflags.BoolVar(&c.conf.RunConnectionTest, "run-connection-test", false, `Runs a connection test
+against all specified instances. If an instance is unreachable, the Proxy exits with a failure
+status code.`)
+
 	// Global and per instance flags
 	pflags.StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
 		"(*) Address to bind Cloud SQL instance listeners.")
@@ -474,6 +478,10 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 
 	if conf.FUSEDir != "" {
+		if conf.RunConnectionTest {
+			return newBadCommandError("cannot run connection tests in FUSE mode")
+		}
+
 		if err := proxy.SupportsFUSE(); err != nil {
 			return newBadCommandError(
 				fmt.Sprintf("--fuse is not supported: %v", err),
