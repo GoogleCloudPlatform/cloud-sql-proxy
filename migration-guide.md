@@ -8,6 +8,25 @@ of examples of v1 vs v2 invocations covering the most common uses. See
 All the examples below use `<INSTANCE_CONNECTION_NAME>` as a placeholder for
 your instance connection name, e.g., `my-cool-project:us-central1:my-db`.
 
+## Container Image Name Change
+
+As part of releasing a v2, we have updated the image name to be more descriptive.
+Compare:
+
+```
+# v1
+gcr.io/cloudsql-docker/gce-proxy
+```
+
+vs
+
+```
+# v2
+gcr.io/cloud-sql-connectors/cloud-sql-proxy
+```
+
+To update to the v2 container, make sure to update the image name.
+
 ## Behavior Differences
 
 In v1, when a client connected, the Proxy would first try to use a public IP
