@@ -3,14 +3,14 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 go 1.20
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.2.4
+	cloud.google.com/go/cloudsqlconn v1.3.0
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/go-cmp v0.5.9
 	github.com/hanwen/go-fuse/v2 v2.3.0
 	github.com/jackc/pgx/v5 v5.3.1
-	github.com/microsoft/go-mssqldb v0.21.0
+	github.com/microsoft/go-mssqldb v1.1.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
