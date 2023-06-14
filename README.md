@@ -330,8 +330,9 @@ replaces colons with periods:
 
 The Proxy includes support for a connection test on startup. This test helps
 ensure the Proxy can reach the associated instance and is a quick debugging
-tool. The test will attempt to connect to the specified instance and fail
-if the instance is unreachable.
+tool. The test will attempt to connect to the specified instance(s) and fail
+if the instance is unreachable. If the test fails, the Proxy will exit with
+a non-zero exit code.
 
 ```shell
 ./cloud-sql-proxy --run-connection-test <INSTANCE_CONNECTION_NAME>
