@@ -326,6 +326,18 @@ replaces colons with periods:
 ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 ```
 
+### Testing Connectivity
+
+The Proxy includes support for a connection test on startup. This test helps
+ensure the Proxy can reach the associated instance and is a quick debugging
+tool. The test will attempt to connect to the specified instance and fail
+if the instance is unreachable.
+
+```shell
+./cloud-sql-proxy --run-connection-test <INSTANCE_CONNECTION_NAME>
+```
+
+
 ### Additional flags
 
 To see a full list of flags, use:
