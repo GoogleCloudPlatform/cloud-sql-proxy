@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.4.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.3.0...v2.4.0) (2023-06-14)
+
+
+### Features
+
+* add connection test for startup ([#1832](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1832)) ([47dae85](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/47dae851a9513bb5e3d98b59a33aef909a2bf125)), closes [#348](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/348)
+* allow connections during shutdown ([#1805](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1805)) ([4a456ed](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4a456ed6a9727f672783aee021b20a208971270d))
+
+
+### Bug Fixes
+
+* log info message for quitquitquit ([#1806](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1806)) ([4d36204](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4d36204cb6c93751e9a7d40be5e3eff94a90847f))
+* Windows service stop ([#1833](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1833)) ([17e66a7](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/17e66a7a73a88d5c29c77133cdb5ad5aebd0a4c1))
+
 ## [2.3.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.2.0...v2.3.0) (2023-05-16)
 
 
