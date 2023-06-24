@@ -66,8 +66,7 @@ func TestPostgresUnix(t *testing.T) {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
-	tmpDir, cleanup := createTempDir(t)
-	defer cleanup()
+	tmpDir := t.TempDir()
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
 		// re-use utility function to determine the Unix address in a
@@ -77,18 +76,6 @@ func TestPostgresUnix(t *testing.T) {
 
 	proxyConnTest(t,
 		[]string{"--unix-socket", tmpDir, *postgresConnName}, "pgx", dsn)
-}
-
-func createTempDir(t *testing.T) (string, func()) {
-	testDir, err := os.MkdirTemp("", "*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	return testDir, func() {
-		if err := os.RemoveAll(testDir); err != nil {
-			t.Logf("failed to cleanup temp dir: %v", err)
-		}
-	}
 }
 
 func TestPostgresImpersonation(t *testing.T) {

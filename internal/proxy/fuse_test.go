@@ -30,16 +30,6 @@ import (
 	"github.com/hanwen/go-fuse/v2/fs"
 )
 
-func randTmpDir(t interface {
-	Fatalf(format string, args ...interface{})
-}) string {
-	name, err := os.MkdirTemp("", "*")
-	if err != nil {
-		t.Fatalf("failed to create tmp dir: %v", err)
-	}
-	return name
-}
-
 // newTestClient is a convenience function for testing that creates a
 // proxy.Client and starts it. The returned cleanup function is also a
 // convenience. Callers may choose to ignore it and manually close the client.
@@ -68,9 +58,9 @@ func TestFUSEREADME(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
-	dir := randTmpDir(t)
+	dir := t.TempDir()
 	d := &fakeDialer{}
-	_, cleanup := newTestClient(t, d, dir, randTmpDir(t))
+	_, cleanup := newTestClient(t, d, dir, t.TempDir())
 
 	fi, err := os.Stat(dir)
 	if err != nil {
@@ -131,8 +121,8 @@ func TestFUSEDialInstance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
-	fuseDir := randTmpDir(t)
-	fuseTempDir := randTmpDir(t)
+	fuseDir := t.TempDir()
+	fuseTempDir := t.TempDir()
 	tcs := []struct {
 		desc         string
 		wantInstance string
@@ -181,7 +171,6 @@ func TestFUSEDialInstance(t *testing.T) {
 			if want, inst := tc.wantInstance, got[0]; want != inst {
 				t.Fatalf("instance: want = %v, got = %v", want, inst)
 			}
-
 		})
 	}
 }
@@ -190,8 +179,8 @@ func TestFUSEReadDir(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
-	fuseDir := randTmpDir(t)
-	_, cleanup := newTestClient(t, &fakeDialer{}, fuseDir, randTmpDir(t))
+	fuseDir := t.TempDir()
+	_, cleanup := newTestClient(t, &fakeDialer{}, fuseDir, t.TempDir())
 	defer cleanup()
 
 	// Initiate a connection so the FUSE server will list it in the dir entries.
@@ -221,7 +210,7 @@ func TestFUSEErrors(t *testing.T) {
 	}
 	ctx := context.Background()
 	d := &fakeDialer{}
-	c, _ := newTestClient(t, d, randTmpDir(t), randTmpDir(t))
+	c, _ := newTestClient(t, d, t.TempDir(), t.TempDir())
 
 	// Simulate FUSE file access by invoking Lookup directly to control
 	// how the socket cache is populated.
@@ -259,9 +248,9 @@ func TestFUSEWithBadInstanceName(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
-	fuseDir := randTmpDir(t)
+	fuseDir := t.TempDir()
 	d := &fakeDialer{}
-	_, cleanup := newTestClient(t, d, fuseDir, randTmpDir(t))
+	_, cleanup := newTestClient(t, d, fuseDir, t.TempDir())
 	defer cleanup()
 
 	_, dialErr := net.Dial("unix", filepath.Join(fuseDir, "notvalid"))
@@ -278,9 +267,9 @@ func TestFUSECheckConnections(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
-	fuseDir := randTmpDir(t)
+	fuseDir := t.TempDir()
 	d := &fakeDialer{}
-	c, cleanup := newTestClient(t, d, fuseDir, randTmpDir(t))
+	c, cleanup := newTestClient(t, d, fuseDir, t.TempDir())
 	defer cleanup()
 
 	// first establish a connection to "register" it with the proxy
@@ -313,9 +302,9 @@ func TestFUSEClose(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
-	fuseDir := randTmpDir(t)
+	fuseDir := t.TempDir()
 	d := &fakeDialer{}
-	c, _ := newTestClient(t, d, fuseDir, randTmpDir(t))
+	c, _ := newTestClient(t, d, fuseDir, t.TempDir())
 
 	// first establish a connection to "register" it with the proxy
 	conn := tryDialUnix(t, filepath.Join(fuseDir, "proj:reg:mysql"))
@@ -336,7 +325,7 @@ func TestFUSEWithBadDir(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
-	conf := &proxy.Config{FUSEDir: "/not/a/dir", FUSETempDir: randTmpDir(t)}
+	conf := &proxy.Config{FUSEDir: "/not/a/dir", FUSETempDir: t.TempDir()}
 	_, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, conf)
 	if err == nil {
 		t.Fatal("proxy client should fail with bad dir")

@@ -100,25 +100,11 @@ func (*errorDialer) Close() error {
 	return errors.New("errorDialer returns error on Close")
 }
 
-func createTempDir(t *testing.T) (string, func()) {
-	testDir, err := os.MkdirTemp("", "*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	return testDir, func() {
-		if err := os.RemoveAll(testDir); err != nil {
-			t.Logf("failed to cleanup temp dir: %v", err)
-		}
-	}
-}
-
 func TestClientInitialization(t *testing.T) {
 	ctx := context.Background()
-	testDir, cleanup := createTempDir(t)
+	testDir := t.TempDir()
 	testUnixSocketPath := path.Join(testDir, "db")
 	testUnixSocketPathPg := path.Join(testDir, "db", ".s.PGSQL.5432")
-
-	defer cleanup()
 
 	tcs := []struct {
 		desc          string
@@ -518,8 +504,7 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 	// it on shutdown. This test ensures the existing socket does not cause
 	// problems for a second invocation.
 	ctx := context.Background()
-	testDir, cleanup := createTempDir(t)
-	defer cleanup()
+	testDir := t.TempDir()
 
 	in := &proxy.Config{
 		UnixSocket: testDir,
@@ -709,5 +694,4 @@ func TestRunConnectionCheck(t *testing.T) {
 	if err := verifyDialAttempts(); err != nil {
 		t.Fatal(err)
 	}
-
 }

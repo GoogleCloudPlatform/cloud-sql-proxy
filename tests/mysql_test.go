@@ -69,8 +69,7 @@ func TestMySQLUnix(t *testing.T) {
 		t.Skip("skipping MySQL integration tests")
 	}
 	requireMySQLVars(t)
-	tmpDir, cleanup := createTempDir(t)
-	defer cleanup()
+	tmpDir := t.TempDir()
 
 	cfg := mysql.Config{
 		User:                 *mysqlUser,

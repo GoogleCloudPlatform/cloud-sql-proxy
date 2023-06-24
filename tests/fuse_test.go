@@ -29,8 +29,7 @@ func TestPostgresFUSEConnect(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
-	tmpDir, cleanup := createTempDir(t)
-	defer cleanup()
+	tmpDir := t.TempDir()
 
 	host := proxy.UnixAddress(tmpDir, *postgresConnName)
 	dsn := fmt.Sprintf(
@@ -41,8 +40,7 @@ func TestPostgresFUSEConnect(t *testing.T) {
 }
 
 func testFUSE(t *testing.T, tmpDir, host string, dsn string) {
-	tmpDir2, cleanup2 := createTempDir(t)
-	defer cleanup2()
+	tmpDir2 := t.TempDir()
 
 	waitForFUSE := func() error {
 		var err error
