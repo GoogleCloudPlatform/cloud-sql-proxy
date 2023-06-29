@@ -261,7 +261,7 @@ To configure ports on a per instance basis, use the `port` query param:
 
 ### Configuring Listening Address
 
-To overide the choice of `localhost`, use the `--address` flag:
+To override the choice of `localhost`, use the `--address` flag:
 
 ```shell
 # Starts a listener on all interfaces at port 5432
@@ -440,7 +440,7 @@ Supported traces include:
 To enable Cloud Monitoring and Cloud Trace, use the `--telemetry-project` flag
 with the project where you want to view metrics and traces. To configure the
 metrics prefix used by Cloud Monitoring, use the `--telemetry-prefix` flag. When
-enabling telementry, both Cloud Monitoring and Cloud Trace are enabled. To
+enabling telemetry, both Cloud Monitoring and Cloud Trace are enabled. To
 disable Cloud Monitoring, use `--disable-metrics`. To disable Cloud Trace, use
 `--disable-traces`.
 
@@ -525,7 +525,7 @@ Admin API . If your Proxy reports request quota errors, we recommend deploying
 the Proxy with a connection pooler like [pgbouncer][] or [ProxySQL][]. For
 details, see [Running the Cloud SQL Proxy as a Service][service-example].
 
-### Can I share the Proxy across mulitple applications?
+### Can I share the Proxy across multiple applications?
 
 Instead of using a single Proxy across multiple applications, we recommend using
 one Proxy instance for every application process. The Proxy uses the context's
@@ -538,7 +538,7 @@ unclear from an IAM perspective which principal is doing what.
 After downloading a binary from the releases page, copy the sha256sum value
 that corresponds with the binary you chose.
 
-Then run this command (make sure to add the asterix before the file name):
+Then run this command (make sure to add the asterisk before the file name):
 
 ``` shell
 echo '<RELEASE_PAGE_SHA_HERE> *<NAME_OF_FILE_HERE>' | shasum -c
