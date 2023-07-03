@@ -1142,13 +1142,11 @@ func tryDial(method, addr string) (*http.Response, error) {
 		return nil, err
 	}
 	req := &http.Request{Method: method, URL: u}
-	// Never wait longer than 30 seconds for an HTTP response.
-	cl := &http.Client{Timeout: 30 * time.Second}
 	for {
 		if attempts > 10 {
 			return resp, err
 		}
-		resp, err = cl.Do(req)
+		resp, err = http.DefaultClient.Do(req)
 		if err != nil {
 			attempts++
 			time.Sleep(time.Second)
@@ -1219,24 +1217,15 @@ func TestQuitQuitQuit(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("expected a 400 status, got = %v", resp.StatusCode)
 	}
-	resp, err = tryDial("POST", "http://localhost:9192/quitquitquit")
+	resp, err = http.Post("http://localhost:9192/quitquitquit", "", nil)
 	if err != nil {
 		t.Fatalf("failed to dial endpoint: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected a 200 status, got = %v", resp.StatusCode)
 	}
-
-	var gotErr error
-	select {
-	case err := <-errCh:
-		gotErr = err
-	case <-time.After(30 * time.Second):
-		t.Fatal("timeout waiting for error")
-	}
-
-	if !errors.Is(gotErr, errQuitQuitQuit) {
-		t.Fatalf("want = %v, got = %v", errQuitQuitQuit, gotErr)
+	if want, got := errQuitQuitQuit, <-errCh; !errors.Is(got, want) {
+		t.Fatalf("want = %v, got = %v", want, got)
 	}
 }
 
