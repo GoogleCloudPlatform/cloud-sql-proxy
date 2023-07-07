@@ -3,27 +3,27 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 go 1.20
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.3.0
+	cloud.google.com/go/cloudsqlconn v1.4.0
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/go-cmp v0.5.9
 	github.com/hanwen/go-fuse/v2 v2.3.0
 	github.com/jackc/pgx/v5 v5.3.1
-	github.com/microsoft/go-mssqldb v1.1.0
+	github.com/microsoft/go-mssqldb v1.3.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	go.opencensus.io v0.24.0
 	go.uber.org/zap v1.24.0
-	golang.org/x/oauth2 v0.9.0
+	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sys v0.10.0
 	google.golang.org/api v0.130.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
-	cloud.google.com/go/compute v1.19.3 // indirect
+	cloud.google.com/go/compute v1.20.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/monitoring v1.13.0 // indirect
 	cloud.google.com/go/trace v1.9.0 // indirect
