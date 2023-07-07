@@ -357,6 +357,22 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the psc flag",
+			args: []string{"--psc", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				PSC: true,
+			}),
+		},
+		{
+			desc: "using the psc flag query param",
+			args: []string{"proj:region:inst?psc=true"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					PSC: pointer(true),
+				}},
+			}),
+		},
+		{
 			desc: "using the quota project flag",
 			args: []string{"--quota-project", "proj", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -639,6 +655,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			}),
 		},
 		{
+			desc:     "using the psc envvar",
+			envName:  "CSQL_PROXY_PSC",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				PSC: true,
+			}),
+		},
+		{
 			desc:     "using the quota project envvar",
 			envName:  "CSQL_PROXY_QUOTA_PROJECT",
 			envValue: "proj",
@@ -905,6 +929,79 @@ func TestPrivateIPQueryParams(t *testing.T) {
 	}
 }
 
+func TestPSCQueryParams(t *testing.T) {
+	tcs := []struct {
+		desc string
+		args []string
+		want *bool
+	}{
+		{
+			desc: "when the query string is absent",
+			args: []string{"proj:region:inst"},
+			want: nil,
+		},
+		{
+			desc: "when the query string has no value",
+			args: []string{"proj:region:inst?psc"},
+			want: pointer(true),
+		},
+		{
+			desc: "when the query string is true",
+			args: []string{"proj:region:inst?psc=true"},
+			want: pointer(true),
+		},
+		{
+			desc: "when the query string is True",
+			args: []string{"proj:region:inst?psc=True"},
+			want: pointer(true),
+		},
+		{
+			desc: "when the query string is (short) T",
+			args: []string{"proj:region:inst?psc=T"},
+			want: pointer(true),
+		},
+		{
+			desc: "when the query string is (short) t",
+			args: []string{"proj:region:inst?psc=t"},
+			want: pointer(true),
+		},
+		{
+			desc: "when the query string is false",
+			args: []string{"proj:region:inst?psc=false"},
+			want: pointer(false),
+		},
+		{
+			desc: "when the query string is (short) f",
+			args: []string{"proj:region:inst?psc=f"},
+			want: pointer(false),
+		},
+		{
+			desc: "when the query string is False",
+			args: []string{"proj:region:inst?psc=False"},
+			want: pointer(false),
+		},
+		{
+			desc: "when the query string is (short) F",
+			args: []string{"proj:region:inst?psc=F"},
+			want: pointer(false),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			c, err := invokeProxyCommand(tc.args)
+			if err != nil {
+				t.Fatalf("command.Execute: %v", err)
+			}
+			if tc.want == nil && c.conf.Instances[0].PSC == nil {
+				return
+			}
+			if got := c.conf.Instances[0].PSC; *got != *tc.want {
+				t.Errorf("args = %v, want = %v, got = %v", tc.args, *tc.want, *got)
+			}
+		})
+	}
+}
+
 func TestNewCommandWithErrors(t *testing.T) {
 	tcs := []struct {
 		desc string
@@ -1062,6 +1159,17 @@ func TestNewCommandWithErrors(t *testing.T) {
 			args: []string{
 				"--auto-ip",
 				"p:r:i?private-ip=true",
+			},
+		},
+		{
+			desc: "using private IP and psc query params",
+			args: []string{"p:r:i?private-ip=true&psc=true"},
+		},
+		{
+			desc: "using --private-ip with --psc",
+			args: []string{
+				"--private-ip", "--psc",
+				"p:r:i",
 			},
 		},
 		{
