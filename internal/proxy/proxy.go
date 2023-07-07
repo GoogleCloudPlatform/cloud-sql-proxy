@@ -103,7 +103,7 @@ type InstanceConnConfig struct {
 	// private IP address instead of the public IP address
 	PrivateIP *bool
 
-	// PSC tells the proxy to attempt to connect  to the db instance's
+	// PSC tells the proxy to attempt to connect to the db instance's
 	// private service connect endpoint
 	PSC *bool
 }
