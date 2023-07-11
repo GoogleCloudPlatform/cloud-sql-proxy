@@ -102,6 +102,10 @@ type InstanceConnConfig struct {
 	// PrivateIP tells the proxy to attempt to connect to the db instance's
 	// private IP address instead of the public IP address
 	PrivateIP *bool
+
+	// PSC tells the proxy to attempt to connect to the db instance's
+	// private service connect endpoint
+	PSC *bool
 }
 
 // Config contains all the configuration provided by the caller.
@@ -167,6 +171,10 @@ type Config struct {
 	// PrivateIP enables connections via the database server's private IP address
 	// for all instances.
 	PrivateIP bool
+
+	// PSC enables connections via the database server's private service connect
+	// endpoint for all instances
+	PSC bool
 
 	// AutoIP supports a legacy behavior where the Proxy will connect to
 	// the first IP address returned from the SQL ADmin API response. This
@@ -253,6 +261,10 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	// add the option.
 	case i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP:
 		opts = append(opts, cloudsqlconn.WithPrivateIP())
+	// If PSC is enabled at the instance level, or PSC is enabled globally
+	// add the option.
+	case i.PSC != nil && *i.PSC || i.PSC == nil && c.PSC:
+		opts = append(opts, cloudsqlconn.WithPSC())
 	case c.AutoIP:
 		opts = append(opts, cloudsqlconn.WithAutoIP())
 	default:
