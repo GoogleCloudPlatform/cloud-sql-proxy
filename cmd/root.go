@@ -398,6 +398,8 @@ the Proxy will then pick-up automatically.`)
 		"Disable Cloud Monitoring integration (used with --telemetry-project)")
 	pflags.StringVar(&c.conf.TelemetryPrefix, "telemetry-prefix", "",
 		"Prefix for Cloud Monitoring metrics.")
+	pflags.BoolVar(&c.conf.ExitZeroOnSigterm, "exit-zero-on-sigterm", false,
+		"Exit with 0 exit code when Sigterm received (default is 143)")
 	pflags.BoolVar(&c.conf.Prometheus, "prometheus", false,
 		"Enable Prometheus HTTP endpoint /metrics on localhost")
 	pflags.StringVar(&c.conf.PrometheusNamespace, "prometheus-namespace", "",
@@ -756,7 +758,11 @@ func runSignalWrapper(cmd *Command) (err error) {
 		case syscall.SIGINT:
 			shutdownCh <- errSigInt
 		case syscall.SIGTERM:
-			shutdownCh <- errSigTerm
+			if cmd.conf.ExitZeroOnSigterm {
+				shutdownCh <- errSigTerm0
+			} else {
+				shutdownCh <- errSigTerm
+			}
 		}
 	}()
 

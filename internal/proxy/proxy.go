@@ -202,6 +202,8 @@ type Config struct {
 	// TelemetryTracingSampleRate sets the rate at which traces are
 	// samples. A higher value means fewer traces.
 	TelemetryTracingSampleRate int
+	// ExitZeroOnSigterm exits with 0 exit code when Sigterm received
+	ExitZeroOnSigterm bool
 	// DisableTraces disables tracing when TelemetryProject is set.
 	DisableTraces bool
 	// DisableMetrics disables metrics when TelemetryProject is set.
