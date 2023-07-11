@@ -29,7 +29,7 @@ var (
 		Code: 143,
 	}
 
-	errSigTerm0 = &exitError{
+	errSigTermZero = &exitError{
 		Err:  errors.New("SIGTERM signal received"),
 		Code: 0,
 	}

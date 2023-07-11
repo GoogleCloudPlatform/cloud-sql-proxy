@@ -759,7 +759,7 @@ func runSignalWrapper(cmd *Command) (err error) {
 			shutdownCh <- errSigInt
 		case syscall.SIGTERM:
 			if cmd.conf.ExitZeroOnSigterm {
-				shutdownCh <- errSigTerm0
+				shutdownCh <- errSigTermZero
 			} else {
 				shutdownCh <- errSigTerm
 			}
