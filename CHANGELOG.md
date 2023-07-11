@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.4.0...v2.5.0) (2023-07-11)
+
+
+### Features
+
+* add PSC support to proxy ([#1863](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1863)) ([496974a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/496974a31555d64f144d24247507c0ec457d7edd))
+
 ## [2.4.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.3.0...v2.4.0) (2023-06-14)
 
 
