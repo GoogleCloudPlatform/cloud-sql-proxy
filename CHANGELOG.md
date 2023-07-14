@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.5.0...v2.6.0) (2023-07-14)
+
+
+### Features
+
+* add support for exit zero on sigterm ([#1870](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1870)) ([e0a97dd](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e0a97ddd5bea94054b1da0c3f0844ab47ad6f126))
+
 ## [2.5.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.4.0...v2.5.0) (2023-07-11)
 
 
