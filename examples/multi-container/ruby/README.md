@@ -87,7 +87,7 @@ spec:
         image: gcr.io/<YOUR_PROJECT_ID>/run-cloudsql
         ports:
           - containerPort: 8080
-       env:
+        env:
           - name: DB_USER
             value: <DB_USER>
           - name: DB_PASS

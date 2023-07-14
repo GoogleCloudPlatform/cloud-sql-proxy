@@ -452,6 +452,8 @@ status code.`)
 		"(*) Enables Automatic IAM Authentication for all instances")
 	pflags.BoolVar(&c.conf.PrivateIP, "private-ip", false,
 		"(*) Connect to the private ip address for all instances")
+	pflags.BoolVar(&c.conf.PSC, "psc", false,
+		"(*) Connect to the PSC endpoint for all instances")
 
 	v := viper.NewWithOptions(viper.EnvKeyReplacer(strings.NewReplacer("-", "_")))
 	v.SetEnvPrefix(envPrefix)
@@ -509,6 +511,11 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 	if userHasSet("private-ip") && userHasSet("auto-ip") {
 		return newBadCommandError("cannot specify --private-ip and --auto-ip together")
+	}
+
+	// If more than one IP type is set, error.
+	if conf.PrivateIP && conf.PSC {
+		return newBadCommandError("cannot specify --private-ip and --psc flags at the same time")
 	}
 
 	// If more than one auth method is set, error.
@@ -666,6 +673,15 @@ and re-try with just --auto-iam-authn`)
 			}
 			if ic.PrivateIP != nil && *ic.PrivateIP && conf.AutoIP {
 				return newBadCommandError("cannot use --auto-ip with private-ip")
+			}
+
+			ic.PSC, err = parseBoolOpt(q, "psc")
+			if err != nil {
+				return err
+			}
+
+			if ic.PrivateIP != nil && ic.PSC != nil {
+				return newBadCommandError("cannot specify both private-ip and psc query params")
 			}
 
 		}
