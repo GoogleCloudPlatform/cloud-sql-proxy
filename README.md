@@ -54,7 +54,7 @@ following instructions for your OS and CPU architecture.
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.6.0"
 
 curl "$URL/cloud-sql-proxy.linux.amd64" -o cloud-sql-proxy
 
@@ -68,7 +68,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.6.0"
 
 curl "$URL/cloud-sql-proxy.linux.386" -o cloud-sql-proxy
 
@@ -82,7 +82,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.6.0"
 
 curl "$URL/cloud-sql-proxy.linux.arm64" -o cloud-sql-proxy
 
@@ -96,7 +96,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.6.0"
 
 curl "$URL/cloud-sql-proxy.linux.arm" -o cloud-sql-proxy
 
@@ -110,7 +110,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.6.0"
 
 curl "$URL/cloud-sql-proxy.darwin.amd64" -o cloud-sql-proxy
 
@@ -124,7 +124,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.6.0"
 
 curl "$URL/cloud-sql-proxy.darwin.arm64" -o cloud-sql-proxy
 
@@ -138,7 +138,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.6.0/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -148,7 +148,7 @@ curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0/
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.3.0/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.6.0/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -261,7 +261,7 @@ To configure ports on a per instance basis, use the `port` query param:
 
 ### Configuring Listening Address
 
-To overide the choice of `localhost`, use the `--address` flag:
+To override the choice of `localhost`, use the `--address` flag:
 
 ```shell
 # Starts a listener on all interfaces at port 5432
@@ -325,6 +325,19 @@ replaces colons with periods:
 #    C:\cloudsql\myproject.my-region.mysql
 ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 ```
+
+### Testing Connectivity
+
+The Proxy includes support for a connection test on startup. This test helps
+ensure the Proxy can reach the associated instance and is a quick debugging
+tool. The test will attempt to connect to the specified instance(s) and fail
+if the instance is unreachable. If the test fails, the Proxy will exit with
+a non-zero exit code.
+
+```shell
+./cloud-sql-proxy --run-connection-test <INSTANCE_CONNECTION_NAME>
+```
+
 
 ### Additional flags
 
@@ -427,7 +440,7 @@ Supported traces include:
 To enable Cloud Monitoring and Cloud Trace, use the `--telemetry-project` flag
 with the project where you want to view metrics and traces. To configure the
 metrics prefix used by Cloud Monitoring, use the `--telemetry-prefix` flag. When
-enabling telementry, both Cloud Monitoring and Cloud Trace are enabled. To
+enabling telemetry, both Cloud Monitoring and Cloud Trace are enabled. To
 disable Cloud Monitoring, use `--disable-metrics`. To disable Cloud Trace, use
 `--disable-traces`.
 
@@ -512,7 +525,7 @@ Admin API . If your Proxy reports request quota errors, we recommend deploying
 the Proxy with a connection pooler like [pgbouncer][] or [ProxySQL][]. For
 details, see [Running the Cloud SQL Proxy as a Service][service-example].
 
-### Can I share the Proxy across mulitple applications?
+### Can I share the Proxy across multiple applications?
 
 Instead of using a single Proxy across multiple applications, we recommend using
 one Proxy instance for every application process. The Proxy uses the context's
@@ -525,7 +538,7 @@ unclear from an IAM perspective which principal is doing what.
 After downloading a binary from the releases page, copy the sha256sum value
 that corresponds with the binary you chose.
 
-Then run this command (make sure to add the asterix before the file name):
+Then run this command (make sure to add the asterisk before the file name):
 
 ``` shell
 echo '<RELEASE_PAGE_SHA_HERE> *<NAME_OF_FILE_HERE>' | shasum -c

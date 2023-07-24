@@ -29,6 +29,11 @@ var (
 		Code: 143,
 	}
 
+	errSigTermZero = &exitError{
+		Err:  errors.New("SIGTERM signal received"),
+		Code: 0,
+	}
+
 	errQuitQuitQuit = &exitError{
 		Err:  errors.New("/quitquitquit received request"),
 		Code: 0, // This error guarantees a clean exit.
