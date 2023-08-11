@@ -15,7 +15,10 @@
 // Package util contains utility functions for use throughout the Cloud SQL Auth proxy.
 package util
 
-import "strings"
+import (
+	_ "embed"
+	"strings"
+)
 
 // SplitName splits a fully qualified instance into its project, region, and
 // instance name components. While we make the transition to regionalized
@@ -43,4 +46,27 @@ func SplitName(instance string) (project, region, name string) {
 	default:
 		return spl[0], spl[1], spl[2]
 	}
+}
+
+// versionString indicates the version of the proxy currently in use.
+//
+//go:embed version.txt
+var versionString string
+
+// metadataString indicates additional build or distribution metadata.
+var metadataString = ""
+
+// semanticVersion returns the version of the proxy in a semver format.
+func SemanticVersion() string {
+	v := strings.TrimSpace(versionString)
+	if metadataString != "" {
+		v += "+" + metadataString
+	}
+	return v
+}
+
+// userAgentFromVersionString returns an appropriate user agent string
+// for identifying this proxy process.
+func UserAgentFromVersionString() string {
+	return "cloud_sql_proxy/" + SemanticVersion()
 }

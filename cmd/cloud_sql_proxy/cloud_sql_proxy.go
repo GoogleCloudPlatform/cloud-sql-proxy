@@ -274,28 +274,6 @@ Information for all flags:
 
 var defaultTmp = filepath.Join(os.TempDir(), "cloudsql-proxy-tmp")
 
-// versionString indiciates the version of the proxy currently in use.
-//
-//go:embed version.txt
-var versionString string
-
-// metadataString indiciates additional build or distribution metadata.
-var metadataString = ""
-
-// semanticVersion returns the version of the proxy in a semver format.
-func semanticVersion() string {
-	v := strings.TrimSpace(versionString)
-	if metadataString != "" {
-		v += "+" + metadataString
-	}
-	return v
-}
-
-// userAgentFromVersionString returns an appropriate user agent string for identifying this proxy process.
-func userAgentFromVersionString() string {
-	return "cloud_sql_proxy/" + semanticVersion()
-}
-
 const accountErrorSuffix = `Please create a new VM with Cloud SQL access (scope) enabled under "Identity and API access". Alternatively, create a new "service account key" and specify it using the -credential_file parameter`
 
 type stringListValue []string
@@ -548,7 +526,7 @@ use the value from the flag, Not compatible with -fuse.`,
 	flag.Parse()
 
 	if *version {
-		fmt.Println("Cloud SQL Auth proxy:", semanticVersion())
+		fmt.Println("Cloud SQL Auth proxy:", util.SemanticVersion())
 		return 0
 	}
 
@@ -664,7 +642,7 @@ use the value from the flag, Not compatible with -fuse.`,
 		Certs: certs.NewCertSourceOpts(client, certs.RemoteOpts{
 			APIBasePath:    *host,
 			IgnoreRegion:   !*checkRegion,
-			UserAgent:      userAgentFromVersionString(),
+			UserAgent:      util.UserAgentFromVersionString(),
 			IPAddrTypeOpts: ipAddrTypeOptsInput,
 			EnableIAMLogin: *enableIAMLogin,
 			TokenSource:    tokSrc,
