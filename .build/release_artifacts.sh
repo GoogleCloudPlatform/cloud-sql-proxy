@@ -58,11 +58,27 @@ done
 
 tag_latest() {
     local new_version=$1
+    local minor_version=${new_version%.*}
+    local major_version=${new_version%.*.*}
     for registry in "gcr.io" "us.gcr.io" "eu.gcr.io" "asia.gcr.io"
     do
         local base_image="$registry/cloud-sql-connectors/cloud-sql-proxy"
         echo "Tagging $new_version as latest in $registry"
         gcloud container images add-tag --quiet "$base_image:$new_version" "$base_image:latest"
+        gcloud container images add-tag --quiet "$base_image:$new_version" "$base_image:$minor_version"
+        gcloud container images add-tag --quiet "$base_image:$new_version" "$base_image:$major_version"
+        echo "Addings tags to $new_version-alpine image in $registry"
+        gcloud container images add-tag --quiet "$base_image:$new_version-alpine" "$base_image:alpine"
+        gcloud container images add-tag --quiet "$base_image:$new_version-alpine" "$base_image:$minor_version-alpine"
+        gcloud container images add-tag --quiet "$base_image:$new_version-alpine" "$base_image:$major_version-alpine"
+        echo "Addings tags to $new_version-buster image in $registry"
+        gcloud container images add-tag --quiet "$base_image:$new_version-buster" "$base_image:buster"
+        gcloud container images add-tag --quiet "$base_image:$new_version-buster" "$base_image:$minor_version-buster"
+        gcloud container images add-tag --quiet "$base_image:$new_version-buster" "$base_image:$major_version-buster"
+        echo "Addings tags to $new_version-bullseye image in $registry"
+        gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:bullseye"
+        gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:$minor_version-bullseye"
+        gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:$major_version-bullseye"
     done
 }
 
