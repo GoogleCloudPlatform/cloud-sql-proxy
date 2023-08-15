@@ -43,7 +43,7 @@ gcloud builds submit --async --config .build/bullseye.yaml --substitutions _VERS
 
 # Build the binarys and upload to GCS
 gcloud builds submit --config .build/gcs_upload.yaml --substitutions _VERSION=$VERSION
-# cleam up any artifacts.json left by previous builds
+# clean up any artifacts.json left by previous builds
 gsutil rm -f gs://cloud-sql-connectors/cloud-sql-proxy/v$VERSION/*.json 2> /dev/null || true
 
 # Generate sha256 hashes for authentication
