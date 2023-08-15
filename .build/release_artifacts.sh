@@ -58,7 +58,10 @@ done
 
 tag_latest() {
     local new_version=$1
+    # strip patch version from version, x.y.z -> x.y
+    # https://stackoverflow.com/questions/49252680/bash-get-major-minor-version-from-string
     local minor_version=${new_version%.*}
+    # strip minor and patch version from version, x.y.z -> x 
     local major_version=${new_version%.*.*}
     for registry in "gcr.io" "us.gcr.io" "eu.gcr.io" "asia.gcr.io"
     do
