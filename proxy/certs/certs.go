@@ -37,7 +37,7 @@ import (
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 )
 
-const defaultUserAgent = "custom cloud_sql_proxy version >= 1.10"
+var defaultUserAgent = util.UserAgentFromVersionString()
 
 // NewCertSource returns a CertSource which can be used to authenticate using
 // the provided client, which must not be nil.
