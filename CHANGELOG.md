@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.6.0...v2.6.1) (2023-08-16)
+
+
+### Bug Fixes
+
+* remove the error message for zero on sigterm ([#1902](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1902)) ([55f0f60](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/55f0f60c9701a22e657ba814c9cfe6221c4840e7))
+
 ## [2.6.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.5.0...v2.6.0) (2023-07-14)
 
 
