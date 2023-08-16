@@ -80,9 +80,9 @@ tag_latest() {
         gcloud container images add-tag --quiet "$base_image:$new_version-buster" "$base_image:$major_minor_version-buster"
         gcloud container images add-tag --quiet "$base_image:$new_version-buster" "$base_image:$major_version-buster"
         echo "Addings tags to $new_version-bullseye image in $registry"
-        #gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:bullseye"
-        #gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:$major_minor_version-bullseye"
-        #gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:$major_version-bullseye"
+        gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:bullseye"
+        gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:$major_minor_version-bullseye"
+        gcloud container images add-tag --quiet "$base_image:$new_version-bullseye" "$base_image:$major_version-bullseye"
     done
 }
 
