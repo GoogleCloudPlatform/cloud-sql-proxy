@@ -1,5 +1,87 @@
 # Changelog
 
+## [1.33.10](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.10...v1.33.10) (2023-08-16)
+
+
+### Features
+
+* add bullseye container image ([#1467](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1467)) ([5a5d0a1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/5a5d0a1c342ec57027921f43c4a40e02865a5b12))
+* add deprecation warning for Darwin 386 ([#781](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/781)) ([cdc552b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/cdc552b8da7abb3378d43c060acb019de7e12fcc))
+* add Go version support policy ([#1109](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1109)) ([ae6f4a1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ae6f4a1a534df8a273c0ea96880154b90bc65e77))
+* add health checks to proxy ([#859](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/859)) ([ea62bdd](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ea62bddaaf3aa7df79250d045ba2f5f3fe7edaea))
+* add instance dialing to health check ([#871](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/871)) ([eca3793](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/eca37935e7cd54efcd612c170e46f45c1d8e3556))
+* Add option to delay key generate until first connect ([#841](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/841)) ([4999ffd](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4999ffd0c3406e91874648630f9805b2d5f0ac50))
+* add support for Go 1.19 ([#1441](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1441)) ([1b16ff8](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1b16ff8324b74a8d62f70286837d3b4a3af6d056))
+* add support for ReadTime in Admin API requests ([#1040](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1040)) ([a7c8b5c](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/a7c8b5cf4d10c17bea405ce67ee642232b43fdec))
+* add support for specifying a quota project ([#1044](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1044)) ([dc66aca](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/dc66aca88190ae3f6d39f191489fdfb280146ed9))
+* add support for structured logs ([#650](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/650)) ([ca8993a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ca8993a2110affa0b0cbbfdebf6f6bdd86004e9f))
+* Add support for systemd notify ([#719](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/719)) ([4305eff](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4305eff05f1d33da4251a7b512b723cb086e4ce5))
+* allow multiple -instances flags ([#1046](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1046)) ([1972693](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1972693b8ac65c912bb719dc23d4f578cb6ff9e2)), closes [#1030](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1030)
+* deprecate proxy drivers ([#1500](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1500)) ([2b460ea](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/2b460ea07ddfdc658b52f275c0e5550ce553c872))
+* Downscope OAuth2 token included in ephemeral certificate ([#1450](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1450)) ([7557a35](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/7557a354ee26fa842025b0c2a811cb6175484e6d))
+* drop support and testing for Go 1.13, 1.14, 1.15 ([#1148](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1148)) ([158b0d5](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/158b0d57d46054be6a0d1600d5030b23be69dc9b))
+* improve reliability of refresh operations ([#883](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/883)) ([480992a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/480992a7671abe9b76f940175f4ed17f5271d3f8))
+* make Docker images ARM-friendly ([#1193](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1193)) ([6a98a04](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/6a98a0407785db7085532ea242b7079ceba756e3))
+* require TLS v1.3 at minimum ([#906](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/906)) ([cafa966](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/cafa966e50170ad94f12f067549ba3aedf8ecdca))
+* stop building darwin 386 binaries ([#846](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/846)) ([77d7c40](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/77d7c40ff79cf99a10d2dbae39b737625a08582f)), closes [#780](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/780)
+* switch to supported FUSE library ([#953](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/953)) ([10f2133](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/10f2133010f3bf7ef8a13b43e0bfa16bdca8cedb))
+* verify FUSE is installed on macOS / linux ([#959](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/959)) ([9ab868e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/9ab868ef344b9a82c06f97928420f98a4d37c5ce))
+
+
+### Bug Fixes
+
+* add support for Go 1.20 ([#1668](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1668)) ([c3d0c6b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/c3d0c6b9c483140b316d22aafa5bef39e0ad235d))
+* Allow combined use of structured logs and -log_debug_stdout ([#726](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/726)) ([45bda77](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/45bda776fc964a3464a1703035b4f2a719779bc6))
+* build statically linked binaries ([#1681](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1681)) ([ccb9bfa](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ccb9bfae0138596dd91b73e27a0c39f4aa8a2480))
+* bump all dependencies to latest ([#1706](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1706)) ([7ff4c4f](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/7ff4c4f65a5156ff08625a0ce2fb533e839dd9ee))
+* bump deps to latest ([#1671](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1671)) ([084b72e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/084b72ed77379003039cb87df6f7d374505b6f69))
+* **certs:** fix panic on error ([#682](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/682)) ([e82815b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e82815b474c3c34480d0cfee36a59998deb0ec1b))
+* **certs:** fix panic on error ([#682](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/682)) ([710ed96](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/710ed967b441150a7ed68a161f760a938d19b4c7))
+* change to static base container ([#791](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/791)) ([d66233e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/d66233e2a0aecb6e80a4f802b0dc6a5cd2fa9041))
+* don't build fuse on freebsd ([#1439](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1439)) ([87863a1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/87863a1b326e31fb3d3f4474fb2223010c6207e9))
+* ensure proxy shuts down gracefully on SIGTERM ([#877](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/877)) ([9793555](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/97935551ac44cb7a92e2901def1938d604dfeecb))
+* fail fast on invalid config ([#999](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/999)) ([18a0960](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/18a096037d9ceb2ca71218984b65fe342fc2a778))
+* improve cache to prevent multiple concurrent refreshes ([#674](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/674)) ([c5ffa69](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/c5ffa69952eba713e7acc688841f9b448a180625))
+* improve log message when refresh is throttled ([#830](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/830)) ([4ffee2a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4ffee2a1950fd6fb6703647d178a436b566b8a80))
+* increase rateLimit burst size to 2 ([#1048](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1048)) ([df6b6f9](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/df6b6f9ed8860d28f5e934db495257d288c42f2b))
+* invalidate cached config on handshake error ([#817](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/817)) ([5d98f5c](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/5d98f5c40e0b58da479bf6897712d53e6846f613))
+* invalidated config should retain error ([#1068](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1068)) ([49d3003](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/49d3003c018afdc0cde54340d5be808f9dcd5c84))
+* lower refresh buffer and config throttle when IAM authn is enabled ([#680](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/680)) ([58acab3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/58acab3b03375032501f17c85949db493af7a292))
+* prevent refreshCfg from scheduling multiple refreshes ([#666](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/666)) ([52db349](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/52db3492ac78a9a68218c2a12840c4016b1d0b99))
+* refactor client test ([#884](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/884)) ([e0cb364](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e0cb3642a537766c052747177e32065e36e270a2))
+* remove unnecessary token parsing ([#1074](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1074)) ([e138611](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e1386118ad239e6c1ff16df6f2be1351a6432bb3))
+* replace the hardcoded default version string ([#1836](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1836)) ([#1900](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1900)) ([f945798](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f945798b9c12daea5c318a14c5320a8fa18c4ec3))
+* require login_token with token and enable_iam_login ([#1641](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1641)) ([48a2fe5](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/48a2fe5f2c0e5487d3d5ccfa29023ac7d4a77600))
+* respect context deadline for TLS handshakes ([#987](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/987)) ([12ff12c](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/12ff12c9f87459dc40e2e6e4a2d08bebb0786ee7)), closes [#986](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/986)
+* restore Go 1.16 support ([#1408](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1408)) ([618cb12](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/618cb129e3591aba072a01b420d18cc7dce26a68))
+* return early when cert refresh fails ([#748](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/748)) ([fd21f66](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/fd21f66f2d8dc3b8e787ab0b467db4d4b85921cb))
+* return error from instance version ([#1069](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1069)) ([d9fc819](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/d9fc819a197bd75d0060bd46b8e06da6bdd6630c))
+* strip monotonic clock reading during refresh ([#1223](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1223)) ([957d160](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/957d1609ad96bfed77b3744f1c11a762010bc06e))
+* strip padding from access tokens if present ([#851](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/851)) ([1f195e5](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1f195e500c1a8989dcf4d73c429620ddd5b20891))
+* structured logging respects the -verbose flag ([#737](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/737)) ([f35422f](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f35422f449a0c79f6b2225de21c26c2da04d3528))
+* structured_logs compatibility with Google Cloud Logging ([#861](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/861)) ([74a6ec7](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/74a6ec70b63f4f0488470164fa4da68a26779fb2))
+* update all direct deps to latest ([#1497](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1497)) ([b15f78a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/b15f78a569dc4bd7e113e9739a24240f5a7b4036))
+* update dependencies to latest versions ([#1034](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1034)) ([8954d24](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/8954d241a71b59d9bf82cb47469e6652d3f379e7))
+* update dependencies to latest versions ([#1187](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1187)) ([f915180](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f9151809664e1847db94b0e4da905aece000d8fa))
+* update dependencies to latest versions ([#1286](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1286)) ([d3f9dcb](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/d3f9dcbe81bb43a0602e35359a262b2920f1915e))
+* update dependencies to latest versions ([#1383](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1383)) ([8b6b137](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/8b6b13732a6ff0b6fb1b595b41e926da7d27353d))
+* update dependencies to latest versions ([#1546](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1546)) ([a3aba9a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/a3aba9a2552831b5aa1935af9a4ef4371d30a37c))
+* update dependencies to latest versions ([#1581](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1581)) ([e23ccb4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e23ccb404df2f4291429ea3d5d65c0aa8cf8cfac))
+* update dependencies to latest versions ([#1752](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1752)) ([f0b3cbd](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f0b3cbd11d88cc1a1d38da233ac04a929747eb17))
+* update dependencies to latest versions ([#1798](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1798)) ([e652120](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e652120b0f46dfb2246cccdb482ff3639b25f9a9))
+* update dependencies to latest versions ([#1846](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1846)) ([d7b43c0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/d7b43c0ca1a696025211f2242e2b9342c068d14d))
+* update dependencies to latest versions ([#1873](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1873)) ([1978c11](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1978c11bac70858eca1dc31bf67e3e19a326a456))
+* update dependencies to latest versions ([#1918](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1918)) ([aa9cd4b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/aa9cd4bd2ed0f159a9adcffdf948bb42f40fcca4))
+* Update example usage links ([#695](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/695)) ([672f1e9](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/672f1e9ffdc99615791d3fa8f68b59211f55399c))
+* validate instance connections in liveness probe ([#995](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/995)) ([e5cc8d4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e5cc8d4f8676fed2013cc491578a1aaf7416ec3e))
+* validate instances in fuse mode ([#875](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/875)) ([96f8b65](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/96f8b655b09b711fd9adfcb486626b64d3b917f3))
+
+
+### Miscellaneous Chores
+
+* release 1.32.0 ([#1386](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1386)) ([4708c69](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4708c696e57c4572ed0525db3b6317d98e164780))
+* set release version to 1.33.10 ([#1921](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1921)) ([bfe64ff](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/bfe64ffe366c05cf4be97de86e784affda8b6777))
+
 ## [1.33.10](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.9...v1.33.10) (2023-08-15)
 
 
