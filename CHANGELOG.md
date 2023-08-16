@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.10](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.9...v1.33.10) (2023-08-15)
+
+
+### Bug Fixes
+
+* replace the hardcoded default version string ([#1836](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1836)) ([#1900](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1900)) ([f945798](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f945798b9c12daea5c318a14c5320a8fa18c4ec3))
+
 ## [1.33.9](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.8...v1.33.9) (2023-07-18)
 
 
