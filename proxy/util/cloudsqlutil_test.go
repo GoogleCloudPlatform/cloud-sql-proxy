@@ -15,17 +15,16 @@
 package util
 
 import (
-	"os"
+	_ "embed"
 	"strings"
 	"testing"
 )
 
+//go:embed version.txt
+var actualVersion string
+
 func TestSemanticVersion(t *testing.T) {
-	v, err := os.ReadFile("version.txt")
-	if err != nil {
-		t.Fatalf("failed to read version.txt: %v", err)
-	}
-	want := strings.TrimSpace(string(v))
+	want := strings.TrimSpace(actualVersion)
 
 	if got := SemanticVersion(); got != want {
 		t.Fatalf("want = %q, got = %q", want, got)
@@ -33,11 +32,7 @@ func TestSemanticVersion(t *testing.T) {
 }
 
 func TestUserAgentFromVersionString(t *testing.T) {
-	v, err := os.ReadFile("version.txt")
-	if err != nil {
-		t.Fatalf("failed to read version.txt: %v", err)
-	}
-	want := "cloud_sql_proxy/" + strings.TrimSpace(string(v))
+	want := "cloud_sql_proxy/" + strings.TrimSpace(actualVersion)
 
 	if got := UserAgentFromVersionString(); got != want {
 		t.Fatalf("want = %q, got = %q", want, got)
