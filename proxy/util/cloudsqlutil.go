@@ -56,7 +56,7 @@ var versionString string
 // metadataString indicates additional build or distribution metadata.
 var metadataString = ""
 
-// semanticVersion returns the version of the proxy in a semver format.
+// SemanticVersion returns the version of the proxy in a semver format.
 func SemanticVersion() string {
 	v := strings.TrimSpace(versionString)
 	if metadataString != "" {
@@ -65,7 +65,7 @@ func SemanticVersion() string {
 	return v
 }
 
-// userAgentFromVersionString returns an appropriate user agent string
+// UserAgentFromVersionString returns an appropriate user agent string
 // for identifying this proxy process.
 func UserAgentFromVersionString() string {
 	return "cloud_sql_proxy/" + SemanticVersion()
