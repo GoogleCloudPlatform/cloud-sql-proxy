@@ -76,8 +76,7 @@ func TestNewCommandArgumentsOnLinux(t *testing.T) {
 	}
 }
 
-func TestSdNotify(t *testing.T) {
-
+func TestSdNotifyOnLinux(t *testing.T) {
 	tcs := []struct {
 		desc          string
 		proxyMustFail bool
@@ -148,4 +147,5 @@ func TestSdNotify(t *testing.T) {
 		})
 	}
 
+	os.Unsetenv("NOTIFY_SOCKET")
 }
