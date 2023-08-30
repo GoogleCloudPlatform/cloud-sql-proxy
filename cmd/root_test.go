@@ -1230,7 +1230,7 @@ func TestCommandWithCustomDialer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if err := c.ExecuteContext(ctx); !errors.As(err, &errSigInt) {
+	if err := c.ExecuteContext(ctx); !errors.Is(err, errSigInt) {
 		t.Fatalf("want errSigInt, got = %v", err)
 	}
 
