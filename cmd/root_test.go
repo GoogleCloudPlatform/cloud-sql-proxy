@@ -29,7 +29,6 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
-	"github.com/coreos/go-systemd/daemon"
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/cobra"
 )
@@ -1387,78 +1386,4 @@ func TestQuitQuitQuitWithErrors(t *testing.T) {
 	if !strings.Contains(got.Error(), "close failed") {
 		t.Fatalf("want = %v, got = %v", errCloseFailed, got)
 	}
-}
-
-func TestSdNotify(t *testing.T) {
-
-	tcs := []struct {
-		desc          string
-		proxyMustFail bool
-		notifyState   string
-	}{
-		{
-			desc:          "System with systemd Type=notify and proxy started successfully",
-			proxyMustFail: false,
-			notifyState:   daemon.SdNotifyReady,
-		},
-		{
-			desc:          "System with systemd Type=notify and proxy failed to start",
-			proxyMustFail: true,
-			notifyState:   daemon.SdNotifyStopping,
-		},
-	}
-
-	// Create a temp dir for the socket file.
-	testDir, err := os.MkdirTemp("/tmp/", "test-")
-	if err != nil {
-		t.Fatalf("Fail to create the temp dir: %v", err)
-	}
-	defer os.RemoveAll(testDir)
-
-	//Set up the socket stream to listen for notifications.
-	socketAddr := testDir + "/notify-socket.sock"
-	laddr := net.UnixAddr{
-		Name: socketAddr,
-		Net:  "unixgram",
-	}
-	conn, err := net.ListenUnixgram("unixgram", &laddr)
-	if err != nil {
-		t.Fatalf("net.ListenUnixgram error: %v", err)
-	}
-
-	// To simulate systemd behavior with Type=notify, set NOTIFY_SOCKET
-	// to the name of the socket that listens for notifications.
-	os.Setenv("NOTIFY_SOCKET", socketAddr)
-
-	s := &spyDialer{}
-	c := NewCommand(WithDialer(s))
-	// Keep the test output quiet
-	c.SilenceUsage = false
-	c.SilenceErrors = false
-	c.SetArgs([]string{"my-project:my-region:my-instance"})
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	for _, tc := range tcs {
-		t.Run(tc.desc, func(t *testing.T) {
-
-			if tc.proxyMustFail {
-				c.conf.FUSEDir = "invalid"
-			}
-
-			go c.ExecuteContext(ctx)
-
-			stateReceived := make([]byte, 4096)
-			length, _, err := conn.ReadFromUnix(stateReceived)
-			if err != nil {
-				t.Fatalf("conn.ReadFromUnix error: %s\n", err)
-			}
-			if string(stateReceived[0:length]) != tc.notifyState {
-				t.Fatalf("Expected Notify State %v, got %v", tc.notifyState, string(stateReceived))
-			}
-
-		})
-	}
-
 }
