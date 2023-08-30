@@ -39,6 +39,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
+	"github.com/coreos/go-systemd/daemon"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -798,9 +799,23 @@ func runSignalWrapper(cmd *Command) (err error) {
 	select {
 	case err := <-shutdownCh:
 		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
+		// If running under systemd with Type=notify, it will send a message to the
+		// service manager that a failure occurred and it is terminating.
+		go func() {
+			if _, err := daemon.SdNotify(false, daemon.SdNotifyStopping); err != nil {
+				cmd.logger.Errorf("Failed to notify systemd of termination: %v", err)
+			}
+		}()
 		return err
 	case p = <-startCh:
 		cmd.logger.Infof("The proxy has started successfully and is ready for new connections!")
+		// If running under systemd with Type=notify, it will send a message to the
+		// service manager that it is ready to handle connections now.
+		go func() {
+			if _, err := daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
+				cmd.logger.Errorf("Failed to notify systemd of readiness: %v", err)
+			}
+		}()
 	}
 	defer func() {
 		if cErr := p.Close(); cErr != nil {

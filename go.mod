@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.4.2
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
+	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/go-cmp v0.5.9
 	github.com/hanwen/go-fuse/v2 v2.3.0
