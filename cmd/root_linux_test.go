@@ -102,12 +102,8 @@ func TestSdNotifyOnLinux(t *testing.T) {
 	defer os.RemoveAll(testDir)
 
 	//Set up the socket stream to listen for notifications.
-	socketAddr := testDir + "/notify-socket.sock"
-	laddr := net.UnixAddr{
-		Name: socketAddr,
-		Net:  "unixgram",
-	}
-	conn, err := net.ListenUnixgram("unixgram", &laddr)
+	socketAddr := filepath.Join(testDir, "notify-socket.sock")
+	conn, err := net.ListenUnixgram("unixgram", &net.UnixAddr{Name: socketAddr, Net: "unixgram"})
 	if err != nil {
 		t.Fatalf("net.ListenUnixgram error: %v", err)
 	}
@@ -115,6 +111,7 @@ func TestSdNotifyOnLinux(t *testing.T) {
 	// To simulate systemd behavior with Type=notify, set NOTIFY_SOCKET
 	// to the name of the socket that listens for notifications.
 	os.Setenv("NOTIFY_SOCKET", socketAddr)
+	defer os.Unsetenv("NOTIFY_SOCKET")
 
 	s := &spyDialer{}
 	c := NewCommand(WithDialer(s))
@@ -146,6 +143,4 @@ func TestSdNotifyOnLinux(t *testing.T) {
 
 		})
 	}
-
-	os.Unsetenv("NOTIFY_SOCKET")
 }
