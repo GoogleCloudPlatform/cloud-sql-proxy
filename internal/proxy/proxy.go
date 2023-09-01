@@ -510,19 +510,25 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	for _, inst := range conf.Instances {
 		m, err := c.newSocketMount(ctx, conf, pc, inst)
 		if err != nil {
-			for _, m := range mnts {
-				mErr := m.Close()
-				if mErr != nil {
-					l.Errorf("failed to close mount: %v", mErr)
-				}
+			c.logger.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
+			if networkType(conf, inst) == "unix" {
+				continue
 			}
-			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
+			switch err.(type) {
+			// this is not the inactive instance case. Fail the proxy
+			// so that the user could fix the proxy command error.
+			case *net.OpError:
+				return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
+			}
 		}
 
 		l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
 		mnts = append(mnts, m)
 	}
 	c.mnts = mnts
+	if len(mnts) == 0 {
+		return nil, fmt.Errorf("No active instance to mount")
+	}
 	return c, nil
 }
 
@@ -747,6 +753,14 @@ type socketMount struct {
 	dialOpts []cloudsqlconn.DialOption
 }
 
+func networkType(conf *Config, inst InstanceConnConfig) string {
+	if (conf.UnixSocket == "" && inst.UnixSocket == "" && inst.UnixSocketPath == "") ||
+		(inst.Addr != "" || inst.Port != 0) {
+		return "tcp"
+	}
+	return "unix"
+}
+
 func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst InstanceConnConfig) (*socketMount, error) {
 	var (
 		// network is one of "tcp" or "unix"
@@ -765,8 +779,7 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 	//   instance)
 	// use a TCP listener.
 	// Otherwise, use a Unix socket.
-	if (conf.UnixSocket == "" && inst.UnixSocket == "" && inst.UnixSocketPath == "") ||
-		(inst.Addr != "" || inst.Port != 0) {
+	if networkType(conf, inst) == "tcp" {
 		network = "tcp"
 
 		a := conf.Addr
@@ -784,7 +797,6 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 			version, err := c.dialer.EngineVersion(ctx, inst.Name)
 			if err != nil {
 				c.logger.Errorf("could not resolve version for %q: %v", inst.Name, err)
-				return nil, err
 			}
 			np = pc.nextDBPort(version)
 		}
@@ -801,6 +813,8 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 
 		address, err = newUnixSocketMount(inst, conf.UnixSocket, strings.HasPrefix(version, "POSTGRES"))
 		if err != nil {
+			c.logger.Errorf("could not mount unix socket %q for %q: %v",
+				conf.UnixSocket, inst.Name, err)
 			return nil, err
 		}
 	}
