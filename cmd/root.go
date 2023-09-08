@@ -39,11 +39,16 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
+	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/bridge/opencensus"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -751,7 +756,17 @@ func runSignalWrapper(cmd *Command) (err error) {
 		if enableTraces {
 			s := trace.ProbabilitySampler(1 / float64(cmd.conf.TelemetryTracingSampleRate))
 			trace.ApplyConfig(trace.Config{DefaultSampler: s})
-			trace.RegisterExporter(sd)
+			exporter, err := texporter.New(
+				texporter.WithTraceClientOptions([]option.ClientOption{option.WithTelemetryDisabled()}),
+				texporter.WithProjectID(cmd.conf.TelemetryProject))
+			if err != nil {
+				cmd.logger.Errorf("Failed to create trace exporter: %v", err)
+				return err
+			}
+			tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+			otel.SetTracerProvider(tp)
+			tracer := tp.Tracer("Cloud SQL Proxy Trace")
+			trace.DefaultTracer = opencensus.NewTracer(tracer)
 		}
 		defer func() {
 			sd.Flush()

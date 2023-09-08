@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.4.2
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.19.1
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/go-cmp v0.5.9
@@ -16,6 +17,9 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	go.opencensus.io v0.24.0
+	go.opentelemetry.io/otel v1.17.0
+	go.opentelemetry.io/otel/bridge/opencensus v0.40.0
+	go.opentelemetry.io/otel/sdk v1.17.0
 	go.uber.org/zap v1.25.0
 	golang.org/x/oauth2 v0.11.0
 	golang.org/x/sys v0.11.0
@@ -28,6 +32,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/monitoring v1.15.1 // indirect
 	cloud.google.com/go/trace v1.10.1 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.43.1 // indirect
 	github.com/aws/aws-sdk-go v1.43.31 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
@@ -35,6 +40,8 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
+	github.com/go-logr/logr v1.2.4 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -62,6 +69,9 @@ require (
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
+	go.opentelemetry.io/otel/metric v1.17.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v0.40.0 // indirect
+	go.opentelemetry.io/otel/trace v1.17.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
