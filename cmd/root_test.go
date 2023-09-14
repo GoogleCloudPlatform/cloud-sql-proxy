@@ -1352,7 +1352,7 @@ func TestQuitQuitQuitHTTPGet(t *testing.T) {
 	c := NewCommand(WithDialer(&spyDialer{}))
 	c.SilenceUsage = true
 	c.SilenceErrors = true
-	c.SetArgs([]string{"--quitquitquit", "--admin-port", "9193", "my-project:my-region:my-instance"})
+	c.SetArgs([]string{"--quitquitquit", "--admin-port", "9194", "my-project:my-region:my-instance"})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
