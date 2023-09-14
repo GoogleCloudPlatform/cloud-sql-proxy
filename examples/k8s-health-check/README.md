@@ -54,7 +54,7 @@ livenessProbe:
    # We recommend adding a liveness probe to the proxy sidecar container.
    httpGet:
       path: /liveness
-      port: 9090
+      port: 9801
    # Number of seconds after the container has started before the first probe is scheduled. Defaults to 0.
    # Not necessary when the startup probe is in use.
    initialDelaySeconds: 0
@@ -74,35 +74,40 @@ livenessProbe:
 # We do not recommend adding a readiness probe under most circumstances
 ```
 
-2. Add `--http-address` and `--http-port` (optional) to your
+2. Enable the health checks by setting `--http-address` and `--http-port` (optional) to your
    proxy container configuration under `command: `.
     > [proxy_with_http_health_check.yaml](proxy_with_http_health_check.yaml#L53-L76)
 
 ```yaml
 args:
-  # If connecting from a VPC-native GKE cluster, you can use the
-  # following flag to have the proxy connect over private IP
-  # - "--private-ip"
+# Replace <INSTANCE_CONNECTION_NAME> with the instance connection
+# name in the format: "project_name:region:instance_name"
+# Replace <DB_PORT> with the port that the proxy should open
+# to listen for database connections from the application
+- <INSTANCE_CONNECTION_NAME>?port=<DB_PORT>
 
-  # Enable HTTP health checks
-  - "--health-check"
+env:
+# It can be easier to manage the k8s configuration file when you
+# use environment variables instead of CLI flags. This is the
+# recommended configuration. This configuration is enabled by default
+# when the cloud-sql-proxy-operator configures a proxy image
 
-  # Listen on all addresses so the kubelet can reach the endpoints
-  - "--http-address=0.0.0.0"
+# Enable HTTP healthchecks on port 9801. This enables /liveness,
+# /readiness and /startup health check endpoints. Allow connections
+# listen for connections on any interface (0.0.0.0) so that the
+# k8s management components can reach these endpoints.
+- name: CSQL_PROXY_HEALTH_CHECK
+  value: "true"
+- name: CSQL_PROXY_HTTP_PORT
+  value: "9801"
+- name: CSQL_PROXY_HTTP_ADDRESS
+  value: 0.0.0.0
 
-  # Set the port where the HTTP server listens
-  # - "--http-port=9090"
+# Configure the proxy to exit gracefully when sent a k8s configuration
+# file.
+- name: CSQL_PROXY_EXIT_ZERO_ON_SIGTERM
+  value: "true"
 
-  # Enable structured logging with LogEntry format:
-  - "--structured-logs"
-
-  # This flag specifies where the service account key can be found
-  # Remove this argument if you are using workload identity
-  - "--credentials-file=/secrets/service_account.json"
-
-  # Replace DB_PORT with the port the proxy should listen on
-  - "--port=<DB_PORT>"
-  - "<INSTANCE_CONNECTION_NAME>"
 ```
 
 ### Readiness Health Check Configuration
@@ -145,7 +150,7 @@ seconds, 6 x 30sec = 3 minutes.)
 readinessProbe:
   httpGet:
     path: /readiness
-    port: 9090
+    port: 9801
   initialDelaySeconds: 30
   # 30 sec period x 6 failures = 3 min until the pod is terminated
   periodSeconds: 30
@@ -176,7 +181,7 @@ for more than 1 minute.
     readinessProbe:
         httpGet:
             path: /readiness
-            port: 9090
+            port: 9801
         initialDelaySeconds: 10
         # 5 sec period x 12 failures = 60 sec until the pod is terminated
         periodSeconds: 5
