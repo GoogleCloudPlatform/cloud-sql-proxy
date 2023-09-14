@@ -1307,7 +1307,7 @@ func TestPProfServer(t *testing.T) {
 	}
 }
 
-func TestQuitQuitQuitHttpPost(t *testing.T) {
+func TestQuitQuitQuitHTTPPost(t *testing.T) {
 	c := NewCommand(WithDialer(&spyDialer{}))
 	c.SilenceUsage = true
 	c.SilenceErrors = true
@@ -1348,11 +1348,11 @@ func TestQuitQuitQuitHttpPost(t *testing.T) {
 	}
 }
 
-func TestQuitQuitQuitHttpGet(t *testing.T) {
+func TestQuitQuitQuitHTTPGet(t *testing.T) {
 	c := NewCommand(WithDialer(&spyDialer{}))
 	c.SilenceUsage = true
 	c.SilenceErrors = true
-	c.SetArgs([]string{"--quitquitquit", "--admin-port", "9192", "my-project:my-region:my-instance"})
+	c.SetArgs([]string{"--quitquitquit", "--admin-port", "9193", "my-project:my-region:my-instance"})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
