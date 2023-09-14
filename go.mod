@@ -9,7 +9,7 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/go-cmp v0.5.9
-	github.com/hanwen/go-fuse/v2 v2.3.0
+	github.com/hanwen/go-fuse/v2 v2.4.0
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/microsoft/go-mssqldb v1.6.0
 	github.com/spf13/cobra v1.7.0
