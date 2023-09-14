@@ -1362,7 +1362,7 @@ func TestQuitQuitQuitHTTPGet(t *testing.T) {
 		errCh <- err
 	}()
 
-	resp, err := tryDial("GET", "http://localhost:9192/quitquitquit")
+	resp, err := tryDial("GET", "http://localhost:9194/quitquitquit")
 	if err != nil {
 		t.Fatalf("failed to dial endpoint: %v", err)
 	}
