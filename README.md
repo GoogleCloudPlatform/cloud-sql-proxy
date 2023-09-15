@@ -21,12 +21,13 @@ The Cloud SQL Auth Proxy has support for:
 - Configuration with environment variables
 - Fully POSIX-compliant flags
 
-If you're using Go, Java, or Python, consider using the corresponding Cloud SQL
+If you're using Go, Java, Python, or Node.js, consider using the corresponding Cloud SQL
 connector which does everything the Proxy does, but in process:
 
 - [Cloud SQL Go connector][go connector]
 - [Cloud SQL Java connector][java connector]
 - [Cloud SQL Python connector][python connector]
+- [Cloud SQL Node.js connector][node connector]
 
 For users migrating from v1, see the [Migration Guide](migration-guide.md).
 The [v1 README][v1 readme] is still available.
@@ -42,6 +43,7 @@ instance, or by configuring Public IP.
 [go connector]: https://github.com/GoogleCloudPlatform/cloud-sql-go-connector
 [java connector]: https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory
 [python connector]: https://github.com/GoogleCloudPlatform/cloud-sql-python-connector
+[node connector]: https://github.com/GoogleCloudPlatform/cloud-sql-nodejs-connector
 [v1 readme]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/blob/5f5b09b62eb6dfcaa58ce399d0131c1544bf813f/README.md
 
 ## Installation
