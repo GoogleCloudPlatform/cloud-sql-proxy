@@ -91,7 +91,7 @@ args:
   - "--http-address=0.0.0.0"
 
   # Set the port where the HTTP server listens
-  # - "--http-port 9090"
+  # - "--http-port=9090"
 
   # Enable structured logging with LogEntry format:
   - "--structured-logs"
