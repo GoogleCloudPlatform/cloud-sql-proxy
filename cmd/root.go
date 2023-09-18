@@ -39,7 +39,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
-	"github.com/coreos/go-systemd/daemon"
+	"github.com/coreos/go-systemd/v22/daemon"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
