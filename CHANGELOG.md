@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.6.1...v2.7.0) (2023-09-19)
+
+
+### Features
+
+* /quitquitquit api now responds to HTTP GET and POST requests. ([#1947](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1947)) ([e5ebb48](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e5ebb485f7a7a5f9820822bf4e84467da431fc6b)), closes [#1946](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1946)
+* Add support for systemd notify ([#1930](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1930)) ([cf23647](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/cf23647f72990fc3e6b4987e3040c6020929b97d))
+
 ## [2.6.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.6.0...v2.6.1) (2023-08-16)
 
 
