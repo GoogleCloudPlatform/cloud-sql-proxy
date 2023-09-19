@@ -513,6 +513,8 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 			switch err.(type) {
 			// this is not the inactive instance case. Fail the proxy
 			// so that the user could fix the proxy command error.
+			// for example: two instances with the same port will fail
+			// in the listen call.
 			case *net.OpError:
 				for _, m := range mnts {
 					mErr := m.Close()
