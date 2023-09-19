@@ -510,20 +510,22 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	for _, inst := range conf.Instances {
 		m, err := c.newSocketMount(ctx, conf, pc, inst)
 		if err != nil {
-			c.logger.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
-			if networkType(conf, inst) == "unix" {
-				continue
-			}
 			switch err.(type) {
 			// this is not the inactive instance case. Fail the proxy
 			// so that the user could fix the proxy command error.
 			case *net.OpError:
+				for _, m := range mnts {
+					mErr := m.Close()
+					if mErr != nil {
+						l.Errorf("[%v] failed to close mount: %v", m.inst, mErr)
+					}
+				}
 				return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 			}
+		} else {
+			l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
+			mnts = append(mnts, m)
 		}
-
-		l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
-		mnts = append(mnts, m)
 	}
 	c.mnts = mnts
 	if len(mnts) == 0 {
@@ -795,8 +797,10 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 			np = pc.nextPort()
 		default:
 			version, err := c.dialer.EngineVersion(ctx, inst.Name)
+			// Exit if the port is not specified for inactive instance
 			if err != nil {
-				c.logger.Errorf("could not resolve version for %q: %v", inst.Name, err)
+				c.logger.Errorf("[%v] could not resolve instance version: %v", inst.Name, err)
+				return nil, err
 			}
 			np = pc.nextDBPort(version)
 		}
@@ -807,14 +811,13 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 
 		version, err := c.dialer.EngineVersion(ctx, inst.Name)
 		if err != nil {
-			c.logger.Errorf("could not resolve version for %q: %v", inst.Name, err)
+			c.logger.Errorf("[%v] could not resolve instance version: %v", inst.Name, err)
 			return nil, err
 		}
 
 		address, err = newUnixSocketMount(inst, conf.UnixSocket, strings.HasPrefix(version, "POSTGRES"))
 		if err != nil {
-			c.logger.Errorf("could not mount unix socket %q for %q: %v",
-				conf.UnixSocket, inst.Name, err)
+			c.logger.Errorf("[%v] could not mount unix socket %q: %v", inst.Name, conf.UnixSocket, err)
 			return nil, err
 		}
 	}
@@ -822,6 +825,7 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
 	ln, err := lc.Listen(ctx, network, address)
 	if err != nil {
+		c.logger.Errorf("[%v] could not listen to address %v: %v", inst.Name, address, err)
 		return nil, err
 	}
 	// Change file permissions to allow access for user, group, and other.

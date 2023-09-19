@@ -310,14 +310,6 @@ func TestClientInitialization(t *testing.T) {
 			},
 		},
 		{
-			desc: "without TCP port or unix socket for non functional instance",
-			in: &proxy.Config{
-				Instances: []proxy.InstanceConnConfig{
-					{Name: "proj:region:fakeserver"},
-				},
-			},
-		},
-		{
 			desc: "with TCP port for non functional instance",
 			in: &proxy.Config{
 				Instances: []proxy.InstanceConnConfig{
@@ -751,6 +743,14 @@ func TestProxyInitializationWithFailedUnixSocket(t *testing.T) {
 						Name:           "proj:region:fakeserver",
 						UnixSocketPath: testUnixSocketPath,
 					},
+				},
+			},
+		},
+		{
+			desc: "without TCP port or unix socket for non functional instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: "proj:region:fakeserver"},
 				},
 			},
 		},
