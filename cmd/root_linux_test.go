@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coreos/go-systemd/daemon"
+	"github.com/coreos/go-systemd/v22/daemon"
 	"github.com/spf13/cobra"
 )
 
