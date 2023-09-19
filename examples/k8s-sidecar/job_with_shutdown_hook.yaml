@@ -49,7 +49,7 @@ spec:
         - -c
         - >
           my_batch_job --host=127.0.0.1 --port=<DB_PORT> --username=<DB_USER> --dbname=<DB_NAME>
-          wget --post-data '' http://localhost:9091/quitquitquit
+          curl http://localhost:9091/quitquitquit
         image: busybox
         imagePullPolicy: IfNotPresent
         resources: {}
