@@ -31,7 +31,7 @@
         "^debian:buster",
         "^debian:bullseye"
       ],
-      "groupName: "container images"
+      "groupName": "container images"
     }
   ]
 }
