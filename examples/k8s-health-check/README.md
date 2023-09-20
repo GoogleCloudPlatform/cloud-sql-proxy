@@ -82,15 +82,18 @@ livenessProbe:
 args:
 # Replace <INSTANCE_CONNECTION_NAME> with the instance connection
 # name in the format: "project_name:region:instance_name"
-# Replace <DB_PORT> with the port that the proxy should open
-# to listen for database connections from the application
-- <INSTANCE_CONNECTION_NAME>?port=<DB_PORT>
+- <INSTANCE_CONNECTION_NAME>
 
 env:
 # It can be easier to manage the k8s configuration file when you
 # use environment variables instead of CLI flags. This is the
 # recommended configuration. This configuration is enabled by default
 # when the cloud-sql-proxy-operator configures a proxy image
+
+# Replace <DB_PORT> with the port that the proxy should open
+# to listen for database connections from the application
+- name: CSQL_PROXY_PORT
+  value: <DB_PORT>
 
 # Enable HTTP healthchecks on port 9801. This enables /liveness,
 # /readiness and /startup health check endpoints. Allow connections

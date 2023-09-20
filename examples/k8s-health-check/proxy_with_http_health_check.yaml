@@ -57,7 +57,7 @@ spec:
         # name in the format: "project_name:region:instance_name"
         # Replace <DB_PORT> with the port that the proxy should open
         # to listen for database connections from the application
-        - <INSTANCE_CONNECTION_NAME>?port=<DB_PORT>
+        - <INSTANCE_CONNECTION_NAME>
 
         env:
         # Using environment variables instead of CLI arguments to configure the
@@ -67,6 +67,11 @@ spec:
         # This is the recommended configuration for your proxy pod template.
         # It is used by the cloud-sql-proxy-operator when configuring the
         # proxy container.
+
+        # Replace <DB_PORT> with the port that the proxy should open
+        # to listen for database connections from the application
+        - name: CSQL_PROXY_PORT
+          value: <DB_PORT>
 
         # If connecting from a VPC-native GKE cluster, you can use the
         # following flag to have the proxy connect over private IP
