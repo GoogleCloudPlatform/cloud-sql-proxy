@@ -786,10 +786,10 @@ func TestProxyMultiInstances(t *testing.T) {
 					{Name: mysql, Port: 3306},
 				},
 			},
-			wantSuccess: true,
+			wantSuccess: false,
 		},
 		{
-			desc: "with two tcp socket instances",
+			desc: "with two tcp socket instances and conflicting ports",
 			in: &proxy.Config{
 				Instances: []proxy.InstanceConnConfig{
 					{Name: "proj:region:fakeserver", Port: 60000},

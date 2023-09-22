@@ -510,29 +510,19 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	for _, inst := range conf.Instances {
 		m, err := c.newSocketMount(ctx, conf, pc, inst)
 		if err != nil {
-			switch err.(type) {
-			// this is not the inactive instance case. Fail the proxy
-			// so that the user could fix the proxy command error.
-			// for example: two instances with the same port will fail
-			// in the listen call.
-			case *net.OpError:
-				for _, m := range mnts {
-					mErr := m.Close()
-					if mErr != nil {
-						l.Errorf("[%v] failed to close mount: %v", m.inst, mErr)
-					}
+			for _, m := range mnts {
+				mErr := m.Close()
+				if mErr != nil {
+					l.Errorf("failed to close mount: %v", mErr)
 				}
-				return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 			}
-		} else {
-			l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
-			mnts = append(mnts, m)
+			return nil, fmt.Errorf("[%v] Unable to mount socket: %v", inst.Name, err)
 		}
+
+		l.Infof("[%s] Listening on %s", inst.Name, m.Addr())
+		mnts = append(mnts, m)
 	}
 	c.mnts = mnts
-	if len(mnts) == 0 {
-		return nil, fmt.Errorf("No active instance to mount")
-	}
 	return c, nil
 }
 
