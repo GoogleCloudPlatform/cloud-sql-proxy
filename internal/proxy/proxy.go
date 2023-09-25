@@ -747,6 +747,14 @@ type socketMount struct {
 	dialOpts []cloudsqlconn.DialOption
 }
 
+func networkType(conf *Config, inst InstanceConnConfig) string {
+	if (conf.UnixSocket == "" && inst.UnixSocket == "" && inst.UnixSocketPath == "") ||
+		(inst.Addr != "" || inst.Port != 0) {
+		return "tcp"
+	}
+	return "unix"
+}
+
 func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfig, inst InstanceConnConfig) (*socketMount, error) {
 	var (
 		// network is one of "tcp" or "unix"
@@ -765,8 +773,7 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 	//   instance)
 	// use a TCP listener.
 	// Otherwise, use a Unix socket.
-	if (conf.UnixSocket == "" && inst.UnixSocket == "" && inst.UnixSocketPath == "") ||
-		(inst.Addr != "" || inst.Port != 0) {
+	if networkType(conf, inst) == "tcp" {
 		network = "tcp"
 
 		a := conf.Addr
@@ -782,8 +789,9 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 			np = pc.nextPort()
 		default:
 			version, err := c.dialer.EngineVersion(ctx, inst.Name)
+			// Exit if the port is not specified for inactive instance
 			if err != nil {
-				c.logger.Errorf("could not resolve version for %q: %v", inst.Name, err)
+				c.logger.Errorf("[%v] could not resolve instance version: %v", inst.Name, err)
 				return nil, err
 			}
 			np = pc.nextDBPort(version)
@@ -795,12 +803,13 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 
 		version, err := c.dialer.EngineVersion(ctx, inst.Name)
 		if err != nil {
-			c.logger.Errorf("could not resolve version for %q: %v", inst.Name, err)
+			c.logger.Errorf("[%v] could not resolve instance version: %v", inst.Name, err)
 			return nil, err
 		}
 
 		address, err = newUnixSocketMount(inst, conf.UnixSocket, strings.HasPrefix(version, "POSTGRES"))
 		if err != nil {
+			c.logger.Errorf("[%v] could not mount unix socket %q: %v", inst.Name, conf.UnixSocket, err)
 			return nil, err
 		}
 	}
@@ -808,6 +817,7 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
 	ln, err := lc.Listen(ctx, network, address)
 	if err != nil {
+		c.logger.Errorf("[%v] could not listen to address %v: %v", inst.Name, address, err)
 		return nil, err
 	}
 	// Change file permissions to allow access for user, group, and other.

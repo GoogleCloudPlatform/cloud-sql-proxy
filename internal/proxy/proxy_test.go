@@ -17,6 +17,7 @@ package proxy_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -83,6 +84,8 @@ func (f *fakeDialer) EngineVersion(_ context.Context, inst string) (string, erro
 		return "MYSQL_8_0", nil
 	case strings.Contains(inst, "sqlserver"):
 		return "SQLSERVER_2019_STANDARD", nil
+	case strings.Contains(inst, "fakeserver"):
+		return "", fmt.Errorf("non existing server")
 	default:
 		return "POSTGRES_14", nil
 	}
@@ -304,6 +307,17 @@ func TestClientInitialization(t *testing.T) {
 			},
 			wantUnixAddrs: []string{
 				filepath.Join(testUnixSocketPathPg),
+			},
+		},
+		{
+			desc: "with TCP port for non functional instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: "proj:region:fakeserver", Port: 50000},
+				},
+			},
+			wantTCPAddrs: []string{
+				"127.0.0.1:50000",
 			},
 		},
 	}
@@ -710,4 +724,87 @@ func TestRunConnectionCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 
+}
+
+func TestProxyInitializationWithFailedUnixSocket(t *testing.T) {
+	ctx := context.Background()
+	testDir, _ := createTempDir(t)
+	testUnixSocketPath := path.Join(testDir, "db")
+
+	tcs := []struct {
+		desc string
+		in   *proxy.Config
+	}{
+		{
+			desc: "with unix socket for non functional instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{
+						Name:           "proj:region:fakeserver",
+						UnixSocketPath: testUnixSocketPath,
+					},
+				},
+			},
+		},
+		{
+			desc: "without TCP port or unix socket for non functional instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: "proj:region:fakeserver"},
+				},
+			},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			_, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, tc.in)
+			if err == nil {
+				t.Fatalf("want non nil error, got = %v", err)
+			}
+		})
+	}
+}
+
+func TestProxyMultiInstances(t *testing.T) {
+	ctx := context.Background()
+	testDir, _ := createTempDir(t)
+	testUnixSocketPath := path.Join(testDir, "db")
+
+	tcs := []struct {
+		desc        string
+		in          *proxy.Config
+		wantSuccess bool
+	}{
+		{
+			desc: "with tcp socket and unix for non functional instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{
+						Name:           "proj:region:fakeserver",
+						UnixSocketPath: testUnixSocketPath,
+					},
+					{Name: mysql, Port: 3306},
+				},
+			},
+			wantSuccess: false,
+		},
+		{
+			desc: "with two tcp socket instances and conflicting ports",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{
+					{Name: "proj:region:fakeserver", Port: 60000},
+					{Name: mysql, Port: 60000},
+				},
+			},
+			wantSuccess: false,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			_, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, tc.in)
+			if tc.wantSuccess != (err == nil) {
+				t.Fatalf("want return = %v, got = %v", tc.wantSuccess, err == nil)
+			}
+		})
+	}
 }
