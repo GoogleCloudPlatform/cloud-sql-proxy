@@ -579,12 +579,12 @@ following lifecycle regarding support for a major version:
 wouldn’t otherwise introduce a breaking change). New major versions are
 guaranteed to be "active" for a minimum of 1 year.
 
-- **Deprecated** - Deprecated versions continue to receive security and critical
-bug fixes, but do not receive new features. Deprecated versions will be publicly
+- **Maintenance** - Maintenance versions continue to receive security and critical
+bug fixes, but do not receive new features. Maintenance versions will be publicly
 supported for 1 year.
 
-- **Unsupported** - Any major version that has been deprecated for >=1 year is
-considered publicly unsupported.
+- **Unsupported** - Any major version that has been in maintenance for more than 1
+year is considered publicly unsupported.
 
 ### Release cadence
 
