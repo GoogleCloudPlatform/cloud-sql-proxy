@@ -2,6 +2,7 @@
   "extends": [
     "config:recommended"
   ],
+  "dependencyDashboardLabels": ["type: process"],
   "commitMessagePrefix": "deps: ",
   "postUpdateOptions": [
     "gomodTidy"
