@@ -3,6 +3,13 @@
 [![CI][ci-badge]][ci-build]
 [![Go Reference][pkg-badge]][pkg-docs]
 
+**NOTE**: V1 is now in [maintenance mode][support-policy]. For new
+features, please upgrade to [v2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy).
+See the [migration-guide][] for details.
+
+[support-policy]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy#support-policy
+[migration-guide]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/blob/main/migration-guide.md
+
 The [Cloud SQL Auth proxy][proxy-page] is a binary that provides IAM-based
 authorization and encryption when connecting to a Cloud SQL instance.
 
@@ -340,17 +347,7 @@ for possible values.
 
 ### Major version lifecycle
 
-This project uses [semantic versioning](https://semver.org/), and uses the
-following lifecycle regarding support for a major version:
-
-**Active** - Active versions get all new features and security fixes (that
-wouldn’t otherwise introduce a breaking change). New major versions are
-guaranteed to be "active" for a minimum of 1 year.
-**Deprecated** - Deprecated versions continue to receive security and critical
-bug fixes, but do not receive new features. Deprecated versions will be publicly
-supported for 1 year.
-**Unsupported** - Any major version that has been deprecated for >=1 year is
-considered publicly unsupported.
+See https://github.com/GoogleCloudPlatform/cloud-sql-proxy#support-policy.
 
 ### Supported Go Versions
 
