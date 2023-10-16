@@ -80,7 +80,7 @@ jobs:
 
       - uses: mattes/gce-cloudsql-proxy-action@v1
         with:
-          creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          creds: ${{ steps.auth.outputs.credentials_file_path }}
           instance: ${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}
 
 
