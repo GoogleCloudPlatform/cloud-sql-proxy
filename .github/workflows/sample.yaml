@@ -81,6 +81,6 @@ jobs:
       - uses: mattes/gce-cloudsql-proxy-action@v1
         with:
           creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-          instance: my-project:us-central1:instance-1
+          instance: ${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}
 
 
