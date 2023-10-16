@@ -78,9 +78,10 @@ jobs:
             POSTGRES_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_PASS
             POSTGRES_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_DB
 
-      - uses: mattes/gce-cloudsql-proxy-action@v1
-        with:
-          creds: ${{ steps.auth.outputs.credentials_file_path }}
-          instance: ${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}
-
-
+      - name: Enable cloud SQL proxy to temp instance
+        run: |
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.7.0/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy
+          nohup ./cloud-sql-proxy ${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }} > cloud-sql-proxy.out 2> cloud-sql-proxy.err < /dev/null &
+          echo $!
+          echo CLOUD_SQL_PROXY_PID=$(echo $!) >> $GITHUB_ENV
