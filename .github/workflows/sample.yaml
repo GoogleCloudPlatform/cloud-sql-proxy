@@ -86,8 +86,8 @@ jobs:
           echo $!
           echo CLOUD_SQL_PROXY_PID=$(echo $!) >> $GITHUB_ENV
       - run: |
-          apt-get update
-          apt-get install --yes --no-install-recommends postgresql-client
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client
       - run: |
           PGPASSWORD=bad psql -h 127.0.0.1 -U postgres -c 'SELECT NOW()'
 
