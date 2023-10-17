@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.33.12](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.11...v1.33.12) (2023-10-17)
+
+
+### Bug Fixes
+
+* bump dependencies to latest ([#2001](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2001)) ([2aa1924](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/2aa192419abfb63c78b001946d43d9802e7584d8))
+* update supported Go versions ([#2002](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2002)) ([68b85b6](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/68b85b6646e0eec39b42cf578695abcf9b6538bb))
+
 ## [1.33.11](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.10...v1.33.11) (2023-09-19)
 
 
