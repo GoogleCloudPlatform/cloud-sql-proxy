@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.33.13](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.12...v1.33.13) (2023-10-25)
+
+
+### Bug Fixes
+
+* upgrade google.golang.org/grpc ([#2009](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2009)) ([ac9255b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ac9255bf029474f0d8cce7c2e148db28dcfa2852))
+
 ## [1.33.12](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.11...v1.33.12) (2023-10-17)
 
 
