@@ -930,7 +930,7 @@ func (c *Client) proxyConn(inst string, client, server net.Conn) {
 				cleanup(fmt.Sprintf("[%s] instance closed the connection", inst), false)
 				return
 			case sErr != nil:
-				cleanup(fmt.Sprintf("[%s] connection aborted - error writing to instance: %v", inst, cErr), true)
+				cleanup(fmt.Sprintf("[%s] connection aborted - error writing to instance: %v", inst, sErr), true)
 				return
 			}
 		}
@@ -955,7 +955,7 @@ func (c *Client) proxyConn(inst string, client, server net.Conn) {
 			cleanup(fmt.Sprintf("[%s] client closed the connection", inst), false)
 			return
 		case cErr != nil:
-			cleanup(fmt.Sprintf("[%s] connection aborted - error writing to client: %v", inst, sErr), true)
+			cleanup(fmt.Sprintf("[%s] connection aborted - error writing to client: %v", inst, cErr), true)
 			return
 		}
 	}
