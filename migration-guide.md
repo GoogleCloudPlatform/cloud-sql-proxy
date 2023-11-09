@@ -97,7 +97,7 @@ but recognize in some legacy environments `--auto-ip` may be necessary.
 In v1 it was possible to do this:
 
 ``` shell
-export INSTANCES="<INSTANCE_CONNECTION_NAME_1>=tcp:3307,<INSTANCE_CONNECTION_NAME_2>=tcp:5432"
+export INSTANCES="<INSTANCE_CONNECTION_NAME_1>=tcp:3306,<INSTANCE_CONNECTION_NAME_2>=tcp:5432"
 
 ./cloud_sql_proxy
 ```
@@ -108,7 +108,7 @@ All flags can be set with an environment variable including instance connection 
 For example, in v2 this is possible:
 
 ```
-export CSQL_PROXY_INSTANCE_CONNECTION_NAME_0="<INSTANCE_CONNECTION_NAME_1>?port=3307"
+export CSQL_PROXY_INSTANCE_CONNECTION_NAME_0="<INSTANCE_CONNECTION_NAME_1>?port=3306"
 export CSQL_PROXY_INSTANCE_CONNECTION_NAME_1="<INSTANCE_CONNECTION_NAME_2>?port=5342"
 
 export CSQL_PROXY_AUTO_IAM_AUTHN=true
