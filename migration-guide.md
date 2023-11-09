@@ -92,6 +92,36 @@ but recognize in some legacy environments `--auto-ip` may be necessary.
 ./cloud-sql-proxy --address 0.0.0.0 --port 6000 <INSTANCE_CONNECTION_NAME>
 ```
 
+## Environment variable changes
+
+In v1 it was possible to do this:
+
+``` shell
+export INSTANCES="<INSTANCE_CONNECTION_NAME_1>,<INSTANCE_CONNECTION_NAME_2>"
+
+./cloud_sql_proxy
+```
+
+In v2, we've significantly expanded the support for environment variables.
+All flags can be set with an environment variable. And instance connection names
+can be set with variables.
+
+For example, in v2 this is possible:
+
+```
+export CSQL_PROXY_INSTANCE_CONNECTION_NAME_0="<INSTANCE_CONNECTION_NAME_1>"
+export CSQL_PROXY_INSTANCE_CONNECTION_NAME_1="<INSTANCE_CONNECTION_NAME_2>"
+
+export CSQL_PROXY_PORT=9000
+export CSQL_PROXY_AUTO_IAM_AUTHN=true
+
+./cloud-sql-proxy
+```
+
+See the [help message][] for more details.
+
+[help message]: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/blob/10bec27e4d44c14fe9e68f25fef6c373324e8bab/cmd/root.go#L240-L264
+
 ## Flag Changes
 
 The following table lists in alphabetical order v1 flags and their v2 version.
