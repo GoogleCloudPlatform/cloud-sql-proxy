@@ -107,7 +107,7 @@ All flags can be set with an environment variable including instance connection 
 
 For example, in v2 this is possible:
 
-```
+``` shell
 export CSQL_PROXY_INSTANCE_CONNECTION_NAME_0="<INSTANCE_CONNECTION_NAME_1>?port=3306"
 export CSQL_PROXY_INSTANCE_CONNECTION_NAME_1="<INSTANCE_CONNECTION_NAME_2>?port=5432"
 
