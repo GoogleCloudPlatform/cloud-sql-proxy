@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.7.1...v2.7.2) (2023-11-14)
+
+
+### Bug Fixes
+
+* use proper error instance to write error log ([#2014](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2014)) ([cc76a54](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/cc76a544a6878ad9f0ef5fb407de314b3f801cbe))
+
 ## [2.7.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.7.0...v2.7.1) (2023-10-17)
 
 
