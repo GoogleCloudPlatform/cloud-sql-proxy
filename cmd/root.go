@@ -284,16 +284,16 @@ Waiting for Startup
 
     Sometimes it is necessary to wait for the Proxy to start.
 
-    To help ensure the Proxy is up and ready, the Proxy includes adds a wait
+    To help ensure the Proxy is up and ready, the Proxy includes a wait
     subcommand with an optional --max flag to set the maximum time to wait.
 
-    By default when invoking this command:
+    Invoke the wait command, like this:
 
     ./cloud-sql-proxy wait
 
-    The Proxy will wait up to the maximum time for the /startup endpoint to
-    respond. This command requires that the Proxy be started in another
-    process with the HTTP health check enabled. If an alternate health
+    By default, the Proxy will wait up to the maximum time for the startup
+    endpoint to respond. The wait command requires that the Proxy be started in
+    another process with the HTTP health check enabled. If an alternate health
     check port or address is used, as in:
 
     ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME> \
