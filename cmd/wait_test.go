@@ -15,8 +15,10 @@
 package cmd
 
 import (
+	"io"
 	"net"
 	"testing"
+	"time"
 )
 
 func TestWaitCommandFlags(t *testing.T) {
@@ -35,6 +37,11 @@ func TestWaitCommandFlags(t *testing.T) {
 			return
 		}
 		defer conn.Close()
+		// Use a read deadline to produce read error
+		conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+		// Read client request first.
+		io.ReadAll(conn)
+		// Write a generic 200 response back.
 		conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 	}()
 
@@ -53,7 +60,7 @@ func TestWaitCommandFails(t *testing.T) {
 	_, err := invokeProxyCommand([]string{
 		"wait",
 		// assuming default host and port
-		"--max=500ms",
+		"--max=100ms",
 	})
 	if err == nil {
 		t.Fatal("wait should fail when endpoint does not respond")
