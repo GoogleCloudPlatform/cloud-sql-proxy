@@ -15,6 +15,8 @@
 # Use the latest stable golang 1.x to compile to a binary
 FROM --platform=$BUILDPLATFORM golang:1 as build
 
+LABEL org.opencontainers.image.source="https://github.com/GoogleCloudPlatform/cloud-sql-proxy"
+
 WORKDIR /go/src/cloud-sql-proxy
 COPY . .
 
