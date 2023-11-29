@@ -28,7 +28,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container.buster"
 
 # Final stage
-FROM debian:buster@sha256:53cf4f4dbe6f827072bde99045671754cca8174d0464d829c194a26e7ba2c134
+FROM debian:buster@sha256:46ca02d33c65ab188d6e56f26c323bf1aa9a99074f2f54176fdc3884304f58b8
 RUN apt-get update && apt-get install -y ca-certificates
 # Install fuse and allow enable non-root users to mount
 RUN apt-get update && apt-get install -y fuse && sed -i 's/^#user_allow_other$/user_allow_other/g' /etc/fuse.conf
