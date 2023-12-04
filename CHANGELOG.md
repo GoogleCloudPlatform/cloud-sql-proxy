@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.7.2...v2.8.0) (2023-12-04)
+
+
+### Features
+
+* add support for wait command ([#2041](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2041)) ([1c00ba4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1c00ba475374e6ae46956c4125b91a55fe953751))
+
 ## [2.7.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.7.1...v2.7.2) (2023-11-14)
 
 
