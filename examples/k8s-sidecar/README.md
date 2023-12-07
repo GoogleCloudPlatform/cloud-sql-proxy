@@ -182,7 +182,7 @@ as a separate service for several reasons:
     - name: cloud-sql-proxy
       # It is recommended to use the latest version of the Cloud SQL Auth Proxy
       # Make sure to update on a regular schedule!
-      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0  # make sure to use the latest version
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0  # make sure to use the latest version
       args:
         # If connecting from a VPC-native GKE cluster, you can use the
         # following flag to have the proxy connect over private IP
