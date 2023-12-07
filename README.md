@@ -369,13 +369,13 @@ currently supported:
 - `$VERSION-bullseye`
 
 The `$VERSION` is the Proxy version without the leading "v" (e.g.,
-`2.0.0`).
+`2.8.0`).
 
 For example, to pull a particular version, use a command like:
 
 ``` shell
-# $VERSION is 2.0.0
-docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.0.0
+# $VERSION is 2.8.0
+docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
 ```
 
 We recommend pinning to a specific version tag and using automation with a CI pipeline

@@ -49,7 +49,7 @@ spec:
       - name: cloud-sql-proxy
         # It is recommended to use the latest version of the Cloud SQL Auth Proxy
         # Make sure to update on a regular schedule!
-        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.6.0
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
         imagePullPolicy: IfNotPresent
 
         args:
