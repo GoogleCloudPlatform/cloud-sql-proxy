@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.8.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.8.0...v2.8.1) (2023-12-12)
+
+
+### Bug Fixes
+
+* label container images correctly ([#2061](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2061)) ([f071d38](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f071d38e152c70113d7102c19ed450c74e8d64f0))
+* Update Go Connector to v1.5.2 to ensure connections work after waking from sleep
+([#1788](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1788))
+
 ## [2.8.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.7.2...v2.8.0) (2023-12-04)
 
 
