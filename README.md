@@ -381,7 +381,7 @@ For example, to pull a particular version, use a command like:
 docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
 ```
 
-<!-- {x-version-update-start} -->
+<!-- {x-version-update-end} -->
 We recommend pinning to a specific version tag and using automation with a CI pipeline
 to update regularly.
 
