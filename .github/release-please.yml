@@ -22,3 +22,5 @@ branches:
   handleGHRelease: true
   packageName: cloud-sql-proxy
   releaseType: simple
+extraFiles:
+  - README.md
