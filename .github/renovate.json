@@ -11,11 +11,11 @@
   "packageRules": [
     {
       "matchManagers": ["github-actions"],
-      "groupName": "bump dependencies for github"
+      "groupName": "dependencies for github"
     },
     {
       "matchManagers": ["dockerfile"],
-      "groupName": "bump container images"
+      "groupName": "container images"
     }
   ]
 }
