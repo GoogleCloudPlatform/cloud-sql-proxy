@@ -507,18 +507,6 @@ Cloud SQL instance. You MUST ensure the Proxy can reach your Cloud SQL
 instance, either by deploying it in a VPC that has access to your Private IP
 instance, or by configuring Public IP.
 
-### Is there a library version of the Proxy that I can use?
-
-Yes. Cloud SQL supports three language connectors:
-
-- [Cloud SQL Go Connector][go connector]
-- [Cloud SQL Java Connector](https://github.com/GoogleCloudPlatform/cloud-sql-jdbc-socket-factory)
-- [Cloud SQL Python Connector](https://github.com/GoogleCloudPlatform/cloud-sql-python-connector)
-
-The connectors for Go, Java, and Python offer the best experience when you are
-writing an application in those languages. Use the Proxy when your application
-uses another language.
-
 ### Should I use the Proxy for large deployments?
 
 We recommend deploying the Proxy on the host machines that are running the
