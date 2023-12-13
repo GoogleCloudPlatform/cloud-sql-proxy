@@ -10,28 +10,11 @@
   "prConcurrentLimit": 3,
   "packageRules": [
     {
-      "matchPackagePatterns": [
-        "^actions/checkout",
-        "^actions/github-script",
-        "^actions/setup-go",
-        "^actions/upload-artifact",
-        "^dorny/paths-filter",
-        "^github/codeql-action",
-        "^golang/govulncheck-action",
-        "^golangci/golangci-lint-action",
-        "^google-github-actions/auth",
-        "^google-github-actions/get-secretmanager-secrets",
-        "^google-github-actions/setup-gcloud",
-        "^micnncim/action-label-syncer",
-        "^ossf/scorecard-action"
-      ],
+      "matchManagers": ["github-actions"],
       "groupName": "dependencies for github"
     },
     {
-      "matchPackagePatterns": [
-        "^debian:buster",
-        "^debian:bullseye"
-      ],
+      "matchManagers": ["dockerfile"],
       "groupName": "container images"
     }
   ]
