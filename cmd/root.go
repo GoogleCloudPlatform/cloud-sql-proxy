@@ -91,24 +91,6 @@ type Command struct {
 	cleanup func() error
 }
 
-// Option is a function that configures a Command.
-type Option func(*Command)
-
-// WithLogger overrides the default logger.
-func WithLogger(l cloudsql.Logger) Option {
-	return func(c *Command) {
-		c.logger = l
-	}
-}
-
-// WithDialer configures the Command to use the provided dialer to connect to
-// Cloud SQL instances.
-func WithDialer(d cloudsql.Dialer) Option {
-	return func(c *Command) {
-		c.dialer = d
-	}
-}
-
 var longHelp = `
 Overview
 
@@ -397,10 +379,6 @@ func NewCommand(opts ...Option) *Command {
 			UserAgent: userAgent,
 		},
 	}
-	for _, o := range opts {
-		o(c)
-	}
-
 	var waitCmd = &cobra.Command{
 		Use:  "wait",
 		RunE: runWaitCmd,
@@ -417,6 +395,10 @@ func NewCommand(opts ...Option) *Command {
 		// If args is not already populated, try to read from the environment.
 		if len(args) == 0 {
 			args = instanceFromEnv(args)
+		}
+		// Override CLI based arguments with any programmatic options.
+		for _, o := range opts {
+			o(c)
 		}
 		// Handle logger separately from config
 		if c.conf.StructuredLogs {
