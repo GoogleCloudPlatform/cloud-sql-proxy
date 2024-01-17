@@ -54,23 +54,23 @@ jobs:
         repository: ${{ github.event.pull_request.head.repo.full_name }}
         
     - name: Setup Go
-      uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
+      uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
       with:
         go-version: "1.21"
       if: ${{ matrix.language == 'go' }}
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@4759df8df70c5ebe7042c3029bbace20eee13edd # v2.23.1
+      uses: github/codeql-action/init@0b21cf2492b6b02c465a3e5d7c473717ad7721ba # v3.23.1
       with:
         languages: ${{ matrix.language }}
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually
     - name: Autobuild
-      uses: github/codeql-action/autobuild@4759df8df70c5ebe7042c3029bbace20eee13edd # v2.23.1
+      uses: github/codeql-action/autobuild@0b21cf2492b6b02c465a3e5d7c473717ad7721ba # v3.23.1
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@4759df8df70c5ebe7042c3029bbace20eee13edd # v2.23.1
+      uses: github/codeql-action/analyze@0b21cf2492b6b02c465a3e5d7c473717ad7721ba # v3.23.1
       with:
         category: "/language:${{matrix.language}}"
