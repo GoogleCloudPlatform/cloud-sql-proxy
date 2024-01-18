@@ -96,7 +96,7 @@ type InstanceConnConfig struct {
 	// and Port.
 	UnixSocketPath string
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
-	// Postgres-only. If it is nil, the value was not specified.
+	// MySQL and Postgres only. If it is nil, the value was not specified.
 	IAMAuthN *bool
 
 	// PrivateIP tells the proxy to attempt to connect to the db instance's
@@ -155,7 +155,7 @@ type Config struct {
 	FUSETempDir string
 
 	// IAMAuthN enables automatic IAM DB Authentication for all instances.
-	// Postgres-only.
+	// MySQL and Postgres only.
 	IAMAuthN bool
 
 	// MaxConnections are the maximum number of connections the Client may
