@@ -357,6 +357,16 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the private-ip flag with query param override",
+			args: []string{"--private-ip", "proj:region:inst?private-ip=false"},
+			want: withDefaults(&proxy.Config{
+				PrivateIP: true,
+				Instances: []proxy.InstanceConnConfig{{
+					PrivateIP: pointer(false),
+				}},
+			}),
+		},
+		{
 			desc: "using the psc flag",
 			args: []string{"--psc", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
