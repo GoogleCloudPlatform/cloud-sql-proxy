@@ -434,7 +434,7 @@ func NewCommand(opts ...Option) *Command {
 
 	// Flags that apply only to the root command
 	localFlags := rootCmd.Flags()
-	// Flags that applie to all sub-commands
+	// Flags that apply to all sub-commands
 	globalFlags := rootCmd.PersistentFlags()
 
 	localFlags.BoolP("help", "h", false, "Display help information for cloud-sql-proxy")
