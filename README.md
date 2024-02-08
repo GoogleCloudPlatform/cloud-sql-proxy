@@ -342,6 +342,14 @@ a non-zero exit code.
 ./cloud-sql-proxy --run-connection-test <INSTANCE_CONNECTION_NAME>
 ```
 
+### Config file
+
+The Proxy supports a configuration file. Supported file types are TOML, JSON,
+and YAML. Load the file with the `--config-file` flag:
+
+```shell
+./cloud-sql-proxy --config-file /path/to/config.[toml|json|yaml]
+```
 
 ### Additional flags
 
