@@ -26,7 +26,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container.bullseye"
 
 # Final stage
-FROM debian:bullseye@sha256:71cb300d5448af821aedfe63afd55ba05f45a6a79f00dcd131b96b780bb99fe4
+FROM debian:bullseye@sha256:171478fbe347a3cfe45058dae333b6ed848fd8ce89f3104c89fa94c245086db1
 
 LABEL org.opencontainers.image.source="https://github.com/GoogleCloudPlatform/cloud-sql-proxy"
 
