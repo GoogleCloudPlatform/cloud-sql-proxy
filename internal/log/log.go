@@ -27,16 +27,18 @@ import (
 // StdLogger is the standard logger that distinguishes between info and error
 // logs.
 type StdLogger struct {
-	infoLog *llog.Logger
-	errLog  *llog.Logger
+	infoLog  *llog.Logger
+	debugLog *llog.Logger
+	errLog   *llog.Logger
 }
 
 // NewStdLogger create a Logger that uses out and err for informational and
 // error messages.
 func NewStdLogger(out, err io.Writer) cloudsql.Logger {
 	return &StdLogger{
-		infoLog: llog.New(out, "", llog.LstdFlags),
-		errLog:  llog.New(err, "", llog.LstdFlags),
+		infoLog:  llog.New(out, "", llog.LstdFlags),
+		debugLog: llog.New(out, "", llog.LstdFlags),
+		errLog:   llog.New(err, "", llog.LstdFlags),
 	}
 }
 
@@ -52,7 +54,7 @@ func (l *StdLogger) Errorf(format string, v ...interface{}) {
 
 // Debugf logs debug messages
 func (l *StdLogger) Debugf(format string, v ...interface{}) {
-	l.infoLog.Printf(format, v...)
+	l.debugLog.Printf(format, v...)
 }
 
 // StructuredLogger writes log messages in JSON.
@@ -72,7 +74,7 @@ func (l *StructuredLogger) Errorf(format string, v ...interface{}) {
 
 // Debugf logs debug messages
 func (l *StructuredLogger) Debugf(format string, v ...interface{}) {
-	l.logger.Infof(format, v...)
+	l.logger.Debugf(format, v...)
 }
 
 // NewStructuredLogger creates a Logger that logs messages using JSON.

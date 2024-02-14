@@ -454,6 +454,13 @@ To enable Prometheus, use the `--prometheus` flag. This will start an HTTP
 server on localhost with a `/metrics` endpoint. The Prometheus namespace may
 optionally be set with `--prometheus-namespace`.
 
+## Debug logging
+
+To enable debug logging to report on internal certificate refresh operations,
+use the `--debug-logs` flag. Typical use of the Proxy should not require debug
+logs, but if you are surprised by the Proxy's behavior, debug logging should
+provide insight into internal operations and can help when reporting issues.
+
 ## Localhost Admin Server
 
 The Proxy includes support for an admin server on localhost. By default, the

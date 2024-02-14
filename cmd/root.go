@@ -262,6 +262,13 @@ Localhost Admin Server
   /quitquitquit. The admin server exits gracefully when it receives a POST
   request at /quitquitquit.
 
+Debug logging
+
+  On occasion, it can help to enable debug logging which will report on
+  internal certificate refresh operations. To enable debug logging, use:
+
+      ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME> --debug-logs
+
 Waiting for Startup
 
   See the wait subcommand's help for details.
@@ -458,6 +465,8 @@ Instead prefer Application Default Credentials
 the Proxy will then pick-up automatically.`)
 	localFlags.BoolVarP(&c.conf.StructuredLogs, "structured-logs", "l", false,
 		"Enable structured logging with LogEntry format")
+	localFlags.BoolVar(&c.conf.DebugLogs, "debug-logs", false,
+		"Enable debug logging")
 	localFlags.Uint64Var(&c.conf.MaxConnections, "max-connections", 0,
 		"Limit the number of connections. Default is no limit.")
 	localFlags.DurationVar(&c.conf.WaitOnClose, "max-sigterm-delay", 0,
