@@ -239,6 +239,8 @@ type Config struct {
 	// QuitQuitQuit enables a handler that will shut the Proxy down upon
 	// receiving a POST request.
 	QuitQuitQuit bool
+	// DebugLogs enables debug level logging.
+	DebugLogs bool
 
 	// OtherUserAgents is a list of space separate user agents that will be
 	// appended to the default user agent.
@@ -396,6 +398,9 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 	}
 	opts = append(opts, co)
 
+	if c.DebugLogs {
+		opts = append(opts, cloudsqlconn.WithDebugLogger(l))
+	}
 	if c.APIEndpointURL != "" {
 		opts = append(opts, cloudsqlconn.WithAdminAPIEndpoint(c.APIEndpointURL))
 	}
@@ -710,7 +715,7 @@ func (c *Client) serveSocketMount(_ context.Context, s *socketMount) error {
 		}
 		// handle the connection in a separate goroutine
 		go func() {
-			c.logger.Infof("[%s] accepted connection from %s", s.inst, cConn.RemoteAddr())
+			c.logger.Infof("[%s] Accepted connection from %s", s.inst, cConn.RemoteAddr())
 
 			// A client has established a connection to the local socket. Before
 			// we initiate a connection to the Cloud SQL backend, increment the
