@@ -457,7 +457,7 @@ optionally be set with `--prometheus-namespace`.
 ## Debug logging
 
 To enable debug logging to report on internal certificate refresh operations,
-use the `--debug-log` flag. Typical use of the Proxy should not require debug
+use the `--debug-logs` flag. Typical use of the Proxy should not require debug
 logs, but if you are surprised by the Proxy's behavior, debug logging should
 provide insight into internal operations and can help when reporting issues.
 
