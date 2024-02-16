@@ -265,6 +265,13 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the universe domain flag",
+			args: []string{"--universe-domain", "test-universe.test", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				UniverseDomain: "test-universe.test",
+			}),
+		},
+		{
 			desc: "using the unix socket flag",
 			args: []string{"--unix-socket", "/path/to/dir/", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -1188,6 +1195,12 @@ func TestNewCommandWithErrors(t *testing.T) {
 				"--run-connection-test",
 				"--fuse", "myfusedir",
 			},
+		},
+		{
+			desc: "using both --sqladmin-api-endpoint and --universe-domain",
+			args: []string{
+				"--sqladmin-api-endpoint", "https://sqladmin.googleapis.com",
+				"--universe-domain", "test-universe.test", "proj:region:inst"},
 		},
 	}
 

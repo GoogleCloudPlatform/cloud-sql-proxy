@@ -141,6 +141,10 @@ type Config struct {
 	// the proxy will use the main public api: https://sqladmin.googleapis.com/
 	APIEndpointURL string
 
+	// UniverseDomain is the universe domain for the TPC environment. When left
+	// blank, the proxy will use the Google Default Universe (GDU): googleapis.com
+	UniverseDomain string
+
 	// UnixSocket is the directory where Unix sockets will be created,
 	// connected to any Instances. If set, takes precedence over Addr and Port.
 	UnixSocket string
@@ -403,6 +407,10 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 	}
 	if c.APIEndpointURL != "" {
 		opts = append(opts, cloudsqlconn.WithAdminAPIEndpoint(c.APIEndpointURL))
+	}
+
+	if c.UniverseDomain != "" {
+		opts = append(opts, cloudsqlconn.WithUniverseDomain(c.UniverseDomain))
 	}
 
 	if c.IAMAuthN {
