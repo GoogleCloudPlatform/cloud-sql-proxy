@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.16...v1.34.0) (2024-02-20)
+
+
+### Features
+
+* bump to Go 1.22 ([#2121](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2121)) ([a72afb5](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/a72afb57378fc28a237bfd442055f7ce52f7a317))
+
 ## [1.33.16](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.33.15...v1.33.16) (2024-01-17)
 
 
