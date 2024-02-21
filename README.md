@@ -51,7 +51,7 @@ instance, or by configuring Public IP.
 Check for the latest version on the [releases page][releases] and use the
 following instructions for your OS and CPU architecture.
 
-<!-- {x-version-update-start:cloud-sql-proxy/v:released} -->
+<!-- {x-release-please-start-version} -->
 <details open>
 <summary>Linux amd64</summary>
 
@@ -155,7 +155,7 @@ curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.8.2/
 ```
 
 </details>
-<!-- {x-version-update-end} -->
+<!-- {x-release-please-end} -->
 
 ### Install from Source
 
@@ -370,7 +370,7 @@ currently supported:
 - `$VERSION-buster`
 - `$VERSION-bullseye`
 
-<!-- {x-version-update-start} -->
+<!-- {x-release-please-start-version} -->
 The `$VERSION` is the Proxy version without the leading "v" (e.g.,
 `2.8.2`).
 
@@ -381,7 +381,7 @@ For example, to pull a particular version, use a command like:
 docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.2
 ```
 
-<!-- {x-version-update-end} -->
+<!-- {x-release-please-end} -->
 We recommend pinning to a specific version tag and using automation with a CI pipeline
 to update regularly.
 
