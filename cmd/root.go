@@ -50,7 +50,7 @@ var (
 	// versionString indicates the version of this library.
 	//go:embed version.txt
 	versionString string
-	// metadataString indiciates additional build or distribution metadata.
+	// metadataString indicates additional build or distribution metadata.
 	metadataString string
 	userAgent      string
 )
@@ -60,7 +60,7 @@ func init() {
 	userAgent = "cloud-sql-proxy/" + versionString
 }
 
-// semanticVersion returns the version of the proxy including an compile-time
+// semanticVersion returns the version of the proxy including a compile-time
 // metadata.
 func semanticVersion() string {
 	v := strings.TrimSpace(versionString)
@@ -75,7 +75,8 @@ func semanticVersion() string {
 func Execute() {
 	if err := NewCommand().Execute(); err != nil {
 		exit := 1
-		if terr, ok := err.(*exitError); ok {
+		var terr *exitError
+		if errors.As(err, &terr) {
 			exit = terr.Code
 		}
 		os.Exit(exit)
@@ -191,7 +192,7 @@ Health checks
 Service Account Impersonation
 
   The Proxy supports service account impersonation with the
-  --impersonate-service-account flag and matches gcloud's flag. When enabled,
+  --impersonate-service-account flag and matches gclouds flag. When enabled,
   all API requests are made impersonating the supplied service account. The
   IAM principal must have the iam.serviceAccounts.getAccessToken permission or
   the role roles/iam.serviceAccounts.serviceAccountTokenCreator.
@@ -244,6 +245,33 @@ Configuration using environment variables
       CSQL_PROXY_INSTANCE_CONNECTION_NAME_0=my-project:us-central1:my-db-server \
       CSQL_PROXY_INSTANCE_CONNECTION_NAME_1=my-other-project:us-central1:my-other-server \
           ./cloud-sql-proxy
+
+Configuration using a configuration file
+
+  Instead of using CLI flags, the Proxy may be configured using a configuration
+  file. The configuration file is a TOML, YAML or JSON file with the same keys
+  as the environment variables. The configuration file is specified with the
+  --config-file flag. An invocation of the Proxy using a configuration file
+  would look like the following:
+
+      ./cloud-sql-proxy --config-file=config.toml
+
+  The configuration file may look like the following:
+
+      instance_connection_name = "my-project:us-central1:my-server-instance"
+
+  If multiple instance connection names are used, add the index of the
+  instance connection name as a suffix. For example:
+
+      instance_connection_name_0 = "my-project:us-central1:my-db-server"
+      instance_connection_name_1 = "my-other-project:us-central1:my-other-server"
+
+  The configuration file may also contain the same keys as the environment
+  variables and flags. For example:
+
+      auto_iam_authn = true
+      debug = true
+      max_connections = 5
 
 Localhost Admin Server
 
@@ -314,36 +342,6 @@ Configuration
   ./cloud-sql-proxy wait --max 10s
 `
 
-const envPrefix = "CSQL_PROXY"
-
-func instanceFromEnv(args []string) []string {
-	// This supports naming the first instance first with:
-	//     INSTANCE_CONNECTION_NAME
-	// or if that's not defined, with:
-	//     INSTANCE_CONNECTION_NAME_0
-	inst := os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME", envPrefix))
-	if inst == "" {
-		inst = os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME_0", envPrefix))
-		if inst == "" {
-			return nil
-		}
-	}
-	args = append(args, inst)
-
-	i := 1
-	for {
-		instN := os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME_%d", envPrefix, i))
-		// if the next instance connection name is not defined, stop checking
-		// environment variables.
-		if instN == "" {
-			break
-		}
-		args = append(args, instN)
-		i++
-	}
-	return args
-}
-
 const (
 	waitMaxFlag     = "max"
 	httpAddressFlag = "http-address"
@@ -379,6 +377,8 @@ func runWaitCmd(c *cobra.Command, _ []string) error {
 	}
 }
 
+const envPrefix = "CSQL_PROXY"
+
 // NewCommand returns a Command object representing an invocation of the proxy.
 func NewCommand(opts ...Option) *Command {
 	rootCmd := &cobra.Command{
@@ -411,32 +411,15 @@ func NewCommand(opts ...Option) *Command {
 	)
 	rootCmd.AddCommand(waitCmd)
 
-	rootCmd.Args = func(cmd *cobra.Command, args []string) error {
-		// If args is not already populated, try to read from the environment.
-		if len(args) == 0 {
-			args = instanceFromEnv(args)
-		}
-		// Override CLI based arguments with any programmatic options.
-		for _, o := range opts {
-			o(c)
-		}
-		// Handle logger separately from config
-		if c.conf.StructuredLogs {
-			c.logger, c.cleanup = log.NewStructuredLogger(c.conf.Quiet)
-		} else if c.conf.Quiet {
-			c.logger = log.NewStdLogger(io.Discard, os.Stderr)
-		}
-		err := parseConfig(c, c.conf, args)
-		if err != nil {
-			return err
-		}
-		// The arguments are parsed. Usage is no longer needed.
-		cmd.SilenceUsage = true
-		// Errors will be handled by logging from here on.
-		cmd.SilenceErrors = true
-		return nil
+	rootCmd.Args = func(_ *cobra.Command, args []string) error {
+		// Load the configuration file before running the command. This should
+		// ensure that the configuration is loaded in the correct order:
+		//
+		//   flags > environment variables > configuration files
+		//
+		// See https://github.com/carolynvs/stingoftheviper for more info
+		return loadConfig(c, args, opts)
 	}
-
 	rootCmd.RunE = func(*cobra.Command, []string) error { return runSignalWrapper(c) }
 
 	// Flags that apply only to the root command
@@ -447,6 +430,8 @@ func NewCommand(opts ...Option) *Command {
 	localFlags.BoolP("help", "h", false, "Display help information for cloud-sql-proxy")
 	localFlags.BoolP("version", "v", false, "Print the cloud-sql-proxy version")
 
+	localFlags.StringVar(&c.conf.Filepath, "config-file", c.conf.Filepath,
+		"Path to a TOML file containing configuration options.")
 	localFlags.StringVar(&c.conf.OtherUserAgents, "user-agent", "",
 		"Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1")
 	localFlags.StringVarP(&c.conf.Token, "token", "t", "",
@@ -458,7 +443,7 @@ func NewCommand(opts ...Option) *Command {
 	localFlags.StringVarP(&c.conf.CredentialsJSON, "json-credentials", "j", "",
 		"Use service account key JSON as a source of IAM credentials.")
 	localFlags.BoolVarP(&c.conf.GcloudAuth, "gcloud-auth", "g", false,
-		`Use gcloud's user credentials as a source of IAM credentials.
+		`Use gclouds user credentials as a source of IAM credentials.
 NOTE: this flag is a legacy feature and generally should not be used.
 Instead prefer Application Default Credentials
 (enabled with: gcloud auth application-default login) which
@@ -538,30 +523,167 @@ status code.`)
 	localFlags.BoolVar(&c.conf.PSC, "psc", false,
 		"(*) Connect to the PSC endpoint for all instances")
 
-	v := viper.NewWithOptions(viper.EnvKeyReplacer(strings.NewReplacer("-", "_")))
-	v.SetEnvPrefix(envPrefix)
-	v.AutomaticEnv()
-	// Ignoring the error here since its only occurence is if one of the pflags
-	// is nil which is never the case here.
-	_ = v.BindPFlags(globalFlags)
-	_ = v.BindPFlags(localFlags)
-
-	// Override any unset flags with Viper values to use the pflags
-	// object as a single source of truth.
-	localFlags.VisitAll(func(f *pflag.Flag) {
-		if !f.Changed && v.IsSet(f.Name) {
-			val := v.Get(f.Name)
-			_ = localFlags.Set(f.Name, fmt.Sprintf("%v", val))
-		}
-	})
-	globalFlags.VisitAll(func(f *pflag.Flag) {
-		if !f.Changed && v.IsSet(f.Name) {
-			val := v.Get(f.Name)
-			_ = globalFlags.Set(f.Name, fmt.Sprintf("%v", val))
-		}
-	})
-
 	return c
+}
+
+func loadConfig(c *Command, args []string, opts []Option) error {
+	v, err := initViper(c)
+	if err != nil {
+		return err
+	}
+
+	_ = v.BindPFlags(c.Flags())
+
+	c.Flags().VisitAll(func(f *pflag.Flag) {
+		// Override any unset flags with Viper values to use the pflags
+		// object as a single source of truth.
+		if !f.Changed && v.IsSet(f.Name) {
+			val := v.Get(f.Name)
+			_ = c.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+		}
+	})
+
+	// If args is not already populated, try to read from the environment.
+	if len(args) == 0 {
+		args = instanceFromEnv(args)
+	}
+
+	// If no environment args are present, try to read from the config file.
+	if len(args) == 0 {
+		args = instanceFromConfigFile(v)
+	}
+
+	for _, o := range opts {
+		o(c)
+	}
+
+	// Handle logger separately from config
+	if c.conf.StructuredLogs {
+		c.logger, c.cleanup = log.NewStructuredLogger(c.conf.Quiet)
+	}
+
+	if c.conf.Quiet {
+		c.logger = log.NewStdLogger(io.Discard, os.Stderr)
+	}
+
+	err = parseConfig(c, c.conf, args)
+	if err != nil {
+		return err
+	}
+
+	// The arguments are parsed. Usage is no longer needed.
+	c.SilenceUsage = true
+
+	// Errors will be handled by logging from here on.
+	c.SilenceErrors = true
+
+	return nil
+}
+
+func initViper(c *Command) (*viper.Viper, error) {
+	v := viper.New()
+
+	if c.conf.Filepath != "" {
+		// Setup Viper configuration file. Viper will attempt to load
+		// configuration from the specified file if it exists. Otherwise, Viper
+		// will source all configuration from flags and then environment
+		// variables.
+		ext := filepath.Ext(c.conf.Filepath)
+
+		badExtErr := newBadCommandError(
+			fmt.Sprintf("config file %v should have extension of "+
+				"toml, yaml, or json", c.conf.Filepath,
+			))
+
+		if ext == "" {
+			return nil, badExtErr
+		}
+
+		if ext != ".toml" && ext != ".yaml" && ext != ".yml" && ext != ".json" {
+			return nil, badExtErr
+		}
+
+		conf := filepath.Base(c.conf.Filepath)
+		noExt := strings.ReplaceAll(conf, ext, "")
+		// argument must be the name of config file without extension
+		v.SetConfigName(noExt)
+		v.AddConfigPath(filepath.Dir(c.conf.Filepath))
+
+		// Attempt to load configuration from a file. If no file is found,
+		// assume configuration is provided by flags or environment variables.
+		if err := v.ReadInConfig(); err != nil {
+			// If the error is a ConfigFileNotFoundError, then ignore it.
+			// Otherwise, report the error to the user.
+			var cErr viper.ConfigFileNotFoundError
+			if !errors.As(err, &cErr) {
+				return nil, newBadCommandError(fmt.Sprintf(
+					"failed to load configuration from %v: %v",
+					c.conf.Filepath, err,
+				))
+			}
+		}
+	}
+
+	v.SetEnvPrefix(envPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	v.AutomaticEnv()
+
+	return v, nil
+}
+
+func instanceFromEnv(args []string) []string {
+	// This supports naming the first instance first with:
+	//     INSTANCE_CONNECTION_NAME
+	// or if that's not defined, with:
+	//     INSTANCE_CONNECTION_NAME_0
+	inst := os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME", envPrefix))
+	if inst == "" {
+		inst = os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME_0", envPrefix))
+		if inst == "" {
+			return nil
+		}
+	}
+	args = append(args, inst)
+
+	i := 1
+	for {
+		instN := os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME_%d", envPrefix, i))
+		// if the next instance connection name is not defined, stop checking
+		// environment variables.
+		if instN == "" {
+			break
+		}
+		args = append(args, instN)
+		i++
+	}
+	return args
+}
+
+func instanceFromConfigFile(v *viper.Viper) []string {
+	var args []string
+	inst := v.GetString("instance_connection_name")
+
+	if inst == "" {
+		inst = v.GetString("instance_connection_name_0")
+		if inst == "" {
+			return nil
+		}
+	}
+	args = append(args, inst)
+
+	i := 1
+	for {
+		instN := v.GetString(fmt.Sprintf("instance_connection_name_%d", i))
+		// if the next instance connection name is not defined, stop checking
+		// environment variables.
+		if instN == "" {
+			break
+		}
+		args = append(args, instN)
+		i++
+	}
+
+	return args
 }
 
 func userHasSetLocal(cmd *Command, f string) bool {
@@ -894,7 +1016,7 @@ func runSignalWrapper(cmd *Command) (err error) {
 	case err := <-shutdownCh:
 		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 		// If running under systemd with Type=notify, it will send a message to the
-		// service manager that a failure occurred and it is terminating.
+		// service manager that a failure occurred, and it is terminating.
 		go func() {
 			if _, err := daemon.SdNotify(false, daemon.SdNotifyStopping); err != nil {
 				cmd.logger.Errorf("Failed to notify systemd of termination: %v", err)
@@ -1030,7 +1152,7 @@ func startHTTPServer(ctx context.Context, l cloudsql.Logger, addr string, mux *h
 	// Start the HTTP server.
 	go func() {
 		err := server.ListenAndServe()
-		if err == http.ErrServerClosed {
+		if errors.Is(err, http.ErrServerClosed) {
 			return
 		}
 		if err != nil {
@@ -1039,7 +1161,7 @@ func startHTTPServer(ctx context.Context, l cloudsql.Logger, addr string, mux *h
 	}()
 	// Handle shutdown of the HTTP server gracefully.
 	<-ctx.Done()
-	// Give the HTTP server a second to shutdown cleanly.
+	// Give the HTTP server a second to shut down cleanly.
 	ctx2, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx2); err != nil {
