@@ -351,6 +351,19 @@ and YAML. Load the file with the `--config-file` flag:
 ./cloud-sql-proxy --config-file /path/to/config.[toml|json|yaml]
 ```
 
+The configuration file format supports all flags, in lowercase and with an
+underscore instead of a hyphen.
+
+For example:
+
+``` toml
+instance_connection_name = "proj:region:inst"
+auto_iam_authn = true
+debug = true
+```
+
+Run `./cloud-sql-proxy --help` for more details.
+
 ### Additional flags
 
 To see a full list of flags, use:
