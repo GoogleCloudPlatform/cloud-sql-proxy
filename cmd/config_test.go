@@ -18,7 +18,7 @@ import (
 	"testing"
 )
 
-func Assert[T comparable](t *testing.T, want, got T) {
+func assert[T comparable](t *testing.T, want, got T) {
 	t.Helper()
 	if got != want {
 		t.Errorf("got %v, want %v", got, want)
@@ -30,63 +30,61 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 		desc   string
 		args   []string
 		setup  func()
-		assert func(command *Command)
+		assert func(t *testing.T, command *Command)
 	}{
 		{
-			desc: "toml config file",
-			args: []string{"--config-file", "testdata/cloud-sql-proxy.config.test-toml.toml"},
-			setup: func() {
-			},
-			assert: func(command *Command) {
-				Assert(t, 1, len(command.conf.Instances))
-				Assert(t, true, command.conf.Debug)
-			},
-		},
-		{
-			desc: "yaml config file",
-			args: []string{"--config-file", "testdata/cloud-sql-proxy.config.test-yaml.yaml"},
-			setup: func() {
-			},
-			assert: func(command *Command) {
-				Assert(t, 1, len(command.conf.Instances))
-				Assert(t, true, command.conf.Debug)
+			desc:  "toml config file",
+			args:  []string{"--config-file", "testdata/config.toml"},
+			setup: func() {},
+			assert: func(t *testing.T, command *Command) {
+				assert(t, 1, len(command.conf.Instances))
+				assert(t, true, command.conf.Debug)
 			},
 		},
 		{
-			desc: "json config file",
-			args: []string{"--config-file", "testdata/cloud-sql-proxy.config.test-json.json"},
-			setup: func() {
-			},
-			assert: func(command *Command) {
-				Assert(t, 1, len(command.conf.Instances))
-				Assert(t, true, command.conf.Debug)
-			},
-		},
-		{
-			desc: "toml config file with two instances",
-			args: []string{"--config-file", "testdata/cloud-sql-proxy-two-instances.config.test-toml.toml"},
-			setup: func() {
-			},
-			assert: func(command *Command) {
-				Assert(t, 2, len(command.conf.Instances))
+			desc:  "yaml config file",
+			args:  []string{"--config-file", "testdata/config.yaml"},
+			setup: func() {},
+			assert: func(t *testing.T, command *Command) {
+				assert(t, 1, len(command.conf.Instances))
+				assert(t, true, command.conf.Debug)
 			},
 		},
 		{
-			desc: "yaml config file with two instances",
-			args: []string{"--config-file", "testdata/cloud-sql-proxy-two-instances.config.test-yaml.yaml"},
-			setup: func() {
-			},
-			assert: func(command *Command) {
-				Assert(t, 2, len(command.conf.Instances))
+			desc:  "json config file",
+			args:  []string{"--config-file", "testdata/config.json"},
+			setup: func() {},
+			assert: func(t *testing.T, command *Command) {
+				assert(t, 1, len(command.conf.Instances))
+				assert(t, true, command.conf.Debug)
 			},
 		},
 		{
-			desc: "json config file with two instances",
-			args: []string{"--config-file", "testdata/cloud-sql-proxy-two-instances.config.test-json.json"},
-			setup: func() {
+			desc:  "config file with two instances",
+			args:  []string{"--config-file", "testdata/two-instances.toml"},
+			setup: func() {},
+			assert: func(t *testing.T, command *Command) {
+				assert(t, 2, len(command.conf.Instances))
 			},
-			assert: func(command *Command) {
-				Assert(t, 2, len(command.conf.Instances))
+		},
+		{
+			desc: "instance argument overrides env config precedence",
+			args: []string{"proj:region:inst"},
+			setup: func() {
+				t.Setenv("CSQL_PROXY_INSTANCE_CONNECTION_NAME", "p:r:i")
+			},
+			assert: func(t *testing.T, command *Command) {
+				assert(t, "proj:region:inst", command.conf.Instances[0].Name)
+			},
+		},
+		{
+			desc: "instance env overrides config file precedence",
+			args: []string{"--config-file", "testdata/config.json"},
+			setup: func() {
+				t.Setenv("CSQL_PROXY_INSTANCE_CONNECTION_NAME", "p:r:i")
+			},
+			assert: func(t *testing.T, command *Command) {
+				assert(t, "p:r:i", command.conf.Instances[0].Name)
 			},
 		},
 		{
@@ -95,27 +93,33 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 			setup: func() {
 				t.Setenv("CSQL_PROXY_DEBUG", "false")
 			},
-			assert: func(command *Command) {
-				Assert(t, true, command.conf.Debug)
+			assert: func(t *testing.T, command *Command) {
+				assert(t, true, command.conf.Debug)
 			},
 		},
 		{
 			desc: "flag overrides config file precedence",
-			args: []string{"proj:region:inst", "--config-file", "../testdata/cloud-sql-proxy.config.test-toml.toml", "--debug"},
-			setup: func() {
+			args: []string{
+				"proj:region:inst",
+				"--config-file", "testdata/config.toml",
+				"--debug",
 			},
-			assert: func(command *Command) {
-				Assert(t, true, command.conf.Debug)
+			setup: func() {},
+			assert: func(t *testing.T, command *Command) {
+				assert(t, true, command.conf.Debug)
 			},
 		},
 		{
 			desc: "env overrides config file precedence",
-			args: []string{"proj:region:inst", "--config-file", "../testdata/cloud-sql-proxy.config.test-toml.toml"},
+			args: []string{
+				"proj:region:inst",
+				"--config-file", "testdata/config.toml",
+			},
 			setup: func() {
 				t.Setenv("CSQL_PROXY_DEBUG", "false")
 			},
-			assert: func(command *Command) {
-				Assert(t, false, command.conf.Debug)
+			assert: func(t *testing.T, command *Command) {
+				assert(t, false, command.conf.Debug)
 			},
 		},
 	}
@@ -129,7 +133,7 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
 
-			tc.assert(cmd)
+			tc.assert(t, cmd)
 		})
 	}
 }

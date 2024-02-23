@@ -412,16 +412,13 @@ func NewCommand(opts ...Option) *Command {
 	rootCmd.AddCommand(waitCmd)
 
 	rootCmd.Args = func(_ *cobra.Command, args []string) error {
-		// Get the instance connection names from flags, the environment or config file
-		return loadArgs(c, args, opts)
-	}
-	rootCmd.PersistentPreRunE = func(*cobra.Command, []string) error {
-		// Load the configuration file before running the command.
-		// This should ensure that the configuration is loaded in the correct order:
-		// flags > environment variables > configuration files and the defaults
-		// set by the tool.
+		// Load the configuration file before running the command. This should
+		// ensure that the configuration is loaded in the correct order:
+		//
+		//   flags > environment variables > configuration files
+		//
 		// See https://github.com/carolynvs/stingoftheviper for more info
-		return loadConfig(c)
+		return loadConfig(c, args, opts)
 	}
 	rootCmd.RunE = func(*cobra.Command, []string) error { return runSignalWrapper(c) }
 
@@ -529,7 +526,7 @@ status code.`)
 	return c
 }
 
-func loadConfig(c *Command) error {
+func loadConfig(c *Command, args []string, opts []Option) error {
 	v, err := initViper(c)
 	if err != nil {
 		return err
@@ -545,15 +542,6 @@ func loadConfig(c *Command) error {
 			_ = c.Flags().Set(f.Name, fmt.Sprintf("%v", val))
 		}
 	})
-
-	return nil
-}
-
-func loadArgs(c *Command, args []string, opts []Option) error {
-	v, err := initViper(c)
-	if err != nil {
-		return err
-	}
 
 	// If args is not already populated, try to read from the environment.
 	if len(args) == 0 {
@@ -596,34 +584,38 @@ func initViper(c *Command) (*viper.Viper, error) {
 	v := viper.New()
 
 	if c.conf.Filepath != "" {
-		// Setup Viper configuration file. Viper will attempt to load configuration
-		// from the specified file if it exists. Otherwise, Viper will source all
-		// configuration from flags and then environment variables.
+		// Setup Viper configuration file. Viper will attempt to load
+		// configuration from the specified file if it exists. Otherwise, Viper
+		// will source all configuration from flags and then environment
+		// variables.
 		ext := filepath.Ext(c.conf.Filepath)
 
+		badExtErr := newBadCommandError(
+			fmt.Sprintf("config file %v should have extension of "+
+				"toml, yaml, or json", c.conf.Filepath,
+			))
+
 		if ext == "" {
-			return nil, newBadCommandError(fmt.Sprintf("config file %v has no extension, "+
-				"requires TOML, YAML or JSON format", c.conf.Filepath))
+			return nil, badExtErr
 		}
 
 		if ext != ".toml" && ext != ".yaml" && ext != ".yml" && ext != ".json" {
-			return nil, newBadCommandError(fmt.Sprintf("config file %v has an invalid extension, "+
-				"requires TOML, YAML or JSON format", c.conf.Filepath))
+			return nil, badExtErr
 		}
 
 		conf := filepath.Base(c.conf.Filepath)
 		noExt := strings.ReplaceAll(conf, ext, "")
-		v.SetConfigName(noExt) // argument must be the name of config file without extension
+		// argument must be the name of config file without extension
+		v.SetConfigName(noExt)
 		v.AddConfigPath(filepath.Dir(c.conf.Filepath))
 
-		// Attempt to load configuration from a file. If no file is found, assume
-		// configuration is provided by flags or environment variables.
+		// Attempt to load configuration from a file. If no file is found,
+		// assume configuration is provided by flags or environment variables.
 		if err := v.ReadInConfig(); err != nil {
 			// If the error is a ConfigFileNotFoundError, then ignore it.
 			// Otherwise, report the error to the user.
 			var cErr viper.ConfigFileNotFoundError
 			if !errors.As(err, &cErr) {
-				// TODO clean up this error message
 				return nil, newBadCommandError(fmt.Sprintf(
 					"failed to load configuration from %v: %v",
 					c.conf.Filepath, err,
