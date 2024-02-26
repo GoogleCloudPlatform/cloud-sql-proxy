@@ -30,41 +30,44 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 		desc   string
 		args   []string
 		setup  func()
-		assert func(t *testing.T, command *Command)
+		assert func(t *testing.T, c *Command)
 	}{
 		{
 			desc:  "toml config file",
-			args:  []string{"--config-file", "testdata/config.toml"},
+			args:  []string{"--config-file", "testdata/config-toml.toml"},
 			setup: func() {},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, 1, len(command.conf.Instances))
-				assert(t, true, command.conf.Debug)
+			assert: func(t *testing.T, c *Command) {
+				assert(t, 1, len(c.conf.Instances))
+				assert(t, true, c.conf.Debug)
+				assert(t, 5555, c.conf.Port)
+				assert(t, true, c.conf.DebugLogs)
+				assert(t, true, c.conf.IAMAuthN)
 			},
 		},
 		{
 			desc:  "yaml config file",
-			args:  []string{"--config-file", "testdata/config.yaml"},
+			args:  []string{"--config-file", "testdata/config-yaml.yaml"},
 			setup: func() {},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, 1, len(command.conf.Instances))
-				assert(t, true, command.conf.Debug)
+			assert: func(t *testing.T, c *Command) {
+				assert(t, 1, len(c.conf.Instances))
+				assert(t, true, c.conf.Debug)
 			},
 		},
 		{
 			desc:  "json config file",
-			args:  []string{"--config-file", "testdata/config.json"},
+			args:  []string{"--config-file", "testdata/config-json.json"},
 			setup: func() {},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, 1, len(command.conf.Instances))
-				assert(t, true, command.conf.Debug)
+			assert: func(t *testing.T, c *Command) {
+				assert(t, 1, len(c.conf.Instances))
+				assert(t, true, c.conf.Debug)
 			},
 		},
 		{
 			desc:  "config file with two instances",
 			args:  []string{"--config-file", "testdata/two-instances.toml"},
 			setup: func() {},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, 2, len(command.conf.Instances))
+			assert: func(t *testing.T, c *Command) {
+				assert(t, 2, len(c.conf.Instances))
 			},
 		},
 		{
@@ -73,8 +76,8 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 			setup: func() {
 				t.Setenv("CSQL_PROXY_INSTANCE_CONNECTION_NAME", "p:r:i")
 			},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, "proj:region:inst", command.conf.Instances[0].Name)
+			assert: func(t *testing.T, c *Command) {
+				assert(t, "proj:region:inst", c.conf.Instances[0].Name)
 			},
 		},
 		{
@@ -83,8 +86,8 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 			setup: func() {
 				t.Setenv("CSQL_PROXY_INSTANCE_CONNECTION_NAME", "p:r:i")
 			},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, "p:r:i", command.conf.Instances[0].Name)
+			assert: func(t *testing.T, c *Command) {
+				assert(t, "p:r:i", c.conf.Instances[0].Name)
 			},
 		},
 		{
@@ -93,8 +96,8 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 			setup: func() {
 				t.Setenv("CSQL_PROXY_DEBUG", "false")
 			},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, true, command.conf.Debug)
+			assert: func(t *testing.T, c *Command) {
+				assert(t, true, c.conf.Debug)
 			},
 		},
 		{
@@ -105,8 +108,8 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 				"--debug",
 			},
 			setup: func() {},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, true, command.conf.Debug)
+			assert: func(t *testing.T, c *Command) {
+				assert(t, true, c.conf.Debug)
 			},
 		},
 		{
@@ -118,8 +121,8 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 			setup: func() {
 				t.Setenv("CSQL_PROXY_DEBUG", "false")
 			},
-			assert: func(t *testing.T, command *Command) {
-				assert(t, false, command.conf.Debug)
+			assert: func(t *testing.T, c *Command) {
+				assert(t, false, c.conf.Debug)
 			},
 		},
 	}

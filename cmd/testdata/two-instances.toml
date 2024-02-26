@@ -1,2 +1,2 @@
-instance_connection_name_0 = "x:y:z"
-instance_connection_name_1 = "a:b:c"
+instance-connection-name-0 = "x:y:z"
+instance-connection-name-1 = "a:b:c"

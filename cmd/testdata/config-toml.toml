@@ -1,0 +1,5 @@
+instance-connection-name = "proj:region:inst"
+debug = true
+port = "5555"
+debug-logs = true
+auto-iam-authn = true

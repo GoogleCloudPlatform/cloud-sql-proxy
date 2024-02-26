@@ -258,20 +258,21 @@ Configuration using a configuration file
 
   The configuration file may look like the following:
 
-      instance_connection_name = "my-project:us-central1:my-server-instance"
+      instance-connection-name = "my-project:us-central1:my-server-instance"
+      auto-iam-authn = true
 
   If multiple instance connection names are used, add the index of the
   instance connection name as a suffix. For example:
 
-      instance_connection_name_0 = "my-project:us-central1:my-db-server"
-      instance_connection_name_1 = "my-other-project:us-central1:my-other-server"
+      instance-connection-name-0 = "my-project:us-central1:my-db-server"
+      instance-connection-name-1 = "my-other-project:us-central1:my-other-server"
 
   The configuration file may also contain the same keys as the environment
   variables and flags. For example:
 
-      auto_iam_authn = true
+      auto-iam-authn = true
       debug = true
-      max_connections = 5
+      max-connections = 5
 
 Localhost Admin Server
 
@@ -532,8 +533,6 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 		return err
 	}
 
-	_ = v.BindPFlags(c.Flags())
-
 	c.Flags().VisitAll(func(f *pflag.Flag) {
 		// Override any unset flags with Viper values to use the pflags
 		// object as a single source of truth.
@@ -661,10 +660,10 @@ func instanceFromEnv(args []string) []string {
 
 func instanceFromConfigFile(v *viper.Viper) []string {
 	var args []string
-	inst := v.GetString("instance_connection_name")
+	inst := v.GetString("instance-connection-name")
 
 	if inst == "" {
-		inst = v.GetString("instance_connection_name_0")
+		inst = v.GetString("instance-connection-name-0")
 		if inst == "" {
 			return nil
 		}
@@ -673,7 +672,7 @@ func instanceFromConfigFile(v *viper.Viper) []string {
 
 	i := 1
 	for {
-		instN := v.GetString(fmt.Sprintf("instance_connection_name_%d", i))
+		instN := v.GetString(fmt.Sprintf("instance-connection-name-%d", i))
 		// if the next instance connection name is not defined, stop checking
 		// environment variables.
 		if instN == "" {
