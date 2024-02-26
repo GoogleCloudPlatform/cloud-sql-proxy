@@ -355,7 +355,7 @@ The configuration file format supports all flags. The key names should match
 the flag names. For example:
 
 ``` toml
-# use instance-conenction-name-0, instance-connection-name-1, etc.
+# use instance-connection-name-0, instance-connection-name-1, etc.
 # for multiple instances
 instance-connection-name = "proj:region:inst"
 auto-iam-authn = true
