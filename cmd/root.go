@@ -487,6 +487,8 @@ the Proxy will then pick-up automatically.`)
 		"Enables health check endpoints /startup, /liveness, and /readiness on localhost.")
 	localFlags.StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
 		"API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)")
+	localFlags.StringVar(&c.conf.UniverseDomain, "universe-domain", "",
+		"Universe Domain for TPC environments. (default: googleapis.com)")
 	localFlags.StringVar(&c.conf.QuotaProject, "quota-project", "",
 		`Specifies the project to use for Cloud SQL Admin API quota tracking.
 The IAM principal must have the "serviceusage.services.use" permission
@@ -787,6 +789,9 @@ and re-try with just --auto-iam-authn`)
 		conf.UserAgent = userAgent
 	}
 
+	if userHasSetLocal(cmd, "sqladmin-api-endpoint") && userHasSetLocal(cmd, "universe-domain") {
+		return newBadCommandError("cannot specify --sqladmin-api-endpoint and --universe-domain at the same time")
+	}
 	if userHasSetLocal(cmd, "sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
 		_, err := url.Parse(conf.APIEndpointURL)
 		if err != nil {
