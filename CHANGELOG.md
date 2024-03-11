@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.8.2...v2.9.0) (2024-02-20)
+
+
+### Features
+
+* add support for debug logging ([#2107](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2107)) ([c8f7a0a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/c8f7a0abc325a9183b23710e30f5d1c9e619aef5))
+
 ## [2.8.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.8.1...v2.8.2) (2024-01-17)
 
 

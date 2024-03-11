@@ -110,6 +110,9 @@ type InstanceConnConfig struct {
 
 // Config contains all the configuration provided by the caller.
 type Config struct {
+	// Filepath is the path to a configuration file.
+	Filepath string
+
 	// UserAgent is the user agent to use when connecting to the cloudsql instance
 	UserAgent string
 
