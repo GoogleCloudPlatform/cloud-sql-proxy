@@ -307,7 +307,9 @@ Waiting for Startup
 Third Party Licenses
 
   To view all licenses for third party dependencies used within this 
-  distribution please see https://github.com/GoogleCloudPlatform/cloud-sql-proxy/tree/vX.X.X/thirdparty/licenses
+  distribution please see:
+  
+  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.10.0/third_party
 `
 
 var waitHelp = `
