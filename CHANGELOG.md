@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.10.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.9.0...v2.10.0) (2024-03-14)
+
+
+### Features
+
+* add support for config file ([#2106](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2106)) ([c936396](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/c9363966cb017cde7712426c3e9c999e3d7e0973))
+* add TPC support ([#2116](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2116)) ([7d011f8](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/7d011f8f1bb87488f639a3bfde09f57ac350ab8c))
+
+
+### Bug Fixes
+
+* use kebab case for config file consistently ([#2130](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2130)) ([ee52f07](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ee52f0759a84bad9d8cec4a3cd1f8ff536c2e982))
+
 ## [2.9.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.8.2...v2.9.0) (2024-02-20)
 
 
