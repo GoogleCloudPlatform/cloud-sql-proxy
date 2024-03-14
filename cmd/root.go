@@ -303,6 +303,11 @@ Waiting for Startup
   See the wait subcommand's help for details.
 
 (*) indicates a flag that may be used as a query parameter
+
+Third Party Licenses
+
+  To view all licenses for third party dependencies used within this 
+  distribution please see https://github.com/GoogleCloudPlatform/cloud-sql-proxy/tree/vX.X.X/thirdparty/licenses
 `
 
 var waitHelp = `
