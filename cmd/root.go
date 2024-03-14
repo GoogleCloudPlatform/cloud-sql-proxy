@@ -92,6 +92,7 @@ type Command struct {
 	cleanup func() error
 }
 
+// {x-release-please-start-version}
 var longHelp = `
 Overview
 
@@ -303,7 +304,16 @@ Waiting for Startup
   See the wait subcommand's help for details.
 
 (*) indicates a flag that may be used as a query parameter
+
+Third Party Licenses
+
+  To view all licenses for third party dependencies used within this 
+  distribution please see:
+
+  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.9.0/third_party
 `
+
+// {x-release-please-end}
 
 var waitHelp = `
 Waiting for Proxy Startup

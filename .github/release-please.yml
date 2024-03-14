@@ -24,3 +24,4 @@ branches:
   releaseType: simple
 extraFiles:
   - README.md
+  - cmd/root.go
