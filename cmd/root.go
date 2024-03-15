@@ -156,7 +156,7 @@ Instance Level Configuration
 
       ./cloud-sql-proxy \
   	    my-project:us-central1:my-db-server \
-  	    'my-project:us-central1:my-other-server?address=0.0.0.0&port=7000'
+  	    'my-project:us-central1:my-other-server?address=2.10.1.0&port=7000'
 
   When necessary, you may specify the full path to a Unix socket. Set the
   unix-socket-path query parameter to the absolute path of the Unix socket for
@@ -310,7 +310,7 @@ Third Party Licenses
   To view all licenses for third party dependencies used within this
   distribution please see:
 
-  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.10.0/third_party/licenses.tar.gz
+  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.10.1/third_party/licenses.tar.gz
 `
 
 // {x-release-please-end}
