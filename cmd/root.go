@@ -92,7 +92,6 @@ type Command struct {
 	cleanup func() error
 }
 
-// {x-release-please-start-version}
 var longHelp = `
 Overview
 
@@ -310,10 +309,8 @@ Third Party Licenses
   To view all licenses for third party dependencies used within this
   distribution please see:
 
-  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.10.0/third_party/licenses.tar.gz
+  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.10.0/third_party/licenses.tar.gz {x-release-please-version}
 `
-
-// {x-release-please-end}
 
 var waitHelp = `
 Waiting for Proxy Startup
@@ -396,7 +393,7 @@ func NewCommand(opts ...Option) *Command {
 		Use:     "cloud-sql-proxy INSTANCE_CONNECTION_NAME...",
 		Version: versionString,
 		Short:   "cloud-sql-proxy authorizes and encrypts connections to Cloud SQL.",
-		Long:    longHelp,
+		Long:    strings.ReplaceAll(longHelp, "{x-release-please-version}", ""), //remove the inline annotation required by release-please to update version
 	}
 
 	logger := log.NewStdLogger(os.Stdout, os.Stderr)
