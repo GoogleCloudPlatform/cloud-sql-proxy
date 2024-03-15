@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.10.0...v2.10.1) (2024-03-15)
+
+
+### Bug Fixes
+
+* will remove it ([ad79fce](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ad79fce3ffc84c61415f53ecf3af252d5f3d4d7e))
+
 ## [2.10.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.9.0...v2.10.0) (2024-03-14)
 
 
