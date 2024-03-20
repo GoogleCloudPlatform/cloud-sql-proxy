@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.10.0...v2.10.1) (2024-03-20)
+
+
+### Bug Fixes
+
+* correct CI/CD build error ([#2155](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2155)) ([3e3b8ed](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/3e3b8ede607a50ce72af8f8d1d86eb6789560aef))
+
 ## [2.10.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.9.0...v2.10.0) (2024-03-14)
 
 
