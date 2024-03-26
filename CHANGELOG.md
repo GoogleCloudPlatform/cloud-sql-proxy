@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.10.1...v2.11.0) (2024-03-26)
+
+
+### Features
+
+* use Google managed base images ([#2159](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2159)) ([1103a95](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1103a95adb0c0751df99704f71a4376ce38613a4))
+
 ## [2.10.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.10.0...v2.10.1) (2024-03-20)
 
 
