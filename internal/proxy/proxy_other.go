@@ -112,11 +112,11 @@ func (c *Client) Lookup(ctx context.Context, instance string, _ *fuse.EntryOut) 
 	c.fuseMu.Lock()
 	defer c.fuseMu.Unlock()
 	if l, ok := c.fuseSockets[instance]; ok {
-		c.logger.Debugf("found existing fuse socket for instance %q", instance)
+		c.logger.Debugf("found existing socket for instance %q", instance)
 		return l.symlink.EmbeddedInode(), fs.OK
 	}
 
-	c.logger.Debugf("creating new fuse socket for instance %q", instance)
+	c.logger.Debugf("creating new socket for instance %q", instance)
 	s, err := c.newSocketMount(
 		ctx, withUnixSocket(*c.conf, c.fuseTempDir),
 		nil, InstanceConnConfig{Name: instance},
