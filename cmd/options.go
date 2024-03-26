@@ -82,3 +82,10 @@ func WithQuietLogging() Option {
 		c.conf.Quiet = true
 	}
 }
+
+// WithDebugLogging configures the Proxy to log debug level messages.
+func WithDebugLogging() Option {
+	return func(c *Command) {
+		c.conf.DebugLogs = true
+	}
+}

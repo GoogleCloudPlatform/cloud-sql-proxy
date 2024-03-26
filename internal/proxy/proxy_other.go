@@ -105,15 +105,18 @@ func (c *Client) Lookup(ctx context.Context, instance string, _ *fuse.EntryOut) 
 	}
 
 	if _, err := parseConnName(instance); err != nil {
+		c.logger.Debugf("could not parse instance connection name for %q: %v", instance, err)
 		return nil, syscall.ENOENT
 	}
 
 	c.fuseMu.Lock()
 	defer c.fuseMu.Unlock()
 	if l, ok := c.fuseSockets[instance]; ok {
+		c.logger.Debugf("found existing fuse socket for instance %q", instance)
 		return l.symlink.EmbeddedInode(), fs.OK
 	}
 
+	c.logger.Debugf("creating new fuse socket for instance %q", instance)
 	s, err := c.newSocketMount(
 		ctx, withUnixSocket(*c.conf, c.fuseTempDir),
 		nil, InstanceConnConfig{Name: instance},
@@ -129,6 +132,7 @@ func (c *Client) Lookup(ctx context.Context, instance string, _ *fuse.EntryOut) 
 		sErr := c.serveSocketMount(ctx, s)
 		if sErr != nil {
 			c.fuseMu.Lock()
+			c.logger.Debugf("could not serve socket for instance %q: %v", instance, sErr)
 			delete(c.fuseSockets, instance)
 			c.fuseMu.Unlock()
 		}
