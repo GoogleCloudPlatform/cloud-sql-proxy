@@ -412,6 +412,47 @@ need a shell or related tools, use the Alpine or Buster images listed above.
 
 [distroless]: https://github.com/GoogleContainerTools/distroless
 
+### Working with Docker and the Proxy
+
+The containers have the proxy as an `ENTRYPOINT` so, to use the proxy from a
+container, all you need to do is specify options using the command, and expose
+the proxy's internal port to the host. For example, you can use:
+
+```shell
+docker run --publish <host-port>:<proxy-port> \
+    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.2 \
+    --address "0.0.0.0" --port <proxy-port> <instance-connection-name>
+```
+
+You'll need the `--address "0.0.0.0"` so that the proxy doesn't only listen for
+connections originating from *within* the container.
+
+You will need to authenticate using one of the methods outlined in the
+[credentials](#credentials) section. If using a credentials file you must mount
+the file and ensure that the non-root user that runs the proxy has *read access*
+to the file. These alternatives might help:
+
+1. Change the group of your local file and add read permissions to the group
+with `chgrp 65532 key.json && chmod g+r key.json`.
+1. If you can't control your file's group, you can directly change the public
+permissions of your file by doing `chmod o+r key.json`.
+
+    > [!WARNING]
+    > This can be insecure because it allows any user in the host system to read
+    > the credential file which they can use to authenticate to services in GCP.
+
+For example, a full command using a JSON credentials file might look like
+
+```shell
+docker run \
+    --publish <host-port>:<proxy-port> \
+    --mount type=bind,source="$(pwd)"/sa.json,target=/config/sa.json \
+    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.2 \
+    --address 0.0.0.0 \
+    --port <proxy-port> \
+    --credentials-file /config/sa.json <instance-connection-name>
+```
+
 ## Running as a Kubernetes Sidecar
 
 See the [example here][sidecar-example] as well as [Connecting from Google
