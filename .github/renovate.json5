@@ -16,6 +16,11 @@
     {
       "matchManagers": ["dockerfile"],
       "groupName": "container images"
-    }
+    },
+    {
+      "groupName": "Non-major dependency updates",
+      "matchLanguages": ["go"],
+      "matchUpdateTypes": ["minor", "patch"],
+    },
   ]
 }
