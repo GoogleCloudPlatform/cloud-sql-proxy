@@ -418,9 +418,10 @@ The containers have the proxy as an `ENTRYPOINT` so, to use the proxy from a
 container, all you need to do is specify options using the command, and expose
 the proxy's internal port to the host. For example, you can use:
 
+<!-- {x-release-please-start-version} -->
 ```shell
 docker run --publish <host-port>:<proxy-port> \
-    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.2 \
+    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.10.1 \
     --address "0.0.0.0" --port <proxy-port> <instance-connection-name>
 ```
 
@@ -447,11 +448,12 @@ For example, a full command using a JSON credentials file might look like
 docker run \
     --publish <host-port>:<proxy-port> \
     --mount type=bind,source="$(pwd)"/sa.json,target=/config/sa.json \
-    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.2 \
+    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.10.1 \
     --address 0.0.0.0 \
     --port <proxy-port> \
     --credentials-file /config/sa.json <instance-connection-name>
 ```
+<!-- {x-release-please-end} -->
 
 ## Running as a Kubernetes Sidecar
 
