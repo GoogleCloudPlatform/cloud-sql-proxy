@@ -645,27 +645,30 @@ func instanceFromEnv(args []string) []string {
 	//     INSTANCE_CONNECTION_NAME
 	// or if that's not defined, with:
 	//     INSTANCE_CONNECTION_NAME_0
-	inst := os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME", envPrefix))
-	if inst == "" {
-		inst = os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME_0", envPrefix))
-		if inst == "" {
-			return nil
-		}
-	}
-	args = append(args, inst)
+	connPrefix := fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME", envPrefix)
 
-	i := 1
-	for {
-		instN := os.Getenv(fmt.Sprintf("%s_INSTANCE_CONNECTION_NAME_%d", envPrefix, i))
-		// if the next instance connection name is not defined, stop checking
-		// environment variables.
-		if instN == "" {
-			break
+	envs := os.Environ()
+	// Check for all occurrences of the prefix string inside the environment
+	for _, env := range envs {
+		splitEnv := strings.SplitN(env, "=", 2)
+		envName := splitEnv[0]
+
+		// Check if it's prefixed with CSQL_PROXY_INSTANCE_CONNECTION_NAME
+		if strings.HasPrefix(envName, connPrefix) {
+			// Check if it's suffixed with _INTEGER
+			// Or if it is simply the prefix
+			suffix := strings.TrimPrefix(envName, connPrefix)
+			if suffix == "" || (strings.HasPrefix(suffix, "_") && isInt(suffix[1:])) {
+				args = append(args, envName)
+			}
 		}
-		args = append(args, instN)
-		i++
 	}
 	return args
+}
+
+func isInt(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
 }
 
 func instanceFromConfigFile(v *viper.Viper) []string {
