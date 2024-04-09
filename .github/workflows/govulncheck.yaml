@@ -23,6 +23,9 @@ on:
     - 'main'
     - 'v1'
   pull_request:
+    branches:
+      - 'main'
+      - 'v1'
   pull_request_target:
     types: [labeled]
   schedule:
