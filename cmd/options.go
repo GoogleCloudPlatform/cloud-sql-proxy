@@ -89,3 +89,11 @@ func WithDebugLogging() Option {
 		c.conf.DebugLogs = true
 	}
 }
+
+// WithLazyRefresh configures the Proxy to refresh connection info on an
+// as-needed basis when the cached copy has expired.
+func WithLazyRefresh() Option {
+	return func(c *Command) {
+		c.conf.LazyRefresh = true
+	}
+}

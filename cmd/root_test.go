@@ -413,6 +413,13 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the lazy refresh flag",
+			args: []string{"--lazy-refresh", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				LazyRefresh: true,
+			}),
+		},
+		{
 			desc: "using the admin port flag",
 			args: []string{"--admin-port", "7777", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{

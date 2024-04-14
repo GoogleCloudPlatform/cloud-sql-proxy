@@ -189,6 +189,12 @@ type Config struct {
 	// users.
 	AutoIP bool
 
+	// LazyRefresh configures the Go Connector to retrieve connection info
+	// lazily and as-needed. Otherwise, no background refresh cycle runs. This
+	// setting is useful in environments where the CPU may be throttled outside
+	// of a request context, e.g., Cloud Run.
+	LazyRefresh bool
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
@@ -422,6 +428,10 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 
 	if c.QuotaProject != "" {
 		opts = append(opts, cloudsqlconn.WithQuotaProject(c.QuotaProject))
+	}
+
+	if c.LazyRefresh {
+		opts = append(opts, cloudsqlconn.WithLazyRefresh())
 	}
 
 	return opts, nil

@@ -134,6 +134,18 @@ func TestCommandOptions(t *testing.T) {
 			},
 			option: WithQuietLogging(),
 		},
+		{
+			desc: "with lazy refresh",
+			isValid: func(c *Command) error {
+				if !c.conf.LazyRefresh {
+					return errors.New(
+						"LazyRefresh was false, but should be true",
+					)
+				}
+				return nil
+			},
+			option: WithLazyRefresh(),
+		},
 	}
 
 	for _, tc := range tcs {
