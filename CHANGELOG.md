@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.34.1...v1.35.0) (2024-04-03)
+
+
+### Features
+
+* use Google managed Debian containers ([#2173](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2173)) ([d7f4e62](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/d7f4e62f5fe666dc5eb2e5fb40db316d3612e0b3))
+
 ## [1.34.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.34.0...v1.34.1) (2024-03-15)
 
 
