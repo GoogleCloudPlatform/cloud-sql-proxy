@@ -365,6 +365,13 @@ debug-logs = true
 
 Run `./cloud-sql-proxy --help` for more details.
 
+### Configuring a Lazy Refresh
+
+The `--lazy-refresh` flag configures the Proxy to retrieve connection info
+lazily and as-needed. Otherwise, no background refresh cycle runs. This setting
+is useful in environments where the CPU may be throttled outside of a request
+context, e.g., Cloud Run.
+
 ### Additional flags
 
 To see a full list of flags, use:
