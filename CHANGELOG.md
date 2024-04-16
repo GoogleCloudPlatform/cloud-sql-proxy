@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.11.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.10.1...v2.11.0) (2024-04-16)
+
+
+### Features
+
+* add support for a lazy refresh ([#2184](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2184)) ([fd7ab82](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/fd7ab82796c052ddf12f78989e5d3cab49f26c55)), closes [#2183](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2183)
+* use Google managed base images ([#2159](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2159)) ([1103a95](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1103a95adb0c0751df99704f71a4376ce38613a4))
+
 ## [2.10.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.10.0...v2.10.1) (2024-03-20)
 
 
