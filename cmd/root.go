@@ -515,6 +515,12 @@ is the target account.`)
 		`Supports legacy behavior of v1 and will try to connect to first IP
 address returned by the SQL Admin API. In most cases, this flag should not be used.
 Prefer default of public IP or use --private-ip instead.`)
+	localFlags.BoolVar(&c.conf.LazyRefresh, "lazy-refresh", false,
+		`Configure a lazy refresh where connection info is retrieved only if
+the cached copy has expired. Use this setting in environments where the
+CPU may be throttled and a background refresh cannot run reliably
+(e.g., Cloud Run)`,
+	)
 
 	localFlags.BoolVar(&c.conf.RunConnectionTest, "run-connection-test", false, `Runs a connection test
 against all specified instances. If an instance is unreachable, the Proxy exits with a failure
