@@ -13,11 +13,9 @@
 # limitations under the License.
 
 assign_issues:
-#   - shubha-rajan
-  - enocom
+  - hessjc
   - jackwotherspoon
 
 assign_prs:
-#   - shubha-rajan
-  - enocom
+  - hessjc
   - jackwotherspoon
