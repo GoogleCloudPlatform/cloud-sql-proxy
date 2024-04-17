@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.35.0...v1.35.1) (2024-04-17)
+
+
+### Miscellaneous Chores
+
+* release 1.35.1 ([#2189](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2189)) ([b89d5c3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/b89d5c303f8aa7848a5effd3eedbfc170557ebc9))
+
 ## [1.35.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.34.1...v1.35.0) (2024-04-03)
 
 
