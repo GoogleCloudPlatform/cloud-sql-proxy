@@ -184,6 +184,9 @@ func (c *Client) fuseMounts() []*socketMount {
 func (c *Client) unmountFUSE() error {
 	c.fuseServerMu.Lock()
 	defer c.fuseServerMu.Unlock()
+	if c.fuseServer == nil {
+		return nil
+	}
 	return c.fuseServer.Unmount()
 }
 
