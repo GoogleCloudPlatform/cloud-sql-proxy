@@ -18,8 +18,11 @@
 package proxy_test
 
 import (
+	"context"
 	"os"
 	"testing"
+
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 )
 
 var (
@@ -39,4 +42,21 @@ func verifySocketPermissions(t *testing.T, addr string) {
 	if fm := fi.Mode(); fm != 0777|os.ModeSocket {
 		t.Fatalf("file mode: want = %v, got = %v", 0777|os.ModeSocket, fm)
 	}
+}
+
+func TestFuseClosesGracefully(t *testing.T) {
+	c, err := proxy.NewClient(
+		context.Background(), nil, testLogger,
+		&proxy.Config{
+			FUSEDir:     t.TempDir(),
+			FUSETempDir: t.TempDir(),
+			Token:       "mytoken",
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+
 }
