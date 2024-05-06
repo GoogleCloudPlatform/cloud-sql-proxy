@@ -13,9 +13,9 @@
 # limitations under the License.
 
 assign_issues:
-  - hessjc
+  - hessjcg
   - jackwotherspoon
 
 assign_prs:
-  - hessjc
+  - hessjcg
   - jackwotherspoon
