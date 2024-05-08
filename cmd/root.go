@@ -1165,8 +1165,6 @@ func quitquitquit(quitOnce *sync.Once, shutdownCh chan<- error) http.HandlerFunc
 			select {
 			case shutdownCh <- errQuitQuitQuit:
 				cmd.logger.Debugf("QuitQuitQuit signal received. Writing to shutdown channel.")
-			case <-shutdownCh:
-				cmd.logger.Debugf("Could not write to shutdown channel. The proxy is already exiting.")
 			default:
 				// The write attempt to shutdownCh failed and
 				// the proxy is already exiting.
