@@ -1065,8 +1065,10 @@ func runSignalWrapper(cmd *Command) (err error) {
 	var (
 		needsHTTPServer bool
 		mux             = http.NewServeMux()
-		notify          = func() {}
+		notifyStarted   = func() {}
+		notifyStopped   = func() {}
 	)
+
 	if cmd.conf.Prometheus {
 		needsHTTPServer = true
 		e, err := prometheus.NewExporter(prometheus.Options{
@@ -1086,8 +1088,10 @@ func runSignalWrapper(cmd *Command) (err error) {
 		mux.HandleFunc("/startup", hc.HandleStartup)
 		mux.HandleFunc("/readiness", hc.HandleReadiness)
 		mux.HandleFunc("/liveness", hc.HandleLiveness)
-		notify = hc.NotifyStarted
+		notifyStarted = hc.NotifyStarted
+		notifyStopped = hc.NotifyStopped
 	}
+	defer notifyStopped()
 	// Start the HTTP server if anything requiring HTTP is specified.
 	if needsHTTPServer {
 		go startHTTPServer(
@@ -1132,7 +1136,7 @@ func runSignalWrapper(cmd *Command) (err error) {
 
 	go func() { 
 		cmd.logger.Debugf("Starting to listen on shutdown channel.")
-		shutdownCh <- p.Serve(ctx, notify) 
+		shutdownCh <- p.Serve(ctx, notifyStarted) 
 	}()
 
 	err = <-shutdownCh
