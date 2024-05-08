@@ -1007,8 +1007,10 @@ func runSignalWrapper(cmd *Command) (err error) {
 		}
 		switch s {
 		case syscall.SIGINT:
+			cmd.logger.Debugf("Sending SIGINT signal for proxy to shutdown.")
 			shutdownCh <- errSigInt
 		case syscall.SIGTERM:
+			cmd.logger.Debugf("Sending SIGTERM signal for proxy to shutdown.")
 			if cmd.conf.ExitZeroOnSigterm {
 				shutdownCh <- errSigTermZero
 			} else {
