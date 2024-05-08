@@ -1134,9 +1134,9 @@ func runSignalWrapper(cmd *Command) (err error) {
 		)
 	}
 
-	go func() { 
+	go func() {
 		cmd.logger.Debugf("Starting to listen on shutdown channel.")
-		shutdownCh <- p.Serve(ctx, notifyStarted) 
+		shutdownCh <- p.Serve(ctx, notifyStarted)
 	}()
 
 	err = <-shutdownCh
@@ -1164,11 +1164,9 @@ func quitquitquit(quitOnce *sync.Once, shutdownCh chan<- error) http.HandlerFunc
 		quitOnce.Do(func() {
 			select {
 			case shutdownCh <- errQuitQuitQuit:
-				cmd.logger.Debugf("QuitQuitQuit signal received. Writing to shutdown channel.")
 			default:
 				// The write attempt to shutdownCh failed and
 				// the proxy is already exiting.
-				cmd.logger.Debugf("Could not write to shutdown channel. The proxy is already exiting.")
 			}
 		})
 	}
@@ -1186,7 +1184,6 @@ func startHTTPServer(ctx context.Context, l cloudsql.Logger, addr string, mux *h
 			return
 		}
 		if err != nil {
-			cmd.logger.Debugf("Error starting HTTP server. Writing error to shutdown channel.")
 			shutdownCh <- fmt.Errorf("failed to start HTTP server: %v", err)
 		}
 	}()
