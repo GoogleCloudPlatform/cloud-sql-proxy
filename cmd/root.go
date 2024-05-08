@@ -1025,7 +1025,7 @@ func runSignalWrapper(cmd *Command) (err error) {
 		defer close(startCh)
 		p, err := proxy.NewClient(ctx, cmd.dialer, cmd.logger, cmd.conf)
 		if err != nil {
-			cmd.logger.Debugf("Error starting proxy. Writing error to shutdown channel.")
+			cmd.logger.Debugf("Error starting proxy: %v", err)
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)
 			return
 		}
@@ -1135,8 +1135,9 @@ func runSignalWrapper(cmd *Command) (err error) {
 	}
 
 	go func() {
-		cmd.logger.Debugf("Starting to listen on shutdown channel.")
-		shutdownCh <- p.Serve(ctx, notifyStarted)
+		err := p.Serve(ctx, notifyStarted)
+		cmd.logger.Debugf("proxy server error: %v", err)
+		shutdownCh <- err
 	}()
 
 	err = <-shutdownCh
