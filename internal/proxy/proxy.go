@@ -412,6 +412,7 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 	opts = append(opts, co)
 
 	if c.DebugLogs {
+		// nolint:staticcheck
 		opts = append(opts, cloudsqlconn.WithDebugLogger(l))
 	}
 	if c.APIEndpointURL != "" {
