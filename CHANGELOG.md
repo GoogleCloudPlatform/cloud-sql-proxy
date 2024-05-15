@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.11.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.11.0...v2.11.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* don't depend on downstream in readiness check ([#2207](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2207)) ([49fa927](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/49fa927ede69bf24f3fd0c56e60b99e4111d58f1)), closes [#2083](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2083)
+* ensure proxy shutsdown cleanly on fuse error ([#2205](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2205)) ([54e65d1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/54e65d14a5d533f44e33b52a2dc88c2a419eae2f)), closes [#2013](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2013)
+* use public mirrors for base images ([#2190](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2190)) ([69b4215](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/69b42158291b0ea4f074469dabbe34949af86053))
+
 ## [2.11.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.10.1...v2.11.0) (2024-04-16)
 
 
