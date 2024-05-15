@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.35.1...v1.35.2) (2024-04-17)
+
+
+### Bug Fixes
+
+* use public mirrors for base images ([#2192](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2192)) ([88c0183](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/88c0183c00e4c532243b8a7b4263b6770adcbdda))
+
 ## [1.35.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.35.0...v1.35.1) (2024-04-17)
 
 
