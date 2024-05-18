@@ -675,7 +675,7 @@ By participating in this project you agree to abide by its terms. See
 [ci-build]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/actions/workflows/tests.yaml?query=event%3Apush+branch%3Amain
 [cloud-sql]: https://cloud.google.com/sql
 [code-samples]: https://cloud.google.com/sql/docs/mysql/samples
-[code-of-conduct]: CONTRIBUTING.md#contributor-code-of-conduct
+[code-of-conduct]: CODE_OF_CONDUCT.md
 [connect-to-k8s]: https://cloud.google.com/sql/docs/mysql/connect-kubernetes-engine
 [connection-overview]: https://cloud.google.com/sql/docs/mysql/connect-overview
 [contributing]: CONTRIBUTING.md
