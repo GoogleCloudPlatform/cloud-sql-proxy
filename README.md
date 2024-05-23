@@ -32,10 +32,12 @@ connector which does everything the Proxy does, but in process:
 For users migrating from v1, see the [Migration Guide](migration-guide.md).
 The [v1 README][v1 readme] is still available.
 
-NOTE: The Proxy does not configure the network between the VM it's running on
-and the Cloud SQL instance. You MUST ensure the Proxy can reach your Cloud SQL
-instance, either by deploying it in a VPC that has access to your Private IP
-instance, or by configuring Public IP.
+> [!IMPORTANT]
+> 
+> The Proxy does not configure the network between the VM it's running on
+> and the Cloud SQL instance. You MUST ensure the Proxy can reach your Cloud SQL
+> instance, either by deploying it in a VPC that has access to your Private IP
+> instance, or by configuring Public IP.
 
 [cloud monitoring]: https://cloud.google.com/monitoring
 [cloud trace]: https://cloud.google.com/trace
@@ -187,19 +189,21 @@ The Cloud SQL Proxy uses a Cloud IAM principal to authorize connections against
 a Cloud SQL instance. The Proxy sources the credentials using
 [Application Default Credentials](https://cloud.google.com/docs/authentication/production).
 
-Note: Any IAM principal connecting to a Cloud SQL database will need one of the
-following IAM roles:
-
-- Cloud SQL Client (preferred)
-- Cloud SQL Editor
-- Cloud SQL Admin
-
-Or one may manually assign the following IAM permissions:
-
-- `cloudsql.instances.connect`
-- `cloudsql.instances.get`
-
-See [Roles and Permissions in Cloud SQL][roles-and-permissions] for details.
+> [!NOTE]
+>
+> Any IAM principal connecting to a Cloud SQL database will need one of the
+> following IAM roles:
+>
+> - Cloud SQL Client (preferred)
+> - Cloud SQL Editor
+> - Cloud SQL Admin
+>
+> Or one may manually assign the following IAM permissions:
+> 
+> - `cloudsql.instances.connect`
+> - `cloudsql.instances.get`
+>
+> See [Roles and Permissions in Cloud SQL][roles-and-permissions] for details.
 
 When the Proxy authenticates under the Compute Engine VM's default service
 account, the VM must have at least the `sqlservice.admin` API scope (i.e.,
@@ -293,9 +297,11 @@ private IP, use:
 ./cloud-sql-proxy --private-ip <INSTANCE_CONNECTION_NAME>
 ```
 
-NOTE: The Proxy does not configure the network. You MUST ensure the Proxy can
-reach your Cloud SQL instance, either by deploying it in a VPC that has access
-to your Private IP instance, or by configuring Public IP.
+> [!IMPORTANT]
+> 
+> The Proxy does not configure the network. You MUST ensure the Proxy can
+> reach your Cloud SQL instance, either by deploying it in a VPC that has access
+> to your Private IP instance, or by configuring Public IP.
 
 ### Configuring Unix domain sockets
 
@@ -321,14 +327,16 @@ query param:
     'myproject:my-region:mysql?unix-socket=/cloudsql'
 ```
 
-NOTE: The Proxy supports Unix domain sockets on recent versions of Windows, but
-replaces colons with periods:
-
-```shell
-# Starts a Unix domain socket at the path:
-#    C:\cloudsql\myproject.my-region.mysql
-./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
-```
+> [!NOTE]
+>
+> The Proxy supports Unix domain sockets on recent versions of Windows, but
+> replaces colons with periods:
+> 
+> ```shell
+> # Starts a Unix domain socket at the path:
+> #    C:\cloudsql\myproject.my-region.mysql
+> ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
+> ```
 
 ### Testing Connectivity
 
@@ -445,9 +453,10 @@ with `chgrp 65532 key.json && chmod g+r key.json`.
 1. If you can't control your file's group, you can directly change the public
 permissions of your file by doing `chmod o+r key.json`.
 
-    > [!WARNING]
-    > This can be insecure because it allows any user in the host system to read
-    > the credential file which they can use to authenticate to services in GCP.
+> [!WARNING]
+> 
+> This can be insecure because it allows any user in the host system to read
+> the credential file which they can use to authenticate to services in GCP.
 
 For example, a full command using a JSON credentials file might look like
 
