@@ -19,7 +19,7 @@
     },
     {
       "groupName": "Non-major dependency updates",
-      "matchLanguages": ["go"],
+      "matchManagers": ["gomod"],
       "matchUpdateTypes": ["minor", "patch"],
     },
   ]
