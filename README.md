@@ -465,7 +465,7 @@ docker run \
     --publish <host-port>:<proxy-port> \
     --mount type=bind,source="$(pwd)"/sa.json,target=/config/sa.json \
     gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4 \
-    --address 2.11.4.0 \
+    --address 0.0.0.0 \
     --port <proxy-port> \
     --credentials-file /config/sa.json <instance-connection-name>
 ```
