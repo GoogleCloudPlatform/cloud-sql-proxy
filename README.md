@@ -59,7 +59,7 @@ following instructions for your OS and CPU architecture.
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4"
 
 curl "$URL/cloud-sql-proxy.linux.amd64" -o cloud-sql-proxy
 
@@ -73,7 +73,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4"
 
 curl "$URL/cloud-sql-proxy.linux.386" -o cloud-sql-proxy
 
@@ -87,7 +87,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4"
 
 curl "$URL/cloud-sql-proxy.linux.arm64" -o cloud-sql-proxy
 
@@ -101,7 +101,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4"
 
 curl "$URL/cloud-sql-proxy.linux.arm" -o cloud-sql-proxy
 
@@ -115,7 +115,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4"
 
 curl "$URL/cloud-sql-proxy.darwin.amd64" -o cloud-sql-proxy
 
@@ -129,7 +129,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4"
 
 curl "$URL/cloud-sql-proxy.darwin.arm64" -o cloud-sql-proxy
 
@@ -143,7 +143,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -153,7 +153,7 @@ curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.4/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -409,13 +409,13 @@ currently supported:
 
 <!-- {x-release-please-start-version} -->
 The `$VERSION` is the Proxy version without the leading "v" (e.g.,
-`2.11.3`).
+`2.11.4`).
 
 For example, to pull a particular version, use a command like:
 
 ``` shell
-# $VERSION is 2.11.3
-docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.3
+# $VERSION is 2.11.4
+docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
 ```
 
 <!-- {x-release-please-end} -->
@@ -436,11 +436,11 @@ the proxy's internal port to the host. For example, you can use:
 <!-- {x-release-please-start-version} -->
 ```shell
 docker run --publish <host-port>:<proxy-port> \
-    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.3 \
-    --address "0.0.0.0" --port <proxy-port> <instance-connection-name>
+    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4 \
+    --address "2.11.4.0" --port <proxy-port> <instance-connection-name>
 ```
 
-You'll need the `--address "0.0.0.0"` so that the proxy doesn't only listen for
+You'll need the `--address "2.11.4.0"` so that the proxy doesn't only listen for
 connections originating from *within* the container.
 
 You will need to authenticate using one of the methods outlined in the
@@ -464,7 +464,7 @@ For example, a full command using a JSON credentials file might look like
 docker run \
     --publish <host-port>:<proxy-port> \
     --mount type=bind,source="$(pwd)"/sa.json,target=/config/sa.json \
-    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.3 \
+    gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4 \
     --address 0.0.0.0 \
     --port <proxy-port> \
     --credentials-file /config/sa.json <instance-connection-name>
