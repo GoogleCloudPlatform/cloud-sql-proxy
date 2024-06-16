@@ -250,7 +250,7 @@ type Config struct {
 	// Debug enables a debug handler on localhost.
 	Debug bool
 	// QuitQuitQuit enables a handler that will shut the Proxy down upon
-	// receiving a POST request.
+	// receiving a GET or POST request.
 	QuitQuitQuit bool
 	// DebugLogs enables debug level logging.
 	DebugLogs bool

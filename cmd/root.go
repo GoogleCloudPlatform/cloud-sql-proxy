@@ -288,7 +288,7 @@ Localhost Admin Server
   profiler at https://pkg.go.dev/net/http/pprof.
 
   When --quitquitquit is set, the admin server adds an endpoint at
-  /quitquitquit. The admin server exits gracefully when it receives a POST
+  /quitquitquit. The admin server exits gracefully when it receives a GET or POST
   request at /quitquitquit.
 
 Debug logging
