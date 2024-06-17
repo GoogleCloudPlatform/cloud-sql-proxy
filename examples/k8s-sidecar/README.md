@@ -176,13 +176,14 @@ as a separate service for several reasons:
   accurately scope and request resources to match your applications as it
   scales
 
+<!-- {x-release-please-start-version} -->
 1. Add the Cloud SQL Auth Proxy to the pod configuration under `containers`:
     > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L39-L69)
     ```yaml
     - name: cloud-sql-proxy
       # It is recommended to use the latest version of the Cloud SQL Auth Proxy
       # Make sure to update on a regular schedule!
-      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0  # make sure to use the latest version
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4  # make sure to use the latest version
       args:
         # If connecting from a VPC-native GKE cluster, you can use the
         # following flag to have the proxy connect over private IP
@@ -209,6 +210,8 @@ as a separate service for several reasons:
           # application's requirements.
           cpu:    "1"
     ```
+<!-- {x-release-please-end} -->
+
    If you are using a service account key, specify your secret volume and add
    the `--credentials-file` flag to the command:
 

@@ -58,7 +58,7 @@ spec:
       - name: cloud-sql-proxy
         # It is recommended to use the latest version of the Cloud SQL Auth Proxy
         # Make sure to update on a regular schedule!
-        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
         args:
         # Enable the admin api server on port 9091
         - "--admin-port=9091"

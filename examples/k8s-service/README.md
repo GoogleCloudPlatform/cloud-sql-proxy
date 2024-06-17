@@ -169,9 +169,10 @@ For the PgBouncer deployment, we add the proxy as a sidecar, starting it on port
 
 > [`pgbouncer_deployment.yaml`](pgbouncer_deployment.yaml#L70-L76)
 
+<!-- {x-release-please-start-version} -->
 ``` yaml
 - name: cloud-sql-proxy
-  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0  # make sure to use the latest version
+  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4  # make sure to use the latest version
   args:
     # Replace DB_PORT with the port the proxy should listen on
     - "--port=<DB_PORT>"
@@ -179,6 +180,7 @@ For the PgBouncer deployment, we add the proxy as a sidecar, starting it on port
   securityContext:
     runAsNonRoot: true
 ```
+<!-- {x-release-please-end} -->
 
 Next, we create a PgBouncer service, listening on port 5342:
 

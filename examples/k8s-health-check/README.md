@@ -162,18 +162,18 @@ readinessProbe:
   successThreshold: 1
 ```
 
-
 A web application has a database connection pool leak and the 
 engineering team can't find the root cause. To keep the system running, 
 the application should be automatically restarted if it consumes 50 connections 
 for more than 1 minute.
 
+<!-- {x-release-please-start-version} -->
 ```yaml
     containers:
     - name: my-application
       image: gcr.io/my-container/my-application:1.1
     - name: cloud-sql-proxy
-      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
       args:
         # Set the --max-connections flag to 50
         - "--max-connections"
@@ -192,3 +192,4 @@ for more than 1 minute.
         timeoutSeconds: 5
         successThreshold: 1
 ```
+<!-- {x-release-please-end} -->
