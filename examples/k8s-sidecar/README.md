@@ -176,6 +176,7 @@ as a separate service for several reasons:
   accurately scope and request resources to match your applications as it
   scales
 
+<!-- {x-release-please-start-version} -->
 1. Add the Cloud SQL Auth Proxy to the pod configuration under `containers`:
     > [proxy_with_workload-identity.yaml](proxy_with_workload_identity.yaml#L39-L69)
     ```yaml
@@ -209,6 +210,8 @@ as a separate service for several reasons:
           # application's requirements.
           cpu:    "1"
     ```
+<!-- {x-release-please-end} -->
+
    If you are using a service account key, specify your secret volume and add
    the `--credentials-file` flag to the command:
 

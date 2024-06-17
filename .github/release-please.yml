@@ -15,13 +15,16 @@
 handleGHRelease: true
 packageName: cloud-sql-proxy
 releaseType: simple
-versionFile: 'cmd/version.txt'
+versionFile: "cmd/version.txt"
 branches:
-- branch: v1
-  versionFile: 'proxy/util/version.txt'
-  handleGHRelease: true
-  packageName: cloud-sql-proxy
-  releaseType: simple
+  - branch: v1
+    versionFile: "proxy/util/version.txt"
+    handleGHRelease: true
+    packageName: cloud-sql-proxy
+    releaseType: simple
 extraFiles:
   - README.md
   - cmd/root.go
+  - examples/k8s-health-check/README.md
+  - examples/k8s-service/README.md
+  - examples/k8s-sidecar/README.md
