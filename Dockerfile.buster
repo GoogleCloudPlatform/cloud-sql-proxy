@@ -26,7 +26,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container.buster"
 
 # Final stage
-FROM gcr.io/cloud-marketplace-containers/google/debian10@sha256:8a2aae770e6ef3e88f61227b148754f5a2c35b790943fd14db050199803406eb
+FROM gcr.io/cloud-marketplace-containers/google/debian10@sha256:bf5274d185680301f076431113bb7f7e21c7748dec0e066166d4bd02a8ff1c09
 
 LABEL org.opencontainers.image.source="https://github.com/GoogleCloudPlatform/cloud-sql-proxy"
 
