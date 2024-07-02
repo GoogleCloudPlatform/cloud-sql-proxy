@@ -437,10 +437,10 @@ the proxy's internal port to the host. For example, you can use:
 ```shell
 docker run --publish <host-port>:<proxy-port> \
     gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4 \
-    --address "2.11.4.0" --port <proxy-port> <instance-connection-name>
+    --address "0.0.0.0" --port <proxy-port> <instance-connection-name>
 ```
 
-You'll need the `--address "2.11.4.0"` so that the proxy doesn't only listen for
+You'll need the `--address "0.0.0.0"` so that the proxy doesn't only listen for
 connections originating from *within* the container.
 
 You will need to authenticate using one of the methods outlined in the
