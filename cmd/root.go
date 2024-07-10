@@ -463,6 +463,8 @@ the Proxy will then pick-up automatically.`)
 		"Enable debug logging")
 	localFlags.Uint64Var(&c.conf.MaxConnections, "max-connections", 0,
 		"Limit the number of connections. Default is no limit.")
+	localFlags.DurationVar(&c.conf.WaitBeforeClose, "min-sigterm-delay", 0,
+		"The number of seconds to accept new connections after receiving a TERM signal.")
 	localFlags.DurationVar(&c.conf.WaitOnClose, "max-sigterm-delay", 0,
 		"Maximum number of seconds to wait for connections to close after receiving a TERM signal.")
 	localFlags.StringVar(&c.conf.TelemetryProject, "telemetry-project", "",
@@ -1144,12 +1146,16 @@ func runSignalWrapper(cmd *Command) (err error) {
 	switch {
 	case errors.Is(err, errSigInt):
 		cmd.logger.Infof("SIGINT signal received. Shutting down...")
+		time.Sleep(cmd.conf.WaitBeforeClose)
 	case errors.Is(err, errSigTerm):
 		cmd.logger.Infof("SIGTERM signal received. Shutting down...")
+		time.Sleep(cmd.conf.WaitBeforeClose)
 	case errors.Is(err, errSigTermZero):
 		cmd.logger.Infof("SIGTERM signal received. Shutting down...")
+		time.Sleep(cmd.conf.WaitBeforeClose)
 	case errors.Is(err, errQuitQuitQuit):
 		cmd.logger.Infof("/quitquitquit received request. Shutting down...")
+		time.Sleep(cmd.conf.WaitBeforeClose)
 	default:
 		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
 	}

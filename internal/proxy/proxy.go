@@ -170,6 +170,11 @@ type Config struct {
 	// connections. A zero-value indicates no limit.
 	MaxConnections uint64
 
+	// WaitBeforeClose sets the duration to wait after receiving a shutdown signal
+	// but before closing the process. Not setting this field means to initiate
+	// the shutdown process immediately.
+	WaitBeforeClose time.Duration
+
 	// WaitOnClose sets the duration to wait for connections to close before
 	// shutting down. Not setting this field means to close immediately
 	// regardless of any open connections.
