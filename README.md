@@ -404,7 +404,7 @@ currently supported:
 
 - `$VERSION` (default)
 - `$VERSION-alpine`
-- `$VERSION-buster`
+- `$VERSION-bookworm`
 - `$VERSION-bullseye`
 
 <!-- {x-release-please-start-version} -->
@@ -423,7 +423,7 @@ We recommend pinning to a specific version tag and using automation with a CI pi
 to update regularly.
 
 The default container image uses [distroless][] with a non-root user. If you
-need a shell or related tools, use the Alpine or Buster images listed above.
+need a shell or related tools, use the Alpine or Bookworm images listed above.
 
 [distroless]: https://github.com/GoogleContainerTools/distroless
 
