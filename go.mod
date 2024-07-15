@@ -3,7 +3,7 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 go 1.22
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.11.0
+	cloud.google.com/go/cloudsqlconn v1.11.1
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/coreos/go-systemd/v22 v22.5.0
@@ -84,7 +84,7 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20240708141625-4ad9e859172b // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240708141625-4ad9e859172b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240709173604-40e1e62336c5 // indirect
 	google.golang.org/grpc v1.64.1 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
