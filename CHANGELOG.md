@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.36.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.35.4...v1.36.0) (2024-07-16)
+
+
+### Features
+
+* add support for bookworm to v1 Proxy ([#2271](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2271)) ([3ef7325](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/3ef73250c06aec5c1f39f21b065fdc47ea55b4d5))
+
 ## [1.35.4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.35.3...v1.35.4) (2024-06-12)
 
 
