@@ -23,10 +23,10 @@ ARG TARGETARCH
 
 RUN go get ./...
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-X main.metadataString=container.buster" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
+    go build -ldflags "-X main.metadataString=container.bookworm" -o cloud_sql_proxy ./cmd/cloud_sql_proxy
 
 # Final stage
-FROM gcr.io/cloud-marketplace-containers/google/debian10
+FROM gcr.io/cloud-marketplace-containers/google/debian12
 RUN apt-get update && apt-get install -y ca-certificates
 # Install fuse and allow enable non-root users to mount
 RUN apt-get update && apt-get install -y fuse && sed -i 's/^#user_allow_other$/user_allow_other/g' /etc/fuse.conf
