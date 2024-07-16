@@ -45,10 +45,10 @@ currently supported:
 * `$VERSION` - default image (recommended)
 * `$VERSION-alpine` - uses [`alpine:3`](https://hub.docker.com/_/alpine)
   as a base image (only supported from v1.17 up)
-* `$VERSION-buster` - uses [`debian:buster`](https://hub.docker.com/_/debian)
-  as a base image (only supported from v1.17 up)
 * `$VERSION-bullseye` - uses [`debian:bullseye`](https://hub.docker.com/_/debian)
   as a base image (only supported from v1.17 up)
+* `$VERSION-bookworm` - uses [`debian:bookworm`](https://hub.docker.com/_/debian)
+  as a base image (only supported from v1.35.5 and up)
 
 We recommend using the latest version of the proxy and updating the version
 regularly. However, we also recommend pinning to a specific tag and avoid the
@@ -58,7 +58,8 @@ it's a best practice to test changes before deployment, and use automated
 rollbacks to revert potential failures.
 
 **NOTE**: As of v1.16, the default container image uses [distroless][]. If you
-require a shell or similar tools, use the Alpine or Buster images listed above.
+require a shell or similar tools, use the Alpine or Debian based (bullseye
+and bookworm) images listed above.
 
 [distroless]: https://github.com/GoogleContainerTools/distroless
 
