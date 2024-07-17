@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.12.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.11.4...v2.12.0) (2024-07-17)
+
+
+### Features
+
+* Add parameter --min-sigterm-delay allow new connections for a minimum number off seconds before shutting down the proxy. ([#2266](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2266)) ([52cd0d9](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/52cd0d95695d2b8e9456825e7c0bd452234a867b)), closes [#1640](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/1640)
+* add support for Debian bookworm ([#2267](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2267)) ([fbec17b](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/fbec17bd2c8c0898bdf41eb22669a871e5048ba9))
+
+
+### Bug Fixes
+
+* ignore go-fuse ctx in Lookup ([#2268](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2268)) ([ae8ec35](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ae8ec359b43056fe815ac7c649388232bc1b4171))
+* Make the process exit if there as an error accepting a fuse connection. ([#2257](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2257)) ([bb2a0ae](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/bb2a0ae76d518eaeec69fcc2ac7e930a4bd7e024))
+
 ## [2.11.4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.11.3...v2.11.4) (2024-06-12)
 
 
