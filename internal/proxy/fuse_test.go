@@ -281,6 +281,27 @@ func TestFUSEReadDir(t *testing.T) {
 	}
 }
 
+func TestLookupIgnoresContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping fuse tests in short mode.")
+	}
+	// create context and cancel it immediately
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	d := &fakeDialer{}
+	c, _, _ := newTestClient(t, d, randTmpDir(t), randTmpDir(t))
+
+	// invoke Lookup with cancelled context, should ignore context and succeed
+	_, err := c.Lookup(ctx, "proj:reg:mysql", nil)
+	if err != fs.OK {
+		t.Fatalf("proxy.Client.Lookup(): %v", err)
+	}
+	// Close the client to close all open sockets.
+	if err := c.Close(); err != nil {
+		t.Fatalf("c.Close(): %v", err)
+	}
+}
+
 func TestFUSEErrors(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
