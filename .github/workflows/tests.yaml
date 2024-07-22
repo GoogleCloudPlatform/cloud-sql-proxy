@@ -16,13 +16,11 @@ name: tests
 on:
   push:
     branches:
-    - 'main'
-    - 'v1'
+      - "main"
+      - "v1"
   pull_request:
-  pull_request_target:
-    types: [labeled]
   schedule:
-  - cron:  '0 2 * * *'
+    - cron: "0 2 * * *"
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -45,10 +43,7 @@ jobs:
           CGO_ENABLED=0 GOOS=freebsd go build
           CGO_ENABLED=0 GOOS=openbsd go build
 
-
   integration:
-   # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
-    if: "${{ (github.event.action != 'labeled' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) || github.event.label.name == 'tests: run' }}"
     name: integration tests
     runs-on: ${{ matrix.os }}
     strategy:
@@ -56,40 +51,20 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
       fail-fast: false
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: read
+      id-token: write
       issues: write
       pull-requests: write
     steps:
-      - name: Remove PR label
-        if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            try {
-              await github.rest.issues.removeLabel({
-                name: 'tests: run',
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.payload.pull_request.number
-              });
-            } catch (e) {
-              console.log('Failed to remove label. Another job may have already removed it!');
-            }
-
       - name: Checkout code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Setup Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
           go-version: "1.22"
 
-      - id: 'auth'
+      - id: auth
         name: Authenticate to Google Cloud
         uses: google-github-actions/auth@71fee32a0bb7e97b4d33d548e7d957010649d8fa # v2.1.3
         with:
@@ -100,25 +75,25 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@98ddc00a17442e89a24bbf282954a3b65ce6d200 # v2.1.0
 
-      - id: 'secrets'
+      - id: secrets
         name: Get secrets
         uses: google-github-actions/get-secretmanager-secrets@dc4a1392bad0fd60aee00bb2097e30ef07a1caae # v2.1.3
         with:
           secrets: |-
-            MYSQL_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_CONNECTION_NAME
-            MYSQL_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_USER
-            MYSQL_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_PASS
-            MYSQL_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_DB
-            POSTGRES_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_CONNECTION_NAME
-            POSTGRES_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_USER
-            POSTGRES_USER_IAM:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_USER_IAM
-            POSTGRES_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_PASS
-            POSTGRES_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/POSTGRES_DB
-            SQLSERVER_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_CONNECTION_NAME
-            SQLSERVER_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_USER
-            SQLSERVER_PASS:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
-            SQLSERVER_DB:${{ secrets.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
-            IMPERSONATED_USER:${{ secrets.GOOGLE_CLOUD_PROJECT }}/IMPERSONATED_USER
+            MYSQL_CONNECTION_NAME:${{ vars.GOOGLE_CLOUD_PROJECT }}/MYSQL_CONNECTION_NAME
+            MYSQL_USER:${{ vars.GOOGLE_CLOUD_PROJECT }}/MYSQL_USER
+            MYSQL_PASS:${{ vars.GOOGLE_CLOUD_PROJECT }}/MYSQL_PASS
+            MYSQL_DB:${{ vars.GOOGLE_CLOUD_PROJECT }}/MYSQL_DB
+            POSTGRES_CONNECTION_NAME:${{ vars.GOOGLE_CLOUD_PROJECT }}/POSTGRES_CONNECTION_NAME
+            POSTGRES_USER:${{ vars.GOOGLE_CLOUD_PROJECT }}/POSTGRES_USER
+            POSTGRES_USER_IAM:${{ vars.GOOGLE_CLOUD_PROJECT }}/POSTGRES_USER_IAM
+            POSTGRES_PASS:${{ vars.GOOGLE_CLOUD_PROJECT }}/POSTGRES_PASS
+            POSTGRES_DB:${{ vars.GOOGLE_CLOUD_PROJECT }}/POSTGRES_DB
+            SQLSERVER_CONNECTION_NAME:${{ vars.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_CONNECTION_NAME
+            SQLSERVER_USER:${{ vars.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_USER
+            SQLSERVER_PASS:${{ vars.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_PASS
+            SQLSERVER_DB:${{ vars.GOOGLE_CLOUD_PROJECT }}/SQLSERVER_DB
+            IMPERSONATED_USER:${{ vars.GOOGLE_CLOUD_PROJECT }}/IMPERSONATED_USER
 
       - name: Enable fuse config (Linux)
         if: runner.os == 'Linux'
@@ -127,23 +102,23 @@ jobs:
 
       - name: Run tests
         env:
-          GOOGLE_CLOUD_PROJECT: '${{ secrets.GOOGLE_CLOUD_PROJECT }}'
-          MYSQL_CONNECTION_NAME: '${{ steps.secrets.outputs.MYSQL_CONNECTION_NAME }}'
-          MYSQL_USER: '${{ steps.secrets.outputs.MYSQL_USER }}'
-          MYSQL_PASS: '${{ steps.secrets.outputs.MYSQL_PASS }}'
-          MYSQL_DB: '${{ steps.secrets.outputs.MYSQL_DB }}'
-          POSTGRES_CONNECTION_NAME: '${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}'
-          POSTGRES_USER: '${{ steps.secrets.outputs.POSTGRES_USER }}'
-          POSTGRES_USER_IAM: '${{ steps.secrets.outputs.POSTGRES_USER_IAM }}'
-          POSTGRES_PASS: '${{ steps.secrets.outputs.POSTGRES_PASS }}'
-          POSTGRES_DB: '${{ steps.secrets.outputs.POSTGRES_DB }}'
-          SQLSERVER_CONNECTION_NAME: '${{ steps.secrets.outputs.SQLSERVER_CONNECTION_NAME }}'
-          SQLSERVER_USER: '${{ steps.secrets.outputs.SQLSERVER_USER }}'
-          SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
-          SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
-          IMPERSONATED_USER: '${{ steps.secrets.outputs.IMPERSONATED_USER }}'
+          GOOGLE_CLOUD_PROJECT: "${{ vars.GOOGLE_CLOUD_PROJECT }}"
+          MYSQL_CONNECTION_NAME: "${{ steps.secrets.outputs.MYSQL_CONNECTION_NAME }}"
+          MYSQL_USER: "${{ steps.secrets.outputs.MYSQL_USER }}"
+          MYSQL_PASS: "${{ steps.secrets.outputs.MYSQL_PASS }}"
+          MYSQL_DB: "${{ steps.secrets.outputs.MYSQL_DB }}"
+          POSTGRES_CONNECTION_NAME: "${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}"
+          POSTGRES_USER: "${{ steps.secrets.outputs.POSTGRES_USER }}"
+          POSTGRES_USER_IAM: "${{ steps.secrets.outputs.POSTGRES_USER_IAM }}"
+          POSTGRES_PASS: "${{ steps.secrets.outputs.POSTGRES_PASS }}"
+          POSTGRES_DB: "${{ steps.secrets.outputs.POSTGRES_DB }}"
+          SQLSERVER_CONNECTION_NAME: "${{ steps.secrets.outputs.SQLSERVER_CONNECTION_NAME }}"
+          SQLSERVER_USER: "${{ steps.secrets.outputs.SQLSERVER_USER }}"
+          SQLSERVER_PASS: "${{ steps.secrets.outputs.SQLSERVER_PASS }}"
+          SQLSERVER_DB: "${{ steps.secrets.outputs.SQLSERVER_DB }}"
+          IMPERSONATED_USER: "${{ steps.secrets.outputs.IMPERSONATED_USER }}"
           TMPDIR: "/tmp"
-          TMP: '${{ runner.temp }}'
+          TMP: "${{ runner.temp }}"
         # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`
         shell: bash
         run: |

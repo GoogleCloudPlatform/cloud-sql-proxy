@@ -20,16 +20,14 @@ permissions: read-all
 on:
   push:
     branches:
-    - 'main'
-    - 'v1'
+      - "main"
+      - "v1"
   pull_request:
     branches:
-      - 'main'
-      - 'v1'
-  pull_request_target:
-    types: [labeled]
+      - "main"
+      - "v1"
   schedule:
-  - cron:  '0 2 * * *'
+    - cron: "0 2 * * *"
 
 jobs:
   govulncheck_job:
