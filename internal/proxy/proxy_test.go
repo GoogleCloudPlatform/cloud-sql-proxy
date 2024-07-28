@@ -630,7 +630,7 @@ func TestClientConnCount(t *testing.T) {
 func TestCheckConnections(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 50000,
+		Port: 55555,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
@@ -657,7 +657,7 @@ func TestCheckConnections(t *testing.T) {
 
 	in = &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 60000,
+		Port: 66666,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg1"},
 			{Name: "proj:region:pg2"},
