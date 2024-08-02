@@ -163,8 +163,6 @@ jobs:
           go-version: 1.22
       - name: Checkout code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Enable fuse config
-        run: sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
       - name: Run tests
         # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`
         shell: bash
