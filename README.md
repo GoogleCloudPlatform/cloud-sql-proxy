@@ -392,12 +392,17 @@ To see a full list of flags, use:
 ## Container Images
 
 There are containerized versions of the Proxy available from the following
-Google Cloud Container Registry repositories:
+[Artifact Registry](https://cloud.google.com/artifact-registry) repositories:
 
 - `gcr.io/cloud-sql-connectors/cloud-sql-proxy`
 - `us.gcr.io/cloud-sql-connectors/cloud-sql-proxy`
 - `eu.gcr.io/cloud-sql-connectors/cloud-sql-proxy`
 - `asia.gcr.io/cloud-sql-connectors/cloud-sql-proxy`
+
+> [!NOTE]
+>
+> The above container images were migrated from Google Container Registry (deprecated)
+> to Artifact Registry which is why they begin with the old naming pattern (`gcr.io`)
 
 Each image is tagged with the associated Proxy version. The following tags are
 currently supported:
