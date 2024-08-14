@@ -16,24 +16,24 @@ name: tests
 on:
   push:
     branches:
-    - 'v1'
+      - "v1"
   pull_request:
   pull_request_target:
     types: [labeled]
 
 jobs:
   unit:
-   # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
+    # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
     if: "${{ (github.event.action != 'labeled' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) || github.event.label.name == 'tests: run' }}"
     name: unit tests
     runs-on: "ubuntu-latest"
     strategy:
       matrix:
-        go-version: ["1.20", "1.22"]
+        go-version: ["1.21", "1.23"]
       fail-fast: false
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
       - name: Remove PR label
         if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
@@ -53,7 +53,7 @@ jobs:
             }
 
       - name: Checkout code
-        uses: 'actions/checkout@v3'
+        uses: "actions/checkout@v3"
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -63,9 +63,9 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0.8.0'
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v0.8.0"
         with:
           workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
@@ -87,7 +87,7 @@ jobs:
           ./flakybot --repo ${{github.repository}} --commit_hash ${{github.sha}} --build_url https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
 
   integration:
-   # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
+    # run job on proper workflow event triggers (skip job for pull_request event from forks and only run pull_request_target for "tests: run" label)
     if: "${{ (github.event.action != 'labeled' && github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) || github.event.label.name == 'tests: run' }}"
     name: integration tests
     runs-on: ${{ matrix.os }}
@@ -96,8 +96,8 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
       fail-fast: false
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
       - name: Remove PR label
         if: "${{ github.event.action == 'labeled' && github.event.label.name == 'tests: run' }}"
@@ -117,7 +117,7 @@ jobs:
             }
 
       - name: Checkout code
-        uses: 'actions/checkout@v3'
+        uses: "actions/checkout@v3"
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
@@ -125,19 +125,19 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.22"
+          go-version: "1.23"
 
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0.8.0'
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v0.8.0"
         with:
           workload_identity_provider: ${{ secrets.PROVIDER_NAME }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
 
-      - id: 'secrets'
+      - id: "secrets"
         name: Get secrets
-        uses: 'google-github-actions/get-secretmanager-secrets@v0.5.0'
+        uses: "google-github-actions/get-secretmanager-secrets@v0.5.0"
         with:
           secrets: |-
             MYSQL_CONNECTION_NAME:${{ secrets.GOOGLE_CLOUD_PROJECT }}/MYSQL_CONNECTION_NAME
@@ -161,20 +161,20 @@ jobs:
 
       - name: Run tests
         env:
-          GOOGLE_CLOUD_PROJECT: '${{ secrets.GOOGLE_CLOUD_PROJECT }}'
-          MYSQL_CONNECTION_NAME: '${{ steps.secrets.outputs.MYSQL_CONNECTION_NAME }}'
-          MYSQL_USER: '${{ steps.secrets.outputs.MYSQL_USER }}'
-          MYSQL_PASS: '${{ steps.secrets.outputs.MYSQL_PASS }}'
-          MYSQL_DB: '${{ steps.secrets.outputs.MYSQL_DB }}'
-          POSTGRES_CONNECTION_NAME: '${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}'
-          POSTGRES_USER: '${{ steps.secrets.outputs.POSTGRES_USER }}'
-          POSTGRES_USER_IAM: '${{ steps.secrets.outputs.POSTGRES_USER_IAM }}'
-          POSTGRES_PASS: '${{ steps.secrets.outputs.POSTGRES_PASS }}'
-          POSTGRES_DB: '${{ steps.secrets.outputs.POSTGRES_DB }}'
-          SQLSERVER_CONNECTION_NAME: '${{ steps.secrets.outputs.SQLSERVER_CONNECTION_NAME }}'
-          SQLSERVER_USER: '${{ steps.secrets.outputs.SQLSERVER_USER }}'
-          SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
-          SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
+          GOOGLE_CLOUD_PROJECT: "${{ secrets.GOOGLE_CLOUD_PROJECT }}"
+          MYSQL_CONNECTION_NAME: "${{ steps.secrets.outputs.MYSQL_CONNECTION_NAME }}"
+          MYSQL_USER: "${{ steps.secrets.outputs.MYSQL_USER }}"
+          MYSQL_PASS: "${{ steps.secrets.outputs.MYSQL_PASS }}"
+          MYSQL_DB: "${{ steps.secrets.outputs.MYSQL_DB }}"
+          POSTGRES_CONNECTION_NAME: "${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}"
+          POSTGRES_USER: "${{ steps.secrets.outputs.POSTGRES_USER }}"
+          POSTGRES_USER_IAM: "${{ steps.secrets.outputs.POSTGRES_USER_IAM }}"
+          POSTGRES_PASS: "${{ steps.secrets.outputs.POSTGRES_PASS }}"
+          POSTGRES_DB: "${{ steps.secrets.outputs.POSTGRES_DB }}"
+          SQLSERVER_CONNECTION_NAME: "${{ steps.secrets.outputs.SQLSERVER_CONNECTION_NAME }}"
+          SQLSERVER_USER: "${{ steps.secrets.outputs.SQLSERVER_USER }}"
+          SQLSERVER_PASS: "${{ steps.secrets.outputs.SQLSERVER_PASS }}"
+          SQLSERVER_DB: "${{ steps.secrets.outputs.SQLSERVER_DB }}"
           TMPDIR: "/tmp"
         run: |
           go install github.com/jstemmer/go-junit-report/v2@latest
