@@ -548,11 +548,9 @@ use the value from the flag, Not compatible with -fuse.`,
 	}
 
 	// Notify users of v2 Proxy and suggest migrating
-	logging.Infof("This version of the Cloud SQL Proxy (v1) is now in " +
-		"maintenance mode and no longer receiving active feature development. " +
-		"For the latest features and improvements it is encouraged to migrate " +
-		"to the v2 version of the Cloud SQL Proxy. For assistance please see: " +
-		"https://github.com/GoogleCloudPlatform/cloud-sql-proxy/blob/main/migration-guide.md")
+	logging.Infof("This is Cloud SQL Proxy v1. For the latest features and " +
+		"improvements, migrate to the v2 version of the Cloud SQL Proxy. For " +
+		"details, see: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/blob/main/migration-guide.md")
 
 	if *quiet {
 		logging.Infof("Cloud SQL Auth proxy logging has been disabled by the -quiet flag. All messages (including errors) will be suppressed.")
