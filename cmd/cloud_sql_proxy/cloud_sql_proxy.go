@@ -548,7 +548,7 @@ use the value from the flag, Not compatible with -fuse.`,
 	}
 
 	// Notify users of v2 Proxy and suggest migrating
-	logging.Infof("This is Cloud SQL Proxy v1. For the latest features and " +
+	logging.Infof("This is the Cloud SQL Proxy v1. For the latest features and " +
 		"improvements, migrate to the v2 version of the Cloud SQL Proxy. For " +
 		"details, see: https://github.com/GoogleCloudPlatform/cloud-sql-proxy/blob/main/migration-guide.md")
 
