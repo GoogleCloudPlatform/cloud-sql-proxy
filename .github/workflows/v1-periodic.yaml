@@ -15,7 +15,7 @@
 name: v1 periodic
 on:
   schedule:
-    - cron: "0 2 * * *"
+    - cron:  '0 2 * * *'
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -29,8 +29,8 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
       fail-fast: false
     permissions:
-      contents: "read"
-      id-token: "write"
+      contents: 'read'
+      id-token: 'write'
     steps:
       - name: Checkout code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -40,9 +40,9 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
-          go-version: "1.23"
+          go-version: "1.22"
 
-      - id: auth
+      - id: 'auth'
         name: Authenticate to Google Cloud
         uses: google-github-actions/auth@71fee32a0bb7e97b4d33d548e7d957010649d8fa # v2.1.3
         with:
@@ -50,7 +50,7 @@ jobs:
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
           access_token_lifetime: 600s
 
-      - id: secrets
+      - id: 'secrets'
         name: Get secrets
         uses: google-github-actions/get-secretmanager-secrets@dc4a1392bad0fd60aee00bb2097e30ef07a1caae # v2.1.3
         with:
@@ -76,22 +76,22 @@ jobs:
 
       - name: Run tests
         env:
-          GOOGLE_CLOUD_PROJECT: "${{ secrets.GOOGLE_CLOUD_PROJECT }}"
-          MYSQL_CONNECTION_NAME: "${{ steps.secrets.outputs.MYSQL_CONNECTION_NAME }}"
-          MYSQL_USER: "${{ steps.secrets.outputs.MYSQL_USER }}"
-          MYSQL_PASS: "${{ steps.secrets.outputs.MYSQL_PASS }}"
-          MYSQL_DB: "${{ steps.secrets.outputs.MYSQL_DB }}"
-          POSTGRES_CONNECTION_NAME: "${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}"
-          POSTGRES_USER: "${{ steps.secrets.outputs.POSTGRES_USER }}"
-          POSTGRES_USER_IAM: "${{ steps.secrets.outputs.POSTGRES_USER_IAM }}"
-          POSTGRES_PASS: "${{ steps.secrets.outputs.POSTGRES_PASS }}"
-          POSTGRES_DB: "${{ steps.secrets.outputs.POSTGRES_DB }}"
-          SQLSERVER_CONNECTION_NAME: "${{ steps.secrets.outputs.SQLSERVER_CONNECTION_NAME }}"
-          SQLSERVER_USER: "${{ steps.secrets.outputs.SQLSERVER_USER }}"
-          SQLSERVER_PASS: "${{ steps.secrets.outputs.SQLSERVER_PASS }}"
-          SQLSERVER_DB: "${{ steps.secrets.outputs.SQLSERVER_DB }}"
+          GOOGLE_CLOUD_PROJECT: '${{ secrets.GOOGLE_CLOUD_PROJECT }}'
+          MYSQL_CONNECTION_NAME: '${{ steps.secrets.outputs.MYSQL_CONNECTION_NAME }}'
+          MYSQL_USER: '${{ steps.secrets.outputs.MYSQL_USER }}'
+          MYSQL_PASS: '${{ steps.secrets.outputs.MYSQL_PASS }}'
+          MYSQL_DB: '${{ steps.secrets.outputs.MYSQL_DB }}'
+          POSTGRES_CONNECTION_NAME: '${{ steps.secrets.outputs.POSTGRES_CONNECTION_NAME }}'
+          POSTGRES_USER: '${{ steps.secrets.outputs.POSTGRES_USER }}'
+          POSTGRES_USER_IAM: '${{ steps.secrets.outputs.POSTGRES_USER_IAM }}'
+          POSTGRES_PASS: '${{ steps.secrets.outputs.POSTGRES_PASS }}'
+          POSTGRES_DB: '${{ steps.secrets.outputs.POSTGRES_DB }}'
+          SQLSERVER_CONNECTION_NAME: '${{ steps.secrets.outputs.SQLSERVER_CONNECTION_NAME }}'
+          SQLSERVER_USER: '${{ steps.secrets.outputs.SQLSERVER_USER }}'
+          SQLSERVER_PASS: '${{ steps.secrets.outputs.SQLSERVER_PASS }}'
+          SQLSERVER_DB: '${{ steps.secrets.outputs.SQLSERVER_DB }}'
           TMPDIR: "/tmp"
-          TMP: "${{ runner.temp }}"
+          TMP: '${{ runner.temp }}'
         # specifying bash shell ensures a failure in a piped process isn't lost by using `set -eo pipefail`
         shell: bash
         run: |
