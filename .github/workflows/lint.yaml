@@ -29,14 +29,14 @@ jobs:
         with:
           go-version: "1.23"
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
       - name: >
           Verify go mod tidy. If you're reading this and the check has
           failed, run `goimports -w . && go mod tidy && golangci-lint run`
         run: |
           go mod tidy && git diff --exit-code
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
+        uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 # v6.1.1
         with:
           version: latest
           args: --timeout 3m
