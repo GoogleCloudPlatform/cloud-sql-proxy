@@ -503,12 +503,14 @@ type Client struct {
 
 	logger cloudsql.Logger
 
+	connRefuseNotify func(string)
+
 	fuseMount
 }
 
 // NewClient completes the initial setup required to get the proxy to a "steady"
 // state.
-func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *Config) (*Client, error) {
+func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *Config, connRefuseNotify func(string)) (*Client, error) {
 	// Check if the caller has configured a dialer.
 	// Otherwise, initialize a new one.
 	if d == nil {
@@ -523,9 +525,10 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	}
 
 	c := &Client{
-		logger: l,
-		dialer: d,
-		conf:   conf,
+		logger:           l,
+		dialer:           d,
+		connRefuseNotify: connRefuseNotify,
+		conf:             conf,
 	}
 
 	if conf.FUSEDir != "" {
@@ -753,6 +756,9 @@ func (c *Client) serveSocketMount(_ context.Context, s *socketMount) error {
 
 			if c.conf.MaxConnections > 0 && count > c.conf.MaxConnections {
 				c.logger.Infof("max connections (%v) exceeded, refusing new connection", c.conf.MaxConnections)
+				if c.connRefuseNotify != nil {
+				        go c.connRefuseNotify("too many connections")
+				}
 				_ = cConn.Close()
 				return
 			}
