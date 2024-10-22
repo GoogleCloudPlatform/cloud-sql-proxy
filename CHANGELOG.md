@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.37.0...v1.37.1) (2024-10-22)
+
+
+### Bug Fixes
+
+* add migration message on startup of v1 Proxy ([#2301](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2301)) ([1ded4c3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1ded4c3ba3e6ef91b548bbbd9a849e2fa947290f))
+
 ## [1.37.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.36.0...v1.37.0) (2024-08-14)
 
 
