@@ -372,6 +372,8 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	}
 	callbackGot := 0
 	connRefuseNotify := func() {
+		d.mu.Lock()
+		defer d.mu.Unlock()
 		callbackGot++
 	}
 	c, err := proxy.NewClient(context.Background(), d, testLogger, in, connRefuseNotify)
