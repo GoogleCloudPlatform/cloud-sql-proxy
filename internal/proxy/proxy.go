@@ -757,7 +757,7 @@ func (c *Client) serveSocketMount(_ context.Context, s *socketMount) error {
 			if c.conf.MaxConnections > 0 && count > c.conf.MaxConnections {
 				c.logger.Infof("max connections (%v) exceeded, refusing new connection", c.conf.MaxConnections)
 				if c.connRefuseNotify != nil {
-				        go c.connRefuseNotify()
+					go c.connRefuseNotify()
 				}
 				_ = cConn.Close()
 				return
