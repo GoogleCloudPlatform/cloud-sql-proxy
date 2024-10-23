@@ -51,7 +51,8 @@ func TestFuseClosesGracefully(t *testing.T) {
 			FUSEDir:     t.TempDir(),
 			FUSETempDir: t.TempDir(),
 			Token:       "mytoken",
-		})
+		},
+		nil)
 	if err != nil {
 		t.Fatal(err)
 	}

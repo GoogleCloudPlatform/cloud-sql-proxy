@@ -47,7 +47,7 @@ func newTestClient(t *testing.T, d cloudsql.Dialer, fuseDir, fuseTempDir string)
 	conf := &proxy.Config{FUSEDir: fuseDir, FUSETempDir: fuseTempDir}
 
 	// This context is only used to call the Cloud SQL API
-	c, err := proxy.NewClient(context.Background(), d, testLogger, conf)
+	c, err := proxy.NewClient(context.Background(), d, testLogger, conf, nil)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
@@ -424,7 +424,7 @@ func TestFUSEWithBadDir(t *testing.T) {
 		t.Skip("skipping fuse tests in short mode.")
 	}
 	conf := &proxy.Config{FUSEDir: "/not/a/dir", FUSETempDir: randTmpDir(t)}
-	_, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, conf)
+	_, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, conf, nil)
 	if err == nil {
 		t.Fatal("proxy client should fail with bad dir")
 	}
