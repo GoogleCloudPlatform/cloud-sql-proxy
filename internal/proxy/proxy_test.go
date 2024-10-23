@@ -372,7 +372,7 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	}
 	callbackGot := 0
 	connRefuseNotify := func() {
-		callbackGot += 1
+		callbackGot++
 	}
 	c, err := proxy.NewClient(context.Background(), d, testLogger, in, connRefuseNotify)
 	if err != nil {
