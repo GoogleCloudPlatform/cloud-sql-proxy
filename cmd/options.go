@@ -97,3 +97,11 @@ func WithLazyRefresh() Option {
 		c.conf.LazyRefresh = true
 	}
 }
+
+// WithConnRefuseNotify configures the Proxy to call the provided function when
+// a connection is refused. The notification function is run in a goroutine.
+func WithConnRefuseNotify(n func()) Option {
+	return func(c *Command) {
+		c.connRefuseNotify = n
+	}
+}

@@ -78,7 +78,7 @@ func newProxyWithParams(t *testing.T, maxConns uint64, dialer cloudsql.Dialer, i
 		Instances:      instances,
 		MaxConnections: maxConns,
 	}
-	p, err := proxy.NewClient(context.Background(), dialer, logger, c)
+	p, err := proxy.NewClient(context.Background(), dialer, logger, c, nil)
 	if err != nil {
 		t.Fatalf("proxy.NewClient: %v", err)
 	}

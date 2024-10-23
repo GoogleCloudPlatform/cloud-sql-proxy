@@ -86,10 +86,11 @@ func Execute() {
 // Command represents an invocation of the Cloud SQL Auth Proxy.
 type Command struct {
 	*cobra.Command
-	conf    *proxy.Config
-	logger  cloudsql.Logger
-	dialer  cloudsql.Dialer
-	cleanup func() error
+	conf             *proxy.Config
+	logger           cloudsql.Logger
+	dialer           cloudsql.Dialer
+	cleanup          func() error
+	connRefuseNotify func()
 }
 
 var longHelp = `
@@ -1025,7 +1026,7 @@ func runSignalWrapper(cmd *Command) (err error) {
 	startCh := make(chan *proxy.Client)
 	go func() {
 		defer close(startCh)
-		p, err := proxy.NewClient(ctx, cmd.dialer, cmd.logger, cmd.conf)
+		p, err := proxy.NewClient(ctx, cmd.dialer, cmd.logger, cmd.conf, cmd.connRefuseNotify)
 		if err != nil {
 			cmd.logger.Debugf("Error starting proxy: %v", err)
 			shutdownCh <- fmt.Errorf("unable to start: %v", err)

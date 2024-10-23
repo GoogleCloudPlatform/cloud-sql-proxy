@@ -324,7 +324,7 @@ func TestClientInitialization(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			c, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, tc.in)
+			c, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, tc.in, nil)
 			if err != nil {
 				t.Fatalf("want error = nil, got = %v", err)
 			}
@@ -370,7 +370,13 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 		},
 		MaxConnections: 1,
 	}
-	c, err := proxy.NewClient(context.Background(), d, testLogger, in)
+	callbackGot := 0
+	connRefuseNotify := func() {
+		d.mu.Lock()
+		defer d.mu.Unlock()
+		callbackGot++
+	}
+	c, err := proxy.NewClient(context.Background(), d, testLogger, in, connRefuseNotify)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -410,6 +416,10 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	if got := d.dialAttempts(); got != want {
 		t.Fatalf("dial attempts did not match expected, want = %v, got = %v", want, got)
 	}
+
+	if callbackGot == 0 {
+		t.Fatal("connRefuseNotifyCallback is not called")
+	}
 }
 
 func tryTCPDial(t *testing.T, addr string) net.Conn {
@@ -442,7 +452,7 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 		},
 		WaitOnClose: 1 * time.Second,
 	}
-	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, in)
+	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -464,7 +474,7 @@ func TestClientClosesCleanly(t *testing.T) {
 			{Name: "proj:reg:inst"},
 		},
 	}
-	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, in)
+	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
@@ -486,7 +496,7 @@ func TestClosesWithError(t *testing.T) {
 			{Name: "proj:reg:inst"},
 		},
 	}
-	c, err := proxy.NewClient(context.Background(), &errorDialer{}, testLogger, in)
+	c, err := proxy.NewClient(context.Background(), &errorDialer{}, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
 	}
@@ -542,13 +552,13 @@ func TestClientInitializationWorksRepeatedly(t *testing.T) {
 		},
 	}
 
-	c, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, in)
+	c, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
 	c.Close()
 
-	c, err = proxy.NewClient(ctx, &fakeDialer{}, testLogger, in)
+	c, err = proxy.NewClient(ctx, &fakeDialer{}, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
@@ -562,7 +572,7 @@ func TestClientNotifiesCallerOnServe(t *testing.T) {
 			{Name: "proj:region:pg"},
 		},
 	}
-	c, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, in)
+	c, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
@@ -595,7 +605,7 @@ func TestClientConnCount(t *testing.T) {
 		MaxConnections: 10,
 	}
 
-	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, in)
+	c, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -636,7 +646,7 @@ func TestCheckConnections(t *testing.T) {
 		},
 	}
 	d := &fakeDialer{}
-	c, err := proxy.NewClient(context.Background(), d, testLogger, in)
+	c, err := proxy.NewClient(context.Background(), d, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -664,7 +674,7 @@ func TestCheckConnections(t *testing.T) {
 		},
 	}
 	ed := &errorDialer{}
-	c, err = proxy.NewClient(context.Background(), ed, testLogger, in)
+	c, err = proxy.NewClient(context.Background(), ed, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -690,7 +700,7 @@ func TestRunConnectionCheck(t *testing.T) {
 		RunConnectionTest: true,
 	}
 	d := &fakeDialer{}
-	c, err := proxy.NewClient(context.Background(), d, testLogger, in)
+	c, err := proxy.NewClient(context.Background(), d, testLogger, in, nil)
 	if err != nil {
 		t.Fatalf("proxy.NewClient error: %v", err)
 	}
@@ -757,7 +767,7 @@ func TestProxyInitializationWithFailedUnixSocket(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, tc.in)
+			_, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, tc.in, nil)
 			if err == nil {
 				t.Fatalf("want non nil error, got = %v", err)
 			}
@@ -801,7 +811,7 @@ func TestProxyMultiInstances(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, tc.in)
+			_, err := proxy.NewClient(ctx, &fakeDialer{}, testLogger, tc.in, nil)
 			if tc.wantSuccess != (err == nil) {
 				t.Fatalf("want return = %v, got = %v", tc.wantSuccess, err == nil)
 			}
