@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.14.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.13.0...v2.14.0) (2024-10-23)
+
+
+### Features
+
+* callback notify function when connection is refused ([#2308](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2308)) ([9309b84](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/9309b8461d73d83137943885aad164793a14a875))
+
 ## [2.13.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.12.0...v2.13.0) (2024-08-14)
 
 
