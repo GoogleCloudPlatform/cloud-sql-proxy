@@ -90,7 +90,7 @@ type Command struct {
 	logger           cloudsql.Logger
 	dialer           cloudsql.Dialer
 	cleanup          func() error
-	connRefuseNotify func(string)
+	connRefuseNotify func()
 }
 
 var longHelp = `
