@@ -386,7 +386,7 @@ An invocation of the Proxy using environment variables would look like the follo
 
 ```shell
 CSQL_PROXY_AUTO_IAM_AUTHN=true \ 
-    ./cloud-sql-proxy my-project:us-central1:my-db-server 
+    ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME>
 ```
 
 Run `./cloud-sql-proxy --help` for more details.
