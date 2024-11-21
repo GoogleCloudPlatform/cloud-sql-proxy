@@ -52,9 +52,9 @@ func WithFuseTempDir(dir string) Option {
 
 // WithMaxConnections sets the maximum allowed number of connections. Default
 // is no limit.
-func WithMaxConnections(max uint64) Option {
+func WithMaxConnections(mc uint64) Option {
 	return func(c *Command) {
-		c.conf.MaxConnections = max
+		c.conf.MaxConnections = mc
 	}
 }
 
