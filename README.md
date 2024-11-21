@@ -377,10 +377,12 @@ Run `./cloud-sql-proxy --help` for more details.
 
 The proxy supports configuration through environment variables. 
 Each environment variable uses "CSQL_PROXY" as a prefix and is 
-the uppercase version of the flag using underscores as word delimiters. For 
-example, the `--auto-iam-authn` flag may be set with the environment variable 
-`CSQL_PROXY_AUTO_IAM_AUTHN`. An invocation of the Proxy using environment 
-variables would look like the following: 
+the uppercase version of the flag using underscores as word delimiters. 
+
+For example, the `--auto-iam-authn` flag may be set with the environment variable 
+`CSQL_PROXY_AUTO_IAM_AUTHN`. 
+
+An invocation of the Proxy using environment variables would look like the following: 
 
 ```shell
 CSQL_PROXY_AUTO_IAM_AUTHN=true \ 
