@@ -18,7 +18,7 @@ The Cloud SQL Auth Proxy has support for:
 - [HTTP Healthchecks][health-check-example]
 - Service account impersonation
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
-- Configuration with environment variables
+- Configuration with [environment variables](#config-environment-variables)
 - Fully POSIX-compliant flags
 
 If you're using Go, Java, Python, or Node.js, consider using the corresponding Cloud SQL
@@ -369,6 +369,24 @@ instance-connection-name = "proj:region:inst"
 auto-iam-authn = true
 debug = true
 debug-logs = true
+```
+
+Run `./cloud-sql-proxy --help` for more details.
+
+### Config environment variables
+
+The proxy supports configuration through environment variables. 
+Each environment variable uses "CSQL_PROXY" as a prefix and is 
+the uppercase version of the flag using underscores as word delimiters. 
+
+For example, the `--auto-iam-authn` flag may be set with the environment variable 
+`CSQL_PROXY_AUTO_IAM_AUTHN`. 
+
+An invocation of the Proxy using environment variables would look like the following: 
+
+```shell
+CSQL_PROXY_AUTO_IAM_AUTHN=true \ 
+    ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME>
 ```
 
 Run `./cloud-sql-proxy --help` for more details.
