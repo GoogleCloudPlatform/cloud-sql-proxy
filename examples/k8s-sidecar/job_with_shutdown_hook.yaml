@@ -40,43 +40,43 @@ spec:
         app: busybox
     spec:
       containers:
-      - name: my-application
-        # Run your batch job command.
-        # Then, send a HTTTP POST request to the proxy sidecar container's
-        # /quitquitquit api. This will cause the proxy process to exit.
-        command:
-        - sh
-        - -c
-        - >
-          my_batch_job --host=127.0.0.1 --port=<DB_PORT> --username=<DB_USER> --dbname=<DB_NAME>
-          curl http://localhost:9091/quitquitquit
-        image: busybox
-        imagePullPolicy: IfNotPresent
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-      - name: cloud-sql-proxy
-        # It is recommended to use the latest version of the Cloud SQL Auth Proxy
-        # Make sure to update on a regular schedule!
-        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
-        args:
-        # Enable the admin api server on port 9091
-        - "--admin-port=9091"
-        # Enable the /quitquitquit admin api endpoint
-        - "--quitquitquit"
+        - name: my-application
+          # Run your batch job command.
+          # Then, send a HTTTP POST request to the proxy sidecar container's
+          # /quitquitquit api. This will cause the proxy process to exit.
+          command:
+            - sh
+            - -c
+            - >
+              my_batch_job --host=127.0.0.1 --port=<DB_PORT> --username=<DB_USER> --dbname=<DB_NAME>
+              curl http://localhost:9091/quitquitquit
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        - name: cloud-sql-proxy
+          # It is recommended to use the latest version of the Cloud SQL Auth Proxy
+          # Make sure to update on a regular schedule!
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+          args:
+            # Enable the admin api server on port 9091
+            - "--admin-port=9091"
+            # Enable the /quitquitquit admin api endpoint
+            - "--quitquitquit"
 
-        # Tell the proxy to exit gracefully if it receives a SIGTERM
-        - "--exit-zero-on-sigterm"
+            # Tell the proxy to exit gracefully if it receives a SIGTERM
+            - "--exit-zero-on-sigterm"
 
-        # Replace DB_PORT with the port the proxy should listen on
-        - "--port=<DB_PORT>"
-        - "<INSTANCE_CONNECTION_NAME>"
+            # Replace DB_PORT with the port the proxy should listen on
+            - "--port=<DB_PORT>"
+            - "<INSTANCE_CONNECTION_NAME>"
 
-        securityContext:
-          runAsNonRoot: true
-        resources:
-          requests:
-            memory: "2Gi"
-            cpu:    "1"
+          securityContext:
+            runAsNonRoot: true
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1"
       restartPolicy: Never
       terminationGracePeriodSeconds: 30
