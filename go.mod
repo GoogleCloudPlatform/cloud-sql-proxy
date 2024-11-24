@@ -21,6 +21,7 @@ require (
 	golang.org/x/sys v0.27.0
 	google.golang.org/api v0.208.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+	k8s.io/kubernetes v1.13.0
 )
 
 require (
@@ -34,6 +35,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
@@ -64,6 +66,7 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/prometheus/prometheus v0.35.0 // indirect
 	github.com/prometheus/statsd_exporter v0.22.7 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
