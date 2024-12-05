@@ -17,22 +17,24 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
 	"github.com/spf13/cobra/doc"
-	"k8s.io/kubernetes/cmd/genutils"
 )
 
 func main() {
-	path := "docs/cmd"
-	if len(os.Args) == 2 {
-		path = os.Args[1]
-	} else if len(os.Args) > 2 {
+	if len(os.Args) > 2 {
 		fmt.Fprintf(os.Stderr, "usage: %s [output directory]\n", os.Args[0])
 		os.Exit(1)
 	}
 
-	outDir, err := genutils.OutDir(path)
+	path := "docs/cmd"
+	if len(os.Args) == 2 {
+		path = os.Args[1]
+	}
+
+	outDir, err := filepath.Abs(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get output directory: %v\n", err)
 		os.Exit(1)
