@@ -371,7 +371,8 @@ debug = true
 debug-logs = true
 ```
 
-Run `./cloud-sql-proxy --help` for more details.
+Run `./cloud-sql-proxy --help` for more details. See the full documentation
+in [docs/cmd](docs/cmd).
 
 ### Config environment variables
 
