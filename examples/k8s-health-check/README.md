@@ -173,7 +173,7 @@ for more than 1 minute.
     - name: my-application
       image: gcr.io/my-container/my-application:1.1
     - name: cloud-sql-proxy
-      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.2
       args:
         # Set the --max-connections flag to 50
         - "--max-connections"
