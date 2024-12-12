@@ -25,6 +25,7 @@ branches:
 extraFiles:
   - README.md
   - cmd/root.go
+  - docs/cmd/cloud-sql-proxy.md
   - examples/k8s-health-check/README.md
   - examples/k8s-service/README.md
   - examples/k8s-sidecar/README.md
