@@ -358,18 +358,19 @@ and to [add your IAM principal as a database user][iam-auth-user].
 > [sourced credentials](#credentials) will be able to successfully log in
 > via automatic IAM database authentication.
 >
-> Note: When logging in using an IAM database user, the username must be
-> formatted. 
-> 
-> **Postgres**: For an IAM user account, this is the user's email address.
-> For a service account, it is the service account's email without the
+> When logging in using an IAM database user, the username must be
+> formatted.
+>
+> **Postgres**:
+> * For an IAM user account, this is the user's email address.
+> * For a service account, it is the service account's email without the
 > `.gserviceaccount.com` domain suffix.
 >
-> **MySQL**: For an IAM user account, this is the user's email address,
-> without the `@` or domain name.
->     For example, for `test-user@gmail.com`, the database user would be
->     just `test-user`.
-> For a service account, this is the service account's email address without
+> **MySQL**:
+> * For an IAM user account, this is the user's email address,
+> without the `@` or domain name. For example, for `test-user@gmail.com`,
+> the database user would be `test-user`.
+> * For a service account, this is the service account's email address without
 > the `@project-id.iam.gserviceaccount.com` suffix.
 
 ### Testing Connectivity
