@@ -358,9 +358,12 @@ and to [add your IAM principal as a database user][iam-auth-user].
 > [sourced credentials](#credentials) will be able to successfully log in
 > via automatic IAM database authentication.
 >
-> When logging in using an IAM database user, the username must be
-> formatted.
+> When logging in using an IAM database user, Cloud SQL truncates usernames
+> based on the engine type in order to not exceed character limits.
+> PostgreSQL's username character limit is 63, while MySQL's is 32.
 >
+> Cloud SQL IAM database usernames are formatted in the following way:
+> 
 > **Postgres**:
 > * For an IAM user account, this is the user's email address.
 > * For a service account, it is the service account's email without the
