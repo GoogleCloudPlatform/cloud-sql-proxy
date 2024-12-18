@@ -338,6 +338,40 @@ query param:
 > ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 > ```
 
+### Configuring IAM Database Authentication
+
+The Proxy supports [Automatic IAM Database Authentication][iam-auth] for MySQL
+and Postgres instances, allowing IAM principal's to authenticate and connect
+as database users.
+
+Make sure to configure your [Cloud SQL instance to allow IAM authentication][iam-auth-config]
+and to [add your IAM principal as a database user][iam-auth-user].
+
+```shell
+./cloud-sql-proxy --auto-iam-authn <INSTANCE_CONNECTION_NAME>
+```
+
+> [!IMPORTANT]
+> 
+> Make sure to run the Proxy as the same IAM principal as the database user
+> you want to log in as. Only the IAM principal that is attached to the
+> [sourced credentials](#credentials) will be able to successfully log in
+> via automatic IAM database authentication.
+>
+> Note: When logging in using an IAM database user, the username must be
+> formatted. 
+> 
+> **Postgres**: For an IAM user account, this is the user's email address.
+> For a service account, it is the service account's email without the
+> `.gserviceaccount.com` domain suffix.
+>
+> **MySQL**: For an IAM user account, this is the user's email address,
+> without the `@` or domain name.
+>     For example, for `test-user@gmail.com`, the database user would be
+>     just `test-user`.
+> For a service account, this is the service account's email address without
+> the `@project-id.iam.gserviceaccount.com` suffix.
+
 ### Testing Connectivity
 
 The Proxy includes support for a connection test on startup. This test helps
@@ -712,7 +746,9 @@ By participating in this project you agree to abide by its terms. See
 [connection-overview]: https://cloud.google.com/sql/docs/mysql/connect-overview
 [contributing]: CONTRIBUTING.md
 [health-check-example]: https://github.com/GoogleCloudPlatform/cloudsql-proxy/tree/main/examples/k8s-health-check#cloud-sql-proxy-health-checks
-[iam-auth]: https://cloud.google.com/sql/docs/postgres/authentication#automatic
+[iam-auth]: https://cloud.google.com/sql/docs/postgres/iam-authentication#auto-iam-auth
+[iam-auth-config]: https://cloud.google.com/sql/docs/postgres/create-edit-iam-instances#configure-iam-db-instance
+[iam-auth-user]: https://cloud.google.com/sql/docs/postgres/add-manage-iam-users#creating-a-database-user
 [pkg-badge]: https://pkg.go.dev/badge/github.com/GoogleCloudPlatform/cloudsql-proxy.svg
 [pkg-docs]: https://pkg.go.dev/github.com/GoogleCloudPlatform/cloudsql-proxy
 [private-ip]: https://cloud.google.com/sql/docs/mysql/private-ip#requirements_for_private_ip
