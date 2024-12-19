@@ -211,11 +211,10 @@ account, the VM must have at least the `sqlservice.admin` API scope (i.e.,
 must have the SQL Admin API enabled. The default service account must also have
 at least writer or editor privileges to any projects of target SQL instances.
 
-The Proxy also supports three flags related to credentials:
+The Proxy also supports two flags related to credentials:
 
 - `--token` to use an OAuth2 token
 - `--credentials-file` to use a service account key file
-- `--gcloud-auth` to use the Gcloud user's credentials (local development only)
 
 ### Basic Usage
 
@@ -231,7 +230,7 @@ To start the Proxy, use:
 ```
 
 The Proxy will automatically detect the default database engine's port and start
-a corresponding listener. Production deployments should use the --port flag to
+a corresponding listener. Production deployments should use the `--port` flag to
 reduce startup time.
 
 The Proxy supports multiple instances:
