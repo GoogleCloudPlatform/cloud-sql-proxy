@@ -2,6 +2,12 @@
 
 [![CI][ci-badge]][ci-build]
 
+> [!IMPORTANT]
+>
+> The Cloud SQL Auth Proxy does not currently support Unix domain socket
+> connections to MySQL 8.4 instances. This is due to a [known issue](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2317)
+> involving the new default `caching_sha2_password` authentication plugin.
+
 The Cloud SQL Auth Proxy is a utility for ensuring secure connections to your
 Cloud SQL instances. It provides IAM authorization, allowing you to control who
 can connect to your instance through IAM permissions, and TLS 1.3 encryption,
