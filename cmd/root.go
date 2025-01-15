@@ -499,7 +499,7 @@ the Proxy will then pick-up automatically.`)
 	localFlags.StringVar(&c.conf.APIEndpointURL, "sqladmin-api-endpoint", "",
 		"API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)")
 	localFlags.StringVar(&c.conf.UniverseDomain, "universe-domain", "",
-		"Universe Domain for TPC environments. (default: googleapis.com)")
+		"Universe Domain for non-GDU environments. (default: googleapis.com)")
 	localFlags.StringVar(&c.conf.QuotaProject, "quota-project", "",
 		`Specifies the project to use for Cloud SQL Admin API quota tracking.
 The IAM principal must have the "serviceusage.services.use" permission
