@@ -408,6 +408,7 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 // values for use by cloudsqlconn.NewClient()
 func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error) {
 	opts := []cloudsqlconn.Option{
+		cloudsqlconn.WithDNSResolver(),
 		cloudsqlconn.WithUserAgent(c.UserAgent),
 	}
 	co, err := credentialsOpt(*c, l)
