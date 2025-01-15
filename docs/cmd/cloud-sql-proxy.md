@@ -286,7 +286,7 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
       --telemetry-project string             Enable Cloud Monitoring and Cloud Trace with the provided project ID.
       --telemetry-sample-rate int            Set the Cloud Trace sample rate. A smaller number means more traces. (default 10000)
   -t, --token string                         Use bearer token as a source of IAM credentials.
-      --universe-domain string               Universe Domain for TPC environments. (default: googleapis.com)
+      --universe-domain string               Universe Domain for non-GDU environments. (default: googleapis.com)
   -u, --unix-socket string                   (*) Enables Unix sockets for all listeners with the provided directory.
       --user-agent string                    Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1
   -v, --version                              Print the cloud-sql-proxy version
