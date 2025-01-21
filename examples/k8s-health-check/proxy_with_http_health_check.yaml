@@ -46,7 +46,15 @@ spec:
             secretKeyRef:
               name: <YOUR-DB-SECRET>
               key: database
+      # The proxy should be run as a native sidecar container, available in
+      # Kubernetes 1.29 and higher. This will ensure that the proxy container
+      # is ready before the main application container is started, and
+      # that the proxy container's exit status will not impact the pod's exit
+      # status. See the Kubernetes documentation:
+      # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+      initContainers:
       - name: cloud-sql-proxy
+        restartPolicy: Always
         # It is recommended to use the latest version of the Cloud SQL Auth Proxy
         # Make sure to update on a regular schedule!
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4

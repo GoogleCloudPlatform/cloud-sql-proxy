@@ -98,7 +98,9 @@ spec:
             value: "127.0.0.1"
           - name: DB_PORT
             value: "5432"
+      initContainers:
       - name: cloud-sql-proxy
+        restartPolicy: Always
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
              # Ensure the port number on the --port argument matches the value of

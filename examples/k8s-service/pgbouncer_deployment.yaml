@@ -81,7 +81,9 @@ spec:
           value: "/etc/server/key.pem"
         - name: CLIENT_TLS_CERT_FILE
           value: "/etc/server/cert.pem"
+      initContainers:
       - name: cloud-sql-proxy
+        restartPolicy: Always
         # It is recommended to use the latest version of the Cloud SQL Auth Proxy
         # Make sure to update on a regular schedule!
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.4
