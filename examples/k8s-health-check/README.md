@@ -172,7 +172,9 @@ for more than 1 minute.
     containers:
     - name: my-application
       image: gcr.io/my-container/my-application:1.1
+    initContainers:
     - name: cloud-sql-proxy
+      restartPolicy: Always
       image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3
       args:
         # Set the --max-connections flag to 50

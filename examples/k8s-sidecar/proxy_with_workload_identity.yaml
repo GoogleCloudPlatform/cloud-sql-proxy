@@ -50,7 +50,9 @@ spec:
                   key: database
         # [END cloud_sql_proxy_k8s_secrets]
         # [START cloud_sql_proxy_k8s_container]
+      initContainers:
         - name: cloud-sql-proxy
+          restartPolicy: Always
           # It is recommended to use the latest version of the Cloud SQL Auth Proxy
           # Make sure to update on a regular schedule!
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
