@@ -43,7 +43,9 @@ spec:
             value: "127.0.0.1"
           - name: DB_PORT
             value: "5432"
+      initContainers:
       - name: cloud-sql-proxy
+        restartPolicy: Always
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
              # If connecting to a Cloud SQL instance within a VPC network, you can use the

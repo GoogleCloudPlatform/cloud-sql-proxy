@@ -1,4 +1,4 @@
-# Copyright 2023 Google LLC.
+# Copyright 2025 Google LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,12 +16,8 @@
 # This demonstrates how to configure a batch job so that it shuts down
 # the proxy containers when it has finished processing.
 #
-# The main job container should send a POST request to the proxy's /quitquitquit
-# api when the job process finishes. This will cause the proxy side-car
-# container to shut down.
-#
-# In Kubernetes 1.28, side-car containers will be properly supported, and this
-# extra step will become unnecessary.
+# This works in Kubernetes 1.29 and higher, demonstrating how to run the proxy
+# using a native side-car container.
 #
 # See https://github.com/kubernetes/enhancements/issues/753
 # and https://github.com/GoogleCloudPlatform/cloud-sql-proxy-operator/issues/381
@@ -41,36 +37,31 @@ spec:
     spec:
       containers:
         - name: my-application
-          # Note: This demonstrates a way to run the proxy in an older
-          # kubernetes cluster that does not support native sidecar containers.
-          # It is better to run the job as a native sidecar container.
-          #
-          # See the Kubernetes documentation:
-          # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
-          #
           # Run your batch job command.
           # Then, send a HTTTP POST request to the proxy sidecar container's
           # /quitquitquit api. This will cause the proxy process to exit.
           command:
-            - sh
-            - -c
-            - >
-              my_batch_job --host=127.0.0.1 --port=<DB_PORT> --username=<DB_USER> --dbname=<DB_NAME>
-              curl http://localhost:9091/quitquitquit
-          image: busybox
+            - my_batch_job
+            - --host=127.0.0.1
+            - --port=<DB_PORT>
+            - --username=<DB_USER>
+            - --dbname=<DB_NAME>
+          image: my-application-image
           imagePullPolicy: IfNotPresent
           resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      initContainers:
         - name: cloud-sql-proxy
+          restartPolicy: Always
           # It is recommended to use the latest version of the Cloud SQL Auth Proxy
           # Make sure to update on a regular schedule!
-          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3
           args:
             # Enable the admin api server on port 9091
             - "--admin-port=9091"
-            # Enable the /quitquitquit admin api endpoint
-            - "--quitquitquit"
 
             # Tell the proxy to exit gracefully if it receives a SIGTERM
             - "--exit-zero-on-sigterm"
@@ -78,12 +69,9 @@ spec:
             # Replace DB_PORT with the port the proxy should listen on
             - "--port=<DB_PORT>"
             - "<INSTANCE_CONNECTION_NAME>"
-
           securityContext:
             runAsNonRoot: true
           resources:
             requests:
               memory: "2Gi"
               cpu: "1"
-      restartPolicy: Never
-      terminationGracePeriodSeconds: 30

@@ -44,7 +44,9 @@ spec:
                 secretKeyRef:
                   name: <YOUR-DB-SECRET>
                   key: database
+      initContainers:
         - name: cloud-sql-proxy
+          restartPolicy: Always
           # It is recommended to use the latest version of the Cloud SQL Auth Proxy
           # Make sure to update on a regular schedule!
           image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1
