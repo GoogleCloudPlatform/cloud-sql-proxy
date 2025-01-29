@@ -27,11 +27,14 @@ import (
 )
 
 var (
-	postgresConnName = flag.String("postgres_conn_name", os.Getenv("POSTGRES_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name, in the form of 'project:region:instance'.")
-	postgresUser     = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
-	postgresPass     = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	postgresDB       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
-	postgresIAMUser  = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
+	postgresConnName            = flag.String("postgres_conn_name", os.Getenv("POSTGRES_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name, in the form of 'project:region:instance'.")
+	postgresUser                = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
+	postgresPass                = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
+	postgresDB                  = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
+	postgresIAMUser             = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
+	postgresCustomerCASConnName = flag.String("postgres_customer_cas_conn_name", os.Getenv("POSTGRES_CUSTOMER_CAS_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name for a customer CAS enabled instance, in the form of 'project:region:instance'.")
+	postgresCustomerCASPass     = flag.String("postgres_customer_cas_pass", os.Getenv("POSTGRES_CUSTOMER_CAS_PASS"), "Password for the customer CAS instance database user; be careful when entering a password on the command line (it may go into your terminal's history).")
+	postgresCustomerCASDomain   = flag.String("postgres_customer_cas_domain", os.Getenv("POSTGRES_CUSTOMER_CAS_DOMAIN_NAME"), "Valid DNS domain name for the customer CAS instance.")
 )
 
 func requirePostgresVars(t *testing.T) {
@@ -224,6 +227,47 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 				*postgresConnName},
 			dsn: fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
 				impersonatedIAMUser, *postgresDB),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "pgx", tc.dsn)
+		})
+	}
+}
+
+func TestPostgresCustomerCAS(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	if *postgresCustomerCASConnName == "" {
+		t.Fatal("'postgres_customer_cas_conn_name' not set")
+	}
+	if *postgresCustomerCASPass == "" {
+		t.Fatal("'postgres_customer_cas_pass' not set")
+	}
+	if *postgresCustomerCASDomain == "" {
+		t.Fatal("'postgres_customer_cas_domain' not set")
+	}
+
+	defaultDSN := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresCustomerCASPass, *postgresDB)
+
+	tcs := []struct {
+		desc string
+		dsn  string
+		args []string
+	}{
+		{
+			desc: "using customer CAS default",
+			args: []string{*postgresCustomerCASConnName},
+			dsn:  defaultDSN,
+		},
+		{
+			desc: "using valid domain name",
+			args: []string{*postgresCustomerCASDomain},
+			dsn:  defaultDSN,
 		},
 	}
 	for _, tc := range tcs {
