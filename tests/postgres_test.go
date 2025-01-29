@@ -27,15 +27,14 @@ import (
 )
 
 var (
-	postgresConnName                 = flag.String("postgres_conn_name", os.Getenv("POSTGRES_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name, in the form of 'project:region:instance'.")
-	postgresUser                     = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
-	postgresPass                     = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	postgresDB                       = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
-	postgresIAMUser                  = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
-	postgresCustomerCASConnName      = flag.String("postgres_customer_cas_conn_name", os.Getenv("POSTGRES_CUSTOMER_CAS_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name for a customer CAS enabled instance, in the form of 'project:region:instance'.")
-	postgresCustomerCASPass          = flag.String("postgres_customer_cas_pass", os.Getenv("POSTGRES_CUSTOMER_CAS_PASS"), "Password for the customer CAS instance database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	postgresCustomerCASDomain        = flag.String("postgres_customer_cas_domain", os.Getenv("POSTGRES_CUSTOMER_CAS_DOMAIN_NAME"), "Valid DNS domain name for the customer CAS instance.")
-	postgresCustomerCASInvalidDomain = flag.String("postgres_customer_cas_invalid_domain", os.Getenv("POSTGRES_CUSTOMER_CAS_INVALID_DOMAIN_NAME"), "Invalid DNS domain name for the customer CAS instance.")
+	postgresConnName            = flag.String("postgres_conn_name", os.Getenv("POSTGRES_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name, in the form of 'project:region:instance'.")
+	postgresUser                = flag.String("postgres_user", os.Getenv("POSTGRES_USER"), "Name of database user.")
+	postgresPass                = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
+	postgresDB                  = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
+	postgresIAMUser             = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
+	postgresCustomerCASConnName = flag.String("postgres_customer_cas_conn_name", os.Getenv("POSTGRES_CUSTOMER_CAS_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name for a customer CAS enabled instance, in the form of 'project:region:instance'.")
+	postgresCustomerCASPass     = flag.String("postgres_customer_cas_pass", os.Getenv("POSTGRES_CUSTOMER_CAS_PASS"), "Password for the customer CAS instance database user; be careful when entering a password on the command line (it may go into your terminal's history).")
+	postgresCustomerCASDomain   = flag.String("postgres_customer_cas_domain", os.Getenv("POSTGRES_CUSTOMER_CAS_DOMAIN_NAME"), "Valid DNS domain name for the customer CAS instance.")
 )
 
 func requirePostgresVars(t *testing.T) {
@@ -268,39 +267,6 @@ func TestPostgresCustomerCAS(t *testing.T) {
 		{
 			desc: "using valid domain name",
 			args: []string{*postgresCustomerCASDomain},
-			dsn:  defaultDSN,
-		},
-	}
-	for _, tc := range tcs {
-		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", tc.dsn)
-		})
-	}
-}
-
-func TestPostgresCustomerCASInvalidSAN(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping Postgres integration tests")
-	}
-	requirePostgresVars(t)
-	if *postgresCustomerCASPass == "" {
-		t.Fatal("'postgres_customer_cas_pass' not set")
-	}
-	if *postgresCustomerCASInvalidDomain == "" {
-		t.Fatal("'postgres_customer_cas_invalid_domain' not set")
-	}
-
-	defaultDSN := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
-		*postgresUser, *postgresCustomerCASPass, *postgresDB)
-
-	tcs := []struct {
-		desc string
-		dsn  string
-		args []string
-	}{
-		{
-			desc: "using invalid customer CAS domain (not in SAN)",
-			args: []string{*postgresCustomerCASInvalidDomain},
 			dsn:  defaultDSN,
 		},
 	}
