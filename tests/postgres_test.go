@@ -251,6 +251,41 @@ func TestPostgresCustomerCAS(t *testing.T) {
 	if *postgresCustomerCASDomain == "" {
 		t.Fatal("'postgres_customer_cas_domain' not set")
 	}
+
+	defaultDSN := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		*postgresUser, *postgresCustomerCASPass, *postgresDB)
+
+	tcs := []struct {
+		desc string
+		dsn  string
+		args []string
+	}{
+		{
+			desc: "using customer CAS default",
+			args: []string{*postgresCustomerCASConnName},
+			dsn:  defaultDSN,
+		},
+		{
+			desc: "using valid domain name",
+			args: []string{*postgresCustomerCASDomain},
+			dsn:  defaultDSN,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			proxyConnTest(t, tc.args, "pgx", tc.dsn)
+		})
+	}
+}
+
+func TestPostgresCustomerCASInvalidSAN(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	if *postgresCustomerCASPass == "" {
+		t.Fatal("'postgres_customer_cas_pass' not set")
+	}
 	if *postgresCustomerCASInvalidDomain == "" {
 		t.Fatal("'postgres_customer_cas_invalid_domain' not set")
 	}
@@ -264,13 +299,8 @@ func TestPostgresCustomerCAS(t *testing.T) {
 		args []string
 	}{
 		{
-			desc: "using default usage",
-			args: []string{*postgresCustomerCASConnName},
-			dsn:  defaultDSN,
-		},
-		{
-			desc: "using valid domain name",
-			args: []string{*postgresCustomerCASDomain},
+			desc: "using invalid customer CAS domain (not in SAN)",
+			args: []string{*postgresCustomerCASInvalidDomain},
 			dsn:  defaultDSN,
 		},
 	}
