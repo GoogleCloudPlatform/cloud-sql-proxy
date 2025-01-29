@@ -270,7 +270,7 @@ func TestPostgresCustomerCAS(t *testing.T) {
 		},
 		{
 			desc: "using valid domain name",
-			args: []string{fmt.Sprintf(*postgresCustomerCASDomain)},
+			args: []string{*postgresCustomerCASDomain},
 			dsn:  defaultDSN,
 		},
 	}
