@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.14.3...v2.15.0) (2025-01-30)
+
+
+### Features
+
+* enable Proxy to be started with DNS names ([#2363](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2363)) ([d902441](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/d902441dccdb17229c25478f7267a96917cd6a07))
+
 ## [2.14.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.14.2...v2.14.3) (2025-01-16)
 
 

@@ -174,7 +174,7 @@ For the PgBouncer deployment, we add the proxy as a sidecar, starting it on port
 initContainers:
 - name: cloud-sql-proxy
   restartPolicy: Always
-  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3  # make sure to use the latest version
+  image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.0  # make sure to use the latest version
   args:
     # Replace DB_PORT with the port the proxy should listen on
     - "--port=<DB_PORT>"
