@@ -381,6 +381,68 @@ and to [add your IAM principal as a database user][iam-auth-user].
 > * For a service account, this is the service account's email address without
 > the `@project-id.iam.gserviceaccount.com` suffix.
 
+### Configuring DNS domain names to identify instances
+
+The Proxy can be configured to use DNS to look up an instance. This would
+allow you to configure your application to connect to a database instance, and
+centrally configure which instance in your DNS zone.
+
+#### Configuring DNS Records
+
+Add a DNS TXT record for the Cloud SQL instance to a **private** DNS server
+or a private Google Cloud DNS Zone used by your application.
+
+**Note:** You are strongly discouraged from adding DNS records for your
+Cloud SQL instances to a public DNS server. This would allow anyone on the
+internet to discover the Cloud SQL instance name.
+
+For example: suppose you wanted to use the domain name
+`prod-db.mycompany.example.com` to connect to your database instance
+`my-project:region:my-instance`. You would create the following DNS record:
+
+- Record type: `TXT`
+- Name: `prod-db.mycompany.example.com` – This is the domain name used by the application
+- Value: `my-project:region:my-instance` – This is the instance name
+
+#### Configuring the Proxy
+
+Configure the Proxy with your DNS domain name instead of an instance connection
+name:
+
+```sh
+./cloud-sql-proxy prod-db.mycompany.example.com
+```
+
+### Automatic fail-over using DNS domain names
+
+When the Proxy is configured using a domain name, it will
+periodically check if the DNS record for an instance changes. When the Proxy
+detects that the domain name refers to a different instance, it will
+close all open connections to the old instance. Subsequent connection attempts
+will be directed to the new instance.
+
+For example: suppose application is configured to connect using the
+domain name `prod-db.mycompany.example.com`. Initially the corporate DNS
+zone has a TXT record with the value `my-project:region:my-instance`. The
+application establishes connections to the `my-project:region:my-instance`
+Cloud SQL instance.
+
+Then, to reconfigure the application to use a different database
+instance, change the value of the `prod-db.mycompany.example.com` DNS record
+from `my-project:region:my-instance` to `my-project:other-region:my-instance-2`
+
+The Proxy inside the application detects the change to this
+DNS record. Now, when the application connects to its database using the
+domain name `prod-db.mycompany.example.com`, it will connect to the
+`my-project:other-region:my-instance-2` Cloud SQL instance.
+
+The Proxy will automatically close all existing connections to
+`my-project:region:my-instance`. This will force the connection pools to
+establish new connections. Also, it may cause database queries in progress
+to fail.
+
+The Proxy will poll for changes to the DNS name every 30 seconds by default.
+
 ### Testing Connectivity
 
 The Proxy includes support for a connection test on startup. This test helps
@@ -424,7 +486,7 @@ Each environment variable uses "CSQL_PROXY" as a prefix and is
 the uppercase version of the flag using underscores as word delimiters. 
 
 For example, the `--auto-iam-authn` flag may be set with the environment variable 
-`CSQL_PROXY_AUTO_IAM_AUTHN`. 
+`CSQL_PROXY_AUTO_IAM_AUTHN`.
 
 An invocation of the Proxy using environment variables would look like the following: 
 
