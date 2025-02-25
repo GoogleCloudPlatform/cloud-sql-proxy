@@ -2,8 +2,6 @@ module github.com/GoogleCloudPlatform/cloudsql-proxy
 
 go 1.23.0
 
-toolchain go1.23.3
-
 require (
 	cloud.google.com/go/compute/metadata v0.6.0
 	github.com/coreos/go-systemd/v22 v22.5.0
