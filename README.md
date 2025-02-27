@@ -431,8 +431,8 @@ Then, to reconfigure the application to use a different database
 instance, change the value of the `prod-db.mycompany.example.com` DNS record
 from `my-project:region:my-instance` to `my-project:other-region:my-instance-2`
 
-The Proxy inside the application detects the change to this
-DNS record. Now, when the application connects to its database using the
+The Proxy detects the change to this DNS record.
+Now, when the application connects to its database using the
 domain name `prod-db.mycompany.example.com`, it will connect to the
 `my-project:other-region:my-instance-2` Cloud SQL instance.
 
