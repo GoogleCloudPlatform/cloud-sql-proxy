@@ -728,6 +728,12 @@ guaranteed to be "active" for a minimum of 1 year.
 - **Maintenance** - Maintenance versions continue to receive security and critical
 bug fixes, but do not receive new features.
 
+### Supported Go Versions
+
+Our library is compatible with the two most recent major Go
+releases, the same [policy](https://go.dev/doc/devel/release#policy) the Go
+programming language follows.
+
 ### Release cadence
 
 The Cloud SQL Auth Proxy aims for a minimum monthly release cadence. If no new
