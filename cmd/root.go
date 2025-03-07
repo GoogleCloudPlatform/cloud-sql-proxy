@@ -332,12 +332,13 @@ Configuration
 
   By default, the Proxy will wait up to the maximum time for the startup
   endpoint to respond. The wait command requires that the Proxy be started in
-  another process with the HTTP health check enabled. If an alternate health
-  check port or address is used, as in:
+  another process with the HTTP health check or Prometheus enabled. If an
+  alternate health check port or address is used, as in:
 
   ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME> \
     --http-address 0.0.0.0 \
-    --http-port 9191
+    --http-port 9191 \
+    --health-check 
 
   Then the wait command must also be told to use the same custom values:
 
