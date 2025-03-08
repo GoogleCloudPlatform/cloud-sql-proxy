@@ -34,9 +34,25 @@ and then attempt to use a private IP. In v2, the Proxy now defaults to public
 IP without trying private IP. If you want to use private IP, you must pass
 either the `--private-ip` flag or the query parameter. See the README for details.
 
-In some cases, the v1 behavior may be preferrable. Use the `--auto-ip` flag to
+In some cases, the v1 behavior may be preferable. Use the `--auto-ip` flag to
 mimic v1 behavior. We generally recommend using deterministic IP address selection,
 but recognize in some legacy environments `--auto-ip` may be necessary.
+
+## Executable Name Change
+
+Note that the name of the executable has changed, using hyphens rather than underscores:
+
+```
+# v1
+./cloud_sql_proxy
+```
+
+vs
+
+```
+# v2
+./cloud-sql-proxy
+```
 
 ## Sample Invocations
 
