@@ -42,14 +42,14 @@ but recognize in some legacy environments `--auto-ip` may be necessary.
 
 Note that the name of the executable has changed, using hyphens rather than underscores:
 
-```
+```shell
 # v1
 ./cloud_sql_proxy
 ```
 
 vs
 
-```
+```shell
 # v2
 ./cloud-sql-proxy
 ```
