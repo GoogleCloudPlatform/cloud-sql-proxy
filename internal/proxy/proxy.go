@@ -615,6 +615,11 @@ func (c *Client) ConnCount() (uint64, uint64) {
 	return atomic.LoadUint64(&c.connCount), c.conf.MaxConnections
 }
 
+// InstanceCount returns the number of configured instances.
+func (c *Client) InstanceCount() int {
+	return len(c.conf.Instances)
+}
+
 // Serve starts proxying connections for all configured instances using the
 // associated socket.
 func (c *Client) Serve(ctx context.Context, notify func()) error {
