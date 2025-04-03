@@ -179,10 +179,7 @@ Health checks
   - /readiness: Returns 200 status when the Proxy has started, has available
   connections if max connections have been set with the --max-connections
   flag, and when the Proxy can connect to all registered instances. Otherwise,
-  returns a 503 status. Optionally supports a min-ready query param (e.g.,
-  /readiness?min-ready=3) where the Proxy will return a 200 status if the
-  Proxy can connect successfully to at least min-ready number of instances. If
-  min-ready exceeds the number of registered instances, returns a 400.
+  returns a 503 status.
 
   - /liveness: Always returns 200 status. If this endpoint is not responding,
   the Proxy is in a bad state and should be restarted.

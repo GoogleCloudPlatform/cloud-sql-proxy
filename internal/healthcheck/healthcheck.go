@@ -16,11 +16,9 @@
 package healthcheck
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"sync"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
@@ -80,7 +78,7 @@ var (
 // HandleReadiness ensures the Check has been notified of successful startup,
 // that the proxy has not reached maximum connections, and that the Proxy has
 // not started shutting down.
-func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
+func (c *Check) HandleReadiness(w http.ResponseWriter, _ *http.Request) {
 	select {
 	case <-c.started:
 	default:
@@ -105,33 +103,6 @@ func (c *Check) HandleReadiness(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		w.Write([]byte(err.Error()))
 		return
-	}
-
-	var minReady int
-	if minReadyStr, ok := req.URL.Query()["min-ready"]; ok {
-		var err error
-		if minReady, err = strconv.Atoi(minReadyStr[0]); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("error"))
-			return
-		}
-		if minReady > c.proxy.InstanceCount() {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("min ready > instance count"))
-			return
-		}
-	}
-
-	if minReady > 0 {
-		if _, err := c.proxy.CheckConnections(context.Background()); err != nil {
-			mErr := err.(proxy.MultiErr)
-
-			if minReady > c.proxy.InstanceCount()-len(mErr) {
-				w.WriteHeader(http.StatusServiceUnavailable)
-				w.Write([]byte("min ready"))
-				return
-			}
-		}
 	}
 
 	// No error cases apply, 200 status.

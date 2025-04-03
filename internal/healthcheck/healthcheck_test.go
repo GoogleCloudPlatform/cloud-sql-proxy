@@ -16,7 +16,6 @@ package healthcheck_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -57,14 +56,9 @@ func dialTCP(t *testing.T, addr string) net.Conn {
 	return nil
 }
 
-type fakeDialer struct {
-	isClosed bool
-}
+type fakeDialer struct{}
 
-func (f *fakeDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
-	if f.isClosed {
-		return nil, errors.New("closed")
-	}
+func (*fakeDialer) Dial(_ context.Context, _ string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
 	conn, _ := net.Pipe()
 	return conn, nil
 }
@@ -73,11 +67,7 @@ func (*fakeDialer) EngineVersion(_ context.Context, _ string) (string, error) {
 	return "POSTGRES_14", nil
 }
 
-func (f *fakeDialer) Close() error {
-	if f.isClosed {
-		return errors.New("closed")
-	}
-	f.isClosed = true
+func (*fakeDialer) Close() error {
 	return nil
 }
 
@@ -229,59 +219,6 @@ func TestHandleReadinessForMaxConns(t *testing.T) {
 		t.Fatalf("failed to read response body: %v", err)
 	}
 	if !strings.Contains(string(body), "max connections") {
-		t.Fatalf("want max connections error, got = %v", string(body))
-	}
-}
-func TestHandleReadinessForMinReady(t *testing.T) {
-	p := newTestProxy(t)
-	defer func() {
-		p.Close()
-	}()
-	started := make(chan struct{})
-	check := healthcheck.NewCheck(p, logger)
-	go p.Serve(context.Background(), func() {
-		check.NotifyStarted()
-		close(started)
-	})
-	select {
-	case <-started:
-		// proxy has started
-	case <-time.After(10 * time.Second):
-		t.Fatal("proxy has not started after 10 seconds")
-	}
-
-	conn := dialTCP(t, proxyAddr())
-	defer conn.Close()
-
-	minReadyTest := func(t *testing.T, minReady int, wantCode int) *http.Response {
-		rec := httptest.NewRecorder()
-		check.HandleReadiness(rec, &http.Request{URL: &url.URL{RawQuery: fmt.Sprintf("min-ready=%d", minReady)}})
-		resp := rec.Result()
-		if resp.StatusCode == wantCode {
-			return resp
-		}
-		t.Fatalf("failed to receive status code = %v: %v", wantCode, resp.StatusCode)
-		return nil
-	}
-
-	var resp *http.Response
-
-	resp = minReadyTest(t, 0, http.StatusOK)
-	resp = minReadyTest(t, 1, http.StatusOK)
-	resp = minReadyTest(t, 2, http.StatusBadRequest)
-
-	conn.Close()
-	if err := p.Close(); err != nil {
-		t.Logf("failed to close proxy client: %v", err)
-	}
-
-	resp = minReadyTest(t, 1, http.StatusServiceUnavailable)
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatalf("failed to read response body: %v", err)
-	}
-	if !strings.Contains(string(body), "min ready") {
 		t.Fatalf("want max connections error, got = %v", string(body))
 	}
 }
