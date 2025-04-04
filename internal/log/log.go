@@ -15,36 +15,42 @@
 package log
 
 import (
+	"fmt"
 	"io"
 	llog "log"
+	"log/slog"
 	"os"
+	"time"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+)
+
+const (
+	googLvlKey    = "severity"
+	googMsgKey    = "message"
+	googSourceKey = "sourceLocation"
+	googTimeKey   = "timestamp"
 )
 
 // StdLogger is the standard logger that distinguishes between info and error
 // logs.
 type StdLogger struct {
-	infoLog  *llog.Logger
-	debugLog *llog.Logger
-	errLog   *llog.Logger
+	stdLog *llog.Logger
+	errLog *llog.Logger
 }
 
 // NewStdLogger create a Logger that uses out and err for informational and
 // error messages.
 func NewStdLogger(out, err io.Writer) cloudsql.Logger {
 	return &StdLogger{
-		infoLog:  llog.New(out, "", llog.LstdFlags),
-		debugLog: llog.New(out, "", llog.LstdFlags),
-		errLog:   llog.New(err, "", llog.LstdFlags),
+		stdLog: llog.New(out, "", llog.LstdFlags),
+		errLog: llog.New(err, "", llog.LstdFlags),
 	}
 }
 
 // Infof logs informational messages
 func (l *StdLogger) Infof(format string, v ...interface{}) {
-	l.infoLog.Printf(format, v...)
+	l.stdLog.Printf(format, v...)
 }
 
 // Errorf logs error messages
@@ -54,61 +60,73 @@ func (l *StdLogger) Errorf(format string, v ...interface{}) {
 
 // Debugf logs debug messages
 func (l *StdLogger) Debugf(format string, v ...interface{}) {
-	l.debugLog.Printf(format, v...)
+	l.stdLog.Printf(format, v...)
 }
 
 // StructuredLogger writes log messages in JSON.
 type StructuredLogger struct {
-	logger *zap.SugaredLogger
+	stdLog *slog.Logger
+	errLog *slog.Logger
 }
 
 // Infof logs informational messages
 func (l *StructuredLogger) Infof(format string, v ...interface{}) {
-	l.logger.Infof(format, v...)
+	l.stdLog.Info(fmt.Sprintf(format, v...))
 }
 
 // Errorf logs error messages
 func (l *StructuredLogger) Errorf(format string, v ...interface{}) {
-	l.logger.Errorf(format, v...)
+	l.errLog.Error(fmt.Sprintf(format, v...))
 }
 
 // Debugf logs debug messages
 func (l *StructuredLogger) Debugf(format string, v ...interface{}) {
-	l.logger.Debugf(format, v...)
+	l.stdLog.Debug(fmt.Sprintf(format, v...))
 }
 
 // NewStructuredLogger creates a Logger that logs messages using JSON.
-func NewStructuredLogger(quiet bool) (cloudsql.Logger, func() error) {
-	// Configure structured logs to adhere to LogEntry format
-	// https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
-	c := zap.NewProductionEncoderConfig()
-	c.LevelKey = "severity"
-	c.MessageKey = "message"
-	c.TimeKey = "timestamp"
-	c.EncodeLevel = zapcore.CapitalLevelEncoder
-	c.EncodeTime = zapcore.ISO8601TimeEncoder
-
-	enc := zapcore.NewJSONEncoder(c)
-
-	var syncer zapcore.WriteSyncer
-	// quiet disables writing to the info log
+func NewStructuredLogger(quiet bool) cloudsql.Logger {
+	var infoHandler, errorHandler slog.Handler
 	if quiet {
-		syncer = zapcore.AddSync(io.Discard)
+		infoHandler = slog.DiscardHandler
 	} else {
-		syncer = zapcore.Lock(os.Stdout)
+		infoHandler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level:       slog.LevelDebug,
+			ReplaceAttr: replaceAttr,
+		})
 	}
-	core := zapcore.NewTee(
-		zapcore.NewCore(enc, syncer, zap.LevelEnablerFunc(func(l zapcore.Level) bool {
-			// Anything below error, goes to the info log.
-			return l < zapcore.ErrorLevel
-		})),
-		zapcore.NewCore(enc, zapcore.Lock(os.Stderr), zap.LevelEnablerFunc(func(l zapcore.Level) bool {
-			// Anything at error or higher goes to the error log.
-			return l >= zapcore.ErrorLevel
-		})),
-	)
+	errorHandler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level:       slog.LevelError,
+		ReplaceAttr: replaceAttr,
+	})
+
 	l := &StructuredLogger{
-		logger: zap.New(core).Sugar(),
+		stdLog: slog.New(infoHandler),
+		errLog: slog.New(errorHandler),
 	}
-	return l, l.logger.Sync
+	return l
+}
+
+// replaceAttr remaps default Go logging keys to adhere to LogEntry format
+// https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
+func replaceAttr(groups []string, a slog.Attr) slog.Attr {
+	if groups == nil {
+		if a.Key == slog.LevelKey {
+			a.Key = googLvlKey
+			return a
+		} else if a.Key == slog.MessageKey {
+			a.Key = googMsgKey
+			return a
+		} else if a.Key == slog.SourceKey {
+			a.Key = googSourceKey
+			return a
+		} else if a.Key == slog.TimeKey {
+			a.Key = googTimeKey
+			if a.Value.Kind() == slog.KindTime {
+				a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
+			}
+			return a
+		}
+	}
+	return a
 }
