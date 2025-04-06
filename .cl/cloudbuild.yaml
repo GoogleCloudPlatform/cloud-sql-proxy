@@ -19,8 +19,7 @@ steps:
     args:
       - '-c'
       - |
-        sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
-
+        sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
   - id: run mysql integration tests
     name: golang:${_VERSION}
     env: 
