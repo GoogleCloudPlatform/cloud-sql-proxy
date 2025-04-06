@@ -15,7 +15,12 @@
 steps:
   - id: enable fuse config
     name: 'ubuntu'
-    args: ['/bin/sh', '-c', 'sudo sed -i "s/#user_allow_other/user_allow_other/g" /etc/fuse.conf']
+    args:
+      - '-c'
+      - |
+        apt-get update
+        apt-get install -y sudo
+        sudo sed -i "s/#user_allow_other/user_allow_other/g" /etc/fuse.conf
   - id: run mysql integration tests
     name: golang:${_VERSION}
     env:
