@@ -38,6 +38,7 @@ steps:
     env:
       - "IP_TYPE=${_IP_TYPE}"
       - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
+      - "TMPDIR=/tmp"
     secretEnv:
       - 'MYSQL_CONNECTION_NAME'
       - 'MYSQL_USER'
