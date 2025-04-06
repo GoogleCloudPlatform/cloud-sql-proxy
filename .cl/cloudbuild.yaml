@@ -1,17 +1,3 @@
-# Copyright 2025 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 steps:
   - id: enable-fuse-config
     name: 'gcr.io/cloud-builders/docker'
@@ -19,10 +5,30 @@ steps:
     args:
       - '-c'
       - |
+        # Check if FUSE device exists
+        if [ ! -c /dev/fuse ]; then
+          echo "Error: FUSE device /dev/fuse not found. FUSE might not be available in this environment."
+          exit 1
+        fi
+
+        # Create /etc/fuse.conf if it doesn't exist and populate with default content
+        if [ ! -f /etc/fuse.conf ]; then
+          echo "Creating /etc/fuse.conf with default content."
+          cat <<EOF > /etc/fuse.conf
+# Set the maximum number of FUSE mounts allowed to non-root users.
+# The default is 1000.
+#mount_max = 1000
+
+# Allow non-root users to specify the 'allow_other' mount option.
+#user_allow_other
+EOF
+        fi
+
+        # Modify /etc/fuse.conf to uncomment user_allow_other
         sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
   - id: run mysql integration tests
     name: golang:${_VERSION}
-    env: 
+    env:
       - "IP_TYPE=${_IP_TYPE}"
       - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
     secretEnv: ['MYSQL_CONNECTION_NAME','MYSQL_USER','MYSQL_PASS','MYSQL_DB','POSTGRES_CONNECTION_NAME','POSTGRES_USER','POSTGRES_USER_IAM','POSTGRES_PASS','POSTGRES_DB','POSTGRES_CAS_CONNECTION_NAME','POSTGRES_CAS_PASS','POSTGRES_CUSTOMER_CAS_CONNECTION_NAME','POSTGRES_CUSTOMER_CAS_PASS','POSTGRES_CUSTOMER_CAS_DOMAIN_NAME','SQLSERVER_CONNECTION_NAME','SQLSERVER_USER','SQLSERVER_PASS','SQLSERVER_DB','IMPERSONATED_USER']
