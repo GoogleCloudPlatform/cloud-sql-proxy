@@ -15,6 +15,7 @@
 steps:
   - id: enable fuse config
     name: 'ubuntu'
+    entrypoint: 'sh'
     args:
       - '-c'
       - |
