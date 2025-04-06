@@ -13,19 +13,14 @@
 # limitations under the License.
 
 steps:
-  # Enable fuse config (Linux - assuming Cloud Build environment is Linux-based)
   - id: enable-fuse-config
     name: 'ubuntu'
     entrypoint: bash
     args:
       - '-c'
       - |
-        apt-get update && apt-get install -y --no-install-recommends fuse
-        # Check if FUSE device exists
-        if [ ! -c /dev/fuse ]; then
-          echo "Error: FUSE device /dev/fuse not found. FUSE might not be available in this environment."
-          exit 1
-        fi
+        apt-get update
+        apt-get install -y sudo
         sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 
   - id: run mysql integration tests
