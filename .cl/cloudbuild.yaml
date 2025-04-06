@@ -32,8 +32,7 @@ steps:
     args:
       - '-c'
       - |
-        apk add --no-cache sed fuse sudo
-        sudo sed -i "s/#user_allow_other/user_allow_other/g" /etc/fuse.conf
+        apk add --no-cache fuse
   - id: run integration tests
     name: golang:${_VERSION}
     env:
