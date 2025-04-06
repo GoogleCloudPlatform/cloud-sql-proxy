@@ -30,70 +30,64 @@ steps:
         if [ ! -f /etc/fuse.conf ]; then
           echo "Creating /etc/fuse.conf with default content."
           cat <<EOF > /etc/fuse.conf
-# Set the maximum number of FUSE mounts allowed to non-root users.
-# The default is 1000.
-#mount_max = 1000
-
-# Allow non-root users to specify the 'allow_other' mount option.
-#user_allow_other
-EOF
+          EOF
         fi
         sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 
-#   - id: run mysql integration tests
-#     name: golang:${_VERSION}
-#     env: 
-#       - "IP_TYPE=${_IP_TYPE}"
-#       - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
-#     secretEnv: ['MYSQL_CONNECTION_NAME','MYSQL_USER','MYSQL_PASS','MYSQL_DB','POSTGRES_CONNECTION_NAME','POSTGRES_USER','POSTGRES_USER_IAM','POSTGRES_PASS','POSTGRES_DB','POSTGRES_CAS_CONNECTION_NAME','POSTGRES_CAS_PASS','POSTGRES_CUSTOMER_CAS_CONNECTION_NAME','POSTGRES_CUSTOMER_CAS_PASS','POSTGRES_CUSTOMER_CAS_DOMAIN_NAME','SQLSERVER_CONNECTION_NAME','SQLSERVER_USER','SQLSERVER_PASS','SQLSERVER_DB','IMPERSONATED_USER']
-#     entrypoint: bash
-#     args:
-#     - -c
-#     - |
-#       go test -race -v ./...
-# substitutions:
-#   _VERSION: ${_VERSION}
-#   _IP_TYPE: ${_IP_TYPE}
-# availableSecrets:
-#   secretManager:
-#   - versionName: 'projects/$PROJECT_ID/secrets/MYSQL_CONNECTION_NAME/versions/latest'
-#     env: 'MYSQL_CONNECTION_NAME'
-#   - versionName: 'projects/$PROJECT_ID/secrets/MYSQL_USER/versions/latest'
-#     env: 'MYSQL_USER'
-#   - versionName: 'projects/$PROJECT_ID/secrets/MYSQL_PASS/versions/latest'
-#     env: 'MYSQL_PASS'
-#   - versionName: 'projects/$PROJECT_ID/secrets/MYSQL_DB/versions/latest'
-#     env: 'MYSQL_DB'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CONNECTION_NAME/versions/latest'
-#     env: 'POSTGRES_CONNECTION_NAME'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_USER/versions/latest'
-#     env: 'POSTGRES_USER'
-#   - versionName: 'projects/$PROJECT_ID/secrets/CLOUD_BUILD_POSTGRES_IAM_USER/versions/latest'
-#     env: 'POSTGRES_USER_IAM'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_PASS/versions/latest'
-#     env: 'POSTGRES_PASS'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_DB/versions/latest'
-#     env: 'POSTGRES_DB'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CAS_CONNECTION_NAME/versions/latest'
-#     env: 'POSTGRES_CAS_CONNECTION_NAME'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CAS_PASS/versions/latest'
-#     env: 'POSTGRES_CAS_PASS'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CUSTOMER_CAS_CONNECTION_NAME/versions/latest'
-#     env: 'POSTGRES_CUSTOMER_CAS_CONNECTION_NAME'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CUSTOMER_CAS_PASS/versions/latest'
-#     env: 'POSTGRES_CUSTOMER_CAS_PASS'
-#   - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CUSTOMER_CAS_DOMAIN_NAME/versions/latest'
-#     env: 'POSTGRES_CUSTOMER_CAS_DOMAIN_NAME'
-#   - versionName: 'projects/$PROJECT_ID/secrets/SQLSERVER_CONNECTION_NAME/versions/latest'
-#     env: 'SQLSERVER_CONNECTION_NAME'
-#   - versionName: 'projects/$PROJECT_ID/secrets/SQLSERVER_USER/versions/latest'
-#     env: 'SQLSERVER_USER'
-#   - versionName: 'projects/$PROJECT_ID/secrets/SQLSERVER_PASS/versions/latest'
-#     env: 'SQLSERVER_PASS'
-#   - versionName: 'projects/$PROJECT_ID/secrets/SQLSERVER_DB/versions/latest'
-#     env: 'SQLSERVER_DB'
-#   - versionName: 'projects/$PROJECT_ID/secrets/CLOUD_BUILD_SA/versions/latest'
-#     env: 'IMPERSONATED_USER'
+  - id: run mysql integration tests
+    name: golang:${_VERSION}
+    env: 
+      - "IP_TYPE=${_IP_TYPE}"
+      - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
+    secretEnv: ['MYSQL_CONNECTION_NAME','MYSQL_USER','MYSQL_PASS','MYSQL_DB','POSTGRES_CONNECTION_NAME','POSTGRES_USER','POSTGRES_USER_IAM','POSTGRES_PASS','POSTGRES_DB','POSTGRES_CAS_CONNECTION_NAME','POSTGRES_CAS_PASS','POSTGRES_CUSTOMER_CAS_CONNECTION_NAME','POSTGRES_CUSTOMER_CAS_PASS','POSTGRES_CUSTOMER_CAS_DOMAIN_NAME','SQLSERVER_CONNECTION_NAME','SQLSERVER_USER','SQLSERVER_PASS','SQLSERVER_DB','IMPERSONATED_USER']
+    entrypoint: bash
+    args:
+    - -c
+    - |
+      go test -race -v ./...
+substitutions:
+  _VERSION: ${_VERSION}
+  _IP_TYPE: ${_IP_TYPE}
+availableSecrets:
+  secretManager:
+  - versionName: 'projects/$PROJECT_ID/secrets/MYSQL_CONNECTION_NAME/versions/latest'
+    env: 'MYSQL_CONNECTION_NAME'
+  - versionName: 'projects/$PROJECT_ID/secrets/MYSQL_USER/versions/latest'
+    env: 'MYSQL_USER'
+  - versionName: 'projects/$PROJECT_ID/secrets/MYSQL_PASS/versions/latest'
+    env: 'MYSQL_PASS'
+  - versionName: 'projects/$PROJECT_ID/secrets/MYSQL_DB/versions/latest'
+    env: 'MYSQL_DB'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CONNECTION_NAME/versions/latest'
+    env: 'POSTGRES_CONNECTION_NAME'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_USER/versions/latest'
+    env: 'POSTGRES_USER'
+  - versionName: 'projects/$PROJECT_ID/secrets/CLOUD_BUILD_POSTGRES_IAM_USER/versions/latest'
+    env: 'POSTGRES_USER_IAM'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_PASS/versions/latest'
+    env: 'POSTGRES_PASS'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_DB/versions/latest'
+    env: 'POSTGRES_DB'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CAS_CONNECTION_NAME/versions/latest'
+    env: 'POSTGRES_CAS_CONNECTION_NAME'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CAS_PASS/versions/latest'
+    env: 'POSTGRES_CAS_PASS'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CUSTOMER_CAS_CONNECTION_NAME/versions/latest'
+    env: 'POSTGRES_CUSTOMER_CAS_CONNECTION_NAME'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CUSTOMER_CAS_PASS/versions/latest'
+    env: 'POSTGRES_CUSTOMER_CAS_PASS'
+  - versionName: 'projects/$PROJECT_ID/secrets/POSTGRES_CUSTOMER_CAS_DOMAIN_NAME/versions/latest'
+    env: 'POSTGRES_CUSTOMER_CAS_DOMAIN_NAME'
+  - versionName: 'projects/$PROJECT_ID/secrets/SQLSERVER_CONNECTION_NAME/versions/latest'
+    env: 'SQLSERVER_CONNECTION_NAME'
+  - versionName: 'projects/$PROJECT_ID/secrets/SQLSERVER_USER/versions/latest'
+    env: 'SQLSERVER_USER'
+  - versionName: 'projects/$PROJECT_ID/secrets/SQLSERVER_PASS/versions/latest'
+    env: 'SQLSERVER_PASS'
+  - versionName: 'projects/$PROJECT_ID/secrets/SQLSERVER_DB/versions/latest'
+    env: 'SQLSERVER_DB'
+  - versionName: 'projects/$PROJECT_ID/secrets/CLOUD_BUILD_SA/versions/latest'
+    env: 'IMPERSONATED_USER'
 options:
   dynamicSubstitutions: true
   pool:
