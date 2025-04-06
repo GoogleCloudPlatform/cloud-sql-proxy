@@ -20,12 +20,32 @@ steps:
       - '-c'
       - |
         apt-get update
-        apt-get install -y sudo
+
+        # Check if FUSE device exists
+        if [ ! -c /dev/fuse ]; then
+          echo "Error: FUSE device /dev/fuse not found. FUSE might not be available in this environment."
+          exit 1
+        fi
+
+        # Create /etc/fuse.conf if it doesn't exist and populate with default content
+        if [ ! -f /etc/fuse.conf ]; then
+          echo "Creating /etc/fuse.conf with default content."
+          cat <<EOF > /etc/fuse.conf
+# Set the maximum number of FUSE mounts allowed to non-root users.
+# The default is 1000.
+#mount_max = 1000
+
+# Allow non-root users to specify the 'allow_other' mount option.
+#user_allow_other
+EOF
+        fi
+
+        # Modify /etc/fuse.conf to uncomment user_allow_other
         sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 
   - id: run mysql integration tests
     name: golang:${_VERSION}
-    env: 
+    env:
       - "IP_TYPE=${_IP_TYPE}"
       - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
     secretEnv: ['MYSQL_CONNECTION_NAME','MYSQL_USER','MYSQL_PASS','MYSQL_DB','POSTGRES_CONNECTION_NAME','POSTGRES_USER','POSTGRES_USER_IAM','POSTGRES_PASS','POSTGRES_DB','POSTGRES_CAS_CONNECTION_NAME','POSTGRES_CAS_PASS','POSTGRES_CUSTOMER_CAS_CONNECTION_NAME','POSTGRES_CUSTOMER_CAS_PASS','POSTGRES_CUSTOMER_CAS_DOMAIN_NAME','SQLSERVER_CONNECTION_NAME','SQLSERVER_USER','SQLSERVER_PASS','SQLSERVER_DB','IMPERSONATED_USER']
