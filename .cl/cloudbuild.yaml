@@ -15,11 +15,11 @@
 steps:
   - id: enable-fuse-config
     name: 'gcr.io/cloud-builders/docker'
-    entrypoint: sudo
+    entrypoint: bash
     args:
       - '-c'
       - |
-        sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
+        sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
 
   - id: run mysql integration tests
     name: golang:${_VERSION}
