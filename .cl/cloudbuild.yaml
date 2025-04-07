@@ -13,19 +13,11 @@
 # limitations under the License.
 
 steps:
-  - id: enable fuse config
+  - id: 'Enable fuse config (Linux)'
     name: 'alpine'
     entrypoint: 'sh'
-    args:
-      - '-c'
-      - |
-        apk add --no-cache sed fuse sudo
-        echo "Checking for fusermount..."
-        ls -l /bin/fusermount
-        ls -l /usr/bin/fusermount
-        export PATH=/usr/bin:$PATH
-        echo "PATH: \$PATH"
-        sudo sed -i "s/#user_allow_other/user_allow_other/g" /etc/fuse.conf
+    args: |
+      sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
   # - id: enable fuse config
   #   name: 'alpine'
   #   entrypoint: 'sh'
@@ -63,6 +55,7 @@ steps:
     args:
     - -c
     - |
+      set -eo pipefail
       go test -race -v ./...
 substitutions:
   _VERSION: ${_VERSION}
