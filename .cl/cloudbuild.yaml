@@ -18,7 +18,9 @@ steps:
     entrypoint: sh
     args:
       - '-c'
-      - 'sudo sed -i "s/#user_allow_other/user_allow_other/g" /etc/fuse.conf'
+      - |
+        apk add --no-cache sudo
+        sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
   # - id: enable fuse config
   #   name: 'alpine'
   #   entrypoint: 'sh'
