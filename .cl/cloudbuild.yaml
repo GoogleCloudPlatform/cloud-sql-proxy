@@ -13,9 +13,9 @@
 # limitations under the License.
 
 steps:
-  - id: 'Enable fuse config (Linux)'
-    name: 'alpine'
-    entrypoint: 'sh'
+  - id: Enable fuse config
+    name: alpine
+    entrypoint: sh
     args: |
       sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
   # - id: enable fuse config
