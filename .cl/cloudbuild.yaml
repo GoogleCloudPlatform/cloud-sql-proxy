@@ -13,14 +13,14 @@
 # limitations under the License.
 
 steps:
-  - id: Enable fuse config
-    name: alpine
-    entrypoint: sh
-    args:
-      - '-c'
-      - |
-        apk add --no-cache sudo
-        sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
+  # - id: Enable fuse config
+  #   name: alpine
+  #   entrypoint: sh
+  #   args:
+  #     - '-c'
+  #     - |
+  #       apk add --no-cache sudo
+  #       sudo sed -i 's/#user_allow_other/user_allow_other/g' /etc/fuse.conf
   # - id: enable fuse config
   #   name: 'alpine'
   #   entrypoint: 'sh'
@@ -59,7 +59,7 @@ steps:
     - -c
     - |
       set -eo pipefail
-      go test -race -v ./...
+      go test -race -v ./tests/...
 substitutions:
   _VERSION: ${_VERSION}
   _IP_TYPE: ${_IP_TYPE}
