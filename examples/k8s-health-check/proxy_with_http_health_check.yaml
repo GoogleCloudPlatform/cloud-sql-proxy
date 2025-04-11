@@ -118,6 +118,7 @@ spec:
         lifecycle:
           preStop:
             httpGet:
+              host: localhost
               path: /quitquitquit
               port: 9092
               scheme: HTTP
