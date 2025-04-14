@@ -141,7 +141,7 @@ func TestMySQLAuthentication(t *testing.T) {
 	requireMySQLVars(t)
 
 	var creds string
-	if ipType == "public" {
+	if *ipType == "public" {
 		creds = keyfile(t)
 	}
 	tok, path, cleanup := removeAuthEnvVar(t)
@@ -163,7 +163,7 @@ func TestMySQLAuthentication(t *testing.T) {
 				*mysqlConnName},
 		},
 	}
-	if ipType == "public" {
+	if *ipType == "public" {
 		tcs = append(tcs,
 			struct {
 				desc string

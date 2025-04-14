@@ -85,7 +85,7 @@ func TestSQLServerAuthentication(t *testing.T) {
 	requireSQLServerVars(t)
 
 	var creds string
-	if ipType == "public" {
+	if *ipType == "public" {
 		creds = keyfile(t)
 	}
 	tok, path, cleanup := removeAuthEnvVar(t)
@@ -107,7 +107,7 @@ func TestSQLServerAuthentication(t *testing.T) {
 				*sqlserverConnName},
 		},
 	}
-	if ipType == "public" {
+	if *ipType == "public" {
 		tcs = append(tcs,
 			[]struct {
 				desc string

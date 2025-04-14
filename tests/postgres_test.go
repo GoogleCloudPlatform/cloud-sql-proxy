@@ -125,7 +125,7 @@ func TestPostgresAuthentication(t *testing.T) {
 	requirePostgresVars(t)
 
 	var creds string
-	if ipType == "public" {
+	if *ipType == "public" {
 		creds = keyfile(t)
 	}
 	tok, path, cleanup := removeAuthEnvVar(t)
@@ -147,7 +147,7 @@ func TestPostgresAuthentication(t *testing.T) {
 				*postgresConnName},
 		},
 	}
-	if ipType == "public" {
+	if *ipType == "public" {
 		tcs = append(tcs,
 			[]struct {
 				desc string
