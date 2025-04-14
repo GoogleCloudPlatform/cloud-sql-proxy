@@ -54,8 +54,12 @@ func TestSQLServerTCP(t *testing.T) {
 		t.Skip("skipping SQL Server integration tests")
 	}
 	requireSQLServerVars(t)
-
-	proxyConnTest(t, []string{*sqlserverConnName}, "sqlserver", sqlserverDSN())
+	// Prepare the initial arguments
+	args := []string{*sqlserverConnName}
+	// Add the IP type flag using the helper
+	args = addIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "sqlserver", sqlserverDSN())
 }
 
 func TestSQLServerImpersonation(t *testing.T) {
@@ -63,11 +67,15 @@ func TestSQLServerImpersonation(t *testing.T) {
 		t.Skip("skipping SQL Server integration tests")
 	}
 	requireSQLServerVars(t)
-
-	proxyConnTest(t, []string{
+	// Prepare the initial arguments
+	args := []string{
 		"--impersonate-service-account", *impersonatedUser,
-		*sqlserverConnName},
-		"sqlserver", sqlserverDSN())
+		*sqlserverConnName,
+	}
+	// Add the IP type flag using the helper
+	args = addIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "sqlserver", sqlserverDSN())
 }
 
 func TestSQLServerAuthentication(t *testing.T) {
@@ -120,7 +128,9 @@ func TestSQLServerAuthentication(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "sqlserver", sqlserverDSN())
+			// Add the IP type flag using the helper
+			argsWithIPType := addIPTypeFlag(tc.args)
+			proxyConnTest(t, argsWithIPType, "sqlserver", sqlserverDSN())
 		})
 	}
 }
@@ -149,7 +159,9 @@ func TestSQLServerGcloudAuth(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "sqlserver", sqlserverDSN())
+			// Add the IP type flag using the helper
+			argsWithIPType := addIPTypeFlag(tc.args)
+			proxyConnTest(t, argsWithIPType, "sqlserver", sqlserverDSN())
 		})
 	}
 }

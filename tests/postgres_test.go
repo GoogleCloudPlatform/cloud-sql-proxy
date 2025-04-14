@@ -60,8 +60,12 @@ func TestPostgresTCP(t *testing.T) {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
-
-	proxyConnTest(t, []string{*postgresConnName}, "pgx", postgresDSN())
+	// Prepare the initial arguments
+	args := []string{*postgresConnName}
+	// Add the IP type flag using the helper
+	args = addIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "pgx", postgresDSN())
 }
 
 func TestPostgresUnix(t *testing.T) {
@@ -78,8 +82,12 @@ func TestPostgresUnix(t *testing.T) {
 		proxy.UnixAddress(tmpDir, *postgresConnName),
 		*postgresUser, *postgresPass, *postgresDB)
 
-	proxyConnTest(t,
-		[]string{"--unix-socket", tmpDir, *postgresConnName}, "pgx", dsn)
+	// Prepare the initial arguments
+	args := []string{"--unix-socket", tmpDir, *postgresConnName}
+	// Add the IP type flag using the helper
+	args = addIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "pgx", dsn)
 }
 
 func createTempDir(t *testing.T) (string, func()) {
@@ -99,11 +107,15 @@ func TestPostgresImpersonation(t *testing.T) {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
-
-	proxyConnTest(t, []string{
+	// Prepare the initial arguments
+	args := []string{
 		"--impersonate-service-account", *impersonatedUser,
-		*postgresConnName},
-		"pgx", postgresDSN())
+		*postgresConnName,
+	}
+	// Add the IP type flag using the helper
+	args = addIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "pgx", postgresDSN())
 }
 
 func TestPostgresAuthentication(t *testing.T) {
@@ -156,7 +168,9 @@ func TestPostgresAuthentication(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", postgresDSN())
+			// Add the IP type flag using the helper
+			argsWithIPType := addIPTypeFlag(tc.args)
+			proxyConnTest(t, argsWithIPType, "pgx", postgresDSN())
 		})
 	}
 }
@@ -185,7 +199,9 @@ func TestPostgresGcloudAuth(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", postgresDSN())
+			// Add the IP type flag using the helper
+			argsWithIPType := addIPTypeFlag(tc.args)
+			proxyConnTest(t, argsWithIPType, "pgx", postgresDSN())
 		})
 	}
 
@@ -231,7 +247,9 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", tc.dsn)
+			// Add the IP type flag using the helper
+			argsWithIPType := addIPTypeFlag(tc.args)
+			proxyConnTest(t, argsWithIPType, "pgx", tc.dsn)
 		})
 	}
 }
@@ -272,7 +290,9 @@ func TestPostgresCustomerCAS(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", tc.dsn)
+			// Add the IP type flag using the helper
+			argsWithIPType := addIPTypeFlag(tc.args)
+			proxyConnTest(t, argsWithIPType, "pgx", tc.dsn)
 		})
 	}
 }

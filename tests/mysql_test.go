@@ -29,6 +29,12 @@ var (
 	mysqlUser     = flag.String("mysql_user", os.Getenv("MYSQL_USER"), "Name of database user.")
 	mysqlPass     = flag.String("mysql_pass", os.Getenv("MYSQL_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
 	mysqlDB       = flag.String("mysql_db", os.Getenv("MYSQL_DB"), "Name of the database to connect to.")
+	ipType        = flag.String("ip_type", func() string {
+		if v := os.Getenv("IP_TYPE"); v != "" {
+			return v
+		}
+		return "public"
+	}(), "IP type of the instance to connect to, can be public, private or psc")
 )
 
 func requireMySQLVars(t *testing.T) {
@@ -56,12 +62,33 @@ func mysqlDSN() string {
 	return cfg.FormatDSN()
 }
 
+// addIPTypeFlag appends the correct flag based on the ipType variable.
+func addIPTypeFlag(args []string) []string {
+	switch *ipType {
+	case "private":
+		return append(args, "--private-ip")
+	case "psc":
+		return append(args, "--psc")
+	// "public" is the default and doesn't require a flag
+	case "public":
+		return args
+	default:
+		// Or handle unknown ipType values as needed, maybe log a warning?
+		return args
+	}
+}
+
 func TestMySQLTCP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping MySQL integration tests")
 	}
 	requireMySQLVars(t)
-	proxyConnTest(t, []string{*mysqlConnName}, "mysql", mysqlDSN())
+	// Prepare the initial arguments
+	args := []string{*mysqlConnName}
+	// Add the IP type flag using the helper
+	args = addIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "mysql", mysqlDSN())
 }
 
 func TestMySQLUnix(t *testing.T) {
@@ -82,8 +109,12 @@ func TestMySQLUnix(t *testing.T) {
 		Addr: proxy.UnixAddress(tmpDir, *mysqlConnName),
 		Net:  "unix",
 	}
-	proxyConnTest(t,
-		[]string{"--unix-socket", tmpDir, *mysqlConnName}, "mysql", cfg.FormatDSN())
+	// Prepare the initial arguments
+	args := []string{"--unix-socket", tmpDir, *mysqlConnName}
+	// Add the IP type flag using the helper
+	args = addIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "mysql", cfg.FormatDSN())
 }
 
 func TestMySQLImpersonation(t *testing.T) {
@@ -92,10 +123,15 @@ func TestMySQLImpersonation(t *testing.T) {
 	}
 	requireMySQLVars(t)
 
-	proxyConnTest(t, []string{
+	// Prepare the initial arguments
+	args := []string{
 		"--impersonate-service-account", *impersonatedUser,
-		*mysqlConnName},
-		"mysql", mysqlDSN())
+		*mysqlConnName,
+	}
+	// Add the IP type flag using the helper
+	args = addIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "mysql", mysqlDSN())
 }
 
 func TestMySQLAuthentication(t *testing.T) {
@@ -148,7 +184,9 @@ func TestMySQLAuthentication(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "mysql", mysqlDSN())
+			// Add the IP type flag using the helper
+			argsWithIPType := addIPTypeFlag(tc.args)
+			proxyConnTest(t, argsWithIPType, "mysql", mysqlDSN())
 		})
 	}
 }
@@ -177,7 +215,9 @@ func TestMySQLGcloudAuth(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "mysql", mysqlDSN())
+			// Add the IP type flag using the helper
+			argsWithIPType := addIPTypeFlag(tc.args)
+			proxyConnTest(t, argsWithIPType, "mysql", mysqlDSN())
 		})
 	}
 }
