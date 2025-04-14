@@ -43,7 +43,7 @@ steps:
     args:
     - -c
     - |
-      go test -race -v ./tests/...
+      go test -race -v ./...
 substitutions:
   _VERSION: ${_VERSION}
   _IP_TYPE: ${_IP_TYPE}
