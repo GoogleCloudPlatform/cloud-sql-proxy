@@ -26,6 +26,9 @@ import (
 )
 
 func TestPostgresFUSEConnect(t *testing.T) {
+	if ipType != "public" {
+		t.Skip("skipping FUSE integration tests")
+	}
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}

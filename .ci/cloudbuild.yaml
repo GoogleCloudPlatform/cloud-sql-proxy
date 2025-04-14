@@ -43,7 +43,7 @@ steps:
     args:
     - -c
     - |
-      go test -race -v -exclude='fuse_test.go' ./tests/...
+      go test -race -v ./tests/...
 substitutions:
   _VERSION: ${_VERSION}
   _IP_TYPE: ${_IP_TYPE}
