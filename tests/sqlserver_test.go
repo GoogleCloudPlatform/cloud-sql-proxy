@@ -84,7 +84,10 @@ func TestSQLServerAuthentication(t *testing.T) {
 	}
 	requireSQLServerVars(t)
 
-	creds := keyfile(t)
+	var creds string
+	if ipType == "public" {
+		creds = keyfile(t)
+	}
 	tok, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
@@ -103,28 +106,37 @@ func TestSQLServerAuthentication(t *testing.T) {
 				"--impersonate-service-account", *impersonatedUser,
 				*sqlserverConnName},
 		},
-		{
-			desc: "with credentials file",
-			args: []string{"--credentials-file", path, *sqlserverConnName},
-		},
-		{
-			desc: "with credentials file and impersonation",
-			args: []string{
-				"--credentials-file", path,
-				"--impersonate-service-account", *impersonatedUser,
-				*sqlserverConnName},
-		},
-		{
-			desc: "with credentials JSON",
-			args: []string{"--json-credentials", string(creds), *sqlserverConnName},
-		},
-		{
-			desc: "with credentials JSON and impersonation",
-			args: []string{
-				"--json-credentials", string(creds),
-				"--impersonate-service-account", *impersonatedUser,
-				*sqlserverConnName},
-		},
+	}
+	if ipType == "public" {
+		tcs = append(tcs,
+			[]struct {
+				desc string
+				args []string
+			}{
+				{
+					desc: "with credentials file",
+					args: []string{"--credentials-file", path, *sqlserverConnName},
+				},
+				{
+					desc: "with credentials file and impersonation",
+					args: []string{
+						"--credentials-file", path,
+						"--impersonate-service-account", *impersonatedUser,
+						*sqlserverConnName},
+				},
+				{
+					desc: "with credentials JSON",
+					args: []string{"--json-credentials", string(creds), *sqlserverConnName},
+				},
+				{
+					desc: "with credentials JSON and impersonation",
+					args: []string{
+						"--json-credentials", string(creds),
+						"--impersonate-service-account", *impersonatedUser,
+						*sqlserverConnName},
+				},
+			}
+		)
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {

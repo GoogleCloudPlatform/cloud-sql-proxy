@@ -124,7 +124,10 @@ func TestPostgresAuthentication(t *testing.T) {
 	}
 	requirePostgresVars(t)
 
-	creds := keyfile(t)
+	var creds string
+	if ipType == "public" {
+		creds = keyfile(t)
+	}
 	tok, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
@@ -143,28 +146,37 @@ func TestPostgresAuthentication(t *testing.T) {
 				"--impersonate-service-account", *impersonatedUser,
 				*postgresConnName},
 		},
-		{
-			desc: "with credentials file",
-			args: []string{"--credentials-file", path, *postgresConnName},
-		},
-		{
-			desc: "with credentials file and impersonation",
-			args: []string{
-				"--credentials-file", path,
-				"--impersonate-service-account", *impersonatedUser,
-				*postgresConnName},
-		},
-		{
-			desc: "with credentials JSON",
-			args: []string{"--json-credentials", string(creds), *postgresConnName},
-		},
-		{
-			desc: "with credentials JSON and impersonation",
-			args: []string{
-				"--json-credentials", string(creds),
-				"--impersonate-service-account", *impersonatedUser,
-				*postgresConnName},
-		},
+	}
+	if ipType == "public" {
+		tcs = append(tcs,
+			[]struct {
+				desc string
+				args []string
+			}{
+				{
+					desc: "with credentials file",
+					args: []string{"--credentials-file", path, *postgresConnName},
+				},
+				{
+					desc: "with credentials file and impersonation",
+					args: []string{
+						"--credentials-file", path,
+						"--impersonate-service-account", *impersonatedUser,
+						*postgresConnName},
+				},
+				{
+					desc: "with credentials JSON",
+					args: []string{"--json-credentials", string(creds), *postgresConnName},
+				},
+				{
+					desc: "with credentials JSON and impersonation",
+					args: []string{
+						"--json-credentials", string(creds),
+						"--impersonate-service-account", *impersonatedUser,
+						*postgresConnName},
+				},
+			}
+		)
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {

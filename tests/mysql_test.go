@@ -140,7 +140,10 @@ func TestMySQLAuthentication(t *testing.T) {
 	}
 	requireMySQLVars(t)
 
-	creds := keyfile(t)
+	var creds string
+	if ipType == "public" {
+		creds = keyfile(t)
+	}
 	tok, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
@@ -159,28 +162,37 @@ func TestMySQLAuthentication(t *testing.T) {
 				"--impersonate-service-account", *impersonatedUser,
 				*mysqlConnName},
 		},
-		{
-			desc: "with credentials file",
-			args: []string{"--credentials-file", path, *mysqlConnName},
-		},
-		{
-			desc: "with credentials file and impersonation",
-			args: []string{
-				"--credentials-file", path,
-				"--impersonate-service-account", *impersonatedUser,
-				*mysqlConnName},
-		},
-		{
-			desc: "with credentials JSON",
-			args: []string{"--json-credentials", string(creds), *mysqlConnName},
-		},
-		{
-			desc: "with credentials JSON and impersonation",
-			args: []string{
-				"--json-credentials", string(creds),
-				"--impersonate-service-account", *impersonatedUser,
-				*mysqlConnName},
-		},
+	}
+	if ipType == "public" {
+		tcs = append(tcs,
+			[]struct {
+				desc string
+				args []string
+			}{
+				{
+					desc: "with credentials file",
+					args: []string{"--credentials-file", path, *mysqlConnName},
+				},
+				{
+					desc: "with credentials file and impersonation",
+					args: []string{
+						"--credentials-file", path,
+						"--impersonate-service-account", *impersonatedUser,
+						*mysqlConnName},
+				},
+				{
+					desc: "with credentials JSON",
+					args: []string{"--json-credentials", string(creds), *mysqlConnName},
+				},
+				{
+					desc: "with credentials JSON and impersonation",
+					args: []string{
+						"--json-credentials", string(creds),
+						"--impersonate-service-account", *impersonatedUser,
+						*mysqlConnName},
+				},
+			}
+		)
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
