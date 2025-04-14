@@ -113,29 +113,36 @@ func TestSQLServerAuthentication(t *testing.T) {
 				desc string
 				args []string
 			}{
-				{
-					desc: "with credentials file",
-					args: []string{"--credentials-file", path, *sqlserverConnName},
-				},
-				{
-					desc: "with credentials file and impersonation",
-					args: []string{
-						"--credentials-file", path,
-						"--impersonate-service-account", *impersonatedUser,
-						*sqlserverConnName},
-				},
-				{
-					desc: "with credentials JSON",
-					args: []string{"--json-credentials", string(creds), *sqlserverConnName},
-				},
-				{
-					desc: "with credentials JSON and impersonation",
-					args: []string{
-						"--json-credentials", string(creds),
-						"--impersonate-service-account", *impersonatedUser,
-						*sqlserverConnName},
-				},
-			}
+				desc: "with credentials file",
+				args: []string{"--credentials-file", path, *sqlserverConnName},
+			},
+			struct {
+				desc string
+				args []string
+			}{
+				desc: "with credentials file and impersonation",
+				args: []string{
+					"--credentials-file", path,
+					"--impersonate-service-account", *impersonatedUser,
+					*sqlserverConnName},
+			},
+			struct {
+				desc string
+				args []string
+			}{
+				desc: "with credentials JSON",
+				args: []string{"--json-credentials", string(creds), *sqlserverConnName},
+			},
+			struct {
+				desc string
+				args []string
+			}{
+				desc: "with credentials JSON and impersonation",
+				args: []string{
+					"--json-credentials", string(creds),
+					"--impersonate-service-account", *impersonatedUser,
+					*sqlserverConnName},
+			},
 		)
 	}
 	for _, tc := range tcs {

@@ -165,33 +165,40 @@ func TestMySQLAuthentication(t *testing.T) {
 	}
 	if ipType == "public" {
 		tcs = append(tcs,
-			[]struct {
+			struct {
 				desc string
 				args []string
 			}{
-				{
-					desc: "with credentials file",
-					args: []string{"--credentials-file", path, *mysqlConnName},
-				},
-				{
-					desc: "with credentials file and impersonation",
-					args: []string{
-						"--credentials-file", path,
-						"--impersonate-service-account", *impersonatedUser,
-						*mysqlConnName},
-				},
-				{
-					desc: "with credentials JSON",
-					args: []string{"--json-credentials", string(creds), *mysqlConnName},
-				},
-				{
-					desc: "with credentials JSON and impersonation",
-					args: []string{
-						"--json-credentials", string(creds),
-						"--impersonate-service-account", *impersonatedUser,
-						*mysqlConnName},
-				},
-			}
+				desc: "with credentials file",
+				args: []string{"--credentials-file", path, *mysqlConnName},
+			},
+			struct {
+				desc string
+				args []string
+			}{
+				desc: "with credentials file and impersonation",
+				args: []string{
+					"--credentials-file", path,
+					"--impersonate-service-account", *impersonatedUser,
+					*mysqlConnName},
+			},
+			struct {
+				desc string
+				args []string
+			}{
+				desc: "with credentials JSON",
+				args: []string{"--json-credentials", string(creds), *mysqlConnName},
+			},
+			struct {
+				desc string
+				args []string
+			}{
+				desc: "with credentials JSON and impersonation",
+				args: []string{
+					"--json-credentials", string(creds),
+					"--impersonate-service-account", *impersonatedUser,
+					*mysqlConnName},
+			},
 		)
 	}
 	for _, tc := range tcs {
