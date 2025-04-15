@@ -19,6 +19,7 @@ steps:
       - "IP_TYPE=${_IP_TYPE}"
       - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
       - "TMPDIR=/tmp"
+      - "CLOUDSDK_CORE_DISABLE_PROMPTS=1"
     secretEnv:
       - "MYSQL_CONNECTION_NAME"
       - "MYSQL_USER"
@@ -43,7 +44,12 @@ steps:
     args:
     - -c
     - |
+      curl -sSL https://sdk.cloud.google.com | bash -s -- --quiet
+      export PATH=$PATH:/root/google-cloud-sdk/bin
+      echo "gcloud version:"
+      gcloud version || echo "gcloud command not found or failed"
       go test -race -v ./tests/...
+
 substitutions:
   _VERSION: ${_VERSION}
   _IP_TYPE: ${_IP_TYPE}
