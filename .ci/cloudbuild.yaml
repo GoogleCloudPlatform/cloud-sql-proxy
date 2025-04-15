@@ -45,7 +45,6 @@ steps:
     - -c
     - |
       curl -sSL https://sdk.cloud.google.com | bash -s -- --quiet
-      export PATH=$PATH:/root/google-cloud-sdk/bin
       echo "gcloud version:"
       gcloud version || echo "gcloud command not found or failed"
       go test -race -v ./tests/...
