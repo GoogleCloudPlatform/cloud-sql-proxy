@@ -164,42 +164,36 @@ func TestMySQLAuthentication(t *testing.T) {
 		},
 	}
 	if *ipType == "public" {
-		tcs = append(tcs,
-			struct {
-				desc string
-				args []string
-			}{
+		additionaTcs := []struct {
+			desc string
+			args []string
+		}{
+			{
 				desc: "with credentials file",
 				args: []string{"--credentials-file", path, *mysqlConnName},
 			},
-			struct {
-				desc string
-				args []string
-			}{
+			{
 				desc: "with credentials file and impersonation",
 				args: []string{
 					"--credentials-file", path,
 					"--impersonate-service-account", *impersonatedUser,
-					*mysqlConnName},
+					*mysqlConnName,
+				},
 			},
-			struct {
-				desc string
-				args []string
-			}{
+			{
 				desc: "with credentials JSON",
 				args: []string{"--json-credentials", string(creds), *mysqlConnName},
 			},
-			struct {
-				desc string
-				args []string
-			}{
+			{
 				desc: "with credentials JSON and impersonation",
 				args: []string{
 					"--json-credentials", string(creds),
 					"--impersonate-service-account", *impersonatedUser,
-					*mysqlConnName},
+					*mysqlConnName,
+				},
 			},
-		)
+		}
+		tcs = append(tcs, additionaTcs...)
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {

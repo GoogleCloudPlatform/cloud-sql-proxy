@@ -148,42 +148,36 @@ func TestPostgresAuthentication(t *testing.T) {
 		},
 	}
 	if *ipType == "public" {
-		tcs = append(tcs,
-			[]struct {
-				desc string
-				args []string
-			}{
+		additionalTcs := []struct {
+			desc string
+			args []string
+		}{
+			{
 				desc: "with credentials file",
 				args: []string{"--credentials-file", path, *postgresConnName},
 			},
-			struct {
-				desc string
-				args []string
-			}{
+			{
 				desc: "with credentials file and impersonation",
 				args: []string{
 					"--credentials-file", path,
 					"--impersonate-service-account", *impersonatedUser,
-					*postgresConnName},
+					*postgresConnName,
+				},
 			},
-			struct {
-				desc string
-				args []string
-			}{
+			{
 				desc: "with credentials JSON",
 				args: []string{"--json-credentials", string(creds), *postgresConnName},
 			},
-			struct {
-				desc string
-				args []string
-			}{
+			{
 				desc: "with credentials JSON and impersonation",
 				args: []string{
 					"--json-credentials", string(creds),
 					"--impersonate-service-account", *impersonatedUser,
-					*postgresConnName},
+					*postgresConnName,
+				},
 			},
-		)
+		}
+		tcs = append(tcs, additionalTcs...)
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
