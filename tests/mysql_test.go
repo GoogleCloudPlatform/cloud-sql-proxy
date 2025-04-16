@@ -208,6 +208,9 @@ func TestMySQLGcloudAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping MySQL integration tests")
 	}
+	if v := os.Getenv("IP_TYPE"); v == "private" || v == "psc" {
+		t.Skipf("skipping test because IP_TYPE is set to %v", v)
+	}
 	requireMySQLVars(t)
 
 	tcs := []struct {

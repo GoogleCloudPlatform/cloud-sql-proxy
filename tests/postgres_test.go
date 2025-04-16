@@ -192,6 +192,9 @@ func TestPostgresGcloudAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
+	if v := os.Getenv("IP_TYPE"); v == "private" || v == "psc" {
+		t.Skipf("skipping test because IP_TYPE is set to %v", v)
+	}
 	requirePostgresVars(t)
 
 	tcs := []struct {

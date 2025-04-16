@@ -13,22 +13,12 @@
 # limitations under the License.
 
 steps:
-  - id: setup gcloud
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    entrypoint: bash
-    args:
-      - '-c'
-      - |
-        which gcloud
-        gcloud version
-
   - id: run integration tests
     name: golang:${_VERSION}
     env:
       - "IP_TYPE=${_IP_TYPE}"
       - "GOOGLE_CLOUD_PROJECT=${PROJECT_ID}"
       - "TMPDIR=/tmp"
-      - "CLOUDSDK_CORE_DISABLE_PROMPTS=1"
     secretEnv:
       - "MYSQL_CONNECTION_NAME"
       - "MYSQL_USER"
@@ -53,8 +43,6 @@ steps:
     args:
     - -c
     - |
-      which gcloud
-
       go test -race -v ./tests/...
 
 substitutions:
