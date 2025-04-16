@@ -62,18 +62,14 @@ func mysqlDSN() string {
 	return cfg.FormatDSN()
 }
 
-// addIPTypeFlag appends the correct flag based on the ipType variable.
-func addIPTypeFlag(args []string) []string {
+// AddIPTypeFlag appends the correct flag based on the ipType variable.
+func AddIPTypeFlag(args []string) []string {
 	switch *ipType {
 	case "private":
 		return append(args, "--private-ip")
 	case "psc":
 		return append(args, "--psc")
-	// "public" is the default and doesn't require a flag
-	case "public":
-		return args
 	default:
-		// Or handle unknown ipType values as needed, maybe log a warning?
 		return args
 	}
 }
@@ -86,7 +82,7 @@ func TestMySQLTCP(t *testing.T) {
 	// Prepare the initial arguments
 	args := []string{*mysqlConnName}
 	// Add the IP type flag using the helper
-	args = addIPTypeFlag(args)
+	args = AddIPTypeFlag(args)
 	// Run the test
 	proxyConnTest(t, args, "mysql", mysqlDSN())
 }
@@ -112,7 +108,7 @@ func TestMySQLUnix(t *testing.T) {
 	// Prepare the initial arguments
 	args := []string{"--unix-socket", tmpDir, *mysqlConnName}
 	// Add the IP type flag using the helper
-	args = addIPTypeFlag(args)
+	args = AddIPTypeFlag(args)
 	// Run the test
 	proxyConnTest(t, args, "mysql", cfg.FormatDSN())
 }
@@ -129,7 +125,7 @@ func TestMySQLImpersonation(t *testing.T) {
 		*mysqlConnName,
 	}
 	// Add the IP type flag using the helper
-	args = addIPTypeFlag(args)
+	args = AddIPTypeFlag(args)
 	// Run the test
 	proxyConnTest(t, args, "mysql", mysqlDSN())
 }
@@ -197,9 +193,7 @@ func TestMySQLAuthentication(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			// Add the IP type flag using the helper
-			argsWithIPType := addIPTypeFlag(tc.args)
-			proxyConnTest(t, argsWithIPType, "mysql", mysqlDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "mysql", mysqlDSN())
 		})
 	}
 }
@@ -231,9 +225,7 @@ func TestMySQLGcloudAuth(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			// Add the IP type flag using the helper
-			argsWithIPType := addIPTypeFlag(tc.args)
-			proxyConnTest(t, argsWithIPType, "mysql", mysqlDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "mysql", mysqlDSN())
 		})
 	}
 }

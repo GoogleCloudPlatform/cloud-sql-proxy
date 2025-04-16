@@ -57,7 +57,7 @@ func TestSQLServerTCP(t *testing.T) {
 	// Prepare the initial arguments
 	args := []string{*sqlserverConnName}
 	// Add the IP type flag using the helper
-	args = addIPTypeFlag(args)
+	args = AddIPTypeFlag(args)
 	// Run the test
 	proxyConnTest(t, args, "sqlserver", sqlserverDSN())
 }
@@ -73,7 +73,7 @@ func TestSQLServerImpersonation(t *testing.T) {
 		*sqlserverConnName,
 	}
 	// Add the IP type flag using the helper
-	args = addIPTypeFlag(args)
+	args = AddIPTypeFlag(args)
 	// Run the test
 	proxyConnTest(t, args, "sqlserver", sqlserverDSN())
 }
@@ -141,9 +141,7 @@ func TestSQLServerAuthentication(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			// Add the IP type flag using the helper
-			argsWithIPType := addIPTypeFlag(tc.args)
-			proxyConnTest(t, argsWithIPType, "sqlserver", sqlserverDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "sqlserver", sqlserverDSN())
 		})
 	}
 }
@@ -175,9 +173,7 @@ func TestSQLServerGcloudAuth(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			// Add the IP type flag using the helper
-			argsWithIPType := addIPTypeFlag(tc.args)
-			proxyConnTest(t, argsWithIPType, "sqlserver", sqlserverDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "sqlserver", sqlserverDSN())
 		})
 	}
 }

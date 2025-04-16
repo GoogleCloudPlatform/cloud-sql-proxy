@@ -63,7 +63,7 @@ func TestPostgresTCP(t *testing.T) {
 	// Prepare the initial arguments
 	args := []string{*postgresConnName}
 	// Add the IP type flag using the helper
-	args = addIPTypeFlag(args)
+	args = AddIPTypeFlag(args)
 	// Run the test
 	proxyConnTest(t, args, "pgx", postgresDSN())
 }
@@ -85,7 +85,7 @@ func TestPostgresUnix(t *testing.T) {
 	// Prepare the initial arguments
 	args := []string{"--unix-socket", tmpDir, *postgresConnName}
 	// Add the IP type flag using the helper
-	args = addIPTypeFlag(args)
+	args = AddIPTypeFlag(args)
 	// Run the test
 	proxyConnTest(t, args, "pgx", dsn)
 }
@@ -113,7 +113,7 @@ func TestPostgresImpersonation(t *testing.T) {
 		*postgresConnName,
 	}
 	// Add the IP type flag using the helper
-	args = addIPTypeFlag(args)
+	args = AddIPTypeFlag(args)
 	// Run the test
 	proxyConnTest(t, args, "pgx", postgresDSN())
 }
@@ -181,9 +181,7 @@ func TestPostgresAuthentication(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			// Add the IP type flag using the helper
-			argsWithIPType := addIPTypeFlag(tc.args)
-			proxyConnTest(t, argsWithIPType, "pgx", postgresDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "pgx", postgresDSN())
 		})
 	}
 }
@@ -215,9 +213,7 @@ func TestPostgresGcloudAuth(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			// Add the IP type flag using the helper
-			argsWithIPType := addIPTypeFlag(tc.args)
-			proxyConnTest(t, argsWithIPType, "pgx", postgresDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "pgx", postgresDSN())
 		})
 	}
 
@@ -263,9 +259,7 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			// Add the IP type flag using the helper
-			argsWithIPType := addIPTypeFlag(tc.args)
-			proxyConnTest(t, argsWithIPType, "pgx", tc.dsn)
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "pgx", tc.dsn)
 		})
 	}
 }
@@ -306,9 +300,7 @@ func TestPostgresCustomerCAS(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			// Add the IP type flag using the helper
-			argsWithIPType := addIPTypeFlag(tc.args)
-			proxyConnTest(t, argsWithIPType, "pgx", tc.dsn)
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "pgx", tc.dsn)
 		})
 	}
 }
