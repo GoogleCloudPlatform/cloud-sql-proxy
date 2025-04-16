@@ -13,6 +13,15 @@
 # limitations under the License.
 
 steps:
+  - id: setup gcloud
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        which gcloud
+        gcloud version
+
   - id: run integration tests
     name: golang:${_VERSION}
     env:
@@ -44,10 +53,8 @@ steps:
     args:
     - -c
     - |
-      RUN curl -sSL https://sdk.cloud.google.com | bash
-      ENV PATH ${PATH}:/root/google-cloud-sdk/bin
-      echo "gcloud version:"
-      gcloud version || echo "gcloud command not found or failed"
+      which gcloud
+
       go test -race -v ./tests/...
 
 substitutions:
