@@ -54,8 +54,12 @@ func TestSQLServerTCP(t *testing.T) {
 		t.Skip("skipping SQL Server integration tests")
 	}
 	requireSQLServerVars(t)
-
-	proxyConnTest(t, []string{*sqlserverConnName}, "sqlserver", sqlserverDSN())
+	// Prepare the initial arguments
+	args := []string{*sqlserverConnName}
+	// Add the IP type flag using the helper
+	args = AddIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "sqlserver", sqlserverDSN())
 }
 
 func TestSQLServerImpersonation(t *testing.T) {
@@ -63,11 +67,15 @@ func TestSQLServerImpersonation(t *testing.T) {
 		t.Skip("skipping SQL Server integration tests")
 	}
 	requireSQLServerVars(t)
-
-	proxyConnTest(t, []string{
+	// Prepare the initial arguments
+	args := []string{
 		"--impersonate-service-account", *impersonatedUser,
-		*sqlserverConnName},
-		"sqlserver", sqlserverDSN())
+		*sqlserverConnName,
+	}
+	// Add the IP type flag using the helper
+	args = AddIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "sqlserver", sqlserverDSN())
 }
 
 func TestSQLServerAuthentication(t *testing.T) {
@@ -76,7 +84,10 @@ func TestSQLServerAuthentication(t *testing.T) {
 	}
 	requireSQLServerVars(t)
 
-	creds := keyfile(t)
+	var creds string
+	if *ipType == "public" {
+		creds = keyfile(t)
+	}
 	tok, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
@@ -95,32 +106,42 @@ func TestSQLServerAuthentication(t *testing.T) {
 				"--impersonate-service-account", *impersonatedUser,
 				*sqlserverConnName},
 		},
-		{
-			desc: "with credentials file",
-			args: []string{"--credentials-file", path, *sqlserverConnName},
-		},
-		{
-			desc: "with credentials file and impersonation",
-			args: []string{
-				"--credentials-file", path,
-				"--impersonate-service-account", *impersonatedUser,
-				*sqlserverConnName},
-		},
-		{
-			desc: "with credentials JSON",
-			args: []string{"--json-credentials", string(creds), *sqlserverConnName},
-		},
-		{
-			desc: "with credentials JSON and impersonation",
-			args: []string{
-				"--json-credentials", string(creds),
-				"--impersonate-service-account", *impersonatedUser,
-				*sqlserverConnName},
-		},
+	}
+	if *ipType == "public" {
+		additionaTcs := []struct {
+			desc string
+			args []string
+		}{
+			{
+				desc: "with credentials file",
+				args: []string{"--credentials-file", path, *sqlserverConnName},
+			},
+			{
+				desc: "with credentials file and impersonation",
+				args: []string{
+					"--credentials-file", path,
+					"--impersonate-service-account", *impersonatedUser,
+					*sqlserverConnName,
+				},
+			},
+			{
+				desc: "with credentials JSON",
+				args: []string{"--json-credentials", string(creds), *sqlserverConnName},
+			},
+			{
+				desc: "with credentials JSON and impersonation",
+				args: []string{
+					"--json-credentials", string(creds),
+					"--impersonate-service-account", *impersonatedUser,
+					*sqlserverConnName,
+				},
+			},
+		}
+		tcs = append(tcs, additionaTcs...)
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "sqlserver", sqlserverDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "sqlserver", sqlserverDSN())
 		})
 	}
 }
@@ -128,6 +149,9 @@ func TestSQLServerAuthentication(t *testing.T) {
 func TestSQLServerGcloudAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping SQL Server integration tests")
+	}
+	if v := os.Getenv("IP_TYPE"); v == "private" || v == "psc" {
+		t.Skipf("skipping test because IP_TYPE is set to %v", v)
 	}
 	requireSQLServerVars(t)
 
@@ -149,7 +173,7 @@ func TestSQLServerGcloudAuth(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "sqlserver", sqlserverDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "sqlserver", sqlserverDSN())
 		})
 	}
 }

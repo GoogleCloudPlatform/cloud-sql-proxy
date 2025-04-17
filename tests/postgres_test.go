@@ -60,8 +60,12 @@ func TestPostgresTCP(t *testing.T) {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
-
-	proxyConnTest(t, []string{*postgresConnName}, "pgx", postgresDSN())
+	// Prepare the initial arguments
+	args := []string{*postgresConnName}
+	// Add the IP type flag using the helper
+	args = AddIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "pgx", postgresDSN())
 }
 
 func TestPostgresUnix(t *testing.T) {
@@ -78,8 +82,12 @@ func TestPostgresUnix(t *testing.T) {
 		proxy.UnixAddress(tmpDir, *postgresConnName),
 		*postgresUser, *postgresPass, *postgresDB)
 
-	proxyConnTest(t,
-		[]string{"--unix-socket", tmpDir, *postgresConnName}, "pgx", dsn)
+	// Prepare the initial arguments
+	args := []string{"--unix-socket", tmpDir, *postgresConnName}
+	// Add the IP type flag using the helper
+	args = AddIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "pgx", dsn)
 }
 
 func createTempDir(t *testing.T) (string, func()) {
@@ -99,11 +107,15 @@ func TestPostgresImpersonation(t *testing.T) {
 		t.Skip("skipping Postgres integration tests")
 	}
 	requirePostgresVars(t)
-
-	proxyConnTest(t, []string{
+	// Prepare the initial arguments
+	args := []string{
 		"--impersonate-service-account", *impersonatedUser,
-		*postgresConnName},
-		"pgx", postgresDSN())
+		*postgresConnName,
+	}
+	// Add the IP type flag using the helper
+	args = AddIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "pgx", postgresDSN())
 }
 
 func TestPostgresAuthentication(t *testing.T) {
@@ -112,7 +124,10 @@ func TestPostgresAuthentication(t *testing.T) {
 	}
 	requirePostgresVars(t)
 
-	creds := keyfile(t)
+	var creds string
+	if *ipType == "public" {
+		creds = keyfile(t)
+	}
 	tok, path, cleanup := removeAuthEnvVar(t)
 	defer cleanup()
 
@@ -131,32 +146,42 @@ func TestPostgresAuthentication(t *testing.T) {
 				"--impersonate-service-account", *impersonatedUser,
 				*postgresConnName},
 		},
-		{
-			desc: "with credentials file",
-			args: []string{"--credentials-file", path, *postgresConnName},
-		},
-		{
-			desc: "with credentials file and impersonation",
-			args: []string{
-				"--credentials-file", path,
-				"--impersonate-service-account", *impersonatedUser,
-				*postgresConnName},
-		},
-		{
-			desc: "with credentials JSON",
-			args: []string{"--json-credentials", string(creds), *postgresConnName},
-		},
-		{
-			desc: "with credentials JSON and impersonation",
-			args: []string{
-				"--json-credentials", string(creds),
-				"--impersonate-service-account", *impersonatedUser,
-				*postgresConnName},
-		},
+	}
+	if *ipType == "public" {
+		additionalTcs := []struct {
+			desc string
+			args []string
+		}{
+			{
+				desc: "with credentials file",
+				args: []string{"--credentials-file", path, *postgresConnName},
+			},
+			{
+				desc: "with credentials file and impersonation",
+				args: []string{
+					"--credentials-file", path,
+					"--impersonate-service-account", *impersonatedUser,
+					*postgresConnName,
+				},
+			},
+			{
+				desc: "with credentials JSON",
+				args: []string{"--json-credentials", string(creds), *postgresConnName},
+			},
+			{
+				desc: "with credentials JSON and impersonation",
+				args: []string{
+					"--json-credentials", string(creds),
+					"--impersonate-service-account", *impersonatedUser,
+					*postgresConnName,
+				},
+			},
+		}
+		tcs = append(tcs, additionalTcs...)
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", postgresDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "pgx", postgresDSN())
 		})
 	}
 }
@@ -164,6 +189,9 @@ func TestPostgresAuthentication(t *testing.T) {
 func TestPostgresGcloudAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
+	}
+	if v := os.Getenv("IP_TYPE"); v == "private" || v == "psc" {
+		t.Skipf("skipping test because IP_TYPE is set to %v", v)
 	}
 	requirePostgresVars(t)
 
@@ -185,7 +213,7 @@ func TestPostgresGcloudAuth(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", postgresDSN())
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "pgx", postgresDSN())
 		})
 	}
 
@@ -231,7 +259,7 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", tc.dsn)
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "pgx", tc.dsn)
 		})
 	}
 }
@@ -272,7 +300,7 @@ func TestPostgresCustomerCAS(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			proxyConnTest(t, tc.args, "pgx", tc.dsn)
+			proxyConnTest(t, AddIPTypeFlag(tc.args), "pgx", tc.dsn)
 		})
 	}
 }
