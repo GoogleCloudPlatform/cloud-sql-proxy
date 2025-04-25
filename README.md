@@ -22,7 +22,7 @@ The Cloud SQL Auth Proxy has support for:
 - [Automatic IAM Authentication][iam-auth] (Postgres and MySQL only)
 - Metrics ([Cloud Monitoring][], [Cloud Trace][], and [Prometheus][])
 - [HTTP Healthchecks][health-check-example]
-- Service account impersonation
+- [Service account impersonation](#configuring-service-account-impersonation)
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
 - Configuration with [environment variables](#config-environment-variables)
 - Fully POSIX-compliant flags
@@ -342,6 +342,30 @@ query param:
 > #    C:\cloudsql\myproject.my-region.mysql
 > ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 > ```
+
+### Configuring Service Account Impersonation
+
+The Proxy supports [service account impersonation](https://cloud.google.com/iam/docs/impersonating-service-accounts).
+This allows the Proxy to act as a different service account, which can be useful
+for granting access to resources that are not accessible to the default service
+account.
+
+To use service account impersonation, you must have the
+`iam.serviceAccounts.getAccessToken` permission on the service account you want
+to impersonate. You can grant this permission by assigning the
+`roles/iam.serviceAccountTokenCreator` role to the principal running the Proxy.
+
+Note: The service account must have Cloud SQL Instance User, Service Usage Consumer and Cloud SQL Client permissions.
+
+To impersonate a service account, use the `--impersonate-service-account` flag:
+
+```shell
+# Starts a listener on localhost:5432 and impersonates the service account
+# "my-other-sa@my-project.iam.gserviceaccount.com".
+# The Proxy will use the credentials of the principal running the Proxy to
+# generate a short-lived access token for the impersonated service account.
+./cloud-sql-proxy --impersonate-service-account my-other-sa@my-project.iam.gserviceaccount.com <INSTANCE_CONNECTION_NAME>
+```
 
 ### Configuring IAM Database Authentication
 
