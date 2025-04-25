@@ -347,17 +347,18 @@ query param:
 
 The Proxy supports [service account impersonation](https://cloud.google.com/iam/docs/impersonating-service-accounts).
 This allows the Proxy to act as a different service account, which can be useful
-for granting access to resources that are not accessible to the default service
-account.
+for granting access to resources that are not accessible to the default IAM principal.
 
 To use service account impersonation, you must have the
-`iam.serviceAccounts.getAccessToken` permission on the service account you want
-to impersonate. You can grant this permission by assigning the
-`roles/iam.serviceAccountTokenCreator` role to the principal running the Proxy.
-
-Note: The service account must have Cloud SQL Instance User, Service Usage Consumer and Cloud SQL Client permissions.
+`iam.serviceAccounts.getAccessToken` permission on the IAM principal. You can grant this permission by assigning the
+`roles/iam.serviceAccountTokenCreator` role to the IAM principal.
 
 To impersonate a service account, use the `--impersonate-service-account` flag:
+
+> [!NOTE]: 
+>
+> The service account must have `Cloud SQL Instance User`, `Service Usage Consumer` and `Cloud SQL Client permissions`.
+> The `roles/iam.serviceAccountTokenCreator` role is not required on the impersonated service account but on the IAM principal impersonating the service account.
 
 ```shell
 # Starts a listener on localhost:5432 and impersonates the service account
