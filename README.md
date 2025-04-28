@@ -350,15 +350,15 @@ This allows the Proxy to act as a different service account, which can be useful
 for granting access to resources that are not accessible to the default IAM principal.
 
 To use service account impersonation, you must have the
-`iam.serviceAccounts.getAccessToken` permission on the IAM principal. You can grant this permission by assigning the
+`iam.serviceAccounts.getAccessToken` permission on the IAM principal impersonating another service account. You can grant this permission by assigning the
 `roles/iam.serviceAccountTokenCreator` role to the IAM principal.
 
 To impersonate a service account, use the `--impersonate-service-account` flag:
 
 > [!NOTE]: 
 >
-> The service account must have `Cloud SQL Instance User`, `Service Usage Consumer` and `Cloud SQL Client permissions`.
-> The `roles/iam.serviceAccountTokenCreator` role is not required on the impersonated service account but on the IAM principal impersonating the service account.
+> The impersonated service account must have the `Service Usage Consumer` and `Cloud SQL Client` permissions. Additionally, to use IAM Authenticated users, add the `Cloud SQL Instance User` permission.
+
 
 ```shell
 # Starts a listener on localhost:5432 and impersonates the service account
