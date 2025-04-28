@@ -218,7 +218,7 @@ Third Party Licenses
   To view all licenses for third party dependencies used within this
   distribution please see:
 
-  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.3/third_party/licenses.tar.gz 
+  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.16.0/third_party/licenses.tar.gz 
 
 
 ```
