@@ -343,30 +343,6 @@ query param:
 > ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 > ```
 
-### Configuring Service Account Impersonation
-
-The Proxy supports [service account impersonation](https://cloud.google.com/iam/docs/impersonating-service-accounts).
-This allows the Proxy to act as a different service account, which can be useful
-for granting access to resources that are not accessible to the default IAM principal.
-
-To use service account impersonation, you must have the
-`iam.serviceAccounts.getAccessToken` permission on the IAM principal impersonating another service account. You can grant this permission by assigning the
-`roles/iam.serviceAccountTokenCreator` role to the IAM principal.
-
-To impersonate a service account, use the `--impersonate-service-account` flag:
-
-> [!NOTE]: 
->
-> The impersonated service account must have the `Service Usage Consumer` and `Cloud SQL Client` permissions. Additionally, to use IAM Authenticated users, add the `Cloud SQL Instance User` permission.
-
-
-```shell
-# Starts a listener on localhost:5432 and impersonates the service account
-# "my-other-sa@my-project.iam.gserviceaccount.com".
-# The Proxy will use the credentials of the principal running the Proxy to
-# generate a short-lived access token for the impersonated service account.
-./cloud-sql-proxy --impersonate-service-account my-other-sa@my-project.iam.gserviceaccount.com <INSTANCE_CONNECTION_NAME>
-```
 
 ### Configuring IAM Database Authentication
 
@@ -405,6 +381,38 @@ and to [add your IAM principal as a database user][iam-auth-user].
 > the database user would be `test-user`.
 > * For a service account, this is the service account's email address without
 > the `@project-id.iam.gserviceaccount.com` suffix.
+
+
+### Configuring Service Account Impersonation
+
+The Proxy supports [service account impersonation](https://cloud.google.com/iam/docs/impersonating-service-accounts).
+This allows the Proxy to act as a different service account, which can be useful
+for granting access to resources that are not accessible to the default IAM 
+principal.
+
+To use service account impersonation, you must have the
+`iam.serviceAccounts.getAccessToken` permission on the IAM principal 
+impersonating another service account. You can grant this permission by assigning
+ the `roles/iam.serviceAccountTokenCreator` role to the IAM principal.
+
+To impersonate a service account, use the `--impersonate-service-account` flag:
+
+> [!NOTE]
+>
+> The impersonated service account must have the `Service Usage Consumer` and 
+`Cloud SQL Client` permissions.
+> Additionally, to use IAM Authenticated users, add the `Cloud SQL Instance User`
+ permission.
+
+
+```shell
+# Starts a listener on localhost:5432 and impersonates the service account
+# "my-other-sa@my-project.iam.gserviceaccount.com".
+# The Proxy will use the credentials of the principal running the Proxy to
+# generate a short-lived access token for the impersonated service account.
+./cloud-sql-proxy --impersonate-service-account \
+my-other-sa@my-project.iam.gserviceaccount.com <INSTANCE_CONNECTION_NAME>
+```
 
 ### Configuring DNS domain names to identify instances
 
