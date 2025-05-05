@@ -94,6 +94,8 @@ availableSecrets:
       env: "POSTGRES_CUSTOMER_CAS_DOMAIN_NAME"
     - versionName: "projects/$PROJECT_ID/secrets/POSTGRES_MCP_CONNECTION_NAME/versions/latest"
       env: "POSTGRES_MCP_CONNECTION_NAME"
+    - versionName: "projects/$PROJECT_ID/secrets/POSTGRES_MCP_PASS/versions/latest"
+      env: "POSTGRES_MCP_PASS"
     - versionName: "projects/$PROJECT_ID/secrets/SQLSERVER_CONNECTION_NAME/versions/latest"
       env: "SQLSERVER_CONNECTION_NAME"
     - versionName: "projects/$PROJECT_ID/secrets/SQLSERVER_USER/versions/latest"
