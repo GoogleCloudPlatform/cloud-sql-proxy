@@ -25,11 +25,13 @@ import (
 )
 
 var (
-	mysqlConnName = flag.String("mysql_conn_name", os.Getenv("MYSQL_CONNECTION_NAME"), "Cloud SQL MYSQL instance connection name, in the form of 'project:region:instance'.")
-	mysqlUser     = flag.String("mysql_user", os.Getenv("MYSQL_USER"), "Name of database user.")
-	mysqlPass     = flag.String("mysql_pass", os.Getenv("MYSQL_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
-	mysqlDB       = flag.String("mysql_db", os.Getenv("MYSQL_DB"), "Name of the database to connect to.")
-	ipType        = flag.String("ip_type", func() string {
+	mysqlConnName    = flag.String("mysql_conn_name", os.Getenv("MYSQL_CONNECTION_NAME"), "Cloud SQL MYSQL instance connection name, in the form of 'project:region:instance'.")
+	mysqlUser        = flag.String("mysql_user", os.Getenv("MYSQL_USER"), "Name of database user.")
+	mysqlPass        = flag.String("mysql_pass", os.Getenv("MYSQL_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
+	mysqlDB          = flag.String("mysql_db", os.Getenv("MYSQL_DB"), "Name of the database to connect to.")
+	mysqlMCPConnName = flag.String("mysql_mcp_conn_name", os.Getenv("MYSQL_MCP_CONNECTION_NAME"), "Cloud SQL MCP MYSQL instance connection name, in the form of 'project:region:instance'.")
+	mysqlMCPPass     = flag.String("mysql_mcp_pass", os.Getenv("MYSQL_MCP_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
+	ipType           = flag.String("ip_type", func() string {
 		if v := os.Getenv("IP_TYPE"); v != "" {
 			return v
 		}
@@ -47,6 +49,10 @@ func requireMySQLVars(t *testing.T) {
 		t.Fatal("'mysql_pass' not set")
 	case *mysqlDB:
 		t.Fatal("'mysql_db' not set")
+	case *mysqlMCPConnName:
+		t.Fatal("'mysql_mcp_conn_name' not set")
+	case *mysqlMCPPass:
+		t.Fatal("'mysql_mcp_pass' not set")
 	}
 }
 
@@ -107,6 +113,32 @@ func TestMySQLUnix(t *testing.T) {
 	}
 	// Prepare the initial arguments
 	args := []string{"--unix-socket", tmpDir, *mysqlConnName}
+	// Add the IP type flag using the helper
+	args = AddIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "mysql", cfg.FormatDSN())
+}
+
+func TestMySQLMCPUnix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping MySQL integration tests")
+	}
+	requireMySQLVars(t)
+	tmpDir, cleanup := createTempDir(t)
+	defer cleanup()
+
+	cfg := mysql.Config{
+		User:                 *mysqlUser,
+		Passwd:               *mysqlMCPPass,
+		DBName:               *mysqlDB,
+		AllowNativePasswords: true,
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		Addr: proxy.UnixAddress(tmpDir, *mysqlMCPConnName),
+		Net:  "unix",
+	}
+	// Prepare the initial arguments
+	args := []string{"--unix-socket", tmpDir, *mysqlMCPConnName}
 	// Add the IP type flag using the helper
 	args = AddIPTypeFlag(args)
 	// Run the test
