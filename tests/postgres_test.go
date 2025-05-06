@@ -32,6 +32,8 @@ var (
 	postgresPass                = flag.String("postgres_pass", os.Getenv("POSTGRES_PASS"), "Password for the database user; be careful when entering a password on the command line (it may go into your terminal's history).")
 	postgresDB                  = flag.String("postgres_db", os.Getenv("POSTGRES_DB"), "Name of the database to connect to.")
 	postgresIAMUser             = flag.String("postgres_user_iam", os.Getenv("POSTGRES_USER_IAM"), "Name of database user configured with IAM DB Authentication.")
+	postgresMCPConnName         = flag.String("postgres_mcp_conn_name", os.Getenv("POSTGRES_MCP_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name for a managed instance, in the form of 'project:region:instance'.")
+	postgresMCPPass             = flag.String("postgres_mcp_pass", os.Getenv("POSTGRES_MCP_PASS"), "Password for the managed instance database user; be careful when entering a password on the command line (it may go into your terminal's history).")
 	postgresCustomerCASConnName = flag.String("postgres_customer_cas_conn_name", os.Getenv("POSTGRES_CUSTOMER_CAS_CONNECTION_NAME"), "Cloud SQL Postgres instance connection name for a customer CAS enabled instance, in the form of 'project:region:instance'.")
 	postgresCustomerCASPass     = flag.String("postgres_customer_cas_pass", os.Getenv("POSTGRES_CUSTOMER_CAS_PASS"), "Password for the customer CAS instance database user; be careful when entering a password on the command line (it may go into your terminal's history).")
 	postgresCustomerCASDomain   = flag.String("postgres_customer_cas_domain", os.Getenv("POSTGRES_CUSTOMER_CAS_DOMAIN_NAME"), "Valid DNS domain name for the customer CAS instance.")
@@ -84,6 +86,28 @@ func TestPostgresUnix(t *testing.T) {
 
 	// Prepare the initial arguments
 	args := []string{"--unix-socket", tmpDir, *postgresConnName}
+	// Add the IP type flag using the helper
+	args = AddIPTypeFlag(args)
+	// Run the test
+	proxyConnTest(t, args, "pgx", dsn)
+}
+
+func TestPostgresMCPUnix(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	requirePostgresVars(t)
+	tmpDir, cleanup := createTempDir(t)
+	defer cleanup()
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
+		// re-use utility function to determine the Unix address in a
+		// Windows-friendly way.
+		proxy.UnixAddress(tmpDir, *postgresMCPConnName),
+		*postgresUser, *postgresMCPPass, *postgresDB)
+
+	// Prepare the initial arguments
+	args := []string{"--unix-socket", tmpDir, *postgresMCPConnName}
 	// Add the IP type flag using the helper
 	args = AddIPTypeFlag(args)
 	// Run the test
