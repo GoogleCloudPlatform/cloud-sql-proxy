@@ -25,13 +25,6 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
 )
 
-const (
-	googLvlKey    = "severity"
-	googMsgKey    = "message"
-	googSourceKey = "sourceLocation"
-	googTimeKey   = "timestamp"
-)
-
 // StdLogger is the standard logger that distinguishes between info and error
 // logs.
 type StdLogger struct {
@@ -110,22 +103,21 @@ func NewStructuredLogger(quiet bool) cloudsql.Logger {
 // replaceAttr remaps default Go logging keys to adhere to LogEntry format
 // https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
 func replaceAttr(groups []string, a slog.Attr) slog.Attr {
-	if groups == nil {
-		if a.Key == slog.LevelKey {
-			a.Key = googLvlKey
-			return a
-		} else if a.Key == slog.MessageKey {
-			a.Key = googMsgKey
-			return a
-		} else if a.Key == slog.SourceKey {
-			a.Key = googSourceKey
-			return a
-		} else if a.Key == slog.TimeKey {
-			a.Key = googTimeKey
-			if a.Value.Kind() == slog.KindTime {
-				a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
-			}
-			return a
+	if groups != nil {
+		return a
+	}
+
+	switch a.Key {
+	case slog.LevelKey:
+		a.Key = "severity"
+	case slog.MessageKey:
+		a.Key = "message"
+	case slog.SourceKey:
+		a.Key = "sourceLocation"
+	case slog.TimeKey:
+		a.Key = "timestamp"
+		if a.Value.Kind() == slog.KindTime {
+			a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
 		}
 	}
 	return a
