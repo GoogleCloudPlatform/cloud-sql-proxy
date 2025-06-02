@@ -22,6 +22,7 @@ require (
 	google.golang.org/api v0.233.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
+replace cloud.google.com/go/cloudsqlconn => /Users/hessjc/projects/cloudsql/jj-go-connector
 
 require (
 	cloud.google.com/go/auth v0.16.1 // indirect

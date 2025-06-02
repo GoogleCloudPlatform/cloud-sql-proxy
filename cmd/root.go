@@ -296,6 +296,13 @@ Debug logging
 
       ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME> --debug-logs
 
+Always Send Metadata
+
+  The proxy can send metadata about the type of connection to the instance on
+  connection. This is especially important for MySQL 8.4:
+
+      ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME> --always-send-metadata
+
 Waiting for Startup
 
   See the wait subcommand's help for details.
@@ -526,6 +533,8 @@ CPU may be throttled and a background refresh cannot run reliably
 	localFlags.BoolVar(&c.conf.RunConnectionTest, "run-connection-test", false, `Runs a connection test
 against all specified instances. If an instance is unreachable, the Proxy exits with a failure
 status code.`)
+	localFlags.BoolVar(&c.conf.SendMetadata, "always-send-metadata", false,
+		`Always send connection metadata to the service on connect.`)
 
 	// Global and per instance flags
 	localFlags.StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",

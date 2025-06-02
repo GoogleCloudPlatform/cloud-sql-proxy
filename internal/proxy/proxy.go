@@ -267,6 +267,10 @@ type Config struct {
 	// RunConnectionTest determines whether the Proxy should attempt a connection
 	// to all specified instances to verify the network path is valid.
 	RunConnectionTest bool
+
+	// SendMetadata determines whether the Proxy should send a metadata request
+	// to the server
+	SendMetadata bool
 }
 
 // dialOptions interprets appropriate dial options for a particular instance
@@ -291,6 +295,16 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 		opts = append(opts, cloudsqlconn.WithAutoIP())
 	default:
 		// assume public IP by default
+	}
+
+	// TODO: Read this from the ConnectSettings response instead of using the
+	// configuration flag.
+	if c.SendMetadata {
+		if c.UnixSocket != "" {
+			opts = append(opts, cloudsqlconn.WithMdxClientProtcol(cloudsqlconn.MdxClientProtocol_UDS))
+		} else {
+			opts = append(opts, cloudsqlconn.WithMdxClientProtcol(cloudsqlconn.MdxClientProtocol_TCP))
+		}
 	}
 
 	return opts

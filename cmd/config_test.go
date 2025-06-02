@@ -125,6 +125,16 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 				assert(t, false, c.conf.Debug)
 			},
 		},
+		{
+			desc: "send metadata enabled",
+			args: []string{
+				"proj:region:inst",
+				"--always-send-metadata",
+			},
+			assert: func(t *testing.T, c *Command) {
+				assert(t, true, c.conf.SendMetadata)
+			},
+		},
 	}
 
 	for _, tc := range tcs {
