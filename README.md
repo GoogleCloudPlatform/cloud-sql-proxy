@@ -61,7 +61,7 @@ following instructions for your OS and CPU architecture.
 
 > [!NOTE]
 >
-> Starting with version `v2.17.0`, Windows binaries provided on the
+> Starting with version `v2.17.1`, Windows binaries provided on the
 > [releases page][releases] are signed with Google LLC certificates.
 
 <!-- {x-release-please-start-version} -->
