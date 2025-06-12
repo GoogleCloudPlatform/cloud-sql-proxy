@@ -59,6 +59,11 @@ The [v1 README][v1 readme] is still available.
 Check for the latest version on the [releases page][releases] and use the
 following instructions for your OS and CPU architecture.
 
+> [!NOTE]
+>
+> Starting with version `v2.17.1`, Windows binaries provided on the
+> [releases page][releases] are signed with Google LLC certificates.
+
 <!-- {x-release-please-start-version} -->
 <details open>
 <summary>Linux amd64</summary>
