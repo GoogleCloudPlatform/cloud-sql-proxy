@@ -267,6 +267,10 @@ type Config struct {
 	// RunConnectionTest determines whether the Proxy should attempt a connection
 	// to all specified instances to verify the network path is valid.
 	RunConnectionTest bool
+
+	// IgnoreFailedConnections determines whether the Proxy should ignore failed
+	// connections to Cloud SQL instances instead of exiting on startup.
+	IgnoreFailedConnections bool
 }
 
 // dialOptions interprets appropriate dial options for a particular instance
@@ -546,6 +550,11 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	for _, inst := range conf.Instances {
 		m, err := c.newSocketMount(ctx, conf, pc, inst)
 		if err != nil {
+			if conf.IgnoreFailedConnections {
+				l.Errorf("[%v] Unable to mount socket: %v (ignoring due to ignore-failed-connections flag)", inst.Name, err)
+				continue
+			}
+
 			for _, m := range mnts {
 				mErr := m.Close()
 				if mErr != nil {
