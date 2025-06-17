@@ -268,9 +268,9 @@ type Config struct {
 	// to all specified instances to verify the network path is valid.
 	RunConnectionTest bool
 
-	// IgnoreFailedConnections determines whether the Proxy should ignore failed
+	// SkipFailedInstanceConfig determines whether the Proxy should ignore failed
 	// connections to Cloud SQL instances instead of exiting on startup.
-	IgnoreFailedConnections bool
+	SkipFailedInstanceConfig bool
 }
 
 // dialOptions interprets appropriate dial options for a particular instance
@@ -550,8 +550,8 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	for _, inst := range conf.Instances {
 		m, err := c.newSocketMount(ctx, conf, pc, inst)
 		if err != nil {
-			if conf.IgnoreFailedConnections {
-				l.Errorf("[%v] Unable to mount socket: %v (ignoring due to ignore-failed-connections flag)", inst.Name, err)
+			if conf.SkipFailedInstanceConfig {
+				l.Errorf("[%v] Unable to mount socket: %v (skipped due to skip-failed-instance-config flag)", inst.Name, err)
 				continue
 			}
 

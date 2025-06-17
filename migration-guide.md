@@ -144,29 +144,29 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 - ❌: Not supported in V2
 - 🤔: Unplanned, but has open feature request
 
-| v1                          | v2                    | Notes                                                                                |
-| --------------------------- | --------------------- | ------------------------------------------------------------------------------------ |
-| check_region                | ❌                    |                                                                                      |
-| credential_file             | credentials-file      |                                                                                      |
-| dir                         | unix-socket           |                                                                                      |
-| enable_iam_login            | auto-iam-authn        |                                                                                      |
-| fd_rlimit                   | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258) |
-| fuse                        | fuse                  |                                                                                      |
-| fuse_tmp                    | fuse-temp-dir         |                                                                                      |
-| health_check_port           | http-port             |  Use --http-address=0.0.0.0 when using a health check in Kubernetes                  |
-| host                        | sqladmin-api-endpoint |                                                                                      |
-| instances_metadata          | 🤔                    | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259) |
-| ip_address_types            | private-ip            | Defaults to public. To connect to a private IP, you must add the --private-ip flag   |
-| log_debug_stdout            | ❌                    | v2 logs to stdout, errors to stderr by default                                       |
-| max_connections             | max-connections       |                                                                                      |
-| projects                    | ❌                    | v2 prefers explicit connection configuration to avoid user error                     |
-| quiet                       | quiet                 | quiet disables all logging except errors                                             |
-| quota_project               | quota-project         |                                                                                      |
-| refresh_config_throttle     | ❌                    |                                                                                      |
-| skip_failed_instance_config | ❌                    | This flag was only necessary with Unix sockets. Use TCP sockets to avoid failed startup. |
-| structured_logs             | structured-logs       |                                                                                      |
-| term_timeout                | max-sigterm-delay     |                                                                                      |
-| token                       | token                 |                                                                                      |
-| use_http_health_check       | health-check          |                                                                                      |
-| verbose                     | ❌                    |                                                                                      |
-| version                     | version               |                                                                                      |
+| v1                          | v2                          | Notes                                                                                |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------------------------ |
+| check_region                | ❌                          |                                                                                      |
+| credential_file             | credentials-file            |                                                                                      |
+| dir                         | unix-socket                 |                                                                                      |
+| enable_iam_login            | auto-iam-authn              |                                                                                      |
+| fd_rlimit                   | 🤔                          | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1258) |
+| fuse                        | fuse                        |                                                                                      |
+| fuse_tmp                    | fuse-temp-dir               |                                                                                      |
+| health_check_port           | http-port                   |  Use --http-address=0.0.0.0 when using a health check in Kubernetes                  |
+| host                        | sqladmin-api-endpoint       |                                                                                      |
+| instances_metadata          | 🤔                          | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259) |
+| ip_address_types            | private-ip                  | Defaults to public. To connect to a private IP, you must add the --private-ip flag   |
+| log_debug_stdout            | ❌                          | v2 logs to stdout, errors to stderr by default                                       |
+| max_connections             | max-connections             |                                                                                      |
+| projects                    | ❌                          | v2 prefers explicit connection configuration to avoid user error                     |
+| quiet                       | quiet                       | quiet disables all logging except errors                                             |
+| quota_project               | quota-project               |                                                                                      |
+| refresh_config_throttle     | ❌                          |                                                                                      |
+| skip_failed_instance_config | skip-failed-instance-config |                                                                                      |
+| structured_logs             | structured-logs             |                                                                                      |
+| term_timeout                | max-sigterm-delay           |                                                                                      |
+| token                       | token                       |                                                                                      |
+| use_http_health_check       | health-check                |                                                                                      |
+| verbose                     | ❌                          |                                                                                      |
+| version                     | version                     |                                                                                      |
