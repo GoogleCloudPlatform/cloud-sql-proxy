@@ -268,8 +268,9 @@ type Config struct {
 	// to all specified instances to verify the network path is valid.
 	RunConnectionTest bool
 
-	// SkipFailedInstanceConfig determines whether the Proxy should ignore failed
+	// SkipFailedInstanceConfig determines whether the Proxy should skip failed
 	// connections to Cloud SQL instances instead of exiting on startup.
+	// This only applies to Unix sockets.
 	SkipFailedInstanceConfig bool
 }
 

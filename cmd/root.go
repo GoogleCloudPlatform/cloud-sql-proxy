@@ -528,7 +528,7 @@ against all specified instances. If an instance is unreachable, the Proxy exits 
 status code.`)
 
 	localFlags.BoolVar(&c.conf.SkipFailedInstanceConfig, "skip-failed-instance-config", false,
-		`If set, the Proxy will skip any instances that are unreachable (
+		`If set, the Proxy will skip any instances that are invalid/unreachable (
 only applicable to Unix sockets)`)
 
 	// Global and per instance flags
