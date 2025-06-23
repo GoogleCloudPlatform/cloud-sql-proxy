@@ -277,6 +277,8 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
       --run-connection-test                  Runs a connection test
                                              against all specified instances. If an instance is unreachable, the Proxy exits with a failure
                                              status code.
+      --skip-failed-instance-config          If set, the Proxy will skip any instances that are invalid/unreachable (
+                                             only applicable to Unix sockets)
       --sqladmin-api-endpoint string         API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)
   -l, --structured-logs                      Enable structured logging with LogEntry format
       --telemetry-prefix string              Prefix for Cloud Monitoring metrics.

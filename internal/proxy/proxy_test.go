@@ -310,6 +310,20 @@ func TestClientInitialization(t *testing.T) {
 			},
 		},
 		{
+			desc: "with Unix socket and two instances, one invalid but skipped",
+			in: &proxy.Config{
+				UnixSocket: testDir,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: pg},
+					{Name: "proj:region:fakeserver"},
+				},
+				SkipFailedInstanceConfig: true,
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testDir, pg, ".s.PGSQL.5432"),
+			},
+		},
+		{
 			desc: "with TCP port for non functional instance",
 			in: &proxy.Config{
 				Instances: []proxy.InstanceConnConfig{

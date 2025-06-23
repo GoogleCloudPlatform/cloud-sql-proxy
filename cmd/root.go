@@ -527,6 +527,10 @@ CPU may be throttled and a background refresh cannot run reliably
 against all specified instances. If an instance is unreachable, the Proxy exits with a failure
 status code.`)
 
+	localFlags.BoolVar(&c.conf.SkipFailedInstanceConfig, "skip-failed-instance-config", false,
+		`If set, the Proxy will skip any instances that are invalid/unreachable (
+only applicable to Unix sockets)`)
+
 	// Global and per instance flags
 	localFlags.StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
 		"(*) Address to bind Cloud SQL instance listeners.")
