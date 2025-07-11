@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.17.1...v2.18.0) (2025-07-11)
+
+
+### Features
+
+* add --skip-failed-instance-config flag, to ignore unix socket connection errors on startup ([#2452](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2452)) ([05b0d60](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/05b0d6067c178fdcd70267ccc2cd78614a292d5b)), closes [#2451](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2451)
+
 ## [2.17.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.17.0...v2.17.1) (2025-06-11)
 
 
