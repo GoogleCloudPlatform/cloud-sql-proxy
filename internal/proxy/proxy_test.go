@@ -52,18 +52,6 @@ func (f *fakeDialer) dialAttempts() int {
 	return f.dialCount
 }
 
-func (f *fakeDialer) engineVersionAttempts() int {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return f.engineVersionCount
-}
-
-func (f *fakeDialer) dialedInstances() []string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	return append([]string{}, f.instances...)
-}
-
 func (f *fakeDialer) Dial(_ context.Context, inst string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
