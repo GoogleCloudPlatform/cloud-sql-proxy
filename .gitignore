@@ -4,9 +4,11 @@
 # IDEs
 .idea/
 .vscode/
+*.iml
 
 /cloud-sql-proxy
 /cloud-sql-proxy.exe
 
 /key.json
 /logs/
+.tools
