@@ -206,6 +206,8 @@ function write_e2e_env(){
     exit 1
   fi
 
+  local_user=$(gcloud auth list --format 'value(account)' | tr -d '\n')
+
   echo "Getting test secrets from $TEST_PROJECT into $1"
   {
   for env_name in "${secret_vars[@]}" ; do
@@ -215,6 +217,10 @@ function write_e2e_env(){
     val=$(gcloud secrets versions access latest --project "$TEST_PROJECT" --secret="$secret_name")
     echo "export $env_var_name='$val'"
   done
+
+  # Set IAM User env vars to the local gcloud user
+  echo "export MYSQL_IAM_USER='${local_user%%@*}'"
+  echo "export POSTGRES_USER_IAM='$local_user'"
   } > "$1"
 
 }
