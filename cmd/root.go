@@ -579,7 +579,7 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 
 	// Handle logger separately from config
 	if c.conf.StructuredLogs {
-		c.logger, c.cleanup = log.NewStructuredLogger(c.conf.Quiet)
+		c.logger = log.NewStructuredLogger(c.conf.Quiet)
 	}
 
 	if c.conf.Quiet {
