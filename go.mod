@@ -3,7 +3,7 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 go 1.24
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.17.3
+	cloud.google.com/go/cloudsqlconn v1.18.0
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/coreos/go-systemd/v22 v22.5.0
@@ -19,7 +19,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sys v0.35.0
-	google.golang.org/api v0.246.0
+	google.golang.org/api v0.247.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
@@ -81,7 +81,7 @@ require (
 	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/genproto v0.0.0-20250811160224-6b04f9b4fc78 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250811160224-6b04f9b4fc78 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250811160224-6b04f9b4fc78 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250811230008-5f3141c8851a // indirect
 	google.golang.org/grpc v1.74.2 // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
