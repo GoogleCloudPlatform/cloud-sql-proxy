@@ -34,7 +34,7 @@ func SupportsFUSE() error {
 	if _, err := os.Stat(macfusePath); err != nil {
 		// if that fails, check for osxfuse next
 		if _, err := os.Stat(osxfusePath); err != nil {
-			return errors.New("failed to find osxfuse or macfuse: verify FUSE installation and try again (see https://osxfuse.github.io).")
+			return errors.New("failed to find osxfuse or macfuse: verify FUSE installation and try again (see https://osxfuse.github.io)")
 		}
 	}
 	return nil

@@ -46,6 +46,6 @@ func main() {
 
 	cloudSQLProxy := cmd.NewCommand()
 	cloudSQLProxy.Execute()
-	cloudSQLProxy.Command.DisableAutoGenTag = true
+	cloudSQLProxy.DisableAutoGenTag = true
 	doc.GenMarkdownTree(cloudSQLProxy.Command, outDir)
 }
