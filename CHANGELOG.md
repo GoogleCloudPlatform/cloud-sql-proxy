@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.1...v2.18.2) (2025-08-27)
+
+
+### Bug Fixes
+
+* Update go connector dependency to 1.18.1 to include high priority fix for DNS name configurations. ([#2487](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2487)) ([91efc78](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/91efc78a63866df44b56707684650a86856a0dd9))
+
 ## [2.18.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.0...v2.18.1) (2025-08-14)
 
 
