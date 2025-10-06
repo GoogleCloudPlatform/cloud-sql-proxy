@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Use the latest stable golang 1.x to compile to a binary
-FROM --platform=$BUILDPLATFORM golang:1 as build
+FROM --platform=$BUILDPLATFORM golang:1-alpine as build
 
 WORKDIR /go/src/cloud-sql-proxy
 COPY . .
@@ -23,18 +23,20 @@ ARG TARGETARCH
 
 RUN go get ./...
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container.bullseye"
+    go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container.alpine"
 
 # Final stage
-FROM gcr.io/cloud-marketplace-containers/google/debian11@sha256:196a55bd60c6e7fd35b262fc5ccc6aa1b88491851112f4b07e63d2e79b411386
+FROM alpine:3@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
 
 LABEL org.opencontainers.image.source="https://github.com/GoogleCloudPlatform/cloud-sql-proxy"
 
-RUN apt-get update && apt-get install -y ca-certificates
+RUN apk add --no-cache \
+    ca-certificates \
+    libc6-compat
 # Install fuse and allow enable non-root users to mount
-RUN apt-get update && apt-get install -y fuse && sed -i 's/^#user_allow_other$/user_allow_other/g' /etc/fuse.conf
+RUN apk add --no-cache fuse && sed -i 's/^#user_allow_other$/user_allow_other/g' /etc/fuse.conf
 # Add a non-root user matching the nonroot user from the main container
-RUN groupadd -g 65532 -r nonroot && useradd -u 65532 -g 65532 -r nonroot
+RUN addgroup -g 65532 -S nonroot && adduser -u 65532 -S nonroot -G nonroot
 # Set the uid as an integer for compatibility with runAsNonRoot in Kubernetes
 USER 65532
 
