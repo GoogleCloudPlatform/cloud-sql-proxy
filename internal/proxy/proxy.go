@@ -106,6 +106,10 @@ type InstanceConnConfig struct {
 	// PSC tells the proxy to attempt to connect to the db instance's
 	// private service connect endpoint
 	PSC *bool
+
+	// OverrideIP specifies an IP address to connect to instead of using
+	// the IP address from the SQL Admin API
+	OverrideIP *string
 }
 
 // Config contains all the configuration provided by the caller.
@@ -193,6 +197,10 @@ type Config struct {
 	// setting should be avoided and used only to support legacy Proxy
 	// users.
 	AutoIP bool
+
+	// OverrideIP specifies an IP address to connect to instead of using
+	// the IP address from the SQL Admin API. This applies to all instances.
+	OverrideIP string
 
 	// LazyRefresh configures the Go Connector to retrieve connection info
 	// lazily and as-needed. Otherwise, no background refresh cycle runs. This
@@ -283,19 +291,47 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*i.IAMAuthN))
 	}
 
-	switch {
-	// If private IP is enabled at the instance level, or private IP is enabled globally
-	// add the option.
-	case i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP:
-		opts = append(opts, cloudsqlconn.WithPrivateIP())
-	// If PSC is enabled at the instance level, or PSC is enabled globally
-	// add the option.
-	case i.PSC != nil && *i.PSC || i.PSC == nil && c.PSC:
-		opts = append(opts, cloudsqlconn.WithPSC())
-	case c.AutoIP:
-		opts = append(opts, cloudsqlconn.WithAutoIP())
-	default:
-		// assume public IP by default
+	// If override IP is set at instance or global level, use a custom dial function
+	var overrideIP string
+	if i.OverrideIP != nil && *i.OverrideIP != "" {
+		overrideIP = *i.OverrideIP
+	} else if c.OverrideIP != "" {
+		overrideIP = c.OverrideIP
+	}
+
+	if overrideIP != "" {
+		// Use WithOneOffDialFunc to redirect connections to the override IP
+		opts = append(opts, cloudsqlconn.WithOneOffDialFunc(func(ctx context.Context, network, addr string) (net.Conn, error) {
+			// Parse the original address to extract the port
+			_, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse address %q: %w", addr, err)
+			}
+			// Create new address with override IP and original port
+			newAddr := net.JoinHostPort(overrideIP, port)
+			// Use standard net.Dial to connect to the override IP
+			var d net.Dialer
+			return d.DialContext(ctx, network, newAddr)
+		}))
+		// Still need to select an IP type for certificate verification purposes
+		// Default to public IP when using override
+		opts = append(opts, cloudsqlconn.WithPublicIP())
+	} else {
+		// Normal IP selection logic when no override is specified
+		switch {
+		// If private IP is enabled at the instance level, or private IP is enabled globally
+		// add the option.
+		case i.PrivateIP != nil && *i.PrivateIP || i.PrivateIP == nil && c.PrivateIP:
+			opts = append(opts, cloudsqlconn.WithPrivateIP())
+		// If PSC is enabled at the instance level, or PSC is enabled globally
+		// add the option.
+		case i.PSC != nil && *i.PSC || i.PSC == nil && c.PSC:
+			opts = append(opts, cloudsqlconn.WithPSC())
+		case c.AutoIP:
+			opts = append(opts, cloudsqlconn.WithAutoIP())
+		default:
+			// assume public IP by default
+		}
 	}
 
 	return opts

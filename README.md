@@ -308,10 +308,32 @@ private IP, use:
 ```
 
 > [!IMPORTANT]
-> 
+>
 > The Proxy does not configure the network. You MUST ensure the Proxy can
 > reach your Cloud SQL instance, either by deploying it in a VPC that has access
 > to your Private IP instance, or by configuring Public IP.
+
+### Overriding the Instance IP Address
+
+In advanced scenarios, you can override the IP address that the Proxy connects to:
+
+```shell
+# Connects to the specified IP address instead of the IP from the SQL Admin API
+./cloud-sql-proxy --override-ip 10.0.0.50 <INSTANCE_CONNECTION_NAME>
+```
+
+To override the IP on a per-instance basis, use the `override-ip` query param:
+
+```shell
+# Overrides IP for one specific instance
+./cloud-sql-proxy 'myproject:my-region:myinstance?override-ip=10.0.0.50'
+```
+
+> [!NOTE]
+>
+> The `--override-ip` flag cannot be used with `--private-ip`, `--psc`, or `--auto-ip`.
+> This option is for advanced use cases where you need to connect to a specific IP address
+> that differs from the IPs returned by the Cloud SQL Admin API.
 
 ### Configuring Unix domain sockets
 

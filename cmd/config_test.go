@@ -91,6 +91,14 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 			},
 		},
 		{
+			desc:  "override-ip in config file",
+			args:  []string{"--config-file", "testdata/config-override-ip.toml"},
+			setup: func() {},
+			assert: func(t *testing.T, c *Command) {
+				assert(t, "10.0.0.1", c.conf.OverrideIP)
+			},
+		},
+		{
 			desc: "flag overrides env config precedence",
 			args: []string{"proj:region:inst", "--debug"},
 			setup: func() {
