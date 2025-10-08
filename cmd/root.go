@@ -544,6 +544,8 @@ only applicable to Unix sockets)`)
 		"(*) Connect to the private ip address for all instances")
 	localFlags.BoolVar(&c.conf.PSC, "psc", false,
 		"(*) Connect to the PSC endpoint for all instances")
+	localFlags.StringVar(&c.conf.OverrideIP, "override-ip", "",
+		"(*) Override the IP address to connect to for all instances")
 
 	return c
 }
@@ -750,6 +752,23 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 		return newBadCommandError("cannot specify --private-ip and --auto-ip together")
 	}
 
+	// Validate override-ip if set
+	if conf.OverrideIP != "" {
+		if ip := net.ParseIP(conf.OverrideIP); ip == nil {
+			return newBadCommandError(fmt.Sprintf("--override-ip is not a valid IP address: %q", conf.OverrideIP))
+		}
+		// override-ip cannot be used with other IP selection flags
+		if userHasSetLocal(cmd, "private-ip") {
+			return newBadCommandError("cannot specify --override-ip and --private-ip together")
+		}
+		if userHasSetLocal(cmd, "psc") {
+			return newBadCommandError("cannot specify --override-ip and --psc together")
+		}
+		if userHasSetLocal(cmd, "auto-ip") {
+			return newBadCommandError("cannot specify --override-ip and --auto-ip together")
+		}
+	}
+
 	// If more than one IP type is set, error.
 	if conf.PrivateIP && conf.PSC {
 		return newBadCommandError("cannot specify --private-ip and --psc flags at the same time")
@@ -922,6 +941,27 @@ and re-try with just --auto-iam-authn`)
 
 			if ic.PrivateIP != nil && ic.PSC != nil {
 				return newBadCommandError("cannot specify both private-ip and psc query params")
+			}
+
+			// Parse override-ip query parameter
+			if overrideIP, ok := q["override-ip"]; ok {
+				if len(overrideIP) != 1 {
+					return newBadCommandError(fmt.Sprintf("override-ip query param should be only one value: %q", overrideIP))
+				}
+				if ip := net.ParseIP(overrideIP[0]); ip == nil {
+					return newBadCommandError(fmt.Sprintf("override-ip query param is not a valid IP address: %q", overrideIP[0]))
+				}
+				ic.OverrideIP = &overrideIP[0]
+			}
+
+			// Validate that override-ip is not used with other IP selection options
+			if ic.OverrideIP != nil {
+				if ic.PrivateIP != nil {
+					return newBadCommandError("cannot specify both override-ip and private-ip query params")
+				}
+				if ic.PSC != nil {
+					return newBadCommandError("cannot specify both override-ip and psc query params")
+				}
 			}
 
 		}

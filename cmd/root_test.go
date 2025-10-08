@@ -381,6 +381,32 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the override-ip flag",
+			args: []string{"--override-ip", "10.0.0.1", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				OverrideIP: "10.0.0.1",
+			}),
+		},
+		{
+			desc: "using the override-ip query param",
+			args: []string{"proj:region:inst?override-ip=10.0.0.1"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					OverrideIP: pointer("10.0.0.1"),
+				}},
+			}),
+		},
+		{
+			desc: "using the override-ip flag with query param override",
+			args: []string{"--override-ip", "10.0.0.1", "proj:region:inst?override-ip=10.0.0.2"},
+			want: withDefaults(&proxy.Config{
+				OverrideIP: "10.0.0.1",
+				Instances: []proxy.InstanceConnConfig{{
+					OverrideIP: pointer("10.0.0.2"),
+				}},
+			}),
+		},
+		{
 			desc: "using the psc flag",
 			args: []string{"--psc", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -678,6 +704,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			}),
 		},
 		{
+			desc:     "using the override-ip envvar",
+			envName:  "CSQL_PROXY_OVERRIDE_IP",
+			envValue: "10.0.0.1",
+			want: withDefaults(&proxy.Config{
+				OverrideIP: "10.0.0.1",
+			}),
+		},
+		{
 			desc:     "using the private-ip envvar",
 			envName:  "CSQL_PROXY_PRIVATE_IP",
 			envValue: "true",
@@ -960,6 +994,49 @@ func TestPrivateIPQueryParams(t *testing.T) {
 	}
 }
 
+func TestOverrideIPQueryParams(t *testing.T) {
+	tcs := []struct {
+		desc string
+		args []string
+		want *string
+	}{
+		{
+			desc: "when the query string is absent",
+			args: []string{"proj:region:inst"},
+			want: nil,
+		},
+		{
+			desc: "when the query string has valid IPv4",
+			args: []string{"proj:region:inst?override-ip=10.0.0.1"},
+			want: pointer("10.0.0.1"),
+		},
+		{
+			desc: "when the query string has valid IPv6",
+			args: []string{"proj:region:inst?override-ip=2001:db8::1"},
+			want: pointer("2001:db8::1"),
+		},
+		{
+			desc: "when the query string has private IP",
+			args: []string{"proj:region:inst?override-ip=192.168.1.100"},
+			want: pointer("192.168.1.100"),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			c, err := invokeProxyCommand(tc.args)
+			if err != nil {
+				t.Fatalf("command.Execute: %v", err)
+			}
+			if tc.want == nil && c.conf.Instances[0].OverrideIP == nil {
+				return
+			}
+			if got := c.conf.Instances[0].OverrideIP; *got != *tc.want {
+				t.Errorf("args = %v, want = %v, got = %v", tc.args, *tc.want, *got)
+			}
+		})
+	}
+}
+
 func TestPSCQueryParams(t *testing.T) {
 	tcs := []struct {
 		desc string
@@ -1202,6 +1279,53 @@ func TestNewCommandWithErrors(t *testing.T) {
 				"--private-ip", "--psc",
 				"p:r:i",
 			},
+		},
+		{
+			desc: "using --override-ip with invalid IP address",
+			args: []string{
+				"--override-ip", "invalid-ip",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using override-ip query param with invalid IP address",
+			args: []string{"p:r:i?override-ip=not-an-ip"},
+		},
+		{
+			desc: "using --override-ip with --private-ip",
+			args: []string{
+				"--override-ip", "10.0.0.1",
+				"--private-ip",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using --override-ip with --psc",
+			args: []string{
+				"--override-ip", "10.0.0.1",
+				"--psc",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using --override-ip with --auto-ip",
+			args: []string{
+				"--override-ip", "10.0.0.1",
+				"--auto-ip",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using override-ip and private-ip query params",
+			args: []string{"p:r:i?override-ip=10.0.0.1&private-ip=true"},
+		},
+		{
+			desc: "using override-ip and psc query params",
+			args: []string{"p:r:i?override-ip=10.0.0.1&psc=true"},
+		},
+		{
+			desc: "when the override-ip query param contains multiple values",
+			args: []string{"p:r:i?override-ip=10.0.0.1&override-ip=10.0.0.2"},
 		},
 		{
 			desc: "run-connection-test with fuse",
