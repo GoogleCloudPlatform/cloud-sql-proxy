@@ -2,6 +2,14 @@
 
 [![CI][ci-badge]][ci-build]
 
+> [!WARNING]
+> **Go versions 1.25.2 and 1.24.8 are NOT compatible with Cloud Auth Proxy.**
+>
+> An update to the Go version 1.25.2 and Go 1.24.8 breaks SAN verificaton. This is because Cloud SQL includes a trailing dot in the DNS name within the certificate's Subject Alternative Name (SAN), which the above Go versions reject as a malformed DNS name.
+>
+> For more details, please see the related Go issue: [crypto/x509: quadratic complexity when checking name constraints ](https://github.com/golang/go/issues/75715).
+
+
 > [!IMPORTANT]
 >
 > The Cloud SQL Auth Proxy does not currently support Unix domain socket
