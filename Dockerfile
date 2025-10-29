@@ -26,7 +26,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container"
 
 # Final Stage
-FROM gcr.io/distroless/static:nonroot@sha256:e8a4044e0b4ae4257efa45fc026c0bc30ad320d43bd4c1a7d5271bd241e386d0
+FROM gcr.io/distroless/static:nonroot@sha256:127eb3c971acb50a3c7b511a978bb497b56add4c91225e57605b3b43cc0a9662
 
 LABEL org.opencontainers.image.source="https://github.com/GoogleCloudPlatform/cloud-sql-proxy"
 
