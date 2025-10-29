@@ -297,6 +297,11 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	default:
 		// assume public IP by default
 	}
+	if networkType(&c, i) == "unix" {
+		opts = append(opts, cloudsqlconn.WithMdxClientProtocolType("uds"))
+	} else {
+		opts = append(opts, cloudsqlconn.WithMdxClientProtocolType("tcp"))
+	}
 
 	return opts
 }
