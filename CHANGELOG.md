@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.19.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.3...v2.19.0) (2025-10-29)
+
+
+### Features
+
+* Add MySQL caching_sha2_password support for the proxy clients using unix sockets. ([#2489](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2489)) ([6ff8753](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/6ff8753f486e65afcd08ffea9b41be82c7d507f5)), closes [#2317](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2317)
+
 ## [2.18.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.2...v2.18.3) (2025-10-23)
 
 
