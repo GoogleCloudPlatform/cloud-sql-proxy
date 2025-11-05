@@ -427,13 +427,26 @@ To impersonate a service account, use the `--impersonate-service-account` flag:
 my-other-sa@my-project.iam.gserviceaccount.com <INSTANCE_CONNECTION_NAME>
 ```
 
-### Configuring DNS domain names to identify instances
+### Using Advanced Disaster Recovery and DNS domain names to identify instances
 
-The Proxy can be configured to use DNS to look up an instance. This would
-allow you to configure your application to connect to a database instance, and
-centrally configure which instance in your DNS zone.
+The proxy can be configured to use DNS to look up an instance.
+Use a DNS name managed by Cloud SQL [Advanced Disaster Recovery](https://docs.cloud.google.com/sql/docs/mysql/use-advanced-disaster-recovery),
+or a domain name that you manage.
 
-#### Configuring DNS Records
+#### Using Advanced Recovery Write Endpoint DNS Name
+
+[Advanced Disaster Recovery](https://docs.cloud.google.com/sql/docs/mysql/use-advanced-disaster-recovery)
+creates geographically distributed replicas of your Cloud SQL database instance. When you perform
+switchover or failover on the database instance, the proxy will gracefully disconnect from the
+old primary instance and reconnect to the new primary instance.
+
+Follow the instructions in [Connect using Write Endpoint](https://docs.cloud.google.com/sql/docs/mysql/connect-to-instance-using-write-endpoint)
+to get the write endpoint DNS name for your primary instance. Then, use this write endpoint DNS
+name to configure the proxy.
+
+#### Configure your DNS Records
+
+The proxy may be configured to use DNS that you define as well.
 
 Add a DNS TXT record for the Cloud SQL instance to a **private** DNS server
 or a private Google Cloud DNS Zone used by your application.
