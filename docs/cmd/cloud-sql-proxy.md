@@ -294,5 +294,6 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
 ### SEE ALSO
 
 * [cloud-sql-proxy completion](cloud-sql-proxy_completion.md)	 - Generate the autocompletion script for the specified shell
+* [cloud-sql-proxy shutdown](cloud-sql-proxy_shutdown.md)	 - Signal a running Proxy process to shut down
 * [cloud-sql-proxy wait](cloud-sql-proxy_wait.md)	 - Wait for another Proxy process to start
 
