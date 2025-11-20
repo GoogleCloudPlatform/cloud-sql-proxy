@@ -112,15 +112,13 @@ spec:
         - name: CSQL_PROXY_STRUCTURED_LOGS
           value: "true"
 
-        # Configure kubernetes to call the /quitquitquit endpoint on the
-        # admin server before sending SIGTERM to the proxy before stopping
-        # the pod. This will give the proxy more time to gracefully exit.
+        # Configure kubernetes to call run the cloud-sql-proxy shutdown command
+        # before sending SIGTERM to the proxy when stopping the pod. This will
+        # give the proxy more time to gracefully exit.
         lifecycle:
           preStop:
-            httpGet:
-              path: /quitquitquit
-              port: 9092
-              scheme: HTTP
+            exec:
+              command: ["/cloud-sql-proxy","shutdown", "--admin-port","9192"]
 
         # The /startup probe returns OK when the proxy is ready to receive
         # connections from the application. In this example, k8s will check

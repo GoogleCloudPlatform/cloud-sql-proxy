@@ -33,12 +33,12 @@ function clean() {
 
 ## build - Builds the project without running tests.
 function build() {
-   go build ./...
+   go build -o ./cloud-sql-proxy main.go
 }
 
 ## test - Runs local unit tests.
 function test() {
-  go test -v -race -cover -short
+  go test -v -race -cover -short ./...
 }
 
 ## e2e - Runs end-to-end integration tests.
@@ -83,6 +83,9 @@ function fix() {
   ".tools/goimports" -w .
   go mod tidy
   go fmt ./...
+
+  # Generate CMD docs
+  go run ./cmd/gendocs/gen_cloud-sql-proxy_docs.go
 }
 
 ## lint - runs the linters
