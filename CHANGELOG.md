@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.19.0...v2.20.0) (2025-11-20)
+
+
+### Features
+
+* Add shutdown command to call the /quitquitquit endpoint. ([#2514](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2514)) ([f6747f9](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f6747f93af92d235b449851599d1ef31642cfa11)), closes [#2511](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2511)
+
 ## [2.19.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.3...v2.19.0) (2025-10-29)
 
 
