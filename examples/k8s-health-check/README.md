@@ -43,7 +43,7 @@ startupProbe:
    # the pod only after the proxy has successfully started.
    httpGet:
       path: /startup
-      port: 9090
+      port: 9801
    periodSeconds: 1
    timeoutSeconds: 5
    failureThreshold: 20
