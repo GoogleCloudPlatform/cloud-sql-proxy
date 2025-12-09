@@ -218,7 +218,7 @@ Third Party Licenses
   To view all licenses for third party dependencies used within this
   distribution please see:
 
-  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2/third_party/licenses.tar.gz 
+  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0/third_party/licenses.tar.gz 
 
 
 ```
@@ -277,6 +277,8 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
       --run-connection-test                  Runs a connection test
                                              against all specified instances. If an instance is unreachable, the Proxy exits with a failure
                                              status code.
+      --skip-failed-instance-config          If set, the Proxy will skip any instances that are invalid/unreachable (
+                                             only applicable to Unix sockets)
       --sqladmin-api-endpoint string         API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)
   -l, --structured-logs                      Enable structured logging with LogEntry format
       --telemetry-prefix string              Prefix for Cloud Monitoring metrics.
@@ -292,5 +294,6 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
 ### SEE ALSO
 
 * [cloud-sql-proxy completion](cloud-sql-proxy_completion.md)	 - Generate the autocompletion script for the specified shell
+* [cloud-sql-proxy shutdown](cloud-sql-proxy_shutdown.md)	 - Signal a running Proxy process to shut down
 * [cloud-sql-proxy wait](cloud-sql-proxy_wait.md)	 - Wait for another Proxy process to start
 

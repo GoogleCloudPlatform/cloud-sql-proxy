@@ -57,11 +57,10 @@ func (f *fakeDialer) engineVersionAttempts() int {
 	defer f.mu.Unlock()
 	return f.engineVersionCount
 }
-
 func (f *fakeDialer) dialedInstances() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return append([]string{}, f.instances...)
+	return f.instances
 }
 
 func (f *fakeDialer) Dial(_ context.Context, inst string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
@@ -307,6 +306,20 @@ func TestClientInitialization(t *testing.T) {
 			},
 			wantUnixAddrs: []string{
 				filepath.Join(testUnixSocketPathPg),
+			},
+		},
+		{
+			desc: "with Unix socket and two instances, one invalid but skipped",
+			in: &proxy.Config{
+				UnixSocket: testDir,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: pg},
+					{Name: "proj:region:fakeserver"},
+				},
+				SkipFailedInstanceConfig: true,
+			},
+			wantUnixAddrs: []string{
+				filepath.Join(testDir, pg, ".s.PGSQL.5432"),
 			},
 		},
 		{

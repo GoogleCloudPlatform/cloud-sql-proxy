@@ -12,47 +12,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # .golangci.yml
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-    # From https://golangci-lint.run/usage/linters/
-    # This is a minor deviation from the default linters
-    - goimports
-    - gosimple
     - govet
     - ineffassign
     - revive
     - staticcheck
     - unused
-issues:
-  exclude-use-default: false
-linters-settings:
-  revive:
-    rules:
-      # From https://revive.run/docs#recommended-configuration
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-      - name: empty-block
-      - name: errorf
-      - name: error-naming
-      - name: error-return
-      - name: error-strings
-      - name: exported
-      - name: if-return
-      - name: import-shadowing
-      - name: increment-decrement
-      - name: indent-error-flow
-      - name: range
-      - name: range-val-address
-      - name: range-val-in-closure
-      - name: receiver-naming
-      - name: redefines-builtin-id
-      - name: superfluous-else
-      - name: time-naming
-      - name: unexported-return
-      - name: unreachable-code
-      - name: unused-parameter
-      - name: var-declaration
-      - name: var-naming
+  settings:
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: errorf
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: exported
+        - name: if-return
+        - name: import-shadowing
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: range
+        - name: range-val-address
+        - name: range-val-in-closure
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: var-declaration
+        - name: var-naming
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

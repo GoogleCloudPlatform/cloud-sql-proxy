@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build !windows && !openbsd && !freebsd
-// +build !windows,!openbsd,!freebsd
 
 package proxy
 

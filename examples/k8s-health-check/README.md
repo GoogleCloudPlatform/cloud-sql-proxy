@@ -43,7 +43,7 @@ startupProbe:
    # the pod only after the proxy has successfully started.
    httpGet:
       path: /startup
-      port: 9090
+      port: 9801
    periodSeconds: 1
    timeoutSeconds: 5
    failureThreshold: 20
@@ -172,7 +172,7 @@ for more than 1 minute.
     initContainers:
     - name: cloud-sql-proxy
       restartPolicy: Always
-      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.19.0
       args:
         # Set the --max-connections flag to 50
         - "--max-connections"

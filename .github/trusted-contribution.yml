@@ -1,4 +1,4 @@
-# Copyright 2021 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-assign_issues:
-  - hessjcg
-  - kgala2
+# Trigger presubmit tests for trusted contributors
+# https://github.com/googleapis/repo-automation-bots/tree/main/packages/trusted-contribution
+# Install: https://github.com/apps/trusted-contributions-gcf
 
-assign_prs:
-  - hessjcg
-  - kgala2
+trustedContributors:
+  - "dependabot[bot]"
+  - "renovate-bot"
+  - "renovate[bot]"
+  - "forking-renovate[bot]"
+  - "release-please[bot]"
+annotations:
+  # Trigger Cloud Build tests
+  - type: comment
+    text: "/gcbrun"

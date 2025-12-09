@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build !windows && !darwin
-// +build !windows,!darwin
 
 package proxy_test
 

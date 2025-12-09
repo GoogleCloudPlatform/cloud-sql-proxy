@@ -307,7 +307,7 @@ Third Party Licenses
   To view all licenses for third party dependencies used within this
   distribution please see:
 
-  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2/third_party/licenses.tar.gz {x-release-please-version}
+  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0/third_party/licenses.tar.gz {x-release-please-version}
 `
 
 var waitHelp = `
@@ -349,8 +349,33 @@ Configuration
   ./cloud-sql-proxy wait --max 10s
 `
 
+var shutdownHelp = `
+Shutting Down the Proxy
+
+  The shutdown command signals a running Proxy process to gracefully shut
+  down. This is useful for scripting and for Kubernetes environments.
+
+  The shutdown command requires that the Proxy be started in another process
+  with the admin server enabled. For example:
+
+  ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME> --quitquitquit
+
+  Invoke the shutdown command like this:
+
+  # signals another Proxy process to shut down
+  ./cloud-sql-proxy shutdown
+
+Configuration
+
+  If the running Proxy is configured with a non-default admin port, the
+  shutdown command must also be told to use the same custom value:
+
+  ./cloud-sql-proxy shutdown --admin-port 9192
+`
+
 const (
 	waitMaxFlag     = "max"
+	adminPortFlag   = "admin-port"
 	httpAddressFlag = "http-address"
 	httpPortFlag    = "http-port"
 )
@@ -382,6 +407,29 @@ func runWaitCmd(c *cobra.Command, _ []string) error {
 			return nil
 		}
 	}
+}
+
+func runShutdownCmd(c *cobra.Command, _ []string) error {
+	p, _ := c.Flags().GetString(adminPortFlag)
+	addr := fmt.Sprintf("http://127.0.0.1:%v/quitquitquit", p)
+	c.SilenceUsage = true
+
+	req, err := http.NewRequestWithContext(c.Context(), "POST", addr, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create shutdown request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send shutdown request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("shutdown request failed: status code %v, %v", resp.StatusCode, resp.Status)
+	}
+
+	return nil
 }
 
 const envPrefix = "CSQL_PROXY"
@@ -418,6 +466,20 @@ func NewCommand(opts ...Option) *Command {
 		"maximum amount of time to wait for startup",
 	)
 	rootCmd.AddCommand(waitCmd)
+
+	var shutdownCmd = &cobra.Command{
+		Use:   "shutdown",
+		Short: "Signal a running Proxy process to shut down",
+		Long:  shutdownHelp,
+		RunE:  runShutdownCmd,
+	}
+	shutdownFlags := shutdownCmd.Flags()
+	shutdownFlags.String(
+		adminPortFlag,
+		"9091",
+		"port for the admin server",
+	)
+	rootCmd.AddCommand(shutdownCmd)
 
 	rootCmd.Args = func(_ *cobra.Command, args []string) error {
 		// Load the configuration file before running the command. This should
@@ -490,7 +552,7 @@ the Proxy will then pick-up automatically.`)
 		"Enable pprof on the localhost admin server")
 	localFlags.BoolVar(&c.conf.QuitQuitQuit, "quitquitquit", false,
 		"Enable quitquitquit endpoint on the localhost admin server")
-	localFlags.StringVar(&c.conf.AdminPort, "admin-port", "9091",
+	localFlags.StringVar(&c.conf.AdminPort, adminPortFlag, "9091",
 		"Port for localhost-only admin server")
 	localFlags.BoolVar(&c.conf.HealthCheck, "health-check", false,
 		"Enables health check endpoints /startup, /liveness, and /readiness on localhost.")
@@ -526,6 +588,10 @@ CPU may be throttled and a background refresh cannot run reliably
 	localFlags.BoolVar(&c.conf.RunConnectionTest, "run-connection-test", false, `Runs a connection test
 against all specified instances. If an instance is unreachable, the Proxy exits with a failure
 status code.`)
+
+	localFlags.BoolVar(&c.conf.SkipFailedInstanceConfig, "skip-failed-instance-config", false,
+		`If set, the Proxy will skip any instances that are invalid/unreachable (
+only applicable to Unix sockets)`)
 
 	// Global and per instance flags
 	localFlags.StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
@@ -575,7 +641,7 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 
 	// Handle logger separately from config
 	if c.conf.StructuredLogs {
-		c.logger, c.cleanup = log.NewStructuredLogger(c.conf.Quiet)
+		c.logger = log.NewStructuredLogger(c.conf.Quiet)
 	}
 
 	if c.conf.Quiet {

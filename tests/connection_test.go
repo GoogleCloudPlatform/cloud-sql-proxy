@@ -43,6 +43,9 @@ func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
 	if err != nil {
 		t.Errorf("failed to get token: %v", err)
 	}
+	if *ipType != "public" {
+		return tok, "", func() {}
+	}
 	path, ok := os.LookupEnv("GOOGLE_APPLICATION_CREDENTIALS")
 	if !ok {
 		t.Fatalf("GOOGLE_APPLICATION_CREDENTIALS was not set in the environment")

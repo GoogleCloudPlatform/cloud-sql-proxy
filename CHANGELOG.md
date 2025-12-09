@@ -1,5 +1,74 @@
 # Changelog
 
+## [2.19.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.3...v2.19.0) (2025-10-29)
+
+
+### Features
+
+* Add MySQL caching_sha2_password support for the proxy clients using unix sockets. ([#2489](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2489)) ([6ff8753](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/6ff8753f486e65afcd08ffea9b41be82c7d507f5)), closes [#2317](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2317)
+
+## [2.18.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.2...v2.18.3) (2025-10-23)
+
+
+### Bug Fixes
+
+* bump dependencies to latest ([#2499](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2499)) ([c5fb6ee](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/c5fb6ee1079956c546d2da74c1fe2dfade3ac969))
+
+## [2.18.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.1...v2.18.2) (2025-08-27)
+
+
+### Bug Fixes
+
+* Update go connector dependency to 1.18.1 to include high priority fix for DNS name configurations. ([#2487](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2487)) ([91efc78](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/91efc78a63866df44b56707684650a86856a0dd9))
+
+## [2.18.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.18.0...v2.18.1) (2025-08-14)
+
+
+### Bug Fixes
+
+* bump dependencies to latest ([#2482](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2482)) ([1fc458c](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1fc458c1e309442efa03cdb824c73f37505aa464))
+
+## [2.18.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.17.1...v2.18.0) (2025-07-11)
+
+
+### Features
+
+* add --skip-failed-instance-config flag, to ignore unix socket connection errors on startup ([#2452](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2452)) ([05b0d60](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/05b0d6067c178fdcd70267ccc2cd78614a292d5b)), closes [#2451](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2451)
+
+## [2.17.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.17.0...v2.17.1) (2025-06-11)
+
+
+### Bug Fixes
+
+* Fix the release artifacts job. ([#2461](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2461)) ([929b09e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/929b09e9be30b0995e105c0cc5f4448357f6490d))
+
+## [2.17.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.16.0...v2.17.0) (2025-06-11)
+
+
+### Bug Fixes
+
+* bump dependencies to latest ([#2455](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2455)) ([5035280](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/50352807af4a97797780894dd4fa16607f291582))
+
+
+### Miscellaneous Chores
+
+* release 2.17.0 ([#2459](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2459)) ([a78d853](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/a78d853b5ede5305e19a838ef7948c67d9f77083))
+
+## [2.16.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.15.3...v2.16.0) (2025-04-28)
+
+### Features:
+
+* Update TLS validation to use both SAN and CN fields, from Go Connector v1.17.0 ([#979](https://github.com/GoogleCloudPlatform/cloud-sql-go-connector/issues/979)) ([df60a20](https://github.com/GoogleCloudPlatform/cloud-sql-go-connector/commit/df60a2061dbfd78ce30a87319be8d8e027957d86))
+
+
+## [2.15.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.15.2...v2.15.3) (2025-04-16)
+
+
+
+### Bug Fixes
+
+* bump dependencies to latest ([#2429](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2429)) ([0b1c5f4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/0b1c5f498f6e1bd8bbb7439030072b09fdb1aacb))
+
 ## [2.15.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.15.1...v2.15.2) (2025-03-20)
 
 

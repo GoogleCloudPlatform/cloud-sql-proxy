@@ -267,6 +267,11 @@ type Config struct {
 	// RunConnectionTest determines whether the Proxy should attempt a connection
 	// to all specified instances to verify the network path is valid.
 	RunConnectionTest bool
+
+	// SkipFailedInstanceConfig determines whether the Proxy should skip failed
+	// connections to Cloud SQL instances instead of exiting on startup.
+	// This only applies to Unix sockets.
+	SkipFailedInstanceConfig bool
 }
 
 // dialOptions interprets appropriate dial options for a particular instance
@@ -291,6 +296,11 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 		opts = append(opts, cloudsqlconn.WithAutoIP())
 	default:
 		// assume public IP by default
+	}
+	if networkType(&c, i) == "unix" {
+		opts = append(opts, cloudsqlconn.WithMdxClientProtocolType("uds"))
+	} else {
+		opts = append(opts, cloudsqlconn.WithMdxClientProtocolType("tcp"))
 	}
 
 	return opts
@@ -546,6 +556,11 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	for _, inst := range conf.Instances {
 		m, err := c.newSocketMount(ctx, conf, pc, inst)
 		if err != nil {
+			if conf.SkipFailedInstanceConfig {
+				l.Errorf("[%v] Unable to mount socket: %v (skipped due to skip-failed-instance-config flag)", inst.Name, err)
+				continue
+			}
+
 			for _, m := range mnts {
 				mErr := m.Close()
 				if mErr != nil {

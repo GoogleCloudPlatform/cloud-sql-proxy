@@ -2,6 +2,14 @@
 
 [![CI][ci-badge]][ci-build]
 
+> [!WARNING]
+> **Go versions 1.25.2 and 1.24.8 are NOT compatible with Cloud Auth Proxy.**
+>
+> An update to the Go version 1.25.2 and Go 1.24.8 breaks SAN verificaton. This is because Cloud SQL includes a trailing dot in the DNS name within the certificate's Subject Alternative Name (SAN), which the above Go versions reject as a malformed DNS name.
+>
+> For more details, please see the related Go issue: [crypto/x509: quadratic complexity when checking name constraints ](https://github.com/golang/go/issues/75715).
+
+
 > [!IMPORTANT]
 >
 > The Cloud SQL Auth Proxy does not currently support Unix domain socket
@@ -22,7 +30,7 @@ The Cloud SQL Auth Proxy has support for:
 - [Automatic IAM Authentication][iam-auth] (Postgres and MySQL only)
 - Metrics ([Cloud Monitoring][], [Cloud Trace][], and [Prometheus][])
 - [HTTP Healthchecks][health-check-example]
-- Service account impersonation
+- [Service account impersonation](#configuring-service-account-impersonation)
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
 - Configuration with [environment variables](#config-environment-variables)
 - Fully POSIX-compliant flags
@@ -59,13 +67,18 @@ The [v1 README][v1 readme] is still available.
 Check for the latest version on the [releases page][releases] and use the
 following instructions for your OS and CPU architecture.
 
+> [!NOTE]
+>
+> Starting with version `v2.17.1`, Windows binaries provided on the
+> [releases page][releases] are signed with Google LLC certificates.
+
 <!-- {x-release-please-start-version} -->
 <details open>
 <summary>Linux amd64</summary>
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0"
 
 curl "$URL/cloud-sql-proxy.linux.amd64" -o cloud-sql-proxy
 
@@ -79,7 +92,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0"
 
 curl "$URL/cloud-sql-proxy.linux.386" -o cloud-sql-proxy
 
@@ -93,7 +106,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0"
 
 curl "$URL/cloud-sql-proxy.linux.arm64" -o cloud-sql-proxy
 
@@ -107,7 +120,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0"
 
 curl "$URL/cloud-sql-proxy.linux.arm" -o cloud-sql-proxy
 
@@ -121,7 +134,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0"
 
 curl "$URL/cloud-sql-proxy.darwin.amd64" -o cloud-sql-proxy
 
@@ -135,7 +148,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0"
 
 curl "$URL/cloud-sql-proxy.darwin.arm64" -o cloud-sql-proxy
 
@@ -149,7 +162,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -159,7 +172,7 @@ curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.2/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.19.0/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -343,6 +356,7 @@ query param:
 > ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 > ```
 
+
 ### Configuring IAM Database Authentication
 
 The Proxy supports [Automatic IAM Database Authentication][iam-auth] for MySQL
@@ -381,13 +395,58 @@ and to [add your IAM principal as a database user][iam-auth-user].
 > * For a service account, this is the service account's email address without
 > the `@project-id.iam.gserviceaccount.com` suffix.
 
-### Configuring DNS domain names to identify instances
 
-The Proxy can be configured to use DNS to look up an instance. This would
-allow you to configure your application to connect to a database instance, and
-centrally configure which instance in your DNS zone.
+### Configuring Service Account Impersonation
 
-#### Configuring DNS Records
+The Proxy supports [service account impersonation](https://cloud.google.com/iam/docs/impersonating-service-accounts).
+This allows the Proxy to act as a different service account, which can be useful
+for granting access to resources that are not accessible to the default IAM 
+principal.
+
+To use service account impersonation, you must have the
+`iam.serviceAccounts.getAccessToken` permission on the IAM principal 
+impersonating another service account. You can grant this permission by assigning
+ the `roles/iam.serviceAccountTokenCreator` role to the IAM principal.
+
+To impersonate a service account, use the `--impersonate-service-account` flag:
+
+> [!NOTE]
+>
+> The impersonated service account must have the `Service Usage Consumer` and 
+`Cloud SQL Client` permissions.
+> Additionally, to use IAM Authenticated users, add the `Cloud SQL Instance User`
+ permission.
+
+
+```shell
+# Starts a listener on localhost:5432 and impersonates the service account
+# "my-other-sa@my-project.iam.gserviceaccount.com".
+# The Proxy will use the credentials of the principal running the Proxy to
+# generate a short-lived access token for the impersonated service account.
+./cloud-sql-proxy --impersonate-service-account \
+my-other-sa@my-project.iam.gserviceaccount.com <INSTANCE_CONNECTION_NAME>
+```
+
+### Using Advanced Disaster Recovery and DNS domain names to identify instances
+
+The proxy can be configured to use DNS to look up an instance.
+Use a DNS name managed by Cloud SQL [Advanced Disaster Recovery](https://docs.cloud.google.com/sql/docs/mysql/use-advanced-disaster-recovery),
+or a domain name that you manage.
+
+#### Using Advanced Recovery Write Endpoint DNS Name
+
+[Advanced Disaster Recovery](https://docs.cloud.google.com/sql/docs/mysql/use-advanced-disaster-recovery)
+creates geographically distributed replicas of your Cloud SQL database instance. When you perform
+switchover or failover on the database instance, the proxy will gracefully disconnect from the
+old primary instance and reconnect to the new primary instance.
+
+Follow the instructions in [Connect using Write Endpoint](https://docs.cloud.google.com/sql/docs/mysql/connect-to-instance-using-write-endpoint)
+to get the write endpoint DNS name for your primary instance. Then, use this write endpoint DNS
+name to configure the proxy.
+
+#### Configure your DNS Records
+
+The proxy may be configured to use DNS that you define as well.
 
 Add a DNS TXT record for the Cloud SQL instance to a **private** DNS server
 or a private Google Cloud DNS Zone used by your application.
@@ -538,13 +597,13 @@ currently supported:
 
 <!-- {x-release-please-start-version} -->
 The `$VERSION` is the Proxy version without the leading "v" (e.g.,
-`2.15.2`).
+`2.19.0`).
 
 For example, to pull a particular version, use a command like:
 
 ``` shell
-# $VERSION is 2.15.2
-docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2
+# $VERSION is 2.19.0
+docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.19.0
 ```
 
 <!-- {x-release-please-end} -->
