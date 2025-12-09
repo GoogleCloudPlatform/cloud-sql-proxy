@@ -15,9 +15,12 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
 	"github.com/spf13/cobra/doc"
@@ -48,4 +51,40 @@ func main() {
 	cloudSQLProxy.Execute()
 	cloudSQLProxy.DisableAutoGenTag = true
 	doc.GenMarkdownTree(cloudSQLProxy.Command, outDir)
+
+	// Edit the Markdown file to add release-please tags around the lines that contain
+	// the version number:
+	//
+	// <!-- {x-release-please-start-version} -->
+	// https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0/third_party/licenses.tar.gz
+	// <!-- {x-release-please-end} -->
+
+	f := filepath.Join(outDir, "cloud-sql-proxy.md")
+	b, err := os.ReadFile(f)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read file: %v\n", err)
+		os.Exit(1)
+	}
+
+	var out bytes.Buffer
+	sc := bufio.NewScanner(bytes.NewReader(b))
+	// Example: https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0/third_party/licenses.tar.gz
+	re := regexp.MustCompile(`https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v\d+\.\d+\.\d+/`)
+	for sc.Scan() {
+		line := sc.Bytes()
+		if re.Match(line) {
+			out.WriteString("<!-- {x-release-please-start-version} -->\n")
+			out.Write(line)
+			out.WriteString("\n")
+			out.WriteString("<!-- {x-release-please-end} -->\n")
+		} else {
+			out.Write(line)
+			out.WriteString("\n")
+		}
+	}
+
+	if err := os.WriteFile(f, out.Bytes(), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to write file: %v\n", err)
+		os.Exit(1)
+	}
 }
