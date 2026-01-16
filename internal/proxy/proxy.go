@@ -336,10 +336,10 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 			))
 		case c.CredentialsFile != "":
 			l.Infof("Impersonating service account with the credentials file at %q", c.CredentialsFile)
-			iopts = append(iopts, option.WithCredentialsFile(c.CredentialsFile))
+			iopts = append(iopts, option.WithAuthCredentialsFile(option.ServiceAccount, c.CredentialsFile))
 		case c.CredentialsJSON != "":
 			l.Infof("Impersonating service account with JSON credentials environment variable")
-			iopts = append(iopts, option.WithCredentialsJSON([]byte(c.CredentialsJSON)))
+			iopts = append(iopts, option.WithAuthCredentialsJSON(option.ServiceAccount, []byte(c.CredentialsJSON)))
 		case c.GcloudAuth:
 			l.Infof("Impersonating service account with gcloud user credentials")
 			ts, err := gcloud.TokenSource()
