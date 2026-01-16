@@ -78,7 +78,7 @@ following instructions for your OS and CPU architecture.
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.0"
 
 curl "$URL/cloud-sql-proxy.linux.amd64" -o cloud-sql-proxy
 
@@ -92,7 +92,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.0"
 
 curl "$URL/cloud-sql-proxy.linux.386" -o cloud-sql-proxy
 
@@ -106,7 +106,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.0"
 
 curl "$URL/cloud-sql-proxy.linux.arm64" -o cloud-sql-proxy
 
@@ -120,7 +120,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.0"
 
 curl "$URL/cloud-sql-proxy.linux.arm" -o cloud-sql-proxy
 
@@ -134,7 +134,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.0"
 
 curl "$URL/cloud-sql-proxy.darwin.amd64" -o cloud-sql-proxy
 
@@ -148,7 +148,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0"
+URL="https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.0"
 
 curl "$URL/cloud-sql-proxy.darwin.arm64" -o cloud-sql-proxy
 
@@ -162,7 +162,7 @@ chmod +x cloud-sql-proxy
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.0/cloud-sql-proxy.x64.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -172,7 +172,7 @@ curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0
 
 ```sh
 # see Releases for other versions
-curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.20.0/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
+curl https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.21.0/cloud-sql-proxy.x86.exe -o cloud-sql-proxy.exe
 ```
 
 </details>
@@ -597,13 +597,13 @@ currently supported:
 
 <!-- {x-release-please-start-version} -->
 The `$VERSION` is the Proxy version without the leading "v" (e.g.,
-`2.20.0`).
+`2.21.0`).
 
 For example, to pull a particular version, use a command like:
 
 ``` shell
-# $VERSION is 2.20.0
-docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.20.0
+# $VERSION is 2.21.0
+docker pull gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.21.0
 ```
 
 <!-- {x-release-please-end} -->
