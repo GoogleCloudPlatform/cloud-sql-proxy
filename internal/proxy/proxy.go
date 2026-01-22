@@ -363,7 +363,20 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		var iamAuthNEnabled bool
 		if c.IAMAuthN {
+			iamAuthNEnabled = true
+		} else {
+			for _, ic := range c.Instances {
+				if ic.IAMAuthN != nil && *ic.IAMAuthN {
+					iamAuthNEnabled = true
+					break
+				}
+			}
+		}
+
+		if iamAuthNEnabled {
 			iamLoginTS, err := impersonate.CredentialsTokenSource(
 				context.Background(),
 				impersonate.CredentialsConfig{
