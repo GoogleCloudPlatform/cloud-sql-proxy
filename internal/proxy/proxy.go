@@ -323,6 +323,20 @@ func parseImpersonationChain(chain string) (string, []string) {
 
 const iamLoginScope = "https://www.googleapis.com/auth/sqlservice.login"
 
+// iamAuthNEnabled returns true if IAM authentication is enabled globally
+// or for any instance in the configuration.
+func (c *Config) iamAuthNEnabled() bool {
+	if c.IAMAuthN {
+		return true
+	}
+	for _, inst := range c.Instances {
+		if inst.IAMAuthN != nil && *inst.IAMAuthN {
+			return true
+		}
+	}
+	return false
+}
+
 func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 	// If service account impersonation is configured, set up an impersonated
 	// credentials token source.
@@ -364,19 +378,7 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 			return nil, err
 		}
 
-		var iamAuthNEnabled bool
-		if c.IAMAuthN {
-			iamAuthNEnabled = true
-		} else {
-			for _, ic := range c.Instances {
-				if ic.IAMAuthN != nil && *ic.IAMAuthN {
-					iamAuthNEnabled = true
-					break
-				}
-			}
-		}
-
-		if iamAuthNEnabled {
+		if c.iamAuthNEnabled() {
 			iamLoginTS, err := impersonate.CredentialsTokenSource(
 				context.Background(),
 				impersonate.CredentialsConfig{
@@ -452,7 +454,7 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 		opts = append(opts, cloudsqlconn.WithUniverseDomain(c.UniverseDomain))
 	}
 
-	if c.IAMAuthN {
+	if c.iamAuthNEnabled() {
 		opts = append(opts, cloudsqlconn.WithIAMAuthN())
 	}
 
