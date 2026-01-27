@@ -280,6 +280,14 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 			dsn: fmt.Sprintf("host=localhost user=%s database=%s sslmode=disable",
 				impersonatedIAMUser, *postgresDB),
 		},
+		{
+			desc: "using impersonation with query param",
+			args: []string{
+				"--impersonate-service-account", *impersonatedUser,
+				fmt.Sprintf("%s?auto-iam-authn=true", *postgresConnName)},
+			dsn: fmt.Sprintf("host=localhost user=%s password=password database=%s sslmode=disable",
+				impersonatedIAMUser, *postgresDB),
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
