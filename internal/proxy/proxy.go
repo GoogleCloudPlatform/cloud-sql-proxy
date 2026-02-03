@@ -342,6 +342,9 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 	// credentials token source.
 	if c.ImpersonationChain != "" {
 		var iopts []option.ClientOption
+		if c.UniverseDomain != "" {
+			iopts = append(iopts, option.WithUniverseDomain(c.UniverseDomain))
+		}
 		switch {
 		case c.Token != "":
 			l.Infof("Impersonating service account with OAuth2 token")
