@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.21.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.21.0...v2.21.1) (2026-02-05)
+
+
+### Bug Fixes
+
+* Correctly set the credentials token source and the WithIAMAuthN opt ([#2544](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2544)) ([5b14b6a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/5b14b6af0226758b04555394b6bf08c15efbdcdf)), closes [#2542](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2542)
+* Set the universe domain when using an impersonation chain. ([#2547](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2547)) ([db8644c](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/db8644c1ceeb598f89104892305b06d13c08d1a3))
+
 ## [2.21.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.20.0...v2.21.0) (2026-01-16)
 
 
