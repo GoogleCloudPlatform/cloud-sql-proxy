@@ -231,6 +231,48 @@ function write_e2e_env(){
 
 }
 
+## build_image - Builds and pushes the proxy container image using local source.
+## Usage: ./build.sh build_image [image-url]
+function build_image() {
+  local image_url="${1:-}"
+  local push_arg=""
+
+  if [[ -n "$image_url" ]]; then
+    push_arg="--push"
+    echo "Preparing to build and push proxy image: $image_url"
+  else
+    echo "Preparing to build proxy image (no push)..."
+    push_arg="--load"
+    image_url="cloud-sql-proxy:local"
+  fi
+
+  function cleanup_build() {
+      rm -f cloud-sql-proxy Dockerfile.local
+  }
+  trap cleanup_build EXIT
+
+  echo "Building binary locally..."
+  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container" -o cloud-sql-proxy
+
+  echo "Creating temporary Dockerfile..."
+  cat > Dockerfile.local <<EOF
+FROM gcr.io/distroless/static:nonroot
+COPY cloud-sql-proxy /cloud-sql-proxy
+USER 65532
+ENTRYPOINT ["/cloud-sql-proxy"]
+EOF
+
+  echo "Building Docker image..."
+  docker buildx build \
+    --platform "linux/amd64" \
+    -f Dockerfile.local \
+    -t "$image_url" \
+    $push_arg \
+    .
+  
+  echo "Done."
+}
+
 ## help - prints the help details
 ##
 function help() {
