@@ -52,12 +52,12 @@ func (f *fakeDialer) dialAttempts() int {
 	return f.dialCount
 }
 
-func (f *fakeDialer) engineVersionAttempts() int {
+func (f *fakeDialer) engineVersionAttempts() int { //nolint:unused
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.engineVersionCount
 }
-func (f *fakeDialer) dialedInstances() []string {
+func (f *fakeDialer) dialedInstances() []string { //nolint:unused
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.instances
