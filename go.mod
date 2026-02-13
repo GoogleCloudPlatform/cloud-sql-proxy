@@ -2,7 +2,7 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 
 go 1.24.11
 
-toolchain go1.24.13
+toolchain go1.26.0
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.20.0
