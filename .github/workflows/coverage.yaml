@@ -48,6 +48,6 @@ jobs:
       - name: Verify code coverage. If your reading this and the step has failed, please add tests to cover your changes.
         run: |
           go tool cover -func pr_cover.out
-          if [ "${{ env.PR_COVER }}" -lt "${{ env.CUR_COVER }}"  ]; then
+          if [ "${PR_COVER}" -lt "${CUR_COVER}"  ]; then
             exit 1;
           fi
