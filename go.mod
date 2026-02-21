@@ -2,7 +2,7 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 
 go 1.24.11
 
-toolchain go1.24.13
+toolchain go1.26.0
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.20.1
@@ -20,7 +20,7 @@ require (
 	go.opencensus.io v0.24.0
 	golang.org/x/oauth2 v0.35.0
 	golang.org/x/sys v0.41.0
-	google.golang.org/api v0.266.0
+	google.golang.org/api v0.267.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
