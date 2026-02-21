@@ -132,63 +132,63 @@ func TestClientInitialization(t *testing.T) {
 			desc: "multiple instances",
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
-				Port: 50000,
+				Port: 20000,
 				Instances: []proxy.InstanceConnConfig{
 					{Name: pg},
 					{Name: mysql},
 					{Name: sqlserver},
 				},
 			},
-			wantTCPAddrs: []string{"127.0.0.1:50000", "127.0.0.1:50001", "127.0.0.1:50002"},
+			wantTCPAddrs: []string{"127.0.0.1:20000", "127.0.0.1:20001", "127.0.0.1:20002"},
 		},
 		{
 			desc: "with instance address",
 			in: &proxy.Config{
 				Addr: "1.1.1.1", // bad address, binding shouldn't happen here.
-				Port: 50003,
+				Port: 20003,
 				Instances: []proxy.InstanceConnConfig{
 					{Addr: "0.0.0.0", Name: pg},
 				},
 			},
-			wantTCPAddrs: []string{"0.0.0.0:50003"},
+			wantTCPAddrs: []string{"0.0.0.0:20003"},
 		},
 		{
 			desc: "IPv6 support",
 			in: &proxy.Config{
 				Addr: "::1",
-				Port: 50004,
+				Port: 20004,
 				Instances: []proxy.InstanceConnConfig{
 					{Name: pg},
 				},
 			},
-			wantTCPAddrs: []string{"[::1]:50004"},
+			wantTCPAddrs: []string{"[::1]:20004"},
 		},
 		{
 			desc: "with instance port",
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
-				Port: 50005,
+				Port: 20005,
 				Instances: []proxy.InstanceConnConfig{
-					{Name: pg, Port: 60000},
+					{Name: pg, Port: 21000},
 				},
 			},
-			wantTCPAddrs: []string{"127.0.0.1:60000"},
+			wantTCPAddrs: []string{"127.0.0.1:21000"},
 		},
 		{
 			desc: "with global port and instance port",
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
-				Port: 50006,
+				Port: 20006,
 				Instances: []proxy.InstanceConnConfig{
 					{Name: pg},
-					{Name: mysql, Port: 60001},
+					{Name: mysql, Port: 21001},
 					{Name: sqlserver},
 				},
 			},
 			wantTCPAddrs: []string{
-				"127.0.0.1:50006",
-				"127.0.0.1:60001",
-				"127.0.0.1:50007",
+				"127.0.0.1:20006",
+				"127.0.0.1:21001",
+				"127.0.0.1:20007",
 			},
 		},
 		{
@@ -229,7 +229,7 @@ func TestClientInitialization(t *testing.T) {
 			desc: "with a global TCP host port and an instance Unix socket",
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
-				Port: 50008,
+				Port: 20008,
 				Instances: []proxy.InstanceConnConfig{
 					{Name: mysql, UnixSocket: testDir},
 				},
@@ -244,11 +244,11 @@ func TestClientInitialization(t *testing.T) {
 				Addr:       "127.0.0.1",
 				UnixSocket: testDir,
 				Instances: []proxy.InstanceConnConfig{
-					{Name: pg, Port: 50009},
+					{Name: pg, Port: 20009},
 				},
 			},
 			wantTCPAddrs: []string{
-				"127.0.0.1:50009",
+				"127.0.0.1:20009",
 			},
 		},
 		{
@@ -326,11 +326,11 @@ func TestClientInitialization(t *testing.T) {
 			desc: "with TCP port for non functional instance",
 			in: &proxy.Config{
 				Instances: []proxy.InstanceConnConfig{
-					{Name: "proj:region:fakeserver", Port: 50010},
+					{Name: "proj:region:fakeserver", Port: 20010},
 				},
 			},
 			wantTCPAddrs: []string{
-				"127.0.0.1:50010",
+				"127.0.0.1:20010",
 			},
 		},
 	}
@@ -377,7 +377,7 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	d := &fakeDialer{}
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 50011,
+		Port: 20011,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
@@ -396,13 +396,13 @@ func TestClientLimitsMaxConnections(t *testing.T) {
 	defer c.Close()
 	go c.Serve(context.Background(), func() {})
 
-	conn1, err1 := net.Dial("tcp", "127.0.0.1:50011")
+	conn1, err1 := net.Dial("tcp", "127.0.0.1:20011")
 	if err1 != nil {
 		t.Fatalf("net.Dial error: %v", err1)
 	}
 	defer conn1.Close()
 
-	conn2, err2 := net.Dial("tcp", "127.0.0.1:50011")
+	conn2, err2 := net.Dial("tcp", "127.0.0.1:20011")
 	if err2 != nil {
 		t.Fatalf("net.Dial error: %v", err1)
 	}
@@ -459,7 +459,7 @@ func tryTCPDial(t *testing.T, addr string) net.Conn {
 func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 50012,
+		Port: 20012,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
@@ -471,7 +471,7 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 	}
 	go c.Serve(context.Background(), func() {})
 
-	conn := tryTCPDial(t, "127.0.0.1:50012")
+	conn := tryTCPDial(t, "127.0.0.1:20012")
 	defer conn.Close()
 
 	if err := c.Close(); err == nil {
@@ -482,7 +482,7 @@ func TestClientCloseWaitsForActiveConnections(t *testing.T) {
 func TestClientClosesCleanly(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 50013,
+		Port: 20013,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:reg:inst"},
 		},
@@ -493,7 +493,7 @@ func TestClientClosesCleanly(t *testing.T) {
 	}
 	go c.Serve(context.Background(), func() {})
 
-	conn := tryTCPDial(t, "127.0.0.1:50013")
+	conn := tryTCPDial(t, "127.0.0.1:20013")
 	_ = conn.Close()
 
 	if err := c.Close(); err != nil {
@@ -504,7 +504,7 @@ func TestClientClosesCleanly(t *testing.T) {
 func TestClosesWithError(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 50014,
+		Port: 20014,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:reg:inst"},
 		},
@@ -515,7 +515,7 @@ func TestClosesWithError(t *testing.T) {
 	}
 	go c.Serve(context.Background(), func() {})
 
-	conn := tryTCPDial(t, "127.0.0.1:50014")
+	conn := tryTCPDial(t, "127.0.0.1:20014")
 	defer conn.Close()
 
 	if err = c.Close(); err == nil {
@@ -611,7 +611,7 @@ func TestClientNotifiesCallerOnServe(t *testing.T) {
 func TestClientConnCount(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 50015,
+		Port: 20015,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
@@ -633,7 +633,7 @@ func TestClientConnCount(t *testing.T) {
 		t.Fatalf("want 10 max connections, got = %v", gotMax)
 	}
 
-	conn := tryTCPDial(t, "127.0.0.1:50015")
+	conn := tryTCPDial(t, "127.0.0.1:20015")
 	defer conn.Close()
 
 	verifyOpen := func(t *testing.T, want uint64) {
@@ -653,7 +653,7 @@ func TestClientConnCount(t *testing.T) {
 func TestCheckConnections(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 50016,
+		Port: 20016,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
@@ -680,7 +680,7 @@ func TestCheckConnections(t *testing.T) {
 
 	in = &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 60002,
+		Port: 21002,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg1"},
 			{Name: "proj:region:pg2"},
@@ -706,7 +706,7 @@ func TestCheckConnections(t *testing.T) {
 func TestRunConnectionCheck(t *testing.T) {
 	in := &proxy.Config{
 		Addr: "127.0.0.1",
-		Port: 50017,
+		Port: 20017,
 		Instances: []proxy.InstanceConnConfig{
 			{Name: "proj:region:pg"},
 		},
@@ -815,8 +815,8 @@ func TestProxyMultiInstances(t *testing.T) {
 			desc: "with two tcp socket instances and conflicting ports",
 			in: &proxy.Config{
 				Instances: []proxy.InstanceConnConfig{
-					{Name: "proj:region:fakeserver", Port: 60003},
-					{Name: mysql, Port: 60003},
+					{Name: "proj:region:fakeserver", Port: 21003},
+					{Name: mysql, Port: 21003},
 				},
 			},
 			wantSuccess: false,
