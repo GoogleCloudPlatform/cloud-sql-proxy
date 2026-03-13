@@ -132,14 +132,14 @@ func TestClientInitialization(t *testing.T) {
 			desc: "multiple instances",
 			in: &proxy.Config{
 				Addr: "127.0.0.1",
-				Port: 50000,
+				Port: 51000,
 				Instances: []proxy.InstanceConnConfig{
 					{Name: pg},
 					{Name: mysql},
 					{Name: sqlserver},
 				},
 			},
-			wantTCPAddrs: []string{"127.0.0.1:50000", "127.0.0.1:50001", "127.0.0.1:50002"},
+			wantTCPAddrs: []string{"127.0.0.1:51000", "127.0.0.1:51001", "127.0.0.1:51002"},
 		},
 		{
 			desc: "with instance address",
@@ -326,11 +326,11 @@ func TestClientInitialization(t *testing.T) {
 			desc: "with TCP port for non functional instance",
 			in: &proxy.Config{
 				Instances: []proxy.InstanceConnConfig{
-					{Name: "proj:region:fakeserver", Port: 50010},
+					{Name: "proj:region:fakeserver", Port: 51010},
 				},
 			},
 			wantTCPAddrs: []string{
-				"127.0.0.1:50010",
+				"127.0.0.1:51010",
 			},
 		},
 	}
