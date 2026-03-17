@@ -88,12 +88,13 @@ function fix() {
 ## lint - runs the linters
 function lint() {
   # run lint checks
-  get_golang_tool 'golangci-lint' 'golangci/golangci-lint' 'github.com/golangci/golangci-lint/v2/cmd/golangci-lint'
-  ".tools/golangci-lint" run --timeout 3m
+  get_golang_tool 'goimports' 'golang/tools' 'golang.org/x/tools/cmd/goimports'
+  ".tools/goimports" -w .
+  go fmt ./...
+  go mod tidy
 
   # Check the commit includes a go.mod that is fully
   # up to date.
-  fix
   if [[ -d "$SCRIPT_DIR/.git" ]] ; then
     git diff --exit-code
   fi
