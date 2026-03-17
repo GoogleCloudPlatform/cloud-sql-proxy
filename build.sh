@@ -212,7 +212,7 @@ function write_e2e_env(){
     exit 1
   fi
 
-  local_user=$(gcloud auth list --format 'value(account)' | tr -d '\n')
+  local_user=$(gcloud auth list --format 'value(account)' | grep '@google.com' | tr -d '\n')
 
   echo "Getting test secrets from $TEST_PROJECT into $1"
   {
