@@ -3,7 +3,7 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 go 1.25.7
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.20.1
+	cloud.google.com/go/cloudsqlconn v1.20.2
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/coreos/go-systemd/v22 v22.7.0
@@ -18,7 +18,7 @@ require (
 	go.opencensus.io v0.24.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sys v0.42.0
-	google.golang.org/api v0.271.0
+	google.golang.org/api v0.272.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
