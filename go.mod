@@ -8,14 +8,14 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/hanwen/go-fuse/v2 v2.9.0
 	github.com/jackc/pgx/v4 v4.18.3
-	github.com/lib/pq v1.11.2
+	github.com/lib/pq v1.12.0
 	github.com/microsoft/go-mssqldb v1.9.8
 	go.uber.org/zap v1.27.1
 	golang.org/x/net v0.52.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sys v0.42.0
 	golang.org/x/time v0.15.0
-	google.golang.org/api v0.271.0
+	google.golang.org/api v0.272.0
 )
 
 require (
