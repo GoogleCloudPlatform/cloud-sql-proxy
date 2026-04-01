@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-assign_issues:
-  - hessjcg
-  - kgala2
-
 assign_prs:
   - hessjcg
   - kgala2
