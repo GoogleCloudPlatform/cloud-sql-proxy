@@ -82,7 +82,7 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 		},
 		{
 			desc: "instance env overrides config file precedence",
-			args: []string{"--config-file", "testdata/config.json"},
+			args: []string{"--config-file", "testdata/config-json.json"},
 			setup: func() {
 				t.Setenv("CSQL_PROXY_INSTANCE_CONNECTION_NAME", "p:r:i")
 			},
@@ -104,7 +104,7 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 			desc: "flag overrides config file precedence",
 			args: []string{
 				"proj:region:inst",
-				"--config-file", "testdata/config.toml",
+				"--config-file", "testdata/config-toml.toml",
 				"--debug",
 			},
 			setup: func() {},
@@ -116,13 +116,27 @@ func TestNewCommandWithConfigFile(t *testing.T) {
 			desc: "env overrides config file precedence",
 			args: []string{
 				"proj:region:inst",
-				"--config-file", "testdata/config.toml",
+				"--config-file", "testdata/config-toml.toml",
 			},
 			setup: func() {
 				t.Setenv("CSQL_PROXY_DEBUG", "false")
 			},
 			assert: func(t *testing.T, c *Command) {
 				assert(t, false, c.conf.Debug)
+			},
+		},
+		{
+			desc: "specific config file extension prioritization",
+			args: []string{
+				"proj:region:inst",
+				"--config-file", "testdata/priority.toml",
+			},
+			setup: func() {},
+			assert: func(t *testing.T, c *Command) {
+				// priority.toml has max-connections = 5555 and port = 5555
+				// priority.json has max-connections = 6666 and port = 6666
+				assert(t, uint64(5555), c.conf.MaxConnections)
+				assert(t, 5555, c.conf.Port)
 			},
 		},
 	}

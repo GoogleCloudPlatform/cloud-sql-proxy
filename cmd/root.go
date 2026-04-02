@@ -666,10 +666,6 @@ func initViper(c *Command) (*viper.Viper, error) {
 	v := viper.New()
 
 	if c.conf.Filepath != "" {
-		// Setup Viper configuration file. Viper will attempt to load
-		// configuration from the specified file if it exists. Otherwise, Viper
-		// will source all configuration from flags and then environment
-		// variables.
 		ext := filepath.Ext(c.conf.Filepath)
 
 		badExtErr := newBadCommandError(
@@ -685,11 +681,7 @@ func initViper(c *Command) (*viper.Viper, error) {
 			return nil, badExtErr
 		}
 
-		conf := filepath.Base(c.conf.Filepath)
-		noExt := strings.ReplaceAll(conf, ext, "")
-		// argument must be the name of config file without extension
-		v.SetConfigName(noExt)
-		v.AddConfigPath(filepath.Dir(c.conf.Filepath))
+		v.SetConfigFile(c.conf.Filepath)
 
 		// Attempt to load configuration from a file. If no file is found,
 		// assume configuration is provided by flags or environment variables.
