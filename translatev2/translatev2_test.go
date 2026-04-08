@@ -127,6 +127,11 @@ func TestModeComparison(t *testing.T) {
 			args:       []string{"-instances_metadata=path/to/attr"},
 			v2Expected: true,
 		},
+		{
+			name:       "projects flag stays in v2",
+			args:       []string{"-projects=my-project"},
+			v2Expected: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -544,4 +549,53 @@ func TestE2ESQLServer(t *testing.T) {
 	defer os.RemoveAll(filepath.Dir(binPath))
 
 	testSQLServer(t, binPath, connName, dbName, user, pass)
+}
+
+func TestE2EProjects(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping E2E tests")
+	}
+	project := os.Getenv("TEST_PROJECT")
+	if project == "" {
+		t.Skip("TEST_PROJECT not set")
+	}
+
+	binPath := buildProxy(t)
+	defer os.RemoveAll(filepath.Dir(binPath))
+
+	mysqlConnName := os.Getenv("MYSQL_CONNECTION_NAME")
+	if mysqlConnName == "" {
+		t.Skip("MYSQL_CONNECTION_NAME not set, cannot verify projects flag")
+	}
+
+	for _, mode := range []struct {
+		name string
+		args []string
+	}{
+		{name: "translated_v2", args: []string{}},
+		{name: "legacy_v1", args: []string{"-legacy-v1-proxy"}},
+	} {
+		t.Run(mode.name, func(t *testing.T) {
+			// Use a VERY short path for Unix sockets
+			tmpDir, err := os.MkdirTemp("/tmp", "p-*")
+			if err != nil {
+				t.Fatalf("failed to create temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
+			args := append([]string{}, mode.args...)
+			args = append(args, "-dir="+tmpDir, "-projects="+project, "-skip_failed_instance_config")
+
+			cmd, _ := startProxy(t, binPath, args...)
+			defer cmd.Process.Kill()
+
+			dbName := os.Getenv("MYSQL_DB")
+			user := os.Getenv("MYSQL_USER")
+			pass := os.Getenv("MYSQL_PASS")
+
+			socketPath := filepath.Join(tmpDir, mysqlConnName)
+			dsn := fmt.Sprintf("%s:%s@unix(%s)/%s?parseTime=true", user, pass, socketPath, dbName)
+			runQuery(t, "mysql", dsn)
+		})
+	}
 }

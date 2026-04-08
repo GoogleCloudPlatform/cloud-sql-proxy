@@ -760,47 +760,62 @@ use the value from the flag, Not compatible with -fuse.`,
 	return 0
 }
 
-func main() {
-	translatedArgs, logDebugStdout, verbose, unsupported, legacySet, v2Compat, v2Mode, ok := translateV2Args()
+type TranslationResult struct {
+	V2Args         []string
+	LogDebugStdout bool
+	Verbose        bool
+	Unsupported    []string
+	LegacySet      bool
+	V2Compat       bool
+	V2Mode         bool
+	Projects       []string
+	OK             bool
+}
 
-	if v2Mode {
+func main() {
+	tr := translateV2Args()
+
+	if tr.V2Mode {
 		v2cmd := proxyv2cmd.NewCommand()
-		v2cmd.SetArgs(translatedArgs)
+		v2cmd.SetArgs(tr.V2Args)
 		proxyv2cmd.ExecuteCommand(v2cmd)
 		return
 	}
 
-	if ok {
+	if tr.OK {
 		fmt.Fprintln(os.Stderr, "This proxy running Auth Proxy v2 in compatibility mode.")
 		fmt.Fprintln(os.Stderr, "To use Proxy v1, add the -legacy-v1-proxy flag.")
 
 		opts := []proxyv2cmd.Option{
 			proxyv2cmd.WithProxyV1Compatibility(),
-			proxyv2cmd.WithProxyV1Verbose(verbose),
+			proxyv2cmd.WithProxyV1Verbose(tr.Verbose),
 		}
-		if logDebugStdout {
+		if tr.LogDebugStdout {
 			opts = append(opts, proxyv2cmd.WithProxyV1LogDebugStdout())
+		}
+		if len(tr.Projects) > 0 {
+			opts = append(opts, proxyv2cmd.WithProxyV1Projects(tr.Projects))
 		}
 
 		v2cmd := proxyv2cmd.NewCommand(opts...)
-		v2cmd.SetArgs(translatedArgs)
+		v2cmd.SetArgs(tr.V2Args)
 		proxyv2cmd.ExecuteCommand(v2cmd)
 		return
 	}
 
 	// Translation failed
-	if v2Compat && len(unsupported) > 0 {
-		fmt.Fprintf(os.Stderr, "Error: -v2-compat flag is set, but the following flags are not supported in v2 compatibility mode: %s\n", strings.Join(unsupported, ", "))
+	if tr.V2Compat && len(tr.Unsupported) > 0 {
+		fmt.Fprintf(os.Stderr, "Error: -v2-compat flag is set, but the following flags are not supported in v2 compatibility mode: %s\n", strings.Join(tr.Unsupported, ", "))
 		os.Exit(1)
 	}
 
 	fmt.Fprintln(os.Stderr, "This proxy is using Auth Proxy v1 legacy mode.")
-	if legacySet {
+	if tr.LegacySet {
 		fmt.Fprintln(os.Stderr, "This proxy is using Auth Proxy v1 legacy mode because the -legacy-v1-proxy flag is set")
-	} else if len(unsupported) > 0 {
+	} else if len(tr.Unsupported) > 0 {
 		fmt.Fprintln(os.Stderr, "This proxy is using Auth Proxy v1 legacy mode because it is using")
 		fmt.Fprintln(os.Stderr, "flags that are not supported in v2 compatibility mode:")
-		fmt.Fprintln(os.Stderr, strings.Join(unsupported, ", "))
+		fmt.Fprintln(os.Stderr, strings.Join(tr.Unsupported, ", "))
 	}
 
 	code := runProxy()
@@ -814,44 +829,36 @@ func main() {
 // If the arguments use a feature that is not supported in Proxy v2, this
 // returns false for OK, indicating that the legacy proxy v1 should run the
 // code.
-//
-// Returns:
-// - v2args the arguments translated for the v2 command
-// - logDebugStdout true if the v1 -log_debug_stdout flag was set
-// - verbose true if the v1 -verbose flag was set (default true)
-// - unsupported list of v1 flags that are not supported in v2
-// - legacySet true if -legacy-v1-proxy was set
-// - v2Compat true if -v2-compat was set
-// - v2Mode true if -v2 was set
-// - ok true when it is OK to use the v2 proxy command
-func translateV2Args() (v2args []string, logDebugStdout, verbose bool, unsupported []string, legacySet, v2Compat, v2Mode, ok bool) {
-	verbose = true // default
+func translateV2Args() TranslationResult {
+	var tr TranslationResult
+	tr.Verbose = true // default
 
 	// Check for special flags before anything else
 	for _, arg := range os.Args {
 		if arg == "--legacy-v1-proxy" || arg == "-legacy-v1-proxy" {
-			legacySet = true
+			tr.LegacySet = true
 		}
 		if arg == "--v2-compat" || arg == "-v2-compat" {
-			v2Compat = true
+			tr.V2Compat = true
 		}
 		if arg == "--v2" || arg == "-v2" {
-			v2Mode = true
+			tr.V2Mode = true
 		}
 	}
 
-	if v2Mode {
+	if tr.V2Mode {
 		// In v2 mode, we just pass all arguments except -v2 to the v2 parser
 		for _, arg := range os.Args[1:] {
 			if arg != "--v2" && arg != "-v2" {
-				v2args = append(v2args, arg)
+				tr.V2Args = append(tr.V2Args, arg)
 			}
 		}
-		return v2args, false, false, nil, false, false, true, true
+		tr.OK = true
+		return tr
 	}
 
-	if legacySet {
-		return nil, false, false, nil, true, v2Compat, false, false
+	if tr.LegacySet {
+		return tr
 	}
 
 	fs := flag.NewFlagSet("translate", flag.ContinueOnError)
@@ -878,10 +885,10 @@ func translateV2Args() (v2args []string, logDebugStdout, verbose bool, unsupport
 	verboseFlag := fs.Bool("verbose", true, "")
 	logDebugStdoutFlag := fs.Bool("log_debug_stdout", false, "")
 	instancesMetadata := fs.String("instances_metadata", "", "")
+	projectsFlag := fs.String("projects", "", "")
 
 	// Untranslatable flags
 	_ = fs.Bool("check_region", false, "")
-	_ = fs.String("projects", "", "")
 	_ = fs.Duration("refresh_config_throttle", 0, "")
 	_ = fs.Uint64("fd_rlimit", 0, "")
 	_ = fs.Bool("legacy-v1-proxy", false, "")
@@ -891,75 +898,81 @@ func translateV2Args() (v2args []string, logDebugStdout, verbose bool, unsupport
 	fs.Var(&instances, "instances", "")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
-		return nil, false, false, nil, false, v2Compat, false, false
+		return tr
 	}
 
 	// Check for unsupported flags being set
 	fs.Visit(func(f *flag.Flag) {
 		switch f.Name {
-		case "check_region", "projects":
-			unsupported = append(unsupported, "-"+f.Name)
+		case "check_region":
+			tr.Unsupported = append(tr.Unsupported, "-"+f.Name)
 		}
 	})
-	if len(unsupported) > 0 {
-		return nil, false, false, unsupported, false, v2Compat, false, false
+	if len(tr.Unsupported) > 0 {
+		return tr
 	}
 
-	var args []string
 	fs.Visit(func(f *flag.Flag) {
 		switch f.Name {
+		case "projects":
+			if *projectsFlag != "" {
+				tr.Projects = strings.Split(*projectsFlag, ",")
+			}
 		case "instances_metadata":
-			args = append(args, "--instances-metadata", *instancesMetadata)
+			tr.V2Args = append(tr.V2Args, "--instances-metadata", *instancesMetadata)
 		case "credential_file":
-			args = append(args, "--credentials-file", *credentialFile)
+			tr.V2Args = append(tr.V2Args, "--credentials-file", *credentialFile)
 		case "token":
-			args = append(args, "--token", *token)
+			tr.V2Args = append(tr.V2Args, "--token", *token)
 		case "login_token":
-			args = append(args, "--login-token", *loginToken)
+			tr.V2Args = append(tr.V2Args, "--login-token", *loginToken)
 		case "enable_iam_login":
 			if *enableIAMLogin {
-				args = append(args, "--auto-iam-authn")
+				tr.V2Args = append(tr.V2Args, "--auto-iam-authn")
 			}
 		case "dir":
-			args = append(args, "--unix-socket", *dir)
+			tr.V2Args = append(tr.V2Args, "--unix-socket", *dir)
 		case "fuse":
 			if *useFuse {
-				args = append(args, "--fuse", *dir)
+				tr.V2Args = append(tr.V2Args, "--fuse", *dir)
 			}
 		case "fuse_tmp":
-			args = append(args, "--fuse-temp-dir", *fuseTmp)
+			tr.V2Args = append(tr.V2Args, "--fuse-temp-dir", *fuseTmp)
 		case "health_check_port":
-			args = append(args, "--http-port", *healthCheckPort)
+			tr.V2Args = append(tr.V2Args, "--http-port", *healthCheckPort)
 		case "use_http_health_check":
 			if *useHTTPHealthCheck {
-				args = append(args, "--health-check")
+				tr.V2Args = append(tr.V2Args, "--health-check")
 			}
 		case "host":
-			args = append(args, "--sqladmin-api-endpoint", *host)
+			tr.V2Args = append(tr.V2Args, "--sqladmin-api-endpoint", *host)
 		case "max_connections":
-			args = append(args, "--max-connections", strconv.FormatUint(*maxConnections, 10))
+			tr.V2Args = append(tr.V2Args, "--max-connections", strconv.FormatUint(*maxConnections, 10))
 		case "quiet":
 			if *quiet {
-				args = append(args, "--quiet")
+				tr.V2Args = append(tr.V2Args, "--quiet")
 			}
 		case "quota_project":
-			args = append(args, "--quota-project", *quotaProject)
+			tr.V2Args = append(tr.V2Args, "--quota-project", *quotaProject)
 		case "skip_failed_instance_config":
 			if *skipFailedInstanceConfig {
-				args = append(args, "--skip-failed-instance-config")
+				tr.V2Args = append(tr.V2Args, "--skip-failed-instance-config")
 			}
 		case "structured_logs":
 			if *structuredLogs {
-				args = append(args, "--structured-logs")
+				tr.V2Args = append(tr.V2Args, "--structured-logs")
 			}
 		case "term_timeout":
-			args = append(args, "--max-sigterm-delay", termTimeout.String())
+			tr.V2Args = append(tr.V2Args, "--max-sigterm-delay", termTimeout.String())
 		case "version":
 			if *version {
-				args = append(args, "--version")
+				tr.V2Args = append(tr.V2Args, "--version")
 			}
 		}
 	})
+
+	tr.LogDebugStdout = *logDebugStdoutFlag
+	tr.Verbose = *verboseFlag
 
 	// ip_address_types handling
 	ipTypesSet := false
@@ -970,7 +983,7 @@ func translateV2Args() (v2args []string, logDebugStdout, verbose bool, unsupport
 	})
 
 	if !ipTypesSet {
-		args = append(args, "--auto-ip")
+		tr.V2Args = append(tr.V2Args, "--auto-ip")
 	} else {
 		types := strings.Split(*ipAddressTypes, ",")
 		hasPublic := false
@@ -983,13 +996,14 @@ func translateV2Args() (v2args []string, logDebugStdout, verbose bool, unsupport
 				hasPrivate = true
 			default:
 				// Unknown type, fallback to v1
-				return nil, false, false, []string{"-ip_address_types=" + *ipAddressTypes}, false, v2Compat, false, false
+				tr.Unsupported = append(tr.Unsupported, "-ip_address_types="+*ipAddressTypes)
+				return tr
 			}
 		}
 		if hasPublic && hasPrivate {
-			args = append(args, "--auto-ip")
+			tr.V2Args = append(tr.V2Args, "--auto-ip")
 		} else if hasPrivate {
-			args = append(args, "--private-ip")
+			tr.V2Args = append(tr.V2Args, "--private-ip")
 		} else if hasPublic {
 			// default in v2 is public
 		}
@@ -1000,13 +1014,13 @@ func translateV2Args() (v2args []string, logDebugStdout, verbose bool, unsupport
 		parts := strings.SplitN(inst, "=", 2)
 		connName := parts[0]
 		if len(parts) == 1 {
-			args = append(args, connName)
+			tr.V2Args = append(tr.V2Args, connName)
 			continue
 		}
 
 		opts := strings.SplitN(parts[1], ":", 2)
 		if len(opts) != 2 {
-			return nil, false, false, nil, false, v2Compat, false, false // Invalid format
+			return tr // Invalid format
 		}
 
 		netType := opts[0]
@@ -1018,28 +1032,29 @@ func translateV2Args() (v2args []string, logDebugStdout, verbose bool, unsupport
 				// host:port
 				h, p, err := net.SplitHostPort(netAddr)
 				if err != nil {
-					return nil, false, false, nil, false, v2Compat, false, false
+					return tr
 				}
-				args = append(args, fmt.Sprintf("%s?address=%s&port=%s", connName, h, p))
+				tr.V2Args = append(tr.V2Args, fmt.Sprintf("%s?address=%s&port=%s", connName, h, p))
 			} else {
 				// just port
-				args = append(args, fmt.Sprintf("%s?port=%s", connName, netAddr))
+				tr.V2Args = append(tr.V2Args, fmt.Sprintf("%s?port=%s", connName, netAddr))
 			}
 		case "unix":
 			if strings.HasPrefix(netAddr, "/") {
-				args = append(args, fmt.Sprintf("%s?unix-socket-path=%s", connName, netAddr))
+				tr.V2Args = append(tr.V2Args, fmt.Sprintf("%s?unix-socket-path=%s", connName, netAddr))
 			} else {
-				args = append(args, fmt.Sprintf("%s?unix-socket=%s", connName, netAddr))
+				tr.V2Args = append(tr.V2Args, fmt.Sprintf("%s?unix-socket=%s", connName, netAddr))
 			}
 		default:
-			return nil, false, false, nil, false, v2Compat, false, false // Unsupported network
+			return tr // Unsupported network
 		}
 	}
 
-	// V2 requires at least one instance OR fuse mode OR version OR instances_metadata
-	if len(instances) == 0 && !*useFuse && !*version && *instancesMetadata == "" {
-		return nil, false, false, nil, false, v2Compat, false, false
+	// V2 requires at least one instance OR fuse mode OR version OR instances_metadata OR projects
+	if len(instances) == 0 && !*useFuse && !*version && *instancesMetadata == "" && len(tr.Projects) == 0 {
+		return tr
 	}
 
-	return args, *logDebugStdoutFlag, *verboseFlag, nil, false, v2Compat, false, true
+	tr.OK = true
+	return tr
 }

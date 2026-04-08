@@ -13,6 +13,7 @@ func TestTranslateV2Args(t *testing.T) {
 		wantArgs     []string
 		wantLogDebug bool
 		wantVerbose  bool
+		wantProjects []string
 		wantOk       bool
 	}{
 		{
@@ -123,8 +124,8 @@ func TestTranslateV2Args(t *testing.T) {
 			wantOk:      true,
 		},
 		{
-			name:   "unsupported flag projects",
-			args:   []string{"cloud_sql_proxy", "-projects=p1", "-instances=i1"},
+			name:   "unsupported flag check_region",
+			args:   []string{"cloud_sql_proxy", "-check_region", "-instances=i1"},
 			wantOk: false,
 		},
 		{
@@ -135,10 +136,11 @@ func TestTranslateV2Args(t *testing.T) {
 			wantOk:      true,
 		},
 		{
-			name:     "v2 flag",
-			args:     []string{"cloud_sql_proxy", "-v2", "--debug-logs", "p:r:i"},
-			wantArgs: []string{"--debug-logs", "p:r:i"},
-			wantOk:   true,
+			name:        "v2 flag",
+			args:        []string{"cloud_sql_proxy", "-v2", "--debug-logs", "p:r:i"},
+			wantArgs:    []string{"--debug-logs", "p:r:i"},
+			wantVerbose: true,
+			wantOk:      true,
 		},
 		{
 			name:        "v2-compat flag",
@@ -148,14 +150,21 @@ func TestTranslateV2Args(t *testing.T) {
 			wantOk:      true,
 		},
 		{
-			name:        "instances_metadata flag",
-			args:        []string{"cloud_sql_proxy", "-instances_metadata=path/to/attr"},
-			wantArgs:    []string{"--instances-metadata", "path/to/attr", "--auto-ip"},
-			wantVerbose: true,
-			wantOk:      true,
+			name:         "instances_metadata flag",
+			args:         []string{"cloud_sql_proxy", "-instances_metadata=path/to/attr"},
+			wantArgs:     []string{"--instances-metadata", "path/to/attr", "--auto-ip"},
+			wantVerbose:  true,
+			wantOk:       true,
+		},
+		{
+			name:         "projects flag",
+			args:         []string{"cloud_sql_proxy", "-projects=p1,p2"},
+			wantArgs:     []string{"--auto-ip"},
+			wantVerbose:  true,
+			wantProjects: []string{"p1", "p2"},
+			wantOk:       true,
 		},
 		}
-
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -163,22 +172,25 @@ func TestTranslateV2Args(t *testing.T) {
 			defer func() { os.Args = oldArgs }()
 			os.Args = tt.args
 
-			gotArgs, gotLogDebug, gotVerbose, _, _, _, gotV2Mode, gotOk := translateV2Args()
-			if gotOk != tt.wantOk {
-				t.Errorf("translateV2Args() ok = %v, want %v", gotOk, tt.wantOk)
+			tr := translateV2Args()
+			if tr.OK != tt.wantOk {
+				t.Errorf("translateV2Args() tr.OK = %v, want %v", tr.OK, tt.wantOk)
 			}
-			if gotOk {
-				if !reflect.DeepEqual(gotArgs, tt.wantArgs) {
-					t.Errorf("translateV2Args() args = %v, want %v", gotArgs, tt.wantArgs)
+			if tr.OK {
+				if !reflect.DeepEqual(tr.V2Args, tt.wantArgs) {
+					t.Errorf("translateV2Args() args = %v, want %v", tr.V2Args, tt.wantArgs)
 				}
-				if gotLogDebug != tt.wantLogDebug {
-					t.Errorf("translateV2Args() logDebug = %v, want %v", gotLogDebug, tt.wantLogDebug)
+				if tr.LogDebugStdout != tt.wantLogDebug {
+					t.Errorf("translateV2Args() logDebug = %v, want %v", tr.LogDebugStdout, tt.wantLogDebug)
 				}
-				if gotVerbose != tt.wantVerbose {
-					t.Errorf("translateV2Args() verbose = %v, want %v", gotVerbose, tt.wantVerbose)
+				if tr.Verbose != tt.wantVerbose {
+					t.Errorf("translateV2Args() verbose = %v, want %v", tr.Verbose, tt.wantVerbose)
 				}
-				if gotV2Mode != (tt.name == "v2 flag") {
-					t.Errorf("translateV2Args() v2Mode = %v, want %v", gotV2Mode, tt.name == "v2 flag")
+				if tr.V2Mode != (tt.name == "v2 flag") {
+					t.Errorf("translateV2Args() v2Mode = %v, want %v", tr.V2Mode, tt.name == "v2 flag")
+				}
+				if !reflect.DeepEqual(tr.Projects, tt.wantProjects) {
+					t.Errorf("translateV2Args() projects = %v, want %v", tr.Projects, tt.wantProjects)
 				}
 			}
 		})
