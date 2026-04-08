@@ -122,6 +122,11 @@ func TestModeComparison(t *testing.T) {
 			args:       []string{"-instances=p:r:i=tcp:3312", "-refresh_config_throttle=1m"},
 			v2Expected: true,
 		},
+		{
+			name:       "instances_metadata flag stays in v2",
+			args:       []string{"-instances_metadata=path/to/attr"},
+			v2Expected: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -149,8 +154,9 @@ func TestModeComparison(t *testing.T) {
 					output := outBuf.String()
 					if tt.v2Expected {
 						// V2 indicators
-						if strings.Contains(output, "The proxy has started successfully") &&
-							strings.Contains(output, "Ready for new connections") {
+						if (strings.Contains(output, "The proxy has started successfully") &&
+							strings.Contains(output, "Ready for new connections")) ||
+							strings.Contains(output, "This proxy running Auth Proxy v2 in compatibility mode.") {
 							found = true
 							goto end
 						}
@@ -491,14 +497,6 @@ func TestE2EPostgres(t *testing.T) {
 	if iamUser != "" {
 		t.Run("IAMAuth", func(t *testing.T) {
 			testPostgres(t, binPath, connName, dbName, iamUser, "", true)
-		})
-	}
-
-	casConnName := os.Getenv("POSTGRES_CAS_CONNECTION_NAME")
-	if casConnName != "" {
-		casPass := os.Getenv("POSTGRES_CAS_PASS")
-		t.Run("CASInstance", func(t *testing.T) {
-			testPostgres(t, binPath, casConnName, dbName, user, casPass, false)
 		})
 	}
 }

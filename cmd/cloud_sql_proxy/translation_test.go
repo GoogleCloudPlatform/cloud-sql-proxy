@@ -128,13 +128,34 @@ func TestTranslateV2Args(t *testing.T) {
 			wantOk: false,
 		},
 		{
-			name:        "fuse mode",
-			args:        []string{"cloud_sql_proxy", "-dir=/tmp", "-fuse"},
-			wantArgs:    []string{"--unix-socket", "/tmp", "--fuse", "/tmp", "--auto-ip"},
+			name:     "fuse mode",
+			args:     []string{"cloud_sql_proxy", "-dir=/tmp", "-fuse"},
+			wantArgs: []string{"--unix-socket", "/tmp", "--fuse", "/tmp", "--auto-ip"},
 			wantVerbose: true,
 			wantOk:      true,
 		},
-	}
+		{
+			name:     "v2 flag",
+			args:     []string{"cloud_sql_proxy", "-v2", "--debug-logs", "p:r:i"},
+			wantArgs: []string{"--debug-logs", "p:r:i"},
+			wantOk:   true,
+		},
+		{
+			name:        "v2-compat flag",
+			args:        []string{"cloud_sql_proxy", "-v2-compat", "-instances=i1"},
+			wantArgs:    []string{"--auto-ip", "i1"},
+			wantVerbose: true,
+			wantOk:      true,
+		},
+		{
+			name:        "instances_metadata flag",
+			args:        []string{"cloud_sql_proxy", "-instances_metadata=path/to/attr"},
+			wantArgs:    []string{"--instances-metadata", "path/to/attr", "--auto-ip"},
+			wantVerbose: true,
+			wantOk:      true,
+		},
+		}
+
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -142,7 +163,7 @@ func TestTranslateV2Args(t *testing.T) {
 			defer func() { os.Args = oldArgs }()
 			os.Args = tt.args
 
-			gotArgs, gotLogDebug, gotVerbose, gotOk := translateV2Args()
+			gotArgs, gotLogDebug, gotVerbose, _, _, _, gotV2Mode, gotOk := translateV2Args()
 			if gotOk != tt.wantOk {
 				t.Errorf("translateV2Args() ok = %v, want %v", gotOk, tt.wantOk)
 			}
@@ -155,6 +176,9 @@ func TestTranslateV2Args(t *testing.T) {
 				}
 				if gotVerbose != tt.wantVerbose {
 					t.Errorf("translateV2Args() verbose = %v, want %v", gotVerbose, tt.wantVerbose)
+				}
+				if gotV2Mode != (tt.name == "v2 flag") {
+					t.Errorf("translateV2Args() v2Mode = %v, want %v", gotV2Mode, tt.name == "v2 flag")
 				}
 			}
 		})
