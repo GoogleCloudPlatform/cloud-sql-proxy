@@ -764,7 +764,6 @@ type TranslationResult struct {
 	V2Args         []string
 	LogDebugStdout bool
 	Verbose        bool
-	Unsupported    []string
 	LegacySet      bool
 	V2Compat       bool
 	V2Mode         bool
@@ -804,18 +803,14 @@ func main() {
 	}
 
 	// Translation failed
-	if tr.V2Compat && len(tr.Unsupported) > 0 {
-		fmt.Fprintf(os.Stderr, "Error: -v2-compat flag is set, but the following flags are not supported in v2 compatibility mode: %s\n", strings.Join(tr.Unsupported, ", "))
+	if tr.V2Compat {
+		fmt.Fprintln(os.Stderr, "Error: -v2-compat flag is set, but translation to v2 failed.")
 		os.Exit(1)
 	}
 
 	fmt.Fprintln(os.Stderr, "This proxy is using Auth Proxy v1 legacy mode.")
 	if tr.LegacySet {
 		fmt.Fprintln(os.Stderr, "This proxy is using Auth Proxy v1 legacy mode because the -legacy-v1-proxy flag is set")
-	} else if len(tr.Unsupported) > 0 {
-		fmt.Fprintln(os.Stderr, "This proxy is using Auth Proxy v1 legacy mode because it is using")
-		fmt.Fprintln(os.Stderr, "flags that are not supported in v2 compatibility mode:")
-		fmt.Fprintln(os.Stderr, strings.Join(tr.Unsupported, ", "))
 	}
 
 	code := runProxy()
@@ -898,17 +893,6 @@ func translateV2Args() TranslationResult {
 	fs.Var(&instances, "instances", "")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
-		return tr
-	}
-
-	// Check for unsupported flags being set
-	fs.Visit(func(f *flag.Flag) {
-		switch f.Name {
-		case "check_region":
-			tr.Unsupported = append(tr.Unsupported, "-"+f.Name)
-		}
-	})
-	if len(tr.Unsupported) > 0 {
 		return tr
 	}
 
@@ -996,7 +980,6 @@ func translateV2Args() TranslationResult {
 				hasPrivate = true
 			default:
 				// Unknown type, fallback to v1
-				tr.Unsupported = append(tr.Unsupported, "-ip_address_types="+*ipAddressTypes)
 				return tr
 			}
 		}

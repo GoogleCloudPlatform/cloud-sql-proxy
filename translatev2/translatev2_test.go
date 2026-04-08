@@ -132,6 +132,11 @@ func TestModeComparison(t *testing.T) {
 			args:       []string{"-projects=my-project"},
 			v2Expected: true,
 		},
+		{
+			name:       "check_region flag stays in v2",
+			args:       []string{"-check_region", "-instances=p:r:i"},
+			v2Expected: true,
+		},
 	}
 
 	for _, tt := range tests {

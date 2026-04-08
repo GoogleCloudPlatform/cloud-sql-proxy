@@ -124,9 +124,11 @@ func TestTranslateV2Args(t *testing.T) {
 			wantOk:      true,
 		},
 		{
-			name:   "unsupported flag check_region",
-			args:   []string{"cloud_sql_proxy", "-check_region", "-instances=i1"},
-			wantOk: false,
+			name:        "ignored flag check_region",
+			args:        []string{"cloud_sql_proxy", "-check_region", "-instances=i1"},
+			wantArgs:    []string{"--auto-ip", "i1"},
+			wantVerbose: true,
+			wantOk:      true,
 		},
 		{
 			name:     "fuse mode",
