@@ -24,11 +24,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -48,6 +51,8 @@ import (
 	"golang.org/x/oauth2"
 	goauth "golang.org/x/oauth2/google"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+
+	proxyv2cmd "github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
 )
 
 var (
@@ -132,6 +137,8 @@ https://sqladmin.googleapis.com`,
 	// Settings for healthcheck
 	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an HTTP server that checks and communicates the health of the proxy client.")
 	healthCheckPort    = flag.String("health_check_port", "8090", "When applicable, health checks take place on this port number. Defaults to 8090.")
+
+	_ = flag.Bool("legacy-v1-proxy", false, "If true, the proxy will run in legacy v1 mode.")
 )
 
 const (
@@ -754,6 +761,230 @@ use the value from the flag, Not compatible with -fuse.`,
 }
 
 func main() {
-	code := runProxy()
-	os.Exit(code)
+	translatedArgs, logDebugStdout, verbose, ok := translateV2Args()
+	if !ok {
+		code := runProxy()
+		os.Exit(code)
+	}
+
+	opts := []proxyv2cmd.Option{
+		proxyv2cmd.WithProxyV1Compatibility(),
+		proxyv2cmd.WithProxyV1Verbose(verbose),
+	}
+	if logDebugStdout {
+		opts = append(opts, proxyv2cmd.WithProxyV1LogDebugStdout())
+	}
+
+	v2cmd := proxyv2cmd.NewCommand(opts...)
+	v2cmd.SetArgs(translatedArgs)
+	proxyv2cmd.ExecuteCommand(v2cmd)
+}
+
+// translateV2Args translates the v1 command line args to V2 args.
+// Checks the command line arguments applied to the v1 proxy and then
+// translates it for the v2 proxy.
+//
+// If the arguments use a feature that is not supported in Proxy v2, this
+// returns false for OK, indicating that the legacy proxy v1 should run the
+// code.
+//
+// Returns:
+// - v2args the arguments translated for the v2 command
+// - logDebugStdout true if the v1 -log_debug_stdout flag was set
+// - verbose true if the v1 -verbose flag was set (default true)
+// - ok true when it is OK to use the v2 proxy command
+func translateV2Args() (v2args []string, logDebugStdout, verbose, ok bool) {
+	// Check for --legacy-v1-proxy before anything else
+	for _, arg := range os.Args {
+		if arg == "--legacy-v1-proxy" || arg == "-legacy-v1-proxy" {
+			return nil, false, false, false
+		}
+	}
+
+	fs := flag.NewFlagSet("translate", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+
+	credentialFile := fs.String("credential_file", "", "")
+	token := fs.String("token", "", "")
+	loginToken := fs.String("login_token", "", "")
+	enableIAMLogin := fs.Bool("enable_iam_login", false, "")
+	dir := fs.String("dir", "", "")
+	useFuse := fs.Bool("fuse", false, "")
+	fuseTmp := fs.String("fuse_tmp", "", "")
+	healthCheckPort := fs.String("health_check_port", "", "")
+	useHTTPHealthCheck := fs.Bool("use_http_health_check", false, "")
+	host := fs.String("host", "", "")
+	ipAddressTypes := fs.String("ip_address_types", "PUBLIC,PRIVATE", "")
+	maxConnections := fs.Uint64("max_connections", 0, "")
+	quiet := fs.Bool("quiet", false, "")
+	quotaProject := fs.String("quota_project", "", "")
+	skipFailedInstanceConfig := fs.Bool("skip_failed_instance_config", false, "")
+	structuredLogs := fs.Bool("structured_logs", false, "")
+	termTimeout := fs.Duration("term_timeout", 0, "")
+	version := fs.Bool("version", false, "")
+	verboseFlag := fs.Bool("verbose", true, "")
+	logDebugStdoutFlag := fs.Bool("log_debug_stdout", false, "")
+
+	// Untranslatable flags
+	_ = fs.Bool("check_region", false, "")
+	_ = fs.String("projects", "", "")
+	_ = fs.String("instances_metadata", "", "")
+	_ = fs.Duration("refresh_config_throttle", 0, "")
+	_ = fs.Uint64("fd_rlimit", 0, "")
+	_ = fs.Bool("legacy-v1-proxy", false, "")
+
+	var instances stringListValue
+	fs.Var(&instances, "instances", "")
+
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return nil, false, false, false
+	}
+
+	// Check for unsupported flags being set
+	unsupportedSet := false
+	fs.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "check_region", "projects", "instances_metadata", "legacy-v1-proxy":
+			unsupportedSet = true
+		}
+	})
+	if unsupportedSet {
+		return nil, false, false, false
+	}
+
+	var args []string
+	fs.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "credential_file":
+			args = append(args, "--credentials-file", *credentialFile)
+		case "token":
+			args = append(args, "--token", *token)
+		case "login_token":
+			args = append(args, "--login-token", *loginToken)
+		case "enable_iam_login":
+			if *enableIAMLogin {
+				args = append(args, "--auto-iam-authn")
+			}
+		case "dir":
+			args = append(args, "--unix-socket", *dir)
+		case "fuse":
+			if *useFuse {
+				args = append(args, "--fuse", *dir)
+			}
+		case "fuse_tmp":
+			args = append(args, "--fuse-temp-dir", *fuseTmp)
+		case "health_check_port":
+			args = append(args, "--http-port", *healthCheckPort)
+		case "use_http_health_check":
+			if *useHTTPHealthCheck {
+				args = append(args, "--health-check")
+			}
+		case "host":
+			args = append(args, "--sqladmin-api-endpoint", *host)
+		case "max_connections":
+			args = append(args, "--max-connections", strconv.FormatUint(*maxConnections, 10))
+		case "quiet":
+			if *quiet {
+				args = append(args, "--quiet")
+			}
+		case "quota_project":
+			args = append(args, "--quota-project", *quotaProject)
+		case "skip_failed_instance_config":
+			if *skipFailedInstanceConfig {
+				args = append(args, "--skip-failed-instance-config")
+			}
+		case "structured_logs":
+			if *structuredLogs {
+				args = append(args, "--structured-logs")
+			}
+		case "term_timeout":
+			args = append(args, "--max-sigterm-delay", termTimeout.String())
+		case "version":
+			if *version {
+				args = append(args, "--version")
+			}
+		}
+	})
+
+	// ip_address_types handling
+	ipTypesSet := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "ip_address_types" {
+			ipTypesSet = true
+		}
+	})
+
+	if !ipTypesSet {
+		args = append(args, "--auto-ip")
+	} else {
+		types := strings.Split(*ipAddressTypes, ",")
+		hasPublic := false
+		hasPrivate := false
+		for _, t := range types {
+			switch strings.TrimSpace(t) {
+			case "PUBLIC":
+				hasPublic = true
+			case "PRIVATE":
+				hasPrivate = true
+			default:
+				// Unknown type, fallback to v1
+				return nil, false, false, false
+			}
+		}
+		if hasPublic && hasPrivate {
+			args = append(args, "--auto-ip")
+		} else if hasPrivate {
+			args = append(args, "--private-ip")
+		} else if hasPublic {
+			// default in v2 is public
+		}
+	}
+
+	// instances handling
+	for _, inst := range instances {
+		parts := strings.SplitN(inst, "=", 2)
+		connName := parts[0]
+		if len(parts) == 1 {
+			args = append(args, connName)
+			continue
+		}
+
+		opts := strings.SplitN(parts[1], ":", 2)
+		if len(opts) != 2 {
+			return nil, false, false, false // Invalid format
+		}
+
+		netType := opts[0]
+		netAddr := opts[1]
+
+		switch netType {
+		case "tcp":
+			if strings.Contains(netAddr, ":") {
+				// host:port
+				h, p, err := net.SplitHostPort(netAddr)
+				if err != nil {
+					return nil, false, false, false
+				}
+				args = append(args, fmt.Sprintf("%s?address=%s&port=%s", connName, h, p))
+			} else {
+				// just port
+				args = append(args, fmt.Sprintf("%s?port=%s", connName, netAddr))
+			}
+		case "unix":
+			if strings.HasPrefix(netAddr, "/") {
+				args = append(args, fmt.Sprintf("%s?unix-socket-path=%s", connName, netAddr))
+			} else {
+				args = append(args, fmt.Sprintf("%s?unix-socket=%s", connName, netAddr))
+			}
+		default:
+			return nil, false, false, false // Unsupported network
+		}
+	}
+
+	// V2 requires at least one instance OR fuse mode OR version
+	if len(instances) == 0 && !*useFuse && !*version {
+		return nil, false, false, false
+	}
+
+	return args, *logDebugStdoutFlag, *verboseFlag, true
 }

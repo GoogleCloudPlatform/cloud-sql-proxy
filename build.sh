@@ -38,7 +38,16 @@ function build() {
 
 ## test - Runs local unit tests.
 function test() {
-  go test -v -race -cover -short
+  go test -v -race -cover -short ./...
+}
+
+## test_translatev2 - Runs e2e tests for the transelatev2 code path tests
+function test_translatev2() {
+  if [[ ! -f .envrc ]] ; then
+    write_e2e_env .envrc
+  fi
+  source .envrc
+  go test -v -race -cover ./translatev2
 }
 
 ## e2e - Runs end-to-end integration tests.
