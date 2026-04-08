@@ -212,6 +212,10 @@ type Config struct {
 	// comma-separated list of instance connection names.
 	InstancesMetadata string
 
+	// Projects is a list of projects from which to connect to all
+	// Second Generation instances.
+	Projects []string
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig

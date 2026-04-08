@@ -92,6 +92,14 @@ func WithProxyV1LogDebugStdout() Option {
 	}
 }
 
+// WithProxyV1Projects enables legacy behavior of v1 and will connect to
+// all Second Generation instances in the provided projects.
+func WithProxyV1Projects(projects []string) Option {
+	return func(c *Command) {
+		c.conf.Projects = projects
+	}
+}
+
 // WithProxyV1Verbose enables legacy behavior of v1 and will set
 // the debug-logs flag on the v2 proxy.
 func WithProxyV1Verbose(v bool) Option {

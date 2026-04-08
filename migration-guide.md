@@ -169,7 +169,7 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | ip_address_types            | private-ip                  | Defaults to public. To connect to a private IP, you must add the --private-ip flag   |
 | log_debug_stdout            | ❌                          | v2 logs to stdout, errors to stderr by default                                       |
 | max_connections             | max-connections             |                                                                                      |
-| projects                    | ❌                          | v2 prefers explicit connection configuration to avoid user error                     |
+| projects                    | ❌                          | Not supported as a v2 flag. v2 prefers explicit configuration. v1 -projects is supported in v2 compatibility mode. |
 | quiet                       | quiet                       | quiet disables all logging except errors                                             |
 | quota_project               | quota-project               |                                                                                      |
 | refresh_config_throttle     | ❌                          |                                                                                      |
