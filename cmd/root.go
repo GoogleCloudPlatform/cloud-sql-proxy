@@ -35,6 +35,7 @@ import (
 
 	"contrib.go.opencensus.io/exporter/prometheus"
 	"contrib.go.opencensus.io/exporter/stackdriver"
+	"cloud.google.com/go/compute/metadata"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
@@ -598,6 +599,11 @@ status code.`)
 		`If set, the Proxy will skip any instances that are invalid/unreachable (
 only applicable to Unix sockets)`)
 
+	localFlags.StringVar(&c.conf.InstancesMetadata, "instances-metadata", "",
+		`If provided, it is treated as a path to a metadata value which
+contains a comma-separated list of instance connection names.
+Only supported when running on Google Compute Engine.`)
+
 	// Global and per instance flags
 	localFlags.StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
 		"(*) Address to bind Cloud SQL instance listeners.")
@@ -642,6 +648,15 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 
 	for _, o := range opts {
 		o(c)
+	}
+
+	// If instances-metadata is set, fetch instances from GCE metadata.
+	if c.conf.InstancesMetadata != "" {
+		mArgs, err := instanceFromMetadata(c.conf.InstancesMetadata)
+		if err != nil {
+			return err
+		}
+		args = append(args, mArgs...)
 	}
 
 	// Handle logger separately from config
@@ -1269,4 +1284,23 @@ func startHTTPServer(ctx context.Context, l cloudsql.Logger, addr string, mux *h
 	if err := server.Shutdown(ctx2); err != nil {
 		l.Errorf("failed to shutdown HTTP server: %v\n", err)
 	}
+}
+
+func instanceFromMetadata(path string) ([]string, error) {
+	if !metadata.OnGCE() {
+		return nil, newBadCommandError("instances-metadata unsupported outside of Google Compute Engine")
+	}
+	val, err := metadata.Get(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch metadata from %q: %v", path, err)
+	}
+
+	var args []string
+	for _, inst := range strings.Split(val, ",") {
+		inst = strings.TrimSpace(inst)
+		if inst != "" {
+			args = append(args, inst)
+		}
+	}
+	return args, nil
 }

@@ -208,6 +208,10 @@ type Config struct {
 	// of a request context, e.g., Cloud Run.
 	LazyRefresh bool
 
+	// InstancesMetadata is the GCE metadata path to a value that contains a
+	// comma-separated list of instance connection names.
+	InstancesMetadata string
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
