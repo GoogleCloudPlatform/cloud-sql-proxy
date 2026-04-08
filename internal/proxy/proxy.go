@@ -188,6 +188,14 @@ type Config struct {
 	// endpoint for all instances
 	PSC bool
 
+	// ProxyV1Compatibility supports a legacy behavior where the Proxy will
+	// print out "Ready for new connections" when the proxy starts.
+	ProxyV1Compatibility bool
+
+	// LogDebugStdout supports a legacy behavior where the Proxy will
+	// print debug/info logs to stdout instead of stderr.
+	LogDebugStdout bool
+
 	// AutoIP supports a legacy behavior where the Proxy will connect to
 	// the first IP address returned from the SQL ADmin API response. This
 	// setting should be avoided and used only to support legacy Proxy

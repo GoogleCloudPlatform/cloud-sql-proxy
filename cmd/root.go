@@ -73,7 +73,12 @@ func semanticVersion() string {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := NewCommand().Execute(); err != nil {
+	ExecuteCommand(NewCommand())
+}
+
+// ExecuteCommand runs a preconfigured command, and exits the appropriate error code.
+func ExecuteCommand(c *Command) {
+	if err := c.Execute(); err != nil {
 		exit := 1
 		var terr *exitError
 		if errors.As(err, &terr) {
@@ -646,6 +651,8 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 
 	if c.conf.Quiet {
 		c.logger = log.NewStdLogger(io.Discard, os.Stderr)
+	} else if c.conf.LogDebugStdout {
+		c.logger = log.NewStdLogger(os.Stdout, os.Stderr)
 	}
 
 	err = parseConfig(c, c.conf, args)
@@ -1105,6 +1112,9 @@ func runSignalWrapper(cmd *Command) (err error) {
 		return err
 	case p = <-startCh:
 		cmd.logger.Infof("The proxy has started successfully and is ready for new connections!")
+		if cmd.conf.ProxyV1Compatibility {
+			cmd.logger.Infof("Ready for new connections")
+		}
 		// If running under systemd with Type=notify, it will send a message to the
 		// service manager that it is ready to handle connections now.
 		go func() {

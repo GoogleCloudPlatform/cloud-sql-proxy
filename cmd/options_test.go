@@ -146,6 +146,36 @@ func TestCommandOptions(t *testing.T) {
 			},
 			option: WithLazyRefresh(),
 		},
+		{
+			desc: "with proxy v1 compatibility",
+			isValid: func(c *Command) error {
+				if !c.conf.ProxyV1Compatibility {
+					return errors.New("compatibility was false, but should be true")
+				}
+				return nil
+			},
+			option: WithProxyV1Compatibility(),
+		},
+		{
+			desc: "with proxy v1 verbose true",
+			isValid: func(c *Command) error {
+				if !c.conf.DebugLogs {
+					return errors.New("DebugLogs was false, but should be true")
+				}
+				return nil
+			},
+			option: WithProxyV1Verbose(true),
+		},
+		{
+			desc: "with proxy v1 verbose false",
+			isValid: func(c *Command) error {
+				if c.conf.DebugLogs {
+					return errors.New("DebugLogs was true, but should be false")
+				}
+				return nil
+			},
+			option: WithProxyV1Verbose(false),
+		},
 	}
 
 	for _, tc := range tcs {

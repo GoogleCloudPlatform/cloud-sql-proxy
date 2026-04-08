@@ -76,6 +76,30 @@ func WithAutoIP() Option {
 	}
 }
 
+// WithProxyV1Compatibility enables legacy behavior of v1 and will print
+// out "Ready for new connections" when the proxy starts.
+func WithProxyV1Compatibility() Option {
+	return func(c *Command) {
+		c.conf.ProxyV1Compatibility = true
+	}
+}
+
+// WithProxyV1LogDebugStdout enables legacy behavior of v1 and will print
+// debug/info logs to stdout instead of stderr.
+func WithProxyV1LogDebugStdout() Option {
+	return func(c *Command) {
+		c.conf.LogDebugStdout = true
+	}
+}
+
+// WithProxyV1Verbose enables legacy behavior of v1 and will set
+// the debug-logs flag on the v2 proxy.
+func WithProxyV1Verbose(v bool) Option {
+	return func(c *Command) {
+		c.conf.DebugLogs = v
+	}
+}
+
 // WithQuietLogging configures the Proxy to log error messages only.
 func WithQuietLogging() Option {
 	return func(c *Command) {
