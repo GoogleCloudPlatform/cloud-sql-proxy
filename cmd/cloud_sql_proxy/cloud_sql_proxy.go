@@ -24,11 +24,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -48,6 +51,8 @@ import (
 	"golang.org/x/oauth2"
 	goauth "golang.org/x/oauth2/google"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+
+	proxyv2cmd "github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd"
 )
 
 var (
@@ -132,6 +137,8 @@ https://sqladmin.googleapis.com`,
 	// Settings for healthcheck
 	useHTTPHealthCheck = flag.Bool("use_http_health_check", false, "When set, creates an HTTP server that checks and communicates the health of the proxy client.")
 	healthCheckPort    = flag.String("health_check_port", "8090", "When applicable, health checks take place on this port number. Defaults to 8090.")
+
+	_ = flag.Bool("legacy-v1-proxy", false, "If true, the proxy will run in legacy v1 mode.")
 )
 
 const (
@@ -753,7 +760,284 @@ use the value from the flag, Not compatible with -fuse.`,
 	return 0
 }
 
+type TranslationResult struct {
+	V2Args         []string
+	LogDebugStdout bool
+	Verbose        bool
+	LegacySet      bool
+	V2Compat       bool
+	V2Mode         bool
+	Projects       []string
+	OK             bool
+}
+
 func main() {
+	tr := translateV2Args()
+
+	if tr.V2Mode {
+		v2cmd := proxyv2cmd.NewCommand()
+		v2cmd.SetArgs(tr.V2Args)
+		proxyv2cmd.ExecuteCommand(v2cmd)
+		return
+	}
+
+	if tr.OK {
+		fmt.Fprintln(os.Stderr, "This proxy running Auth Proxy v2 in compatibility mode.")
+		fmt.Fprintln(os.Stderr, "To use Proxy v1, add the -legacy-v1-proxy flag.")
+
+		opts := []proxyv2cmd.Option{
+			proxyv2cmd.WithProxyV1Compatibility(),
+			proxyv2cmd.WithProxyV1Verbose(tr.Verbose),
+		}
+		if tr.LogDebugStdout {
+			opts = append(opts, proxyv2cmd.WithProxyV1LogDebugStdout())
+		}
+		if len(tr.Projects) > 0 {
+			opts = append(opts, proxyv2cmd.WithProxyV1Projects(tr.Projects))
+		}
+
+		v2cmd := proxyv2cmd.NewCommand(opts...)
+		v2cmd.SetArgs(tr.V2Args)
+		proxyv2cmd.ExecuteCommand(v2cmd)
+		return
+	}
+
+	// Translation failed
+	if tr.V2Compat {
+		fmt.Fprintln(os.Stderr, "Error: -v2-compat flag is set, but translation to v2 failed.")
+		os.Exit(1)
+	}
+
+	fmt.Fprintln(os.Stderr, "This proxy is using Auth Proxy v1 legacy mode.")
+	if tr.LegacySet {
+		fmt.Fprintln(os.Stderr, "This proxy is using Auth Proxy v1 legacy mode because the -legacy-v1-proxy flag is set")
+	}
+
 	code := runProxy()
 	os.Exit(code)
+}
+
+// translateV2Args translates the v1 command line args to V2 args.
+// Checks the command line arguments applied to the v1 proxy and then
+// translates it for the v2 proxy.
+//
+// If the arguments use a feature that is not supported in Proxy v2, this
+// returns false for OK, indicating that the legacy proxy v1 should run the
+// code.
+func translateV2Args() TranslationResult {
+	var tr TranslationResult
+	tr.Verbose = true // default
+
+	// Check for special flags before anything else
+	for _, arg := range os.Args {
+		if arg == "--legacy-v1-proxy" || arg == "-legacy-v1-proxy" {
+			tr.LegacySet = true
+		}
+		if arg == "--v2-compat" || arg == "-v2-compat" {
+			tr.V2Compat = true
+		}
+		if arg == "--v2" || arg == "-v2" {
+			tr.V2Mode = true
+		}
+	}
+
+	if tr.V2Mode {
+		// In v2 mode, we just pass all arguments except -v2 to the v2 parser
+		for _, arg := range os.Args[1:] {
+			if arg != "--v2" && arg != "-v2" {
+				tr.V2Args = append(tr.V2Args, arg)
+			}
+		}
+		tr.OK = true
+		return tr
+	}
+
+	if tr.LegacySet {
+		return tr
+	}
+
+	fs := flag.NewFlagSet("translate", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+
+	credentialFile := fs.String("credential_file", "", "")
+	token := fs.String("token", "", "")
+	loginToken := fs.String("login_token", "", "")
+	enableIAMLogin := fs.Bool("enable_iam_login", false, "")
+	dir := fs.String("dir", "", "")
+	useFuse := fs.Bool("fuse", false, "")
+	fuseTmp := fs.String("fuse_tmp", "", "")
+	healthCheckPort := fs.String("health_check_port", "", "")
+	useHTTPHealthCheck := fs.Bool("use_http_health_check", false, "")
+	host := fs.String("host", "", "")
+	ipAddressTypes := fs.String("ip_address_types", "PUBLIC,PRIVATE", "")
+	maxConnections := fs.Uint64("max_connections", 0, "")
+	quiet := fs.Bool("quiet", false, "")
+	quotaProject := fs.String("quota_project", "", "")
+	skipFailedInstanceConfig := fs.Bool("skip_failed_instance_config", false, "")
+	structuredLogs := fs.Bool("structured_logs", false, "")
+	termTimeout := fs.Duration("term_timeout", 0, "")
+	version := fs.Bool("version", false, "")
+	verboseFlag := fs.Bool("verbose", true, "")
+	logDebugStdoutFlag := fs.Bool("log_debug_stdout", false, "")
+	instancesMetadata := fs.String("instances_metadata", "", "")
+	projectsFlag := fs.String("projects", "", "")
+
+	// Untranslatable flags
+	_ = fs.Bool("check_region", false, "")
+	_ = fs.Duration("refresh_config_throttle", 0, "")
+	_ = fs.Uint64("fd_rlimit", 0, "")
+	_ = fs.Bool("legacy-v1-proxy", false, "")
+	_ = fs.Bool("v2-compat", false, "")
+
+	var instances stringListValue
+	fs.Var(&instances, "instances", "")
+
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return tr
+	}
+
+	fs.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "projects":
+			if *projectsFlag != "" {
+				tr.Projects = strings.Split(*projectsFlag, ",")
+			}
+		case "instances_metadata":
+			tr.V2Args = append(tr.V2Args, "--instances-metadata", *instancesMetadata)
+		case "credential_file":
+			tr.V2Args = append(tr.V2Args, "--credentials-file", *credentialFile)
+		case "token":
+			tr.V2Args = append(tr.V2Args, "--token", *token)
+		case "login_token":
+			tr.V2Args = append(tr.V2Args, "--login-token", *loginToken)
+		case "enable_iam_login":
+			if *enableIAMLogin {
+				tr.V2Args = append(tr.V2Args, "--auto-iam-authn")
+			}
+		case "dir":
+			tr.V2Args = append(tr.V2Args, "--unix-socket", *dir)
+		case "fuse":
+			if *useFuse {
+				tr.V2Args = append(tr.V2Args, "--fuse", *dir)
+			}
+		case "fuse_tmp":
+			tr.V2Args = append(tr.V2Args, "--fuse-temp-dir", *fuseTmp)
+		case "health_check_port":
+			tr.V2Args = append(tr.V2Args, "--http-port", *healthCheckPort)
+		case "use_http_health_check":
+			if *useHTTPHealthCheck {
+				tr.V2Args = append(tr.V2Args, "--health-check")
+			}
+		case "host":
+			tr.V2Args = append(tr.V2Args, "--sqladmin-api-endpoint", *host)
+		case "max_connections":
+			tr.V2Args = append(tr.V2Args, "--max-connections", strconv.FormatUint(*maxConnections, 10))
+		case "quiet":
+			if *quiet {
+				tr.V2Args = append(tr.V2Args, "--quiet")
+			}
+		case "quota_project":
+			tr.V2Args = append(tr.V2Args, "--quota-project", *quotaProject)
+		case "skip_failed_instance_config":
+			if *skipFailedInstanceConfig {
+				tr.V2Args = append(tr.V2Args, "--skip-failed-instance-config")
+			}
+		case "structured_logs":
+			if *structuredLogs {
+				tr.V2Args = append(tr.V2Args, "--structured-logs")
+			}
+		case "term_timeout":
+			tr.V2Args = append(tr.V2Args, "--max-sigterm-delay", termTimeout.String())
+		case "version":
+			if *version {
+				tr.V2Args = append(tr.V2Args, "--version")
+			}
+		}
+	})
+
+	tr.LogDebugStdout = *logDebugStdoutFlag
+	tr.Verbose = *verboseFlag
+
+	// ip_address_types handling
+	ipTypesSet := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "ip_address_types" {
+			ipTypesSet = true
+		}
+	})
+
+	if !ipTypesSet {
+		tr.V2Args = append(tr.V2Args, "--auto-ip")
+	} else {
+		types := strings.Split(*ipAddressTypes, ",")
+		hasPublic := false
+		hasPrivate := false
+		for _, t := range types {
+			switch strings.TrimSpace(t) {
+			case "PUBLIC":
+				hasPublic = true
+			case "PRIVATE":
+				hasPrivate = true
+			default:
+				// Unknown type, fallback to v1
+				return tr
+			}
+		}
+		if hasPublic && hasPrivate {
+			tr.V2Args = append(tr.V2Args, "--auto-ip")
+		} else if hasPrivate {
+			tr.V2Args = append(tr.V2Args, "--private-ip")
+		} else if hasPublic {
+			// default in v2 is public
+		}
+	}
+
+	// instances handling
+	for _, inst := range instances {
+		parts := strings.SplitN(inst, "=", 2)
+		connName := parts[0]
+		if len(parts) == 1 {
+			tr.V2Args = append(tr.V2Args, connName)
+			continue
+		}
+
+		opts := strings.SplitN(parts[1], ":", 2)
+		if len(opts) != 2 {
+			return tr // Invalid format
+		}
+
+		netType := opts[0]
+		netAddr := opts[1]
+
+		switch netType {
+		case "tcp":
+			if strings.Contains(netAddr, ":") {
+				// host:port
+				h, p, err := net.SplitHostPort(netAddr)
+				if err != nil {
+					return tr
+				}
+				tr.V2Args = append(tr.V2Args, fmt.Sprintf("%s?address=%s&port=%s", connName, h, p))
+			} else {
+				// just port
+				tr.V2Args = append(tr.V2Args, fmt.Sprintf("%s?port=%s", connName, netAddr))
+			}
+		case "unix":
+			if strings.HasPrefix(netAddr, "/") {
+				tr.V2Args = append(tr.V2Args, fmt.Sprintf("%s?unix-socket-path=%s", connName, netAddr))
+			} else {
+				tr.V2Args = append(tr.V2Args, fmt.Sprintf("%s?unix-socket=%s", connName, netAddr))
+			}
+		default:
+			return tr // Unsupported network
+		}
+	}
+
+	// V2 requires at least one instance OR fuse mode OR version OR instances_metadata OR projects
+	if len(instances) == 0 && !*useFuse && !*version && *instancesMetadata == "" && len(tr.Projects) == 0 {
+		return tr
+	}
+
+	tr.OK = true
+	return tr
 }
