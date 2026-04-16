@@ -118,7 +118,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["/cloud-sql-proxy","shutdown", "--admin-port","9192"]
+              command: ["/cloud-sql-proxy","shutdown", "--admin-port","9092"]
 
         # The /startup probe returns OK when the proxy is ready to receive
         # connections from the application. In this example, k8s will check
