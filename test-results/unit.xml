@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="287" skipped="34">
+	<testsuite name="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql" tests="0" failures="0" errors="0" id="0" hostname="hessjc-test.c.googlers.com" time="0.000" timestamp="2026-04-09T17:56:12Z"></testsuite>
+	<testsuite name="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/gcloud" tests="1" failures="0" errors="0" id="1" hostname="hessjc-test.c.googlers.com" skipped="1" time="1.256" timestamp="2026-04-09T17:56:15Z">
+		<testcase name="TestGcloud" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/gcloud" time="0.000">
+			<skipped message="Skipped"><![CDATA[    gcloud_test.go:25: skipping gcloud integration tests]]></skipped>
+		</testcase>
+	</testsuite>
+	<testsuite name="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" tests="23" failures="0" errors="0" id="2" hostname="hessjc-test.c.googlers.com" skipped="22" time="1.300" timestamp="2026-04-09T17:56:15Z">
+		<testcase name="TestPostgresFUSEConnect" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:33: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestMySQLTCP" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    mysql_test.go:85: skipping MySQL integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestMySQLUnix" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    mysql_test.go:98: skipping MySQL integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestMySQLMCPUnix" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    mysql_test.go:124: skipping MySQL integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestMySQLImpersonation" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    mysql_test.go:150: skipping MySQL integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestMySQLAuthentication" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    mysql_test.go:167: skipping MySQL integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestMySQLGcloudAuth" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    mysql_test.go:235: skipping MySQL integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestMySQLHealthCheck" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    mysql_test.go:267: skipping MySQL integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestVersion" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000"></testcase>
+		<testcase name="TestPostgresTCP" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:62: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestPostgresUnix" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:75: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestPostgresMCPUnix" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:97: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestPostgresImpersonation" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:131: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestPostgresAuthentication" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:147: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestPostgresGcloudAuth" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:215: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestPostgresIAMDBAuthn" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:248: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestPostgresCustomerCAS" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:301: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestPostgresHealthCheck" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    postgres_test.go:342: skipping Postgres integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestSQLServerTCP" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    sqlserver_test.go:54: skipping SQL Server integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestSQLServerImpersonation" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    sqlserver_test.go:67: skipping SQL Server integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestSQLServerAuthentication" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    sqlserver_test.go:83: skipping SQL Server integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestSQLServerGcloudAuth" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    sqlserver_test.go:151: skipping SQL Server integration tests]]></skipped>
+		</testcase>
+		<testcase name="TestSQLServerHealthCheck" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/tests" time="0.000">
+			<skipped message="Skipped"><![CDATA[    sqlserver_test.go:183: skipping SQL Server integration tests]]></skipped>
+		</testcase>
+		<system-out><![CDATA[coverage: [no statements]]]></system-out>
+	</testsuite>
+	<testsuite name="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck" tests="5" failures="0" errors="0" id="3" hostname="hessjc-test.c.googlers.com" time="2.376" timestamp="2026-04-09T17:56:16Z">
+		<properties>
+			<property name="coverage.statements.pct" value="93.30"></property>
+		</properties>
+		<testcase name="TestHandleStartupWhenNotNotified" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:9000]]></system-out>
+		</testcase>
+		<testcase name="TestHandleStartupWhenNotified" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:9000]]></system-out>
+		</testcase>
+		<testcase name="TestHandleReadinessWhenNotNotified" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:9000
+2026/04/09 17:56:14 [Health Check] Readiness failed: proxy is not started]]></system-out>
+		</testcase>
+		<testcase name="TestHandleReadinessWhenStopped" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:9000
+2026/04/09 17:56:14 [Health Check] Readiness failed: proxy has stopped]]></system-out>
+		</testcase>
+		<testcase name="TestHandleReadinessForMaxConns" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/healthcheck" time="1.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:9000
+2026/04/09 17:56:14 [proj:region:pg] Accepted connection from 127.0.0.1:49660
+2026/04/09 17:56:15 [Health Check] Readiness failed: max connections reached (open = 1, max = 1)]]></system-out>
+		</testcase>
+		<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:pg] client closed the connection]]></system-out>
+	</testsuite>
+	<testsuite name="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" tests="58" failures="0" errors="0" id="4" hostname="hessjc-test.c.googlers.com" skipped="11" time="3.034" timestamp="2026-04-09T17:56:16Z">
+		<properties>
+			<property name="coverage.statements.pct" value="62.70"></property>
+		</properties>
+		<testcase name="TestClientUsesSyncAtomicAlignment" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestParseImpersonationChain" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestParseImpersonationChain/when_there_is_only_a_target" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestParseImpersonationChain/when_there_are_delegates" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestFUSESupport" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_linux_test.go:26: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSEREADME" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:81: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSEDialInstance" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:144: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSEAcceptErrorReturnedFromServe" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:202: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSEReadDir" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:256: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestLookupIgnoresContext" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:285: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSEErrors" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:306: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSEWithBadInstanceName" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:346: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSECheckConnections" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:365: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSEClose" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:400: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFUSEWithBadDir" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<skipped message="Skipped"><![CDATA[    fuse_test.go:423: skipping fuse tests in short mode.]]></skipped>
+		</testcase>
+		<testcase name="TestFuseClosesGracefully" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.120">
+			<system-out><![CDATA[2026/04/09 17:56:13 Authorizing with OAuth2 token]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.020"></testcase>
+		<testcase name="TestClientInitialization/multiple_instances" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:27000
+2026/04/09 17:56:14 [proj:region:mysql] Listening on 127.0.0.1:27001
+2026/04/09 17:56:14 [proj:region:sqlserver] Listening on 127.0.0.1:27002]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_instance_address" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on [::]:28003]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/IPv6_support" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on [::1]:28004]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_instance_port" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:28000]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_global_port_and_instance_port" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:28006
+2026/04/09 17:56:14 [proj:region:mysql] Listening on 127.0.0.1:29001
+2026/04/09 17:56:14 [proj:region:sqlserver] Listening on 127.0.0.1:28007]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_incrementing_automatic_port_selection" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:5432
+2026/04/09 17:56:14 [proj:region:pg2] Listening on 127.0.0.1:5433
+2026/04/09 17:56:14 [proj:region:mysql] Listening on 127.0.0.1:3306
+2026/04/09 17:56:14 [proj:region:mysql2] Listening on 127.0.0.1:3307
+2026/04/09 17:56:14 [proj:region:sqlserver] Listening on 127.0.0.1:1433
+2026/04/09 17:56:14 [proj:region:sqlserver2] Listening on 127.0.0.1:1434]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_SQL_Data_enabled_globally_defaulting_to_Postgres_port" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:sd] Listening on 127.0.0.1:5432
+2026/04/09 17:56:14 [proj:region:sd2] Listening on 127.0.0.1:5433]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_SQL_Data_enabled_per-instance_defaulting_to_Postgres_port" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:sd] Listening on 127.0.0.1:5432
+2026/04/09 17:56:14 [proj:region:sd2] Listening on 127.0.0.1:5433]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_SQL_Data_enabled_but_explicit_port" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:sd] Listening on 127.0.0.1:29010]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_a_Unix_socket" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:mysql] Listening on /tmp/442972897/proj:region:mysql]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_a_global_TCP_host_port_and_an_instance_Unix_socket" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:mysql] Listening on /tmp/442972897/proj:region:mysql]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_a_global_Unix_socket_and_an_instance_TCP_port" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:28009]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_a_Unix_socket_for_Postgres" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on /tmp/442972897/proj:region:pg/.s.PGSQL.5432]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_a_Unix_socket_path_per_instance" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:mysql] Listening on /tmp/442972897/db]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_a_Unix_socket_path_overriding_Unix_socket" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:mysql] Listening on /tmp/442972897/db]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_a_Unix_socket_path_per_pg_instance" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on /tmp/442972897/db/.s.PGSQL.5432]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_a_Unix_socket_path_per_pg_instance_and_explicit_pg_path_suffix" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on /tmp/442972897/db/.s.PGSQL.5432]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_Unix_socket_and_two_instances,_one_invalid_but_skipped" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on /tmp/442972897/proj:region:pg/.s.PGSQL.5432
+2026/04/09 17:56:14 [proj:region:fakeserver] could not resolve instance version: non existing server
+2026/04/09 17:56:14 [proj:region:fakeserver] Unable to mount socket: non existing server (skipped due to skip-failed-instance-config flag)]]></system-out>
+		</testcase>
+		<testcase name="TestClientInitialization/with_TCP_port_for_non_functional_instance" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:fakeserver] Listening on [::]:27010]]></system-out>
+		</testcase>
+		<testcase name="TestClientLimitsMaxConnections" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.100">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:28011
+2026/04/09 17:56:14 [proj:region:pg] Accepted connection from 127.0.0.1:48822
+2026/04/09 17:56:14 [proj:region:pg] Accepted connection from 127.0.0.1:48838
+2026/04/09 17:56:14 max connections (1) exceeded, refusing new connection]]></system-out>
+		</testcase>
+		<testcase name="TestClientCloseWaitsForActiveConnections" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="1.100">
+			<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] Listening on 127.0.0.1:28012
+2026/04/09 17:56:14 [proj:region:pg] Accepted connection from 127.0.0.1:32780]]></system-out>
+		</testcase>
+		<testcase name="TestClientClosesCleanly" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.100">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:pg] client closed the connection
+2026/04/09 17:56:15 [proj:reg:inst] Listening on 127.0.0.1:28013
+2026/04/09 17:56:15 [proj:reg:inst] Accepted connection from 127.0.0.1:56870]]></system-out>
+		</testcase>
+		<testcase name="TestClosesWithError" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.100">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:reg:inst] Listening on 127.0.0.1:28014
+2026/04/09 17:56:15 [proj:reg:inst] Accepted connection from 127.0.0.1:47650
+2026/04/09 17:56:15 [proj:reg:inst] failed to connect to instance: errorDialer returns error on Dial]]></system-out>
+		</testcase>
+		<testcase name="TestMultiErrorFormatting" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestMultiErrorFormatting/with_one_error" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestMultiErrorFormatting/with_many_errors" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestClientInitializationWorksRepeatedly" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:pg] Listening on /tmp/2940735531/proj:region:pg/.s.PGSQL.5432
+2026/04/09 17:56:15 [proj:region:pg] Listening on /tmp/2940735531/proj:region:pg/.s.PGSQL.5432]]></system-out>
+		</testcase>
+		<testcase name="TestClientNotifiesCallerOnServe" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.100">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:pg] Listening on [::]:5432]]></system-out>
+		</testcase>
+		<testcase name="TestClientConnCount" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.100">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:pg] Listening on 127.0.0.1:28015
+2026/04/09 17:56:15 [proj:region:pg] Accepted connection from 127.0.0.1:57418
+2026/04/09 17:56:15 [proj:region:pg] client closed the connection]]></system-out>
+		</testcase>
+		<testcase name="TestSQLDataWarmup" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestSQLDataWarmup/standard_warmup" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:reg:inst] Listening on [::]:28004]]></system-out>
+		</testcase>
+		<testcase name="TestSQLDataWarmup/warmup_skipped_globally" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:reg:inst] Listening on [::]:28005]]></system-out>
+		</testcase>
+		<testcase name="TestSQLDataWarmup/warmup_skipped_per-instance" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:reg:inst] Listening on [::]:29006]]></system-out>
+		</testcase>
+		<testcase name="TestCheckConnections" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:pg] Listening on 127.0.0.1:28016
+2026/04/09 17:56:15 [proj:region:pg1] Listening on 127.0.0.1:28002
+2026/04/09 17:56:15 [proj:region:pg2] Listening on 127.0.0.1:28003]]></system-out>
+		</testcase>
+		<testcase name="TestRunConnectionCheck" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.100">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:pg] Listening on 127.0.0.1:28017
+2026/04/09 17:56:15 Connection test started
+2026/04/09 17:56:15 Connection test passed]]></system-out>
+		</testcase>
+		<testcase name="TestProxyInitializationWithFailedUnixSocket" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestProxyInitializationWithFailedUnixSocket/with_unix_socket_for_non_functional_instance" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:fakeserver] could not resolve instance version: non existing server]]></system-out>
+		</testcase>
+		<testcase name="TestProxyInitializationWithFailedUnixSocket/without_TCP_port_or_unix_socket_for_non_functional_instance" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:fakeserver] could not resolve instance version: non existing server]]></system-out>
+		</testcase>
+		<testcase name="TestProxyMultiInstances" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000"></testcase>
+		<testcase name="TestProxyMultiInstances/with_tcp_socket_and_unix_for_non_functional_instance" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:fakeserver] could not resolve instance version: non existing server]]></system-out>
+		</testcase>
+		<testcase name="TestProxyMultiInstances/with_two_tcp_socket_instances_and_conflicting_ports" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:15 [proj:region:fakeserver] Listening on [::]:28003
+2026/04/09 17:56:15 [proj:region:mysql] could not listen to address :28003: listen tcp :28003: bind: address already in use]]></system-out>
+		</testcase>
+		<system-out><![CDATA[2026/04/09 17:56:14 [proj:region:pg] client closed the connection
+2026/04/09 17:56:15 [proj:reg:inst] client closed the connection]]></system-out>
+	</testsuite>
+	<testsuite name="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" tests="200" failures="0" errors="0" id="5" hostname="hessjc-test.c.googlers.com" time="8.694" timestamp="2026-04-09T17:56:22Z">
+		<properties>
+			<property name="coverage.statements.pct" value="86.40"></property>
+		</properties>
+		<testcase name="TestNewCommandWithConfigFile" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.020"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/toml_config_file" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/yaml_config_file" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/json_config_file" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/config_file_with_two_instances" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/instance_argument_overrides_env_config_precedence" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/instance_env_overrides_config_file_precedence" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/flag_overrides_env_config_precedence" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/flag_overrides_config_file_precedence" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithConfigFile/env_overrides_config_file_precedence" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.020"></testcase>
+		<testcase name="TestCommandOptions/with_logger" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions/with_dialer" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions/with_FUSE_dir" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions/with_FUSE_temp_dir" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions/with_max_connections" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions/with_user_agent" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions/with_auto_IP" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions/with_quiet_logging" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptions/with_lazy_refresh" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptionsOverridesCLI" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptionsOverridesCLI/with_duplicate_max_connections" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandOptionsOverridesCLI/with_quiet_logging" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArgumentsOnLinux" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArgumentsOnLinux/using_the_fuse_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArgumentsOnLinux/using_the_fuse_temporary_directory_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestSdNotifyOnLinux" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.010"></testcase>
+		<testcase name="TestSdNotifyOnLinux/System_with_systemd_Type=notify_and_proxy_started_successfully" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [my-project:my-region:my-instance] Listening on 127.0.0.1:34375
+2026/04/09 17:56:14 The proxy has started successfully and is ready for new connections!]]></system-out>
+		</testcase>
+		<testcase name="TestSdNotifyOnLinux/System_with_systemd_Type=notify_and_proxy_failed_to_start" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 Error starting proxy: stat invalid: no such file or directory
+2026/04/09 17:56:14 The proxy has encountered a terminal error: unable to start: stat invalid: no such file or directory
+2026/04/09 17:56:14 Sending SIGINT signal for proxy to shutdown.
+2026/04/09 17:56:14 Sending SIGINT signal for proxy to shutdown.
+2026/04/09 17:56:14 SIGINT signal received. Shutting down...]]></system-out>
+		</testcase>
+		<testcase name="TestUserAgentWithVersionEnvVar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestUserAgent" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.080"></testcase>
+		<testcase name="TestNewCommandArguments/basic_invocation_with_defaults" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_address_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_address_(short)_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_address_query_param" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_port_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_port_(short)_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_port_query_param" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_token_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_token_(short)_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_credentiale_file_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_(short)_credentiale_file_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_JSON_credentials" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_(short)_JSON_credentials" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_gcloud_auth_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_(short)_gcloud_auth_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_api-endpoint_flag_without_trailing_slash" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_api-endpoint_flag_with_trailing_slash" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_universe_domain_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_unix_socket_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_(short)_unix_socket_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_unix_socket_query_param" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_unix_socket_path_query_param" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_iam_authn_login_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_(short)_iam_authn_login_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_iam_authn_login_query_param" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/enabling_structured_logging" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_max_connections_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_min-sigterm-delay_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_wait_after_signterm_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_private-ip_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_private-ip_flag_query_param" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_private-ip_flag_with_query_param_override" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_psc_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_psc_flag_query_param" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_quota_project_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_impersonate_service_account_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_debug_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_lazy_refresh_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_admin_port_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_quitquitquit_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_login-token_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_auto-ip_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_run-connection-test_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_sql-data_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_sql-data-endpoint_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandArguments/using_the_sql-data_query_param" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfigInstanceConnectionName" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.010"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfigInstanceConnectionName/with_one_instance_connection_name" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfigInstanceConnectionName/with_multiple_instance_connection_names" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfigInstanceConnectionName/with_query_params" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfigInstanceConnectionName/when_the_index_skips_a_number" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfigInstanceConnectionName/when_there_are_CLI_args_provided" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfigInstanceConnectionName/when_only_an_index_instance_connection_name_is_defined" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.050"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_address_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_port_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_token_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_credentiale_file_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_JSON_credentials" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_gcloud_auth_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_api-endpoint_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_unix_socket_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_iam_authn_login_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/enabling_structured_logging" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_max_connections_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_wait_after_signterm_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_private-ip_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_psc_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_quota_project_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_impersonate_service_account_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_disable_traces_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 Ignoring --disable-traces because --telemetry-project was not set]]></system-out>
+		</testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_telemetry_sample_rate_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_disable_metrics_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 Ignoring --disable-metrics because --telemetry-project was not set]]></system-out>
+		</testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_telemetry_project_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_telemetry_prefix_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 Ignoring --telementry-prefix because --telemetry-project was not set]]></system-out>
+		</testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_prometheus_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_prometheus_namespace_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_health_check_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_http_address_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_http_port_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 Ignoring --http-port because --prometheus or --health-check was not set]]></system-out>
+		</testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_debug_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_admin_port_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_quitquitquit_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_auto-ip_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_sql-data_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithEnvironmentConfig/using_the_sql-data-endpoint_envvar" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestAutoIAMAuthNQueryParams" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.010"></testcase>
+		<testcase name="TestAutoIAMAuthNQueryParams/when_the_query_string_is_absent" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestAutoIAMAuthNQueryParams/when_the_query_string_is_true" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestAutoIAMAuthNQueryParams/when_the_query_string_is_(short)_t" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestAutoIAMAuthNQueryParams/when_the_query_string_is_false" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestAutoIAMAuthNQueryParams/when_the_query_string_is_(short)_f" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.010"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_absent" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_has_no_value" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_true" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_True" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_(short)_T" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_(short)_t" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_false" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_(short)_f" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_False" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPrivateIPQueryParams/when_the_query_string_is_(short)_F" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.010"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_absent" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_has_no_value" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_true" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_True" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_(short)_T" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_(short)_t" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_false" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_(short)_f" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_False" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestPSCQueryParams/when_the_query_string_is_(short)_F" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestSQLDataQueryParams" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestSQLDataQueryParams/when_the_query_string_is_absent" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestSQLDataQueryParams/when_the_query_string_is_true" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestSQLDataQueryParams/when_the_query_string_is_false" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.040"></testcase>
+		<testcase name="TestNewCommandWithErrors/basic_invocation_missing_instance_connection_name" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_query_string_is_bogus" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_address_query_param_is_empty" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_address_flag_with_a_bad_IP_address" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_address_query_param_is_not_an_IP_address" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_address_query_param_contains_multiple_values" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_query_string_is_invalid" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_port_query_param_contains_multiple_values" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_port_query_param_is_not_a_number" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_both_token_and_credentials_file_are_set" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_both_token_and_gcloud_auth_are_set" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_both_gcloud_auth_and_auto-iam-authn_are_set" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_both_gcloud_auth_and_credentials_file_are_set" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_both_token_and_credentials_JSON_are_set" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_both_credentials_file_and_credentials_JSON_are_set" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_both_gcloud_auth_and_credentials_JSON_are_set" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_unix_socket_query_param_contains_multiple_values" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_unix_socket_flag_with_addr" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_unix_socket_flag_with_port" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_unix_socket_and_unix-socket-path" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_unix_socket_and_addr_query_params" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_unix_socket_path_and_addr_query_params" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_unix_socket_and_port_query_params" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_unix_socket_path_and_port_query_params" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_iam_authn_login_query_param_contains_multiple_values" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_sql-data_query_param_contains_multiple_values" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_sql-data_query_param_is_bogus" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/when_the_iam_authn_login_query_param_is_bogus" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_an_invalid_url_for_sqladmin-api-endpoint" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_fuse-tmp-dir_without_fuse" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_--auto-iam-authn_with_just_token_flag" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_the_--login-token_without_--token_and_--auto-iam-authn" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_--token_and_--login-token_without_--auto-iam-authn" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_--private-ip_with_--auto-ip" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_private-ip_query_param_with_--auto-ip" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_private_IP_and_psc_query_params" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_--private-ip_with_--psc" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/run-connection-test_with_fuse" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestNewCommandWithErrors/using_both_--sqladmin-api-endpoint_and_--universe-domain" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestCommandWithCustomDialer" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="1.000">
+			<system-out><![CDATA[2026/04/09 17:56:14 [my-project:my-region:my-instance] Listening on 127.0.0.1:37787
+2026/04/09 17:56:14 The proxy has started successfully and is ready for new connections!
+2026/04/09 17:56:15 Sending SIGINT signal for proxy to shutdown.
+2026/04/09 17:56:15 SIGINT signal received. Shutting down...]]></system-out>
+		</testcase>
+		<testcase name="TestPrometheusMetricsEndpoint" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="1.010">
+			<system-out><![CDATA[2026/04/09 17:56:15 [my-project:my-region:my-instance] Listening on 127.0.0.1:36897
+2026/04/09 17:56:15 The proxy has started successfully and is ready for new connections!]]></system-out>
+		</testcase>
+		<testcase name="TestPProfServer" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="1.010">
+			<system-out><![CDATA[2026/04/09 17:56:16 SIGINT signal received. Shutting down...
+2026/04/09 17:56:16 proxy server error: accept tcp 127.0.0.1:36897: use of closed network connection
+2026/04/09 17:56:16 [my-project:my-region:my-instance] Listening on 127.0.0.1:33229
+2026/04/09 17:56:16 The proxy has started successfully and is ready for new connections!
+2026/04/09 17:56:16 Enabling pprof endpoints at localhost:9191]]></system-out>
+		</testcase>
+		<testcase name="TestQuitQuitQuitHTTPPost" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="1.010">
+			<system-out><![CDATA[2026/04/09 17:56:17 Sending SIGINT signal for proxy to shutdown.
+2026/04/09 17:56:17 SIGINT signal received. Shutting down...
+2026/04/09 17:56:17 proxy server error: accept tcp 127.0.0.1:33229: use of closed network connection
+2026/04/09 17:56:17 [my-project:my-region:my-instance] Listening on 127.0.0.1:46091
+2026/04/09 17:56:17 The proxy has started successfully and is ready for new connections!
+2026/04/09 17:56:17 Enabling quitquitquit endpoint at localhost:9192
+2026/04/09 17:56:18 /quitquitquit received request. Shutting down...
+2026/04/09 17:56:18 proxy server error: accept tcp 127.0.0.1:46091: use of closed network connection
+2026/04/09 17:56:18 Sending SIGINT signal for proxy to shutdown.]]></system-out>
+		</testcase>
+		<testcase name="TestQuitQuitQuitHTTPGet" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="1.010">
+			<system-out><![CDATA[2026/04/09 17:56:18 [my-project:my-region:my-instance] Listening on 127.0.0.1:42123
+2026/04/09 17:56:18 The proxy has started successfully and is ready for new connections!
+2026/04/09 17:56:18 Enabling quitquitquit endpoint at localhost:9194
+2026/04/09 17:56:19 /quitquitquit received request. Shutting down...
+2026/04/09 17:56:19 proxy server error: accept tcp 127.0.0.1:42123: use of closed network connection
+2026/04/09 17:56:19 Sending SIGINT signal for proxy to shutdown.]]></system-out>
+		</testcase>
+		<testcase name="TestQuitQuitQuitWithErrors" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="1.010">
+			<system-out><![CDATA[2026/04/09 17:56:19 [my-project:my-region:my-instance] Listening on 127.0.0.1:40611
+2026/04/09 17:56:19 The proxy has started successfully and is ready for new connections!
+2026/04/09 17:56:19 Enabling quitquitquit endpoint at localhost:9193
+2026/04/09 17:56:20 /quitquitquit received request. Shutting down...
+2026/04/09 17:56:20 proxy server error: accept tcp 127.0.0.1:40611: use of closed network connection
+2026/04/09 17:56:20 error during shutdown: close failed
+2026/04/09 17:56:20 Sending SIGINT signal for proxy to shutdown.]]></system-out>
+		</testcase>
+		<testcase name="TestShutdownCommand" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestShutdownCommandFails" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.000"></testcase>
+		<testcase name="TestWaitCommandFlags" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="0.100"></testcase>
+		<testcase name="TestWaitCommandFails" classname="github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd" time="1.000"></testcase>
+		<system-out><![CDATA[2026/04/09 17:56:14 proxy server error: accept tcp 127.0.0.1:34375: use of closed network connection
+2026/04/09 17:56:15 proxy server error: accept tcp 127.0.0.1:37787: use of closed network connection
+2026/04/09 17:56:16 Sending SIGINT signal for proxy to shutdown.]]></system-out>
+	</testsuite>
+	<testsuite name="" tests="0" failures="0" errors="0" id="6" hostname="hessjc-test.c.googlers.com" time="0.000" timestamp="2026-04-09T17:56:22Z">
+		<system-out><![CDATA[	github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log		coverage: 0.0% of statements]]></system-out>
+	</testsuite>
+	<testsuite name="" tests="0" failures="0" errors="0" id="7" hostname="hessjc-test.c.googlers.com" time="0.000" timestamp="2026-04-09T17:56:22Z">
+		<system-out><![CDATA[	github.com/GoogleCloudPlatform/cloud-sql-proxy/v2		coverage: 0.0% of statements]]></system-out>
+	</testsuite>
+	<testsuite name="" tests="0" failures="0" errors="0" id="8" hostname="hessjc-test.c.googlers.com" time="0.000" timestamp="2026-04-09T17:56:22Z">
+		<system-out><![CDATA[	github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd/gendocs		coverage: 0.0% of statements]]></system-out>
+	</testsuite>
+</testsuites>
