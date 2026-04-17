@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.21.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.21.2...v2.21.3) (2026-04-17)
+
+
+### Bug Fixes
+
+* **examples:** change admin port on prestop of proxy_with_http_health_check ([#2576](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2576)) ([51d1583](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/51d1583ae45c57d64ca799c0695905c5c711521c))
+* use specific config file for loading ([#2573](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2573)) ([#2580](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2580)) ([f951767](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f9517675a3d470fb5b2c90e9d4df6c2a930a6b3f))
+
 ## [2.21.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.21.1...v2.21.2) (2026-03-18)
 
 
