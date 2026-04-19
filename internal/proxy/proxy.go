@@ -188,6 +188,14 @@ type Config struct {
 	// endpoint for all instances
 	PSC bool
 
+	// ProxyV1Compatibility supports a legacy behavior where the Proxy will
+	// print out "Ready for new connections" when the proxy starts.
+	ProxyV1Compatibility bool
+
+	// LogDebugStdout supports a legacy behavior where the Proxy will
+	// print debug/info logs to stdout instead of stderr.
+	LogDebugStdout bool
+
 	// AutoIP supports a legacy behavior where the Proxy will connect to
 	// the first IP address returned from the SQL ADmin API response. This
 	// setting should be avoided and used only to support legacy Proxy
@@ -199,6 +207,14 @@ type Config struct {
 	// setting is useful in environments where the CPU may be throttled outside
 	// of a request context, e.g., Cloud Run.
 	LazyRefresh bool
+
+	// InstancesMetadata is the GCE metadata path to a value that contains a
+	// comma-separated list of instance connection names.
+	InstancesMetadata string
+
+	// Projects is a list of projects from which to connect to all
+	// Second Generation instances.
+	Projects []string
 
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.

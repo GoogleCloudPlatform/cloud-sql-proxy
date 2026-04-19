@@ -33,6 +33,7 @@ import (
 	"syscall"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	"contrib.go.opencensus.io/exporter/prometheus"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
@@ -44,6 +45,10 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.opencensus.io/trace"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/impersonate"
+	"google.golang.org/api/option"
+	sqladmin "google.golang.org/api/sqladmin/v1"
 )
 
 var (
@@ -73,7 +78,12 @@ func semanticVersion() string {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := NewCommand().Execute(); err != nil {
+	ExecuteCommand(NewCommand())
+}
+
+// ExecuteCommand runs a preconfigured command, and exits the appropriate error code.
+func ExecuteCommand(c *Command) {
+	if err := c.Execute(); err != nil {
 		exit := 1
 		var terr *exitError
 		if errors.As(err, &terr) {
@@ -593,6 +603,11 @@ status code.`)
 		`If set, the Proxy will skip any instances that are invalid/unreachable (
 only applicable to Unix sockets)`)
 
+	localFlags.StringVar(&c.conf.InstancesMetadata, "instances-metadata", "",
+		`If provided, it is treated as a path to a metadata value which
+contains a comma-separated list of instance connection names.
+Only supported when running on Google Compute Engine.`)
+
 	// Global and per instance flags
 	localFlags.StringVarP(&c.conf.Addr, "address", "a", "127.0.0.1",
 		"(*) Address to bind Cloud SQL instance listeners.")
@@ -639,6 +654,24 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 		o(c)
 	}
 
+	// If instances-metadata is set, fetch instances from GCE metadata.
+	if c.conf.InstancesMetadata != "" {
+		mArgs, err := instanceFromMetadata(c.conf.InstancesMetadata)
+		if err != nil {
+			return err
+		}
+		args = append(args, mArgs...)
+	}
+
+	// If projects is set, fetch instances from those projects.
+	if len(c.conf.Projects) > 0 {
+		pArgs, err := instanceFromProjects(c.Context(), c.conf)
+		if err != nil {
+			return err
+		}
+		args = append(args, pArgs...)
+	}
+
 	// Handle logger separately from config
 	if c.conf.StructuredLogs {
 		c.logger = log.NewStructuredLogger(c.conf.Quiet)
@@ -646,6 +679,8 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 
 	if c.conf.Quiet {
 		c.logger = log.NewStdLogger(io.Discard, os.Stderr)
+	} else if c.conf.LogDebugStdout {
+		c.logger = log.NewStdLogger(os.Stdout, os.Stderr)
 	}
 
 	err = parseConfig(c, c.conf, args)
@@ -1105,6 +1140,9 @@ func runSignalWrapper(cmd *Command) (err error) {
 		return err
 	case p = <-startCh:
 		cmd.logger.Infof("The proxy has started successfully and is ready for new connections!")
+		if cmd.conf.ProxyV1Compatibility {
+			cmd.logger.Infof("Ready for new connections")
+		}
 		// If running under systemd with Type=notify, it will send a message to the
 		// service manager that it is ready to handle connections now.
 		go func() {
@@ -1259,4 +1297,130 @@ func startHTTPServer(ctx context.Context, l cloudsql.Logger, addr string, mux *h
 	if err := server.Shutdown(ctx2); err != nil {
 		l.Errorf("failed to shutdown HTTP server: %v\n", err)
 	}
+}
+
+func instanceFromMetadata(path string) ([]string, error) {
+	if !metadata.OnGCE() {
+		return nil, newBadCommandError("instances-metadata unsupported outside of Google Compute Engine")
+	}
+	val, err := metadata.Get(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch metadata from %q: %v", path, err)
+	}
+
+	var args []string
+	for _, inst := range strings.Split(val, ",") {
+		inst = strings.TrimSpace(inst)
+		if inst != "" {
+			args = append(args, inst)
+		}
+	}
+	return args, nil
+}
+
+func instanceFromProjects(ctx context.Context, conf *proxy.Config) ([]string, error) {
+	var opts []option.ClientOption
+	if conf.APIEndpointURL != "" {
+		opts = append(opts, option.WithEndpoint(conf.APIEndpointURL))
+	}
+	if conf.QuotaProject != "" {
+		opts = append(opts, option.WithQuotaProject(conf.QuotaProject))
+	}
+
+	// Handle credentials
+	switch {
+	case conf.ImpersonationChain != "":
+		target, delegates := parseImpersonationChain(conf.ImpersonationChain)
+		var iopts []option.ClientOption
+		switch {
+		case conf.Token != "":
+			ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: conf.Token})
+			iopts = append(iopts, option.WithTokenSource(ts))
+		case conf.CredentialsFile != "":
+			iopts = append(iopts, option.WithCredentialsFile(conf.CredentialsFile))
+		case conf.CredentialsJSON != "":
+			iopts = append(iopts, option.WithCredentialsJSON([]byte(conf.CredentialsJSON)))
+		}
+		ts, err := impersonate.CredentialsTokenSource(ctx, impersonate.CredentialsConfig{
+			TargetPrincipal: target,
+			Delegates:       delegates,
+			Scopes:          []string{sqladmin.SqlserviceAdminScope},
+		}, iopts...)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, option.WithTokenSource(ts))
+	case conf.Token != "":
+		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: conf.Token})
+		opts = append(opts, option.WithTokenSource(ts))
+	case conf.CredentialsFile != "":
+		opts = append(opts, option.WithCredentialsFile(conf.CredentialsFile))
+	case conf.CredentialsJSON != "":
+		opts = append(opts, option.WithCredentialsJSON([]byte(conf.CredentialsJSON)))
+	}
+
+	sql, err := sqladmin.NewService(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan string)
+	errCh := make(chan error, len(conf.Projects))
+	var wg sync.WaitGroup
+	wg.Add(len(conf.Projects))
+	for _, proj := range conf.Projects {
+		proj := proj
+		go func() {
+			defer wg.Done()
+			err := sql.Instances.List(proj).Pages(ctx, func(r *sqladmin.InstancesListResponse) error {
+				for _, in := range r.Items {
+					// The Proxy only supports Second Gen
+					if in.BackendType == "SECOND_GEN" {
+						ch <- in.ConnectionName
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				errCh <- fmt.Errorf("failed to list instances in %q: %v", proj, err)
+			}
+		}()
+	}
+	go func() {
+		wg.Wait()
+		close(ch)
+		close(errCh)
+	}()
+
+	var args []string
+	for x := range ch {
+		args = append(args, x)
+	}
+
+	// Check for any errors
+	for err := range errCh {
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(args) == 0 {
+		return nil, fmt.Errorf("no Cloud SQL Instances found in projects: %v", conf.Projects)
+	}
+	return args, nil
+}
+
+func parseImpersonationChain(chain string) (string, []string) {
+	accts := strings.Split(chain, ",")
+	target := accts[0]
+	// Assign delegates if the chain is more than one account. Delegation
+	// goes from last back towards target, e.g., With sa1,sa2,sa3, sa3
+	// delegates to sa2, which impersonates the target sa1.
+	var delegates []string
+	if l := len(accts); l > 1 {
+		for i := l - 1; i > 0; i-- {
+			delegates = append(delegates, accts[i])
+		}
+	}
+	return target, delegates
 }

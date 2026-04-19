@@ -77,6 +77,16 @@ vs
 ./cloud-sql-proxy --unix-socket /cloudsql <INSTANCE_CONNECTION_NAME>
 ```
 
+### Automatic instance discovery from metadata
+
+```shell
+# v1
+./cloud_sql_proxy -dir /cloudsql -instances_metadata=instance/attributes/cloud-sql-instances
+
+# v2
+./cloud-sql-proxy --unix-socket /cloudsql --instances-metadata instance/attributes/cloud-sql-instances
+```
+
 ### Listen on multiple TCP sockets with incrementing ports
 
 ```shell
@@ -155,11 +165,11 @@ The following table lists in alphabetical order v1 flags and their v2 version.
 | fuse_tmp                    | fuse-temp-dir               |                                                                                      |
 | health_check_port           | http-port                   |  Use --http-address=0.0.0.0 when using a health check in Kubernetes                  |
 | host                        | sqladmin-api-endpoint       |                                                                                      |
-| instances_metadata          | 🤔                          | [Feature Request](https://github.com/GoogleCloudPlatform/cloudsql-proxy/issues/1259) |
+| instances_metadata          | instances-metadata          |                                                                                      |
 | ip_address_types            | private-ip                  | Defaults to public. To connect to a private IP, you must add the --private-ip flag   |
 | log_debug_stdout            | ❌                          | v2 logs to stdout, errors to stderr by default                                       |
 | max_connections             | max-connections             |                                                                                      |
-| projects                    | ❌                          | v2 prefers explicit connection configuration to avoid user error                     |
+| projects                    | ❌                          | Not supported as a v2 flag. v2 prefers explicit configuration. v1 -projects is supported in v2 compatibility mode. |
 | quiet                       | quiet                       | quiet disables all logging except errors                                             |
 | quota_project               | quota-project               |                                                                                      |
 | refresh_config_throttle     | ❌                          |                                                                                      |
