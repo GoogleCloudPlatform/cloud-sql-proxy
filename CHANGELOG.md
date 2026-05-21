@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.22.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.21.3...v2.22.0) (2026-05-21)
+
+
+### Features
+
+* drop support for Bullseye container ([#2600](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2600)) ([60311ab](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/60311ab4cc13e56ecec4d4c8a354b602a8c86010))
+
 ## [2.21.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.21.2...v2.21.3) (2026-04-17)
 
 
