@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.38.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.37.15...v1.38.0) (2026-05-21)
+
+
+### Features
+
+* drop bullseye support ([#2606](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2606)) ([83baf2a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/83baf2a4b225b43b234d774b8080639be210381a))
+
+
+### Bug Fixes
+
+* update dependencies to latest versions ([#2603](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2603)) ([c3dce7a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/c3dce7a5321437e590d3c5be15f12dbae175de12))
+
 ## [1.37.15](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.37.14...v1.37.15) (2026-04-17)
 
 
