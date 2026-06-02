@@ -32,6 +32,9 @@ func TestPostgresFUSEConnect(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 	tmpDir, cleanup := createTempDir(t)
 	defer cleanup()
 

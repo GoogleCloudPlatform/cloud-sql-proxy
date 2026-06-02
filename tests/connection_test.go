@@ -61,7 +61,7 @@ func removeAuthEnvVar(t *testing.T) (*oauth2.Token, string, func()) {
 func keyfile(t *testing.T) string {
 	path := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 	if path == "" {
-		t.Fatal("GOOGLE_APPLICATION_CREDENTIALS not set")
+		t.Skip("GOOGLE_APPLICATION_CREDENTIALS not set")
 	}
 	creds, err := os.ReadFile(path)
 	if err != nil {
