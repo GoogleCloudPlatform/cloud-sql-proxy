@@ -279,7 +279,9 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
                                              status code.
       --skip-failed-instance-config          If set, the Proxy will skip any instances that are invalid/unreachable (
                                              only applicable to Unix sockets)
+      --sql-data                             Enable SQL Data to tunnel through the Cloud SQL Admin API without needing network access to your public or private IP
       --sqladmin-api-endpoint string         API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)
+      --sqldata-api-endpoint string          Override the SQL Data API endpoint
   -l, --structured-logs                      Enable structured logging with LogEntry format
       --telemetry-prefix string              Prefix for Cloud Monitoring metrics.
       --telemetry-project string             Enable Cloud Monitoring and Cloud Trace with the provided project ID.

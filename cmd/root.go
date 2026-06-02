@@ -584,6 +584,9 @@ the cached copy has expired. Use this setting in environments where the
 CPU may be throttled and a background refresh cannot run reliably
 (e.g., Cloud Run)`,
 	)
+	localFlags.StringVar(&c.conf.SQLDataEndpoint, "sqldata-api-endpoint", "",
+		"Override the SQL Data API endpoint",
+	)
 
 	localFlags.BoolVar(&c.conf.RunConnectionTest, "run-connection-test", false, `Runs a connection test
 against all specified instances. If an instance is unreachable, the Proxy exits with a failure
@@ -606,6 +609,10 @@ only applicable to Unix sockets)`)
 		"(*) Connect to the private ip address for all instances")
 	localFlags.BoolVar(&c.conf.PSC, "psc", false,
 		"(*) Connect to the PSC endpoint for all instances")
+	localFlags.BoolVar(&c.conf.SQLDataEnabled, "sql-data", false,
+		"Enable SQL Data to tunnel through the Cloud SQL Admin API without"+
+			" needing network access to your public or private IP",
+	)
 
 	return c
 }
@@ -898,6 +905,7 @@ and re-try with just --auto-iam-authn`)
 			p, pok := q["port"]
 			u, uok := q["unix-socket"]
 			up, upok := q["unix-socket-path"]
+			sd, sdok := q["sql-data"]
 
 			if aok && uok {
 				return newBadCommandError("cannot specify both address and unix-socket query params")
@@ -954,6 +962,16 @@ and re-try with just --auto-iam-authn`)
 					return newBadCommandError(fmt.Sprintf("unix-socket-path query param should be only one value: %q", a))
 				}
 				ic.UnixSocketPath = up[0]
+			}
+			if sdok {
+				if len(sd) != 1 {
+					return newBadCommandError(fmt.Sprintf("sql-data query param should be only one value %q", a))
+				}
+				if sd[0] != "true" && sd[0] != "false" {
+					return newBadCommandError(fmt.Sprintf("sql-data query param should be \"true\" or \"false\" %q", a))
+				}
+				b := sd[0] == "true"
+				ic.SQLDataEnabled = &b
 			}
 
 			ic.IAMAuthN, err = parseBoolOpt(q, "auto-iam-authn")
