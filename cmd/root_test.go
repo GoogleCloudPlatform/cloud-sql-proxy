@@ -495,7 +495,7 @@ func TestNewCommandArguments(t *testing.T) {
 					SQLDataEnabled: pointer(true),
 				}},
 			}),
-		},
+		}
 	}
 
 	for _, tc := range tcs {
@@ -874,7 +874,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			want: withDefaults(&proxy.Config{
 				SQLDataEndpoint: "https://test.googleapis.com",
 			}),
-		},
+		}
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
