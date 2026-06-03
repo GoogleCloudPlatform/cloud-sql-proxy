@@ -350,3 +350,31 @@ func TestPostgresHealthCheck(t *testing.T) {
 	}
 	testHealthCheck(t, *postgresConnName)
 }
+
+func TestPostgresAIDeveloper(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping Postgres integration tests")
+	}
+	pass := os.Getenv("POSTGRES_CUSTOMER_CAS_PASS")
+	if pass == "" {
+		t.Fatal("'POSTGRES_CUSTOMER_CAS_PASS' env var not set")
+	}
+
+	const connName = "hessjc-playground-01:us-central1:aide-poc-instance-1"
+	const user = "postgres"
+	const dbName = "postgres"
+	const quotaProj = "hessjc-playground-01"
+
+	dsn := fmt.Sprintf("host=localhost user=%s password=%s database=%s sslmode=disable",
+		user, pass, dbName)
+
+	args := []string{
+		"--sqladmin-api-endpoint", "https://coreltest-sqladmin.mtls.sandbox.googleapis.com",
+		"--sql-data-endpoint", "coreltest-sqladmin.mtls.sandbox.googleapis.com:443",
+		"--sql-data",
+		"--quota-project", quotaProj,
+		connName,
+	}
+
+	proxyConnTest(t, args, "pgx", dsn)
+}
