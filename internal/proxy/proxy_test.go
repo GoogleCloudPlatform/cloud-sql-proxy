@@ -33,6 +33,11 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 )
 
+var (
+	sd  = "proj:region:sd"
+	sd2 = "proj:region:sd2"
+)
+
 var testLogger = log.NewStdLogger(os.Stdout, os.Stdout)
 
 type fakeDialer struct {
@@ -112,6 +117,12 @@ func createTempDir(t *testing.T) (string, func()) {
 			t.Logf("failed to cleanup temp dir: %v", err)
 		}
 	}
+}
+
+// pointer returns the address of v and makes it easy to take the address of a
+// predeclared identifier.
+func pointer[T any](v T) *T {
+	return &v
 }
 
 func TestClientInitialization(t *testing.T) {
@@ -211,6 +222,47 @@ func TestClientInitialization(t *testing.T) {
 				"127.0.0.1:3307",
 				"127.0.0.1:1433",
 				"127.0.0.1:1434",
+			},
+		},
+		{
+			desc: "with SQL Data enabled globally defaulting to Postgres port",
+			in: &proxy.Config{
+				Addr:           "127.0.0.1",
+				SQLDataEnabled: true,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: sd},
+					{Name: sd2},
+				},
+			},
+			wantTCPAddrs: []string{
+				"127.0.0.1:5432",
+				"127.0.0.1:5433",
+			},
+		},
+		{
+			desc: "with SQL Data enabled per-instance defaulting to Postgres port",
+			in: &proxy.Config{
+				Addr: "127.0.0.1",
+				Instances: []proxy.InstanceConnConfig{
+					{Name: sd, SQLDataEnabled: pointer(true)},
+					{Name: sd2, SQLDataEnabled: pointer(true)},
+				},
+			},
+			wantTCPAddrs: []string{
+				"127.0.0.1:5432",
+				"127.0.0.1:5433",
+			},
+		},
+		{
+			desc: "with SQL Data enabled but explicit port",
+			in: &proxy.Config{
+				Addr: "127.0.0.1",
+				Instances: []proxy.InstanceConnConfig{
+					{Name: sd, SQLDataEnabled: pointer(true), Port: 60000},
+				},
+			},
+			wantTCPAddrs: []string{
+				"127.0.0.1:60000",
 			},
 		},
 		{
@@ -589,6 +641,7 @@ func TestClientNotifiesCallerOnServe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("want error = nil, got = %v", err)
 	}
+	defer c.Close()
 	done := make(chan struct{})
 	notify := func() { close(done) }
 
@@ -648,6 +701,62 @@ func TestClientConnCount(t *testing.T) {
 		t.Fatalf("open connections, want = %v, got = %v", want, got)
 	}
 	verifyOpen(t, 1)
+}
+
+func TestSQLDataWarmup(t *testing.T) {
+	tcs := []struct {
+		desc string
+		in   *proxy.Config
+		want int
+	}{
+		{
+			desc: "standard warmup",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{Name: "proj:reg:inst", Port: 30104}},
+			},
+			want: 1,
+		},
+		{
+			desc: "warmup skipped globally",
+			in: &proxy.Config{
+				SQLDataEnabled: true,
+				Instances:      []proxy.InstanceConnConfig{{Name: "proj:reg:inst", Port: 30105}},
+			},
+			want: 0,
+		},
+		{
+			desc: "warmup skipped per-instance",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					Name:           "proj:reg:inst",
+					Port:           30106,
+					SQLDataEnabled: pointer(true),
+				}},
+			},
+			want: 0,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			d := &fakeDialer{}
+			c, err := proxy.NewClient(context.Background(), d, testLogger, tc.in, nil)
+			if err != nil {
+				t.Fatalf("proxy.NewClient error: %v", err)
+			}
+			defer c.Close()
+
+			var got int
+			for i := 0; i < 10; i++ {
+				got = d.engineVersionAttempts()
+				if got == tc.want {
+					return
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+			t.Fatalf("warmup attempts, want = %v, got = %v", tc.want, got)
+		})
+	}
 }
 
 func TestCheckConnections(t *testing.T) {

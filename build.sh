@@ -33,12 +33,25 @@ function clean() {
 
 ## build - Builds the project without running tests.
 function build() {
-   go build -o ./cloud-sql-proxy main.go
+   local metadata="${1:-}"
+   local ldflags=""
+   if [[ -n "$metadata" ]] ; then
+       ldflags="-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=$metadata"
+   fi
+   go build -ldflags "$ldflags" -o ./cloud-sql-proxy main.go
 }
 
 ## test - Runs local unit tests.
 function test() {
-  go test -v -race -cover -short ./...
+  get_golang_tool 'go-junit-report' 'jstemmer/go-junit-report' 'github.com/jstemmer/go-junit-report/v2'
+  mkdir -p test-results
+  local args=( "./..." )
+  if [[ "$#" -gt 0 ]] ; then
+    args=( "$@" )
+  fi
+  go test -v -race -cover -short "${args[@]}" -json \
+      | .tools/go-junit-report -iocopy -parser gojson -out test-results/unit.xml \
+      | jq -j 'select(.Output) | .Output '
 }
 
 ## e2e - Runs end-to-end integration tests.
@@ -53,7 +66,11 @@ function e2e() {
 # e2e_ci - Run end-to-end integration tests in the CI system.
 #   This assumes that the secrets in the env vars are already set.
 function e2e_ci() {
-  go test -race -v ./... | tee test_results.txt
+  get_golang_tool 'go-junit-report' 'jstemmer/go-junit-report' 'github.com/jstemmer/go-junit-report/v2'
+  mkdir -p test-results
+  go test -race -v ./...  -json \
+     | .tools/go-junit-report -iocopy -parser gojson -out test-results/e2e.xml \
+     | jq -j 'select(.Output) | .Output '
 }
 
 function get_golang_tool() {
@@ -227,16 +244,47 @@ function write_e2e_env(){
   done
 
   # Set IAM User env vars to the local gcloud user
-  echo "export MYSQL_IAM_USER='${local_user%%@*}'"
-  echo "export POSTGRES_USER_IAM='$local_user'"
+  echo "export MYSQL_IAM_USER='$(iam_user_mysql)'"
+  echo "export POSTGRES_USER_IAM='$(iam_user_pg)'"
   } > "$1"
 
 }
 
+function iam_user_pg() {
+  # Truncate the suffix `.iam.gserviceaccount.com` if it exists. Otherwise return the email.
+  local email
+  local pguser
+
+  email="$(iam_user_email)"
+  pguser="${email%%.iam.gserviceaccount.com}"
+  if [[ -n "$pguser" ]] ; then
+    echo "$pguser"
+  else
+    echo "$email"
+  fi
+
+}
+
+function iam_user_mysql() {
+  # Truncate the part after the @
+  local email
+  local pguser
+
+  email=$(iam_user_email)
+  mysqluser="${email%%@*}"
+  echo "$mysqluser"
+}
+
+function iam_user_email() {
+  gcloud auth list --format json | jq -r '.[] | select (.status == "ACTIVE") | .account'
+}
+
+
 ## build_image - Builds and pushes the proxy container image using local source.
-## Usage: ./build.sh build_image [image-url]
+## Usage: ./build.sh build_image [image-url] [metadata]
 function build_image() {
   local image_url="${1:-}"
+  local metadata="${2:-container}"
   local push_arg=""
 
   if [[ -n "$image_url" ]]; then
@@ -254,7 +302,7 @@ function build_image() {
   trap cleanup_build EXIT
 
   echo "Building binary locally..."
-  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=container" -o cloud-sql-proxy
+  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=$metadata" -o cloud-sql-proxy
 
   echo "Creating temporary Dockerfile..."
   cat > Dockerfile.local <<EOF
