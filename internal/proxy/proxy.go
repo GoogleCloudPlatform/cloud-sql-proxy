@@ -870,6 +870,13 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 		if inst.Addr != "" {
 			a = inst.Addr
 		}
+		if ip := net.ParseIP(a); ip != nil {
+			if ip.To4() != nil {
+				network = "tcp4"
+			} else {
+				network = "tcp6"
+			}
+		}
 
 		var np int
 		switch {
