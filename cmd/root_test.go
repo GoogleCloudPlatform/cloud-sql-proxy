@@ -481,6 +481,13 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the sql-data-endpoint flag alias",
+			args: []string{"--sql-data-endpoint", "https://test.googleapis.com", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				SQLDataEndpoint: "https://test.googleapis.com",
+			}),
+		},
+		{
 			desc: "using the sql-data query param",
 			args: []string{"proj:region:inst?sql-data=true"},
 			want: withDefaults(&proxy.Config{
@@ -855,6 +862,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 		{
 			desc:     "using the sqldata-api-endpoint envvar",
 			envName:  "CSQL_PROXY_SQLDATA_API_ENDPOINT",
+			envValue: "https://test.googleapis.com",
+			want: withDefaults(&proxy.Config{
+				SQLDataEndpoint: "https://test.googleapis.com",
+			}),
+		},
+		{
+			desc:     "using the sql-data-endpoint envvar alias",
+			envName:  "CSQL_PROXY_SQL_DATA_ENDPOINT",
 			envValue: "https://test.googleapis.com",
 			want: withDefaults(&proxy.Config{
 				SQLDataEndpoint: "https://test.googleapis.com",

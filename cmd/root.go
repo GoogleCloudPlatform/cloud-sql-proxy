@@ -494,6 +494,12 @@ func NewCommand(opts ...Option) *Command {
 
 	// Flags that apply only to the root command
 	localFlags := rootCmd.Flags()
+	localFlags.SetNormalizeFunc(func(_ *pflag.FlagSet, name string) pflag.NormalizedName {
+		if name == "sql-data-endpoint" {
+			return pflag.NormalizedName("sqldata-api-endpoint")
+		}
+		return pflag.NormalizedName(name)
+	})
 	// Flags that apply to all sub-commands
 	globalFlags := rootCmd.PersistentFlags()
 
@@ -626,9 +632,14 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 	c.Flags().VisitAll(func(f *pflag.Flag) {
 		// Override any unset flags with Viper values to use the pflags
 		// object as a single source of truth.
-		if !f.Changed && v.IsSet(f.Name) {
-			val := v.Get(f.Name)
-			_ = c.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+		if !f.Changed {
+			if v.IsSet(f.Name) {
+				val := v.Get(f.Name)
+				_ = c.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+			} else if f.Name == "sqldata-api-endpoint" && v.IsSet("sql-data-endpoint") {
+				val := v.Get("sql-data-endpoint")
+				_ = c.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+			}
 		}
 	})
 
