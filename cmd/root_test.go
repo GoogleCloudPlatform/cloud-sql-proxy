@@ -874,7 +874,7 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			want: withDefaults(&proxy.Config{
 				SQLDataEndpoint: "https://test.googleapis.com",
 			}),
-		}
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -1087,54 +1087,6 @@ func TestPSCQueryParams(t *testing.T) {
 	}
 }
 
-func TestSQLDataQueryParams(t *testing.T) {
-	tcs := []struct {
-		desc string
-		args []string
-		want *bool
-	}{
-		{
-			desc: "when the query string is absent",
-			args: []string{"proj:region:inst"},
-			want: nil,
-		},
-		{
-			desc: "when the query string is true",
-			args: []string{"proj:region:inst?sql-data=true"},
-			want: pointer(true),
-		},
-		{
-			desc: "when the query string is false",
-			args: []string{"proj:region:inst?sql-data=false"},
-			want: pointer(false),
-		},
-	}
-	for _, tc := range tcs {
-		t.Run(tc.desc, func(t *testing.T) {
-			c, err := invokeProxyCommand(tc.args)
-			if err != nil {
-				t.Fatalf("command.Execute: %v", err)
-			}
-			if tc.want == nil {
-				if len(c.conf.Instances) > 0 && c.conf.Instances[0].SQLDataEnabled != nil {
-					t.Fatalf("args = %v, want nil, got = %v", tc.args, *c.conf.Instances[0].SQLDataEnabled)
-				}
-				return
-			}
-			if len(c.conf.Instances) == 0 {
-				t.Fatal("expected at least one instance")
-			}
-			got := c.conf.Instances[0].SQLDataEnabled
-			if got == nil {
-				t.Fatalf("args = %v, want = %v, got = nil", tc.args, *tc.want)
-			}
-			if *got != *tc.want {
-				t.Errorf("args = %v, want = %v, got = %v", tc.args, *tc.want, *got)
-			}
-		})
-	}
-}
-
 func TestNewCommandWithErrors(t *testing.T) {
 	tcs := []struct {
 		desc string
@@ -1253,14 +1205,6 @@ func TestNewCommandWithErrors(t *testing.T) {
 		{
 			desc: "when the iam authn login query param contains multiple values",
 			args: []string{"proj:region:inst?auto-iam-authn=true&auto-iam-authn=false"},
-		},
-		{
-			desc: "when the sql-data query param contains multiple values",
-			args: []string{"proj:region:inst?sql-data=true&sql-data=false"},
-		},
-		{
-			desc: "when the sql-data query param is bogus",
-			args: []string{"proj:region:inst?sql-data=nope"},
 		},
 		{
 			desc: "when the iam authn login query param is bogus",
