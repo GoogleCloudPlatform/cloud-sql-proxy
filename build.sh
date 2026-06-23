@@ -38,7 +38,7 @@ function build() {
    if [[ -n "$metadata" ]] ; then
        ldflags="-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=$metadata"
    fi
-   go build -ldflags "$ldflags" -o ./cloud-sql-proxy main.go
+   go build -buildvcs=false -ldflags "$ldflags" -o ./cloud-sql-proxy main.go
 }
 
 ## test - Runs local unit tests.
@@ -302,7 +302,7 @@ function build_image() {
   trap cleanup_build EXIT
 
   echo "Building binary locally..."
-  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=$metadata" -o cloud-sql-proxy
+  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -ldflags "-X github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cmd.metadataString=$metadata" -o cloud-sql-proxy
 
   echo "Creating temporary Dockerfile..."
   cat > Dockerfile.local <<EOF
