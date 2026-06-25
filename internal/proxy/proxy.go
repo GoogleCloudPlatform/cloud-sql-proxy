@@ -95,8 +95,6 @@ type InstanceConnConfig struct {
 	// necessary. If set, UnixSocketPath takes precedence over UnixSocket, Addr
 	// and Port.
 	UnixSocketPath string
-	// SQLDataEnabled enables connections through the SqlDataService for this connection.
-	SQLDataEnabled *bool
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// MySQL and Postgres only. If it is nil, the value was not specified.
 	IAMAuthN *bool
@@ -202,11 +200,6 @@ type Config struct {
 	// of a request context, e.g., Cloud Run.
 	LazyRefresh bool
 
-	// SQLDataEnabled configures the dialer to use the SQL Data API.
-	SQLDataEnabled bool
-	// SQLDataEndpoint configures the endpoint of the SQL Data service.
-	SQLDataEndpoint string
-
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
@@ -288,9 +281,6 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 
 	if i.IAMAuthN != nil {
 		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*i.IAMAuthN))
-	}
-	if i.SQLDataEnabled != nil && *i.SQLDataEnabled || c.SQLDataEnabled {
-		opts = append(opts, cloudsqlconn.WithSQLData())
 	}
 
 	switch {
@@ -479,10 +469,6 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 		opts = append(opts, cloudsqlconn.WithLazyRefresh())
 	}
 
-	if c.SQLDataEndpoint != "" {
-		opts = append(opts, cloudsqlconn.WithSQLDataEndpoint(c.SQLDataEndpoint))
-	}
-
 	return opts, nil
 }
 
@@ -578,12 +564,8 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 		return configureFUSE(c, conf)
 	}
 
-	// unless the proxy is in SqlDataEnabled mode, initiate a refresh operation to warm the cache
 	for _, inst := range conf.Instances {
-		// Skip instances with SqlDataEnabled
-		if conf.SQLDataEnabled || inst.SQLDataEnabled != nil && *inst.SQLDataEnabled {
-			continue
-		}
+		// Initiate refresh operation and warm the cache.
 		go func(name string) { _, _ = d.EngineVersion(ctx, name) }(inst.Name)
 	}
 
@@ -870,13 +852,6 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 		if inst.Addr != "" {
 			a = inst.Addr
 		}
-		if ip := net.ParseIP(a); ip != nil {
-			if ip.To4() != nil {
-				network = "tcp4"
-			} else {
-				network = "tcp6"
-			}
-		}
 
 		var np int
 		switch {
@@ -902,17 +877,10 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 	} else {
 		network = "unix"
 
-		var version string
-		switch {
-		case conf.SQLDataEnabled || inst.SQLDataEnabled != nil && *inst.SQLDataEnabled:
-			version = "POSTGRES"
-		default:
-			var err error
-			version, err = c.dialer.EngineVersion(ctx, inst.Name)
-			if err != nil {
-				c.logger.Errorf("[%v] could not resolve instance version: %v", inst.Name, err)
-				return nil, err
-			}
+		version, err := c.dialer.EngineVersion(ctx, inst.Name)
+		if err != nil {
+			c.logger.Errorf("[%v] could not resolve instance version: %v", inst.Name, err)
+			return nil, err
 		}
 
 		address, err = newUnixSocketMount(inst, conf.UnixSocket, strings.HasPrefix(version, "POSTGRES"))
