@@ -885,7 +885,7 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 		case conf.Port != 0:
 			np = pc.nextPort()
 		case conf.SQLDataEnabled || inst.SQLDataEnabled != nil && *inst.SQLDataEnabled:
-			// Only Postgres is supported by the SqlDataService
+			// TODO: Only Postgres is supported by the SqlDataService
 			// when more engines are supported, this code will need to change.
 			np = pc.nextDBPort("POSTGRES")
 		default:

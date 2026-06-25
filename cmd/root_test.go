@@ -1296,6 +1296,13 @@ func TestNewCommandWithErrors(t *testing.T) {
 			},
 		},
 		{
+			desc: "using --private-ip with --sql-data",
+			args: []string{
+				"--private-ip", "--sql-data",
+				"p:r:i",
+			},
+		},
+		{
 			desc: "using private-ip query param with --auto-ip",
 			args: []string{
 				"--auto-ip",

@@ -823,8 +823,18 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 
 	// If more than one IP type is set, error.
-	if conf.PrivateIP && conf.PSC {
-		return newBadCommandError("cannot specify --private-ip and --psc flags at the same time")
+	var ipTypes int
+	if conf.PrivateIP {
+		ipTypes++
+	}
+	if conf.PSC {
+		ipTypes++
+	}
+	if conf.SQLDataEnabled {
+		ipTypes++
+	}
+	if ipTypes > 1 {
+		return newBadCommandError("cannot specify --private-ip, --psc, and --sql-data flags at the same time")
 	}
 
 	// If more than one auth method is set, error.

@@ -268,7 +268,7 @@ function iam_user_pg() {
 function iam_user_mysql() {
   # Truncate the part after the @
   local email
-  local pguser
+  local mysqluser
 
   email=$(iam_user_email)
   mysqluser="${email%%@*}"
