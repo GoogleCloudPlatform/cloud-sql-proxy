@@ -80,6 +80,9 @@ func TestFUSEREADME(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 	dir := randTmpDir(t)
 	d := &fakeDialer{}
 	_, _, cleanup := newTestClient(t, d, dir, randTmpDir(t))
@@ -143,6 +146,9 @@ func TestFUSEDialInstance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 	fuseDir := randTmpDir(t)
 	fuseTempDir := randTmpDir(t)
 	tcs := []struct {
@@ -201,6 +207,9 @@ func TestFUSEAcceptErrorReturnedFromServe(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 
 	fuseDir := randTmpDir(t)
 	fuseTempDir := randTmpDir(t)
@@ -255,6 +264,9 @@ func TestFUSEReadDir(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 	fuseDir := randTmpDir(t)
 	_, _, cleanup := newTestClient(t, &fakeDialer{}, fuseDir, randTmpDir(t))
 	defer cleanup()
@@ -284,6 +296,9 @@ func TestLookupIgnoresContext(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 	// create context and cancel it immediately
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -304,6 +319,9 @@ func TestLookupIgnoresContext(t *testing.T) {
 func TestFUSEErrors(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
+	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
 	}
 	ctx := context.Background()
 	d := &fakeDialer{}
@@ -345,6 +363,9 @@ func TestFUSEWithBadInstanceName(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 	fuseDir := randTmpDir(t)
 	d := &fakeDialer{}
 	_, _, cleanup := newTestClient(t, d, fuseDir, randTmpDir(t))
@@ -363,6 +384,9 @@ func TestFUSEWithBadInstanceName(t *testing.T) {
 func TestFUSECheckConnections(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
+	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
 	}
 	fuseDir := randTmpDir(t)
 	d := &fakeDialer{}
@@ -399,6 +423,9 @@ func TestFUSEClose(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 	fuseDir := randTmpDir(t)
 	d := &fakeDialer{}
 	c, _, _ := newTestClient(t, d, fuseDir, randTmpDir(t))
@@ -421,6 +448,9 @@ func TestFUSEClose(t *testing.T) {
 func TestFUSEWithBadDir(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping fuse tests in short mode.")
+	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
 	}
 	conf := &proxy.Config{FUSEDir: "/not/a/dir", FUSETempDir: randTmpDir(t)}
 	_, err := proxy.NewClient(context.Background(), &fakeDialer{}, testLogger, conf, nil)

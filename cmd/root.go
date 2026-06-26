@@ -494,6 +494,12 @@ func NewCommand(opts ...Option) *Command {
 
 	// Flags that apply only to the root command
 	localFlags := rootCmd.Flags()
+	localFlags.SetNormalizeFunc(func(_ *pflag.FlagSet, name string) pflag.NormalizedName {
+		if name == "sql-data-endpoint" {
+			return pflag.NormalizedName("sqldata-api-endpoint")
+		}
+		return pflag.NormalizedName(name)
+	})
 	// Flags that apply to all sub-commands
 	globalFlags := rootCmd.PersistentFlags()
 
@@ -584,6 +590,9 @@ the cached copy has expired. Use this setting in environments where the
 CPU may be throttled and a background refresh cannot run reliably
 (e.g., Cloud Run)`,
 	)
+	localFlags.StringVar(&c.conf.SQLDataEndpoint, "sqldata-api-endpoint", "",
+		"Override the SQL Data API endpoint",
+	)
 
 	localFlags.BoolVar(&c.conf.RunConnectionTest, "run-connection-test", false, `Runs a connection test
 against all specified instances. If an instance is unreachable, the Proxy exits with a failure
@@ -606,6 +615,10 @@ only applicable to Unix sockets)`)
 		"(*) Connect to the private ip address for all instances")
 	localFlags.BoolVar(&c.conf.PSC, "psc", false,
 		"(*) Connect to the PSC endpoint for all instances")
+	localFlags.BoolVar(&c.conf.SQLDataEnabled, "sql-data", false,
+		"Enable SQL Data to tunnel through the Cloud SQL Admin API without"+
+			" needing network access to your public or private IP",
+	)
 
 	return c
 }
@@ -619,9 +632,14 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 	c.Flags().VisitAll(func(f *pflag.Flag) {
 		// Override any unset flags with Viper values to use the pflags
 		// object as a single source of truth.
-		if !f.Changed && v.IsSet(f.Name) {
-			val := v.Get(f.Name)
-			_ = c.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+		if !f.Changed {
+			if v.IsSet(f.Name) {
+				val := v.Get(f.Name)
+				_ = c.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+			} else if f.Name == "sqldata-api-endpoint" && v.IsSet("sql-data-endpoint") {
+				val := v.Get("sql-data-endpoint")
+				_ = c.Flags().Set(f.Name, fmt.Sprintf("%v", val))
+			}
 		}
 	})
 
@@ -805,8 +823,18 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	}
 
 	// If more than one IP type is set, error.
-	if conf.PrivateIP && conf.PSC {
-		return newBadCommandError("cannot specify --private-ip and --psc flags at the same time")
+	var ipTypes int
+	if conf.PrivateIP {
+		ipTypes++
+	}
+	if conf.PSC {
+		ipTypes++
+	}
+	if conf.SQLDataEnabled {
+		ipTypes++
+	}
+	if ipTypes > 1 {
+		return newBadCommandError("cannot specify --private-ip, --psc, and --sql-data flags at the same time")
 	}
 
 	// If more than one auth method is set, error.
@@ -898,6 +926,7 @@ and re-try with just --auto-iam-authn`)
 			p, pok := q["port"]
 			u, uok := q["unix-socket"]
 			up, upok := q["unix-socket-path"]
+			sd, sdok := q["sql-data"]
 
 			if aok && uok {
 				return newBadCommandError("cannot specify both address and unix-socket query params")
@@ -954,6 +983,16 @@ and re-try with just --auto-iam-authn`)
 					return newBadCommandError(fmt.Sprintf("unix-socket-path query param should be only one value: %q", a))
 				}
 				ic.UnixSocketPath = up[0]
+			}
+			if sdok {
+				if len(sd) != 1 {
+					return newBadCommandError(fmt.Sprintf("sql-data query param should be only one value %q", a))
+				}
+				if sd[0] != "true" && sd[0] != "false" {
+					return newBadCommandError(fmt.Sprintf("sql-data query param should be \"true\" or \"false\" %q", a))
+				}
+				b := sd[0] == "true"
+				ic.SQLDataEnabled = &b
 			}
 
 			ic.IAMAuthN, err = parseBoolOpt(q, "auto-iam-authn")

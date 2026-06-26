@@ -247,6 +247,9 @@ func TestPostgresIAMDBAuthn(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Postgres integration tests")
 	}
+	if os.Getenv("SKIP_FUSE_E2E_TESTS") == "true" {
+		t.Skip("skipping Postgres FUSE integration tests because SKIP_FUSE_E2E_TESTS is set")
+	}
 	requirePostgresVars(t)
 	if *postgresIAMUser == "" {
 		t.Fatal("'postgres_user_iam' not set")
