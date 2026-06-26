@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.23.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.22.1...v2.23.0) (2026-06-26)
+
+
+### Features
+
+* Support Developer Edition connections ([#2610](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2610)) ([6db5dfc](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/6db5dfcaee3f4f294ef8e812858b4a774a58f24a))
+
 ## [2.22.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.22.0...v2.22.1) (2026-06-10)
 
 
