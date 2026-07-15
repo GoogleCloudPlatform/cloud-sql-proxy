@@ -115,7 +115,11 @@ func TestPostgresMCPUnix(t *testing.T) {
 }
 
 func createTempDir(t *testing.T) (string, func()) {
-	testDir, err := os.MkdirTemp("", "*")
+	var dir string
+	if os.PathSeparator == '/' {
+		dir = "/tmp"
+	}
+	testDir, err := os.MkdirTemp(dir, "sqlproxy*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
