@@ -31,6 +31,9 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/cobra"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func withDefaults(c *proxy.Config) *proxy.Config {
@@ -1581,5 +1584,78 @@ func TestQuitQuitQuitWithErrors(t *testing.T) {
 	got := <-errCh
 	if !strings.Contains(got.Error(), "close failed") {
 		t.Fatalf("want = %v, got = %v", errCloseFailed, got)
+	}
+}
+
+func TestFormatStackdriverError(t *testing.T) {
+	tcs := []struct {
+		desc     string
+		err      error
+		wantSub  string
+		wantHint bool
+	}{
+		{
+			desc:     "generic error",
+			err:      errors.New("some random error"),
+			wantSub:  "some random error",
+			wantHint: false,
+		},
+		{
+			desc:     "gRPC error without details",
+			err:      status.Error(codes.Internal, "Internal error encountered"),
+			wantSub:  "rpc error: code = Internal desc = Internal error encountered",
+			wantHint: false,
+		},
+		{
+			desc:     "gRPC PermissionDenied error",
+			err:      status.Error(codes.PermissionDenied, "Permission denied"),
+			wantSub:  "rpc error: code = PermissionDenied desc = Permission denied",
+			wantHint: true,
+		},
+		{
+			desc: "gRPC error with ErrorInfo permission reason",
+			err: func() error {
+				st, _ := status.New(codes.Internal, "Internal error encountered").WithDetails(
+					&errdetails.ErrorInfo{
+						Reason: "ACCESS_TOKEN_SCOPE_INSUFFICIENT",
+						Domain: "googleapis.com",
+					},
+				)
+				return st.Err()
+			}(),
+			wantSub:  "rpc error: code = Internal desc = Internal error encountered",
+			wantHint: true,
+		},
+		{
+			desc: "gRPC error with Help link",
+			err: func() error {
+				st, _ := status.New(codes.Aborted, "Aborted").WithDetails(
+					&errdetails.Help{
+						Links: []*errdetails.Help_Link{
+							{
+								Description: "See docs",
+								Url:         "http://docs",
+							},
+						},
+					},
+				)
+				return st.Err()
+			}(),
+			wantSub:  "Help: See docs (http://docs)",
+			wantHint: false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			got := formatStackdriverError(tc.err)
+			if !strings.Contains(got, tc.wantSub) {
+				t.Errorf("formatStackdriverError(%v) = %q, want to contain %q", tc.err, got, tc.wantSub)
+			}
+			hasHint := strings.Contains(got, "Hint: The Service Account may be missing required IAM permissions")
+			if hasHint != tc.wantHint {
+				t.Errorf("formatStackdriverError(%v) = %q, hasHint = %v, wantHint = %v", tc.err, got, hasHint, tc.wantHint)
+			}
+		})
 	}
 }
