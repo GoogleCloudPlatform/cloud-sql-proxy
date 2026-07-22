@@ -256,7 +256,7 @@ function iam_user_pg() {
   local pguser
 
   email="$(iam_user_email)"
-  pguser="${email%%.iam.gserviceaccount.com}"
+  pguser="${email%%.gserviceaccount.com}"
   if [[ -n "$pguser" ]] ; then
     echo "$pguser"
   else
@@ -278,8 +278,6 @@ function iam_user_mysql() {
 function iam_user_email() {
   gcloud auth list --format json | jq -r '.[] | select (.status == "ACTIVE") | .account'
 }
-
-
 ## build_image - Builds and pushes the proxy container image using local source.
 ## Usage: ./build.sh build_image [image-url] [metadata]
 function build_image() {
