@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.23.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.23.0...v2.23.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* Remove Debian Bookworm base image. ([#2630](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2630)) ([4ebc416](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4ebc416b8b847e7da536ca38b9b7dd4d9ffba7d1))
+
 ## [2.23.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.22.1...v2.23.0) (2026-06-26)
 
 
