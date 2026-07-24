@@ -15,6 +15,7 @@
 package proxy_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"cloud.google.com/go/cloudsqlconn/errtype"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 )
@@ -942,5 +944,63 @@ func TestProxyMultiInstances(t *testing.T) {
 				t.Fatalf("want return = %v, got = %v", tc.wantSuccess, err == nil)
 			}
 		})
+	}
+}
+
+type resourceExhaustedDialer struct {
+	fakeDialer
+}
+
+func (*resourceExhaustedDialer) Dial(_ context.Context, inst string, _ ...cloudsqlconn.DialOption) (net.Conn, error) {
+	return nil, errtype.NewResourceExhaustedError("simulated resource exhausted", inst, nil)
+}
+
+type safeBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (s *safeBuffer) Write(p []byte) (n int, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.buf.Write(p)
+}
+
+func (s *safeBuffer) String() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.buf.String()
+}
+
+func TestResourceExhaustedCooldownLog(t *testing.T) {
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 24020,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:reg:inst"},
+		},
+	}
+	var buf safeBuffer
+	logger := log.NewStdLogger(io.Discard, &buf)
+
+	c, err := proxy.NewClient(context.Background(), &resourceExhaustedDialer{}, logger, in, nil)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error want = nil, got = %v", err)
+	}
+	go c.Serve(context.Background(), func() {})
+	defer c.Close()
+
+	conn, err := net.Dial("tcp", "127.0.0.1:24020")
+	if err != nil {
+		t.Fatalf("failed to dial proxy: %v", err)
+	}
+	defer conn.Close()
+
+	time.Sleep(100 * time.Millisecond)
+
+	output := buf.String()
+	want := "failed to connect to instance (resource exhausted)"
+	if !strings.Contains(output, want) {
+		t.Errorf("log output mismatch: got %q, want to contain %q", output, want)
 	}
 }

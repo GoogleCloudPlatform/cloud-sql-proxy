@@ -495,7 +495,7 @@ func TestNewCommandArguments(t *testing.T) {
 					SQLDataEnabled: pointer(true),
 				}},
 			}),
-		}
+		},
 	}
 
 	for _, tc := range tcs {
