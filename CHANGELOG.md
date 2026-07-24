@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.24.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.23.0...v2.24.0) (2026-07-24)
+
+
+### Features
+
+* Add PSC DNS and Global Write Endpoint support ([#2635](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2635)) ([f77e148](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f77e14807d30036662e0cdb43311375e31743fee))
+
+
+### Bug Fixes
+
+* Remove Debian Bookworm base image. ([#2630](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2630)) ([4ebc416](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4ebc416b8b847e7da536ca38b9b7dd4d9ffba7d1))
+
 ## [2.23.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.22.1...v2.23.0) (2026-06-26)
 
 
