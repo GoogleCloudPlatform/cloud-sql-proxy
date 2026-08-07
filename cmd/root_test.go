@@ -496,6 +496,13 @@ func TestNewCommandArguments(t *testing.T) {
 				}},
 			}),
 		},
+		{
+			desc: "using the resource-exhausted-cooldown-delay flag",
+			args: []string{"--resource-exhausted-cooldown-delay", "10s", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ResourceExhaustedCooldownPeriod: 10 * time.Second,
+			}),
+		},
 	}
 
 	for _, tc := range tcs {

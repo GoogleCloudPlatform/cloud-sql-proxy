@@ -14,3 +14,4 @@
 .tools
 test_results.txt
 test-results
+cloud-sql-proxy-e2e

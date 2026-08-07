@@ -228,69 +228,70 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
 ### Options
 
 ```
-  -a, --address string                       (*) Address to bind Cloud SQL instance listeners. (default "127.0.0.1")
-      --admin-port string                    Port for localhost-only admin server (default "9091")
-  -i, --auto-iam-authn                       (*) Enables Automatic IAM Authentication for all instances
-      --auto-ip                              Supports legacy behavior of v1 and will try to connect to first IP
-                                             address returned by the SQL Admin API. In most cases, this flag should not be used.
-                                             Prefer default of public IP or use --private-ip instead.
-      --config-file string                   Path to a TOML file containing configuration options.
-  -c, --credentials-file string              Use service account key file as a source of IAM credentials.
-      --debug                                Enable pprof on the localhost admin server
-      --debug-logs                           Enable debug logging
-      --disable-metrics                      Disable Cloud Monitoring integration (used with --telemetry-project)
-      --disable-traces                       Disable Cloud Trace integration (used with --telemetry-project)
-      --exit-zero-on-sigterm                 Exit with 0 exit code when Sigterm received (default is 143)
-      --fuse string                          Mount a directory at the path using FUSE to access Cloud SQL instances.
-      --fuse-tmp-dir string                  Temp dir for Unix sockets created with FUSE (default "/tmp/csql-tmp")
-  -g, --gcloud-auth                          Use gclouds user credentials as a source of IAM credentials.
-                                             NOTE: this flag is a legacy feature and generally should not be used.
-                                             Instead prefer Application Default Credentials
-                                             (enabled with: gcloud auth application-default login) which
-                                             the Proxy will then pick-up automatically.
-      --health-check                         Enables health check endpoints /startup, /liveness, and /readiness on localhost.
-  -h, --help                                 Display help information for cloud-sql-proxy
-      --http-address string                  Address for Prometheus and health check server (default "localhost")
-      --http-port string                     Port for Prometheus and health check server (default "9090")
-      --impersonate-service-account string   Comma separated list of service accounts to impersonate. Last value
-                                             is the target account.
-  -j, --json-credentials string              Use service account key JSON as a source of IAM credentials.
-      --lazy-refresh                         Configure a lazy refresh where connection info is retrieved only if
-                                             the cached copy has expired. Use this setting in environments where the
-                                             CPU may be throttled and a background refresh cannot run reliably
-                                             (e.g., Cloud Run)
-      --login-token string                   Use bearer token as a database password (used with token and auto-iam-authn only)
-      --max-connections uint                 Limit the number of connections. Default is no limit.
-      --max-sigterm-delay duration           Maximum number of seconds to wait for connections to close after receiving a TERM signal.
-      --min-sigterm-delay duration           The number of seconds to accept new connections after receiving a TERM signal.
-  -p, --port int                             (*) Initial port for listeners. Subsequent listeners increment from this value.
-      --private-ip                           (*) Connect to the private ip address for all instances
-      --prometheus                           Enable Prometheus HTTP endpoint /metrics on localhost
-      --prometheus-namespace string          Use the provided Prometheus namespace for metrics
-      --psc                                  (*) Connect to the PSC endpoint for all instances
-      --quiet                                Log error messages only
-      --quitquitquit                         Enable quitquitquit endpoint on the localhost admin server
-      --quota-project string                 Specifies the project to use for Cloud SQL Admin API quota tracking.
-                                             The IAM principal must have the "serviceusage.services.use" permission
-                                             for the given project. See https://cloud.google.com/service-usage/docs/overview and
-                                             https://cloud.google.com/storage/docs/requester-pays
-      --run-connection-test                  Runs a connection test
-                                             against all specified instances. If an instance is unreachable, the Proxy exits with a failure
-                                             status code.
-      --skip-failed-instance-config          If set, the Proxy will skip any instances that are invalid/unreachable (
-                                             only applicable to Unix sockets)
-      --sql-data                             Enable SQL Data to tunnel through the Cloud SQL Admin API without needing network access to your public or private IP
-      --sqladmin-api-endpoint string         API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)
-      --sqldata-api-endpoint string          Override the SQL Data API endpoint
-  -l, --structured-logs                      Enable structured logging with LogEntry format
-      --telemetry-prefix string              Prefix for Cloud Monitoring metrics.
-      --telemetry-project string             Enable Cloud Monitoring and Cloud Trace with the provided project ID.
-      --telemetry-sample-rate int            Set the Cloud Trace sample rate. A smaller number means more traces. (default 10000)
-  -t, --token string                         Use bearer token as a source of IAM credentials.
-      --universe-domain string               Universe Domain for non-GDU environments. (default: googleapis.com)
-  -u, --unix-socket string                   (*) Enables Unix sockets for all listeners with the provided directory.
-      --user-agent string                    Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1
-  -v, --version                              Print the cloud-sql-proxy version
+  -a, --address string                               (*) Address to bind Cloud SQL instance listeners. (default "127.0.0.1")
+      --admin-port string                            Port for localhost-only admin server (default "9091")
+  -i, --auto-iam-authn                               (*) Enables Automatic IAM Authentication for all instances
+      --auto-ip                                      Supports legacy behavior of v1 and will try to connect to first IP
+                                                     address returned by the SQL Admin API. In most cases, this flag should not be used.
+                                                     Prefer default of public IP or use --private-ip instead.
+      --config-file string                           Path to a TOML file containing configuration options.
+  -c, --credentials-file string                      Use service account key file as a source of IAM credentials.
+      --debug                                        Enable pprof on the localhost admin server
+      --debug-logs                                   Enable debug logging
+      --disable-metrics                              Disable Cloud Monitoring integration (used with --telemetry-project)
+      --disable-traces                               Disable Cloud Trace integration (used with --telemetry-project)
+      --exit-zero-on-sigterm                         Exit with 0 exit code when Sigterm received (default is 143)
+      --fuse string                                  Mount a directory at the path using FUSE to access Cloud SQL instances.
+      --fuse-tmp-dir string                          Temp dir for Unix sockets created with FUSE (default "/tmp/csql-tmp")
+  -g, --gcloud-auth                                  Use gclouds user credentials as a source of IAM credentials.
+                                                     NOTE: this flag is a legacy feature and generally should not be used.
+                                                     Instead prefer Application Default Credentials
+                                                     (enabled with: gcloud auth application-default login) which
+                                                     the Proxy will then pick-up automatically.
+      --health-check                                 Enables health check endpoints /startup, /liveness, and /readiness on localhost.
+  -h, --help                                         Display help information for cloud-sql-proxy
+      --http-address string                          Address for Prometheus and health check server (default "localhost")
+      --http-port string                             Port for Prometheus and health check server (default "9090")
+      --impersonate-service-account string           Comma separated list of service accounts to impersonate. Last value
+                                                     is the target account.
+  -j, --json-credentials string                      Use service account key JSON as a source of IAM credentials.
+      --lazy-refresh                                 Configure a lazy refresh where connection info is retrieved only if
+                                                     the cached copy has expired. Use this setting in environments where the
+                                                     CPU may be throttled and a background refresh cannot run reliably
+                                                     (e.g., Cloud Run)
+      --login-token string                           Use bearer token as a database password (used with token and auto-iam-authn only)
+      --max-connections uint                         Limit the number of connections. Default is no limit.
+      --max-sigterm-delay duration                   Maximum number of seconds to wait for connections to close after receiving a TERM signal.
+      --min-sigterm-delay duration                   The number of seconds to accept new connections after receiving a TERM signal.
+  -p, --port int                                     (*) Initial port for listeners. Subsequent listeners increment from this value.
+      --private-ip                                   (*) Connect to the private ip address for all instances
+      --prometheus                                   Enable Prometheus HTTP endpoint /metrics on localhost
+      --prometheus-namespace string                  Use the provided Prometheus namespace for metrics
+      --psc                                          (*) Connect to the PSC endpoint for all instances
+      --quiet                                        Log error messages only
+      --quitquitquit                                 Enable quitquitquit endpoint on the localhost admin server
+      --quota-project string                         Specifies the project to use for Cloud SQL Admin API quota tracking.
+                                                     The IAM principal must have the "serviceusage.services.use" permission
+                                                     for the given project. See https://cloud.google.com/service-usage/docs/overview and
+                                                     https://cloud.google.com/storage/docs/requester-pays
+      --resource-exhausted-cooldown-delay duration   Cooldown period after a ResourceExhausted error.
+      --run-connection-test                          Runs a connection test
+                                                     against all specified instances. If an instance is unreachable, the Proxy exits with a failure
+                                                     status code.
+      --skip-failed-instance-config                  If set, the Proxy will skip any instances that are invalid/unreachable (
+                                                     only applicable to Unix sockets)
+      --sql-data                                     Enable SQL Data to tunnel through the Cloud SQL Admin API without needing network access to your public or private IP
+      --sqladmin-api-endpoint string                 API endpoint for all Cloud SQL Admin API requests. (default: https://sqladmin.googleapis.com)
+      --sqldata-api-endpoint string                  Override the SQL Data API endpoint
+  -l, --structured-logs                              Enable structured logging with LogEntry format
+      --telemetry-prefix string                      Prefix for Cloud Monitoring metrics.
+      --telemetry-project string                     Enable Cloud Monitoring and Cloud Trace with the provided project ID.
+      --telemetry-sample-rate int                    Set the Cloud Trace sample rate. A smaller number means more traces. (default 10000)
+  -t, --token string                                 Use bearer token as a source of IAM credentials.
+      --universe-domain string                       Universe Domain for non-GDU environments. (default: googleapis.com)
+  -u, --unix-socket string                           (*) Enables Unix sockets for all listeners with the provided directory.
+      --user-agent string                            Space separated list of additional user agents, e.g. cloud-sql-proxy-operator/0.0.1
+  -v, --version                                      Print the cloud-sql-proxy version
 ```
 
 ### SEE ALSO

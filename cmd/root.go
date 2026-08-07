@@ -590,6 +590,9 @@ the cached copy has expired. Use this setting in environments where the
 CPU may be throttled and a background refresh cannot run reliably
 (e.g., Cloud Run)`,
 	)
+	localFlags.DurationVar(&c.conf.ResourceExhaustedCooldownPeriod, "resource-exhausted-cooldown-delay", 0,
+		`Cooldown period after a ResourceExhausted error.`,
+	)
 	localFlags.StringVar(&c.conf.SQLDataEndpoint, "sqldata-api-endpoint", "",
 		"Override the SQL Data API endpoint",
 	)
