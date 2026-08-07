@@ -202,6 +202,9 @@ type Config struct {
 	// of a request context, e.g., Cloud Run.
 	LazyRefresh bool
 
+	// ResourceExhaustedCooldownPeriod sets the cooldown period after a ResourceExhausted error.
+	ResourceExhaustedCooldownPeriod time.Duration
+
 	// SQLDataEnabled configures the dialer to use the SQL Data API.
 	SQLDataEnabled bool
 	// SQLDataEndpoint configures the endpoint of the SQL Data service.
@@ -477,6 +480,10 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 
 	if c.LazyRefresh {
 		opts = append(opts, cloudsqlconn.WithLazyRefresh())
+	}
+
+	if c.ResourceExhaustedCooldownPeriod != 0 {
+		opts = append(opts, cloudsqlconn.WithResourceExhaustedCooldownPeriod(c.ResourceExhaustedCooldownPeriod))
 	}
 
 	if c.SQLDataEndpoint != "" {
