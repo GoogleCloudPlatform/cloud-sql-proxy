@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.24.1...v2.25.0) (2026-08-07)
+
+
+### Features
+
+* When connecting to Developer Edition instances, enforce a cooldown period on ResourceExhausted errors ([#2655](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2655)) ([6a127ab](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/6a127ab6fbfa701e635d93a770876c082ebaec71))
+
 ## [2.24.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.24.0...v2.24.1) (2026-07-24)
 
 
