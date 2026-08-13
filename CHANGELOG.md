@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.0...v2.25.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* Improve Stackdriver error logging in Cloud SQL Proxy ([#2652](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2652)) ([3c76891](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/3c768912b06c15a18151a044aa38aa9315db3070))
+
 ## [2.25.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.24.1...v2.25.0) (2026-08-07)
 
 
