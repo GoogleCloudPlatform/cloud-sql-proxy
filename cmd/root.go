@@ -44,6 +44,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.opencensus.io/trace"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -1073,6 +1076,9 @@ func runSignalWrapper(cmd *Command) (err error) {
 		sd, err := stackdriver.NewExporter(stackdriver.Options{
 			ProjectID:    cmd.conf.TelemetryProject,
 			MetricPrefix: cmd.conf.TelemetryPrefix,
+			OnError: func(err error) {
+				cmd.logger.Errorf("Failed to export to Stackdriver: %v", formatStackdriverError(err))
+			},
 		})
 		if err != nil {
 			return err
@@ -1301,4 +1307,59 @@ func startHTTPServer(ctx context.Context, l cloudsql.Logger, addr string, mux *h
 	if err := server.Shutdown(ctx2); err != nil {
 		l.Errorf("failed to shutdown HTTP server: %v\n", err)
 	}
+}
+
+func formatStackdriverError(err error) string {
+	st, ok := status.FromError(err)
+	if !ok {
+		return err.Error()
+	}
+
+	// Default message: code and description
+	msg := fmt.Sprintf("rpc error: code = %s desc = %s", st.Code(), st.Message())
+
+	// Try to extract details
+	details := st.Details()
+	if len(details) > 0 {
+		var detailStrings []string
+		for _, detail := range details {
+			switch d := detail.(type) {
+			case *errdetails.ErrorInfo:
+				detailStrings = append(detailStrings, fmt.Sprintf("ErrorInfo: Reason=%s, Domain=%s, Metadata=%v", d.Reason, d.Domain, d.Metadata))
+			case *errdetails.Help:
+				for _, link := range d.Links {
+					detailStrings = append(detailStrings, fmt.Sprintf("Help: %s (%s)", link.Description, link.Url))
+				}
+			default:
+				detailStrings = append(detailStrings, fmt.Sprintf("%T: %v", d, d))
+			}
+		}
+		if len(detailStrings) > 0 {
+			msg = fmt.Sprintf("%s (details: %s)", msg, strings.Join(detailStrings, "; "))
+		}
+	}
+
+	// Add a general hint if we suspect permission issues based on code, message or details
+	isPermissionIssue := st.Code() == codes.PermissionDenied ||
+		strings.Contains(strings.ToLower(st.Message()), "permission") ||
+		strings.Contains(strings.ToLower(st.Message()), "denied")
+
+	if !isPermissionIssue {
+		// Also check details for permission-like reasons
+		for _, detail := range details {
+			if ei, ok := detail.(*errdetails.ErrorInfo); ok {
+				if ei.Reason == "ACCESS_TOKEN_SCOPE_INSUFFICIENT" ||
+					strings.Contains(strings.ToLower(ei.Reason), "permission") {
+					isPermissionIssue = true
+					break
+				}
+			}
+		}
+	}
+
+	if isPermissionIssue {
+		msg = fmt.Sprintf("%s - Hint: The Service Account may be missing required IAM permissions. Please ensure it has 'Monitoring Metric Writer' (roles/monitoring.metricWriter) and 'Cloud Trace Agent' (roles/cloudtrace.agent) roles.", msg)
+	}
+
+	return msg
 }
