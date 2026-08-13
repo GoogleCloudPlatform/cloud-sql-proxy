@@ -3,7 +3,7 @@ module github.com/GoogleCloudPlatform/cloud-sql-proxy/v2
 go 1.25.8
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.24.0
+	cloud.google.com/go/cloudsqlconn v1.25.0
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/coreos/go-systemd/v22 v22.7.0
@@ -18,8 +18,8 @@ require (
 	go.opencensus.io v0.24.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sys v0.47.0
-	google.golang.org/api v0.289.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260720211330-0afa2a65878a
+	google.golang.org/api v0.290.0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260723164925-7274b71286bd
 	google.golang.org/grpc v1.82.1
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
@@ -29,6 +29,7 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/monitoring v1.30.0 // indirect
+	cloud.google.com/go/sql v0.1.0 // indirect
 	cloud.google.com/go/trace v1.16.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/aws/aws-sdk-go v1.55.8 // indirect
@@ -81,7 +82,7 @@ require (
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
-	google.golang.org/genproto v0.0.0-20260319201613-d00831a3d3e7 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260630182238-925bb5da69e7 // indirect
+	google.golang.org/genproto v0.0.0-20260723164925-7274b71286bd // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260723164925-7274b71286bd // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
