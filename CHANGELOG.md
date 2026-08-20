@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.2...v2.25.3) (2026-08-17)
+
+
+### Bug Fixes
+
+* Ensure that the SqlDataEndpoint includes the default port :443 ([#2666](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2666)) ([1f346cf](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/1f346cfdd9c4954491f2d6c11c4dfa54859c56ce))
+
 ## [2.25.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.1...v2.25.2) (2026-08-13)
 
 
