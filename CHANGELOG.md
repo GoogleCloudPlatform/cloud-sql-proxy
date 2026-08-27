@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.25.4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.3...v2.25.4) (2026-08-27)
+
+
+### Bug Fixes
+
+* check context cancellation in serveSocketMount ([#2675](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2675)) ([f791886](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/f79188668415e76ee46374897ecc821746fad7e4))
+* update deps to the latest ([#2677](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2677)) ([2712b55](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/2712b555bd9d5c98782652ea18f9d465910689a2))
+
 ## [2.25.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.2...v2.25.3) (2026-08-17)
 
 

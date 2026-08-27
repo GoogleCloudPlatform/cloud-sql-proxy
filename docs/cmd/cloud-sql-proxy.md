@@ -219,7 +219,7 @@ Third Party Licenses
   distribution please see:
 
 <!-- {x-release-please-start-version} -->
-  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.25.3/third_party/licenses.tar.gz 
+  https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.25.4/third_party/licenses.tar.gz 
 <!-- {x-release-please-end} -->
 
 
