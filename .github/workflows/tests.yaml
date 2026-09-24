@@ -23,7 +23,8 @@ on:
     - cron: "0 2 * * *"
 
 # Declare default permissions as read only.
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   compilation:
