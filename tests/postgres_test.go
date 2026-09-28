@@ -81,7 +81,7 @@ func TestPostgresUnix(t *testing.T) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
 		// re-use utility function to determine the Unix address in a
 		// Windows-friendly way.
-		proxy.UnixAddress(tmpDir, *postgresConnName),
+		strings.ReplaceAll(proxy.UnixAddress(tmpDir, *postgresConnName), `\`, `\\`),
 		*postgresUser, *postgresPass, *postgresDB)
 
 	// Prepare the initial arguments
@@ -103,7 +103,7 @@ func TestPostgresMCPUnix(t *testing.T) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s database=%s sslmode=disable",
 		// re-use utility function to determine the Unix address in a
 		// Windows-friendly way.
-		proxy.UnixAddress(tmpDir, *postgresMCPConnName),
+		strings.ReplaceAll(proxy.UnixAddress(tmpDir, *postgresMCPConnName), `\`, `\\`),
 		*postgresUser, *postgresMCPPass, *postgresDB)
 
 	// Prepare the initial arguments

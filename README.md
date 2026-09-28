@@ -355,6 +355,10 @@ query param:
 > #    C:\cloudsql\myproject.my-region.mysql
 > ./cloud-sql-proxy --unix-socket C:\cloudsql myproject:my-region:mysql
 > ```
+>
+> When connecting with a PostgreSQL keyword/value connection string (such as
+> `pgx` `v5.11.0+` or `libpq`), backslashes (`\`) in Windows socket paths or
+> passwords must be escaped as `\\`.
 
 
 ### Configuring IAM Database Authentication
