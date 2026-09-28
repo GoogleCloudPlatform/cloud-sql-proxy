@@ -97,5 +97,3 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260921155816-b14227669459 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
-
-replace github.com/jackc/pgx/v5 v5.11.0 => github.com/jackc/pgx/v5 v5.10.0
