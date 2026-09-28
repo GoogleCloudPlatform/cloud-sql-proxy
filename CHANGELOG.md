@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.26.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.4...v2.26.0) (2026-09-28)
+
+
+### Bug Fixes
+
+* downgrade pgx to v5.10.0 ([#2687](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2687)) ([85ab150](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/85ab150e8b26418922b942cfe6188aed697c7993))
+* update all dependencies and base images (Alpine 3.24.2, distroless); require Go 1.26 ([#2681](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2681)) ([85d63dd](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/85d63ddbb2aa0c2b959ffaf06102a1dbcef4e920))
+
+
+### Miscellaneous Chores
+
+* release 2.26.0 ([#2689](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2689)) ([3adf01e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/3adf01ea7911a9199ab676c6be4114bc9c7768d4))
+
 ## [2.25.4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.3...v2.25.4) (2026-08-27)
 
 
