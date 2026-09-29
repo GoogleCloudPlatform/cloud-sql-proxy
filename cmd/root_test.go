@@ -506,6 +506,20 @@ func TestNewCommandArguments(t *testing.T) {
 				ResourceExhaustedCooldownPeriod: 10 * time.Second,
 			}),
 		},
+		{
+			desc: "using the failover-period flag",
+			args: []string{"--failover-period", "10s", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				FailoverPeriod: pointer(10 * time.Second),
+			}),
+		},
+		{
+			desc: "using the failover-period flag set to 0",
+			args: []string{"--failover-period", "0s", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				FailoverPeriod: pointer(time.Duration(0)),
+			}),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -883,6 +897,22 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			envValue: "https://test.googleapis.com",
 			want: withDefaults(&proxy.Config{
 				SQLDataEndpoint: "https://test.googleapis.com",
+			}),
+		},
+		{
+			desc:     "using the failover-period envvar",
+			envName:  "CSQL_PROXY_FAILOVER_PERIOD",
+			envValue: "15s",
+			want: withDefaults(&proxy.Config{
+				FailoverPeriod: pointer(15 * time.Second),
+			}),
+		},
+		{
+			desc:     "using the failover-period envvar set to 0",
+			envName:  "CSQL_PROXY_FAILOVER_PERIOD",
+			envValue: "0s",
+			want: withDefaults(&proxy.Config{
+				FailoverPeriod: pointer(time.Duration(0)),
 			}),
 		},
 	}

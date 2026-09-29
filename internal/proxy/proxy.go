@@ -202,6 +202,10 @@ type Config struct {
 	// of a request context, e.g., Cloud Run.
 	LazyRefresh bool
 
+	// FailoverPeriod configures the frequency to check for changes to DNS names.
+	// When set to 0, DNS polling is disabled and checks only occur on new connections.
+	FailoverPeriod *time.Duration
+
 	// ResourceExhaustedCooldownPeriod sets the cooldown period after a ResourceExhausted error.
 	ResourceExhaustedCooldownPeriod time.Duration
 
@@ -480,6 +484,10 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 
 	if c.LazyRefresh {
 		opts = append(opts, cloudsqlconn.WithLazyRefresh())
+	}
+
+	if c.FailoverPeriod != nil {
+		opts = append(opts, cloudsqlconn.WithFailoverPeriod(*c.FailoverPeriod))
 	}
 
 	if c.ResourceExhaustedCooldownPeriod != 0 {

@@ -940,3 +940,17 @@ func TestProxyMultiInstances(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigDialerOptionsFailoverPeriod(t *testing.T) {
+	d := 15 * time.Second
+	c := &proxy.Config{
+		FailoverPeriod: &d,
+	}
+	opts, err := c.DialerOptions(testLogger)
+	if err != nil {
+		t.Fatalf("want err = nil, got = %v", err)
+	}
+	if len(opts) == 0 {
+		t.Fatalf("expected options to be returned, got none")
+	}
+}

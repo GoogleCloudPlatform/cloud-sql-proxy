@@ -14,7 +14,11 @@
 
 package cmd
 
-import "github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
+import (
+	"time"
+
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
+)
 
 // Option is a function that configures a Command.
 type Option func(*Command)
@@ -95,6 +99,13 @@ func WithDebugLogging() Option {
 func WithLazyRefresh() Option {
 	return func(c *Command) {
 		c.conf.LazyRefresh = true
+	}
+}
+
+// WithFailoverPeriod configures the frequency to check for changes to DNS names.
+func WithFailoverPeriod(d time.Duration) Option {
+	return func(c *Command) {
+		c.conf.FailoverPeriod = &d
 	}
 }
 
