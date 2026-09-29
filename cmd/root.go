@@ -94,6 +94,7 @@ type Command struct {
 	dialer           cloudsql.Dialer
 	cleanup          func() error
 	connRefuseNotify func()
+	failoverPeriod   time.Duration
 }
 
 var longHelp = `
@@ -596,6 +597,9 @@ CPU may be throttled and a background refresh cannot run reliably
 	localFlags.DurationVar(&c.conf.ResourceExhaustedCooldownPeriod, "resource-exhausted-cooldown-delay", 0,
 		`Cooldown period after a ResourceExhausted error.`,
 	)
+	localFlags.DurationVar(&c.failoverPeriod, "failover-period", 30*time.Second,
+		`Frequency to check for changes to DNS names. When set to 0, DNS polling is disabled.`,
+	)
 	localFlags.StringVar(&c.conf.SQLDataEndpoint, "sqldata-api-endpoint", "",
 		"Override the SQL Data API endpoint",
 	)
@@ -894,6 +898,10 @@ and re-try with just --auto-iam-authn`)
 	if userHasSetLocal(cmd, "user-agent") {
 		userAgent += " " + cmd.conf.OtherUserAgents
 		conf.UserAgent = userAgent
+	}
+
+	if userHasSetLocal(cmd, "failover-period") {
+		conf.FailoverPeriod = &cmd.failoverPeriod
 	}
 
 	if userHasSetLocal(cmd, "sqladmin-api-endpoint") && userHasSetLocal(cmd, "universe-domain") {
