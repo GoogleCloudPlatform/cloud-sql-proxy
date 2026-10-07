@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
+	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/proxy"
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/cobra"
@@ -130,6 +131,19 @@ func TestUserAgent(t *testing.T) {
 	got := cmd.conf.UserAgent
 	if !strings.Contains(got, want) {
 		t.Errorf("expected userAgent to contain: %v; got: %v", want, got)
+	}
+}
+
+func TestStructuredLogsWithQuiet(t *testing.T) {
+	cmd, err := invokeProxyCommand(
+		[]string{"--structured-logs", "--quiet", "proj:region:inst"},
+	)
+	if err != nil {
+		t.Fatalf("want error = nil, got = %v", err)
+	}
+
+	if _, ok := cmd.logger.(*log.StructuredLogger); !ok {
+		t.Errorf("want logger = *log.StructuredLogger, got = %T", cmd.logger)
 	}
 }
 
