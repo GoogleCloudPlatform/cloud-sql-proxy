@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.38.4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.38.3...v1.38.4) (2026-10-08)
+
+
+### Bug Fixes
+
+* update dependencies to latest versions ([#2692](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2692)) ([62c295f](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/62c295fe62c32688f4dbb4facb1cf11179b15d25))
+* update go version in lint.yaml ([#2696](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2696)) ([927f146](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/927f1468a6ec9a4e4607e9f2dfbad6be1116dd3d))
+
 ## [1.38.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.38.2...v1.38.3) (2026-08-13)
 
 
