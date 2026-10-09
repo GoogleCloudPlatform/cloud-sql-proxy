@@ -1243,8 +1243,10 @@ func runSignalWrapper(cmd *Command) (err error) {
 
 	go func() {
 		err := p.Serve(ctx, notifyStarted)
-		cmd.logger.Debugf("proxy server error: %v", err)
-		shutdownCh <- err
+		if err != nil {
+			cmd.logger.Debugf("proxy server error: %v", err)
+			shutdownCh <- err
+		}
 	}()
 
 	err = <-shutdownCh
@@ -1262,7 +1264,9 @@ func runSignalWrapper(cmd *Command) (err error) {
 		cmd.logger.Infof("/quitquitquit received request. Shutting down...")
 		time.Sleep(cmd.conf.WaitBeforeClose)
 	default:
-		cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
+		if err != nil {
+			cmd.logger.Errorf("The proxy has encountered a terminal error: %v", err)
+		}
 	}
 	return err
 }

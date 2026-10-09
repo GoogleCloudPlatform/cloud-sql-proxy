@@ -16,6 +16,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -693,8 +694,11 @@ func (c *Client) Serve(ctx context.Context, notify func()) error {
 	}
 
 	exitCh := make(chan error)
+	var wg sync.WaitGroup
 	for _, m := range c.mnts {
+		wg.Add(1)
 		go func(mnt *socketMount) {
+			defer wg.Done()
 			err := c.serveSocketMount(ctx, mnt)
 			if err != nil {
 				select {
@@ -710,8 +714,17 @@ func (c *Client) Serve(ctx context.Context, notify func()) error {
 			}
 		}(m)
 	}
+	go func() {
+		wg.Wait()
+		close(exitCh)
+	}()
 	notify()
-	return <-exitCh
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-exitCh:
+		return err
+	}
 }
 
 // MultiErr is a group of errors wrapped into one.
@@ -799,6 +812,9 @@ func (c *Client) serveSocketMount(ctx context.Context, s *socketMount) error {
 		}
 		cConn, err := s.Accept()
 		if err != nil {
+			if errors.Is(err, net.ErrClosed) || strings.Contains(err.Error(), "use of closed network connection") {
+				return nil
+			}
 			if nerr, ok := err.(net.Error); ok && nerr.Timeout() {
 				c.logger.Errorf("[%s] Error accepting connection: %v", s.inst, err)
 				// For transient errors, wait a small amount of time to see if it resolves itself
