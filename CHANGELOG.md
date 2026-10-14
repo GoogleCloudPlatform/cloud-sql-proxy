@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.26.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.0...v2.26.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* keep structured logs when --quiet is set ([#2694](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2694)) ([4b77b57](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4b77b57ce788b89ecd91d131658bcc1e0de30321))
+* update all dependencies to latest ([#2699](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2699)) ([ea92a21](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ea92a21528d9c520dbb8d35a00681e8a07f62dd0))
+* update cloud.google.com/go/cloudsqlconn to v1.25.4 ([#2685](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2685)) ([ddf693e](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/ddf693ed2c99dfe9b8c434d331f1f960ff665581))
+
+### Security / CVE Fixes
+
+Updates `golang.org/x/net` from `v0.59.0` to `v0.61.0`, resolving the following HTTP/2 vulnerabilities:
+
+| Advisory | CVE | Description | Affected Package | Fixed Version |
+| --- | --- | --- | --- | --- |
+| [GO-2026-6603](https://pkg.go.dev/vuln/GO-2026-6603) | [CVE-2026-78659](https://nvd.nist.gov/vuln/detail/CVE-2026-78659) | HTTP/2 server memory exhaustion due to Trailer headers | `golang.org/x/net` | `v0.61.0` |
+| [GO-2026-6610](https://pkg.go.dev/vuln/GO-2026-6610) | [CVE-2026-78660](https://nvd.nist.gov/vuln/detail/CVE-2026-78660) | HTTP/2 transport accepts malformed framing-related headers | `golang.org/x/net` | `v0.61.0` |
+| [GO-2026-6611](https://pkg.go.dev/vuln/GO-2026-6611) | [CVE-2026-78669](https://nvd.nist.gov/vuln/detail/CVE-2026-78669) | Excessive CPU consumption from repeated initial window changes | `golang.org/x/net` | `v0.61.0` |
+| [GO-2026-6612](https://pkg.go.dev/vuln/GO-2026-6612) | [CVE-2026-78663](https://nvd.nist.gov/vuln/detail/CVE-2026-78663) | Double flow control refund on HTTP/2 server streams | `golang.org/x/net` | `v0.61.0` |
+| [GO-2026-6617](https://pkg.go.dev/vuln/GO-2026-6617) | [CVE-2026-97032](https://nvd.nist.gov/vuln/detail/CVE-2026-97032) | HTTP/2 server crash due to HPACK encoder race | `golang.org/x/net` | `v0.61.0` |
+
 ## [2.26.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.4...v2.26.0) (2026-09-28)
 
 
