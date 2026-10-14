@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.26.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.0...v2.26.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* keep structured logs when --quiet is set ([#2694](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2694)) ([4b77b57](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4b77b57ce788b89ecd91d131658bcc1e0de30321))
+
 ## [2.26.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.25.4...v2.26.0) (2026-09-28)
 
 
