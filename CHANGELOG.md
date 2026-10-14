@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.26.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.1...v2.26.2) (2026-10-14)
+
+
+### Bug Fixes
+
+* downgrade go-fuse to v2.11.0 and add linux/386 build check ([#2704](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2704)) ([7f12f58](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/7f12f589aebd27f90f6676ffa65ca311d2bdb88c))
+
 ## [2.26.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.0...v2.26.1) (2026-10-14)
 
 
