@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.26.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.2...v2.26.3) (2026-10-22)
+
+
+### Bug Fixes
+
+* update dependencies and container base image digests ([#2708](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2708)) ([e58f8fb](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e58f8fb639c9806c73ec7207d3ed368751031f01)), refs [#2707](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2707)
+
+### Security / CVE Fixes
+
+Updates `gcr.io/distroless/static:nonroot` and `alpine:3` container base image digests to remove distrusted `emSign ECC Root CA - G3` and `AAA Certificate Services` root certificates (`ca-certificates`), and rebuilds the proxy binaries with Go `1.27.3` / `1.26.10`:
+
+| Advisory | CVE | Description | Affected Component | Fixed Version |
+| --- | --- | --- | --- | --- |
+| [GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809) | [CVE-2026-111943](https://nvd.nist.gov/vuln/detail/CVE-2026-111943) | Distrust compromised intermediate certificates in `crypto/x509` and container OS root CA bundle (`ca-certificates`) | `crypto/x509` (stdlib), `gcr.io/distroless/static:nonroot`, `alpine:3` | `go1.26.10` / `go1.27.3`, `distroless@d620678`, `alpine:3.24.3@71e9b7b` |
+
 ## [2.26.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.1...v2.26.2) (2026-10-14)
 
 
