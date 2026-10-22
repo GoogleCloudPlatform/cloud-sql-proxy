@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.26.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.2...v2.26.3) (2026-10-22)
+
+
+### Bug Fixes
+
+* update dependencies and container base image digests ([#2708](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2708)) ([e58f8fb](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/e58f8fb639c9806c73ec7207d3ed368751031f01)), refs [#2707](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2707)
+
 ## [2.26.2](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.1...v2.26.2) (2026-10-14)
 
 
