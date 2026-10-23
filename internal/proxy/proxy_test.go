@@ -940,3 +940,42 @@ func TestProxyMultiInstances(t *testing.T) {
 		})
 	}
 }
+
+func TestServeExitsCleanlyOnClose(t *testing.T) {
+	in := &proxy.Config{
+		Addr: "127.0.0.1",
+		Port: 24018,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: "proj:region:pg"},
+		},
+	}
+	d := &fakeDialer{}
+	c, err := proxy.NewClient(context.Background(), d, testLogger, in, nil)
+	if err != nil {
+		t.Fatalf("proxy.NewClient error: %v", err)
+	}
+
+	serveErrCh := make(chan error, 1)
+	started := make(chan struct{})
+	go func() {
+		serveErrCh <- c.Serve(context.Background(), func() {
+			close(started)
+		})
+	}()
+
+	<-started
+
+	if err := c.Close(); err != nil {
+		t.Fatalf("c.Close() error: %v", err)
+	}
+
+	select {
+	case err := <-serveErrCh:
+		if err != nil {
+			t.Fatalf("Serve returned non-nil error on Close: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("Serve did not exit after Close")
+	}
+}
+
