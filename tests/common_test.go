@@ -112,6 +112,11 @@ func (p *ProxyExec) Done() bool {
 // Close releases any resources associated with the instance.
 func (p *ProxyExec) Close() {
 	p.cancel()
+	// Drain output so log writes cannot block while the proxy shuts down, and
+	// wait for shutdown to finish so listeners release their ports before the
+	// next test starts.
+	go func() { _, _ = io.Copy(io.Discard, p.Out) }()
+	<-p.done
 	for _, c := range p.closers {
 		c.Close()
 	}
