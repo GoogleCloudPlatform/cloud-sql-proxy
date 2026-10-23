@@ -243,6 +243,7 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
       --disable-metrics                              Disable Cloud Monitoring integration (used with --telemetry-project)
       --disable-traces                               Disable Cloud Trace integration (used with --telemetry-project)
       --exit-zero-on-sigterm                         Exit with 0 exit code when Sigterm received (default is 143)
+      --failover-period duration                     Frequency to check for changes to DNS names. When set to 0, DNS polling is disabled. (default 30s)
       --fuse string                                  Mount a directory at the path using FUSE to access Cloud SQL instances.
       --fuse-tmp-dir string                          Temp dir for Unix sockets created with FUSE (default "/tmp/csql-tmp")
   -g, --gcloud-auth                                  Use gclouds user credentials as a source of IAM credentials.

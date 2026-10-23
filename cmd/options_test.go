@@ -20,6 +20,7 @@ import (
 	"io"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/internal/log"
@@ -145,6 +146,16 @@ func TestCommandOptions(t *testing.T) {
 				return nil
 			},
 			option: WithLazyRefresh(),
+		},
+		{
+			desc: "with failover period",
+			isValid: func(c *Command) error {
+				if c.conf.FailoverPeriod == nil || *c.conf.FailoverPeriod != 10*time.Second {
+					return fmt.Errorf("want = %v, got = %v", 10*time.Second, c.conf.FailoverPeriod)
+				}
+				return nil
+			},
+			option: WithFailoverPeriod(10 * time.Second),
 		},
 	}
 
