@@ -22,6 +22,7 @@ type Option func(*Command)
 // WithLogger overrides the default logger.
 func WithLogger(l cloudsql.Logger) Option {
 	return func(c *Command) {
+		c.customLogger = true
 		c.logger = l
 	}
 }
@@ -80,6 +81,13 @@ func WithAutoIP() Option {
 func WithQuietLogging() Option {
 	return func(c *Command) {
 		c.conf.Quiet = true
+	}
+}
+
+// WithStructuredLogging configures the Proxy to log messages using JSON.
+func WithStructuredLogging() Option {
+	return func(c *Command) {
+		c.conf.StructuredLogs = true
 	}
 }
 

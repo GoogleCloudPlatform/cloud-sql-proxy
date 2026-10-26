@@ -135,6 +135,16 @@ func TestCommandOptions(t *testing.T) {
 			option: WithQuietLogging(),
 		},
 		{
+			desc: "with structured logging",
+			isValid: func(c *Command) error {
+				if !c.conf.StructuredLogs {
+					return errors.New("structured logs was false, but should be true")
+				}
+				return nil
+			},
+			option: WithStructuredLogging(),
+		},
+		{
 			desc: "with lazy refresh",
 			isValid: func(c *Command) error {
 				if !c.conf.LazyRefresh {
@@ -165,6 +175,7 @@ func TestCommandOptions(t *testing.T) {
 }
 
 func TestCommandOptionsOverridesCLI(t *testing.T) {
+	logger := log.NewStdLogger(io.Discard, io.Discard)
 	tcs := []struct {
 		desc    string
 		isValid func(*Command) error
@@ -192,6 +203,28 @@ func TestCommandOptionsOverridesCLI(t *testing.T) {
 			},
 			option: WithQuietLogging(),
 			args:   []string{"--quiet", "false"},
+		},
+		{
+			desc: "with logger overriding structured logs flag",
+			isValid: func(c *Command) error {
+				if c.logger != logger {
+					return errors.New("custom logger was overridden by structured logs flag")
+				}
+				return nil
+			},
+			option: WithLogger(logger),
+			args:   []string{"--structured-logs"},
+		},
+		{
+			desc: "with logger overriding quiet flag",
+			isValid: func(c *Command) error {
+				if c.logger != logger {
+					return errors.New("custom logger was overridden by quiet flag")
+				}
+				return nil
+			},
+			option: WithLogger(logger),
+			args:   []string{"--quiet"},
 		},
 	}
 	for _, tc := range tcs {
