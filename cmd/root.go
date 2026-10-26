@@ -91,6 +91,7 @@ type Command struct {
 	*cobra.Command
 	conf             *proxy.Config
 	logger           cloudsql.Logger
+	customLogger     bool
 	dialer           cloudsql.Dialer
 	cleanup          func() error
 	connRefuseNotify func()
@@ -663,11 +664,13 @@ func loadConfig(c *Command, args []string, opts []Option) error {
 		o(c)
 	}
 
-	// Handle logger separately from config
-	if c.conf.StructuredLogs {
-		c.logger = log.NewStructuredLogger(c.conf.Quiet)
-	} else if c.conf.Quiet {
-		c.logger = log.NewStdLogger(io.Discard, os.Stderr)
+	// Handle logger separately from config if not overridden by WithLogger
+	if !c.customLogger {
+		if c.conf.StructuredLogs {
+			c.logger = log.NewStructuredLogger(c.conf.Quiet)
+		} else if c.conf.Quiet {
+			c.logger = log.NewStdLogger(io.Discard, os.Stderr)
+		}
 	}
 
 	err = parseConfig(c, c.conf, args)
