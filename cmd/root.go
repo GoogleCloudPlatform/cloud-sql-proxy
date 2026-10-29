@@ -33,6 +33,7 @@ import (
 	"syscall"
 	"time"
 
+	"cloud.google.com/go/cloudsqlconn"
 	"contrib.go.opencensus.io/exporter/prometheus"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/GoogleCloudPlatform/cloud-sql-proxy/v2/cloudsql"
@@ -94,6 +95,10 @@ type Command struct {
 	dialer           cloudsql.Dialer
 	cleanup          func() error
 	connRefuseNotify func()
+	// enableBuiltInMetrics backs --enable-builtin-metrics (default true). It
+	// is copied onto conf.BuiltInMetrics in parseConfig only when the flag was
+	// explicitly set, so that an unset flag keeps the connector's own default.
+	enableBuiltInMetrics bool
 }
 
 var longHelp = `
@@ -599,6 +604,18 @@ CPU may be throttled and a background refresh cannot run reliably
 	localFlags.StringVar(&c.conf.SQLDataEndpoint, "sqldata-api-endpoint", "",
 		"Override the SQL Data API endpoint",
 	)
+	localFlags.BoolVar(&c.enableBuiltInMetrics, "enable-builtin-metrics", true,
+		`Export the built-in client metrics (cloudsql.googleapis.com/client/connector/*)
+to Cloud Monitoring in the Cloud SQL instance's project. The Proxy's identity
+needs roles/monitoring.metricWriter on that project for the export to succeed;
+without it, the Proxy logs one warning and keeps serving. Pass
+--enable-builtin-metrics=false to turn the export off.`)
+	localFlags.StringVar(&c.conf.ComputePlatform, "compute-platform", "",
+		fmt.Sprintf(`Override the auto-detected compute_platform label of the built-in client
+metrics. One of: %s.`, strings.Join(computePlatformNames(), ", ")))
+	localFlags.StringVar(&c.conf.ApplicationName, "application-name", "",
+		`Set the application_name label of the built-in client metrics to identify the
+application across its instances (e.g., "checkout-api").`)
 
 	localFlags.BoolVar(&c.conf.RunConnectionTest, "run-connection-test", false, `Runs a connection test
 against all specified instances. If an instance is unreachable, the Proxy exits with a failure
@@ -782,6 +799,17 @@ func instanceFromConfigFile(v *viper.Viper) []string {
 	return args
 }
 
+// computePlatformNames returns the valid --compute-platform values, from the
+// connector, for help text.
+func computePlatformNames() []string {
+	ps := cloudsqlconn.ComputePlatforms()
+	names := make([]string, len(ps))
+	for i, p := range ps {
+		names[i] = string(p)
+	}
+	return names
+}
+
 func userHasSetLocal(cmd *Command, f string) bool {
 	return cmd.LocalFlags().Lookup(f).Changed
 }
@@ -896,6 +924,21 @@ and re-try with just --auto-iam-authn`)
 
 	if userHasSetLocal(cmd, "sqladmin-api-endpoint") && userHasSetLocal(cmd, "universe-domain") {
 		return newBadCommandError("cannot specify --sqladmin-api-endpoint and --universe-domain at the same time")
+	}
+	// Only set BuiltInMetrics when --enable-builtin-metrics was explicitly
+	// provided (via CLI flag, environment variable, or config file); otherwise
+	// leave nil so the connector's default (incl. universe-domain handling)
+	// applies.
+	if userHasSetLocal(cmd, "enable-builtin-metrics") {
+		v := cmd.enableBuiltInMetrics
+		conf.BuiltInMetrics = &v
+	}
+	if conf.ComputePlatform != "" {
+		// Validate early so a typo is reported as a usage error rather than
+		// failing later when the dialer is created.
+		if _, err := cloudsqlconn.ParseComputePlatform(conf.ComputePlatform); err != nil {
+			return newBadCommandError(fmt.Sprintf("invalid value for --compute-platform: %v", err))
+		}
 	}
 	if userHasSetLocal(cmd, "sqladmin-api-endpoint") && conf.APIEndpointURL != "" {
 		_, err := url.Parse(conf.APIEndpointURL)

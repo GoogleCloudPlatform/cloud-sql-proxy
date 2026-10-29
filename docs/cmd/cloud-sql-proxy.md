@@ -232,16 +232,25 @@ cloud-sql-proxy INSTANCE_CONNECTION_NAME... [flags]
 ```
   -a, --address string                               (*) Address to bind Cloud SQL instance listeners. (default "127.0.0.1")
       --admin-port string                            Port for localhost-only admin server (default "9091")
+      --application-name string                      Set the application_name label of the built-in client metrics to identify the
+                                                     application across its instances (e.g., "checkout-api").
   -i, --auto-iam-authn                               (*) Enables Automatic IAM Authentication for all instances
       --auto-ip                                      Supports legacy behavior of v1 and will try to connect to first IP
                                                      address returned by the SQL Admin API. In most cases, this flag should not be used.
                                                      Prefer default of public IP or use --private-ip instead.
+      --compute-platform string                      Override the auto-detected compute_platform label of the built-in client
+                                                     metrics. One of: gce, gke, cloud_run, app_engine, cloud_functions, ai_studio.
       --config-file string                           Path to a TOML file containing configuration options.
   -c, --credentials-file string                      Use service account key file as a source of IAM credentials.
       --debug                                        Enable pprof on the localhost admin server
       --debug-logs                                   Enable debug logging
       --disable-metrics                              Disable Cloud Monitoring integration (used with --telemetry-project)
       --disable-traces                               Disable Cloud Trace integration (used with --telemetry-project)
+      --enable-builtin-metrics                       Export the built-in client metrics (cloudsql.googleapis.com/client/connector/*)
+                                                     to Cloud Monitoring in the Cloud SQL instance's project. The Proxy's identity
+                                                     needs roles/monitoring.metricWriter on that project for the export to succeed;
+                                                     without it, the Proxy logs one warning and keeps serving. Pass
+                                                     --enable-builtin-metrics=false to turn the export off. (default true)
       --exit-zero-on-sigterm                         Exit with 0 exit code when Sigterm received (default is 143)
       --fuse string                                  Mount a directory at the path using FUSE to access Cloud SQL instances.
       --fuse-tmp-dir string                          Temp dir for Unix sockets created with FUSE (default "/tmp/csql-tmp")

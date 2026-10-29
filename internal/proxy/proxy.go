@@ -210,6 +210,21 @@ type Config struct {
 	// SQLDataEndpoint configures the endpoint of the SQL Data service.
 	SQLDataEndpoint string
 
+	// BuiltInMetrics enables or disables the Go Connector's built-in client
+	// metrics (cloudsql.googleapis.com/client/connector/*), which are
+	// otherwise exported by default to Cloud Monitoring in the Cloud SQL
+	// instance's project (except in non-default Cloud universes). Nil leaves
+	// the connector's own default in effect. Unrelated to TelemetryProject /
+	// DisableMetrics, which control the Proxy's own OpenCensus metrics.
+	BuiltInMetrics *bool
+	// ComputePlatform overrides the auto-detected compute_platform label of
+	// the built-in client metrics. Empty means auto-detect.
+	ComputePlatform string
+	// ApplicationName sets the application_name label of the built-in client
+	// metrics, identifying the application across its instances. Empty leaves
+	// the label unset.
+	ApplicationName string
+
 	// Instances are configuration for individual instances. Instance
 	// configuration takes precedence over global configuration.
 	Instances []InstanceConnConfig
@@ -336,6 +351,20 @@ func parseImpersonationChain(chain string) (string, []string) {
 
 const iamLoginScope = "https://www.googleapis.com/auth/sqlservice.login"
 
+// monitoringWriteScope is the OAuth scope the connector's built-in metric
+// export needs when the Proxy supplies the token source itself.
+const monitoringWriteScope = "https://www.googleapis.com/auth/monitoring.write"
+
+// builtInMetricsEnabled reports whether built-in client metrics will be
+// enabled for this Config, mirroring the connector's default (on in the
+// default googleapis.com universe, off elsewhere unless explicitly enabled).
+func (c Config) builtInMetricsEnabled() bool {
+	if c.BuiltInMetrics != nil {
+		return *c.BuiltInMetrics
+	}
+	return c.UniverseDomain == "" || c.UniverseDomain == "googleapis.com"
+}
+
 // iamAuthNEnabled returns true if IAM authentication is enabled globally
 // or for any instance in the configuration.
 func (c *Config) iamAuthNEnabled() bool {
@@ -381,12 +410,19 @@ func credentialsOpt(c Config, l cloudsql.Logger) (cloudsqlconn.Option, error) {
 			l.Infof("Impersonating service account with Application Default Credentials")
 		}
 		target, delegates := parseImpersonationChain(c.ImpersonationChain)
+		scopes := []string{sqladmin.SqlserviceAdminScope}
+		if c.builtInMetricsEnabled() {
+			// The impersonated token is passed to the connector as-is, so it
+			// must also carry the scope the built-in metric export needs;
+			// otherwise every export is rejected for insufficient scopes.
+			scopes = append(scopes, monitoringWriteScope)
+		}
 		ts, err := impersonate.CredentialsTokenSource(
 			context.Background(),
 			impersonate.CredentialsConfig{
 				TargetPrincipal: target,
 				Delegates:       delegates,
-				Scopes:          []string{sqladmin.SqlserviceAdminScope},
+				Scopes:          scopes,
 			},
 			iopts...,
 		)
@@ -488,6 +524,23 @@ func (c *Config) DialerOptions(l cloudsql.Logger) ([]cloudsqlconn.Option, error)
 
 	if c.SQLDataEndpoint != "" {
 		opts = append(opts, cloudsqlconn.WithSQLDataEndpoint(c.SQLDataEndpoint))
+	}
+
+	// Built-in client metrics are on by default in the connector (and off by
+	// default in non-default Cloud universes); only pass the option when
+	// explicitly configured so the connector's own default applies otherwise.
+	if c.BuiltInMetrics != nil {
+		opts = append(opts, cloudsqlconn.WithBuiltInMetrics(*c.BuiltInMetrics))
+	}
+	if c.ComputePlatform != "" {
+		p, err := cloudsqlconn.ParseComputePlatform(c.ComputePlatform)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, cloudsqlconn.WithComputePlatform(p))
+	}
+	if c.ApplicationName != "" {
+		opts = append(opts, cloudsqlconn.WithApplicationName(c.ApplicationName))
 	}
 
 	return opts, nil
@@ -744,12 +797,6 @@ func (c *Client) Close() error {
 		mnts = c.fuseMounts()
 	}
 
-	// Close the dialer to prevent any additional refreshes.
-	cErr := c.dialer.Close()
-	if cErr != nil {
-		mErr = append(mErr, cErr)
-	}
-
 	// Start a timer for clean shutdown (where all connections are closed).
 	// While the timer runs, additional connections will be accepted.
 	timeout := time.After(c.conf.WaitOnClose)
@@ -774,6 +821,14 @@ func (c *Client) Close() error {
 	}
 	if c.fuseDir != "" {
 		c.waitForFUSEMounts()
+	}
+
+	// Close the dialer after listeners and active connections have drained so
+	// that connections accepted or closed during WaitOnClose work and are
+	// included in the final built-in metrics flush, and listeners release their
+	// ports immediately without waiting on the flush RPC.
+	if cErr := c.dialer.Close(); cErr != nil {
+		mErr = append(mErr, cErr)
 	}
 	// Verify that all connections are closed.
 	open := atomic.LoadUint64(&c.connCount)

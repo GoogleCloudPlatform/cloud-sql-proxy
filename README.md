@@ -725,6 +725,59 @@ To enable Prometheus, use the `--prometheus` flag. This will start an HTTP
 server on localhost with a `/metrics` endpoint. The Prometheus namespace may
 optionally be set with `--prometheus-namespace`.
 
+### Built-in Client Metrics (BETA)
+
+Independently of the OpenCensus metrics above, the Proxy exports a small set
+of built-in client metrics to Cloud Monitoring under the
+`cloudsql.googleapis.com/client/connector/` prefix, using the
+`cloudsql.googleapis.com/InstanceClient` monitored resource. These are
+**enabled by default** and need no `--telemetry-project`: they are written to
+the **Cloud SQL instance's project**, using the same identity the Proxy uses
+for the Cloud SQL Admin API.
+
+| Metric | Description |
+| --- | --- |
+| `open_connection_count` | Dial attempts, labelled with `status` and `connection_part` |
+| `connect_latencies` | Dial latency distribution (ms) |
+| `open_connections` | Currently open connections |
+| `closed_connection_count` | Closed connections |
+| `connection_durations` | Connection lifetime distribution (s) |
+
+That identity needs the `roles/monitoring.metricWriter` role on the instance's
+project. Export never affects connectivity: if the role is missing, the Proxy
+logs one warning per process explaining what to grant and keeps serving
+connections. When using `--impersonate-service-account`, the Proxy requests the
+additional `monitoring.write` scope for the impersonated token automatically;
+when using `--token`, the supplied token must carry that scope (or
+`cloud-platform`) for the export to succeed. In non-default Cloud universes
+(`--universe-domain` other than `googleapis.com`), built-in metrics are off by
+default unless explicitly enabled with `--enable-builtin-metrics=true`.
+
+To turn the built-in metrics off:
+
+```shell
+./cloud-sql-proxy --enable-builtin-metrics=false <INSTANCE_CONNECTION_NAME>
+```
+
+To identify your application across its instances (sets the `application_name`
+label, which is empty by default):
+
+```shell
+./cloud-sql-proxy --application-name my-service <INSTANCE_CONNECTION_NAME>
+```
+
+The `compute_platform` label is detected from the environment (GCE, GKE, Cloud
+Run, App Engine, Cloud Functions). To set it explicitly, for example for a
+platform that is not auto-detected:
+
+```shell
+./cloud-sql-proxy --compute-platform ai_studio <INSTANCE_CONNECTION_NAME>
+```
+
+All three flags can also be set with the `CSQL_PROXY_ENABLE_BUILTIN_METRICS`,
+`CSQL_PROXY_APPLICATION_NAME`, and `CSQL_PROXY_COMPUTE_PLATFORM` environment
+variables.
+
 ## Debug logging
 
 To enable debug logging to report on internal certificate refresh operations,

@@ -940,3 +940,36 @@ func TestProxyMultiInstances(t *testing.T) {
 		})
 	}
 }
+
+func TestDialerOptionsBuiltInMetrics(t *testing.T) {
+	// DialerOptions must reject an invalid compute platform and accept a
+	// valid one (case-insensitively), and must not fail for the default
+	// (empty) value or when metrics are explicitly enabled or disabled.
+	f := false
+	tr := true
+	tcs := []struct {
+		desc    string
+		in      proxy.Config
+		wantErr bool
+	}{
+		{desc: "defaults", in: proxy.Config{}},
+		{desc: "metrics disabled", in: proxy.Config{BuiltInMetrics: &f}},
+		{desc: "metrics enabled explicitly", in: proxy.Config{BuiltInMetrics: &tr}},
+		{desc: "valid platform", in: proxy.Config{ComputePlatform: "ai_studio"}},
+		{desc: "valid platform, mixed case", in: proxy.Config{ComputePlatform: "AI_Studio"}},
+		{desc: "application name", in: proxy.Config{ApplicationName: "my-service"}},
+		{desc: "invalid platform", in: proxy.Config{ComputePlatform: "my-laptop"}, wantErr: true},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			tc.in.UserAgent = "test"
+			_, err := tc.in.DialerOptions(testLogger)
+			if tc.wantErr && err == nil {
+				t.Fatal("want error, got nil")
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("want no error, got %v", err)
+			}
+		})
+	}
+}

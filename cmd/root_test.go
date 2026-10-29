@@ -444,6 +444,41 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "disabling built-in metrics",
+			args: []string{"--enable-builtin-metrics=false", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				BuiltInMetrics: pointer(false),
+			}),
+		},
+		{
+			desc: "enabling built-in metrics explicitly",
+			args: []string{"--enable-builtin-metrics", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				BuiltInMetrics: pointer(true),
+			}),
+		},
+		{
+			desc: "using the compute platform flag",
+			args: []string{"--compute-platform", "ai_studio", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ComputePlatform: "ai_studio",
+			}),
+		},
+		{
+			desc: "using the compute platform flag with mixed case",
+			args: []string{"--compute-platform", "Cloud_Run", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ComputePlatform: "Cloud_Run",
+			}),
+		},
+		{
+			desc: "using the application name flag",
+			args: []string{"--application-name", "my-service", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ApplicationName: "my-service",
+			}),
+		},
+		{
 			desc: "using the admin port flag",
 			args: []string{"--admin-port", "7777", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -873,6 +908,38 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			envValue: "true",
 			want: withDefaults(&proxy.Config{
 				AutoIP: true,
+			}),
+		},
+		{
+			desc:     "using the enable-builtin-metrics envvar to disable",
+			envName:  "CSQL_PROXY_ENABLE_BUILTIN_METRICS",
+			envValue: "false",
+			want: withDefaults(&proxy.Config{
+				BuiltInMetrics: pointer(false),
+			}),
+		},
+		{
+			desc:     "using the enable-builtin-metrics envvar to enable",
+			envName:  "CSQL_PROXY_ENABLE_BUILTIN_METRICS",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				BuiltInMetrics: pointer(true),
+			}),
+		},
+		{
+			desc:     "using the compute-platform envvar",
+			envName:  "CSQL_PROXY_COMPUTE_PLATFORM",
+			envValue: "ai_studio",
+			want: withDefaults(&proxy.Config{
+				ComputePlatform: "ai_studio",
+			}),
+		},
+		{
+			desc:     "using the application-name envvar",
+			envName:  "CSQL_PROXY_APPLICATION_NAME",
+			envValue: "my-service",
+			want: withDefaults(&proxy.Config{
+				ApplicationName: "my-service",
 			}),
 		},
 		{
@@ -1350,6 +1417,10 @@ func TestNewCommandWithErrors(t *testing.T) {
 				"--run-connection-test",
 				"--fuse", "myfusedir",
 			},
+		},
+		{
+			desc: "using an invalid compute platform",
+			args: []string{"--compute-platform", "my-laptop", "proj:region:inst"},
 		},
 		{
 			desc: "using both --sqladmin-api-endpoint and --universe-domain",
