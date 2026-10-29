@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.27.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.3...v2.27.0) (2026-10-29)
+
+
+### Features
+
+* add built-in client metrics flags and upgrade cloudsqlconn to v1.26.0 (BETA) ([#2714](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2714)) ([89f3c7c](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/89f3c7c445cf270eabd8d54cc7fb4afdf72d6127))
+
 ## [2.26.3](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.2...v2.26.3) (2026-10-22)
 
 
