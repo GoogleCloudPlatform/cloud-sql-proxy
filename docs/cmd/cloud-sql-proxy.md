@@ -207,6 +207,16 @@ Debug logging
 
       ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME> --debug-logs
 
+Post-Quantum Cryptography
+
+  By default, the Proxy negotiates the hybrid post-quantum key exchange
+  X25519MLKEM768 over TLS 1.3 when built with Go 1.24 or later (v2.15.2+ and
+  v1.37.6+), and automatically falls back to classical X25519 if the server does
+  not support hybrid PQC. To disable post-quantum key exchange, set the
+  environment variable GODEBUG=tlsmlkem=0:
+
+      GODEBUG=tlsmlkem=0 ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME>
+
 Waiting for Startup
 
   See the wait subcommand's help for details.
