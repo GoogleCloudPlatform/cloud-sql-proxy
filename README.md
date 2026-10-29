@@ -31,6 +31,7 @@ The Cloud SQL Auth Proxy has support for:
 - Metrics ([Cloud Monitoring][], [Cloud Trace][], and [Prometheus][])
 - [HTTP Healthchecks][health-check-example]
 - [Service account impersonation](#configuring-service-account-impersonation)
+- [Post-Quantum Cryptography (PQC)](#post-quantum-cryptography-pqc) over TLS 1.3
 - Separate Dialer functionality released as the [Cloud SQL Go Connector][go connector]
 - Configuration with [environment variables](#config-environment-variables)
 - Fully POSIX-compliant flags
@@ -688,6 +689,49 @@ to the SQL Admin API. Specifying `HTTPS_PROXY` or `HTTP_PROXY` is only necessary
 when you want to proxy this traffic. Otherwise, it is optional. See
 [`http.ProxyFromEnvironment`](https://pkg.go.dev/net/http@go1.17.3#ProxyFromEnvironment)
 for possible values.
+
+## Post-Quantum Cryptography (PQC)
+
+The Cloud SQL Auth Proxy encrypts connections to Cloud SQL instances using TLS
+1.3 and negotiates the hybrid post-quantum key exchange **`X25519MLKEM768`**
+(IANA codepoint `0x11ec`) by default via Go's standard `crypto/tls` library.
+
+### Supported Versions
+
+- **Cloud SQL Auth Proxy v2 (`cloud-sql-proxy`)**: Enabled by default in
+  official release binaries and container images starting with **`v2.15.2`**
+  (built with Go 1.24+; upgrading to the latest `v2.26.x+` release is
+  recommended).
+- **Cloud SQL Auth Proxy v1 (`cloud_sql_proxy`, maintenance)**: Enabled by
+  default starting with **`v1.37.6`** (including **`v1.38.4+`**).
+- **Building from source**: Build with **Go 1.24 or later** (`go >= 1.24` in the
+  main module's `go.mod`).
+- **Using `gcloud sql connect`**: `gcloud sql connect` establishes Second
+  Generation connections through `cloud-sql-proxy` using either the Google Cloud
+  SDK `cloud-sql-proxy` component (if installed) or `cloud-sql-proxy` on your
+  system `PATH`. Run `gcloud components update` or ensure any standalone
+  `cloud-sql-proxy` binary on `PATH` is `v2.15.2` or later.
+
+### Automatic Fallback
+
+No flags or configuration changes are required. Both hybrid `X25519MLKEM768` and
+classical `X25519` key shares are offered in the TLS 1.3 `ClientHello`. If a
+Cloud SQL instance does not yet support hybrid PQC, the TLS 1.3 handshake
+automatically falls back to classical `X25519` without connection failures.
+
+### Opting Out
+
+If you need to disable post-quantum key exchange for troubleshooting or
+compatibility (for example, if a middlebox or firewall drops or resets TLS
+handshakes with larger `ClientHello` messages), set the Go runtime environment
+variable `GODEBUG=tlsmlkem=0`:
+
+```shell
+GODEBUG=tlsmlkem=0 ./cloud-sql-proxy <INSTANCE_CONNECTION_NAME>
+```
+
+When running in Docker, Kubernetes, or with `gcloud sql connect`, pass
+`GODEBUG=tlsmlkem=0` in the process or container environment.
 
 ## Support for Metrics and Tracing
 
