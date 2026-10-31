@@ -408,7 +408,15 @@ func runWaitCmd(c *cobra.Command, _ []string) error {
 			return errors.New("command failed to complete successfully")
 		default:
 			resp, err := http.Get(addr)
-			if err != nil || resp.StatusCode != http.StatusOK {
+			if err != nil {
+				time.Sleep(time.Second)
+				break
+			}
+			// Drain and close the body. Without this the connection can't be
+			// reused, so every poll until the proxy is ready leaks one.
+			_, _ = io.Copy(io.Discard, resp.Body)
+			_ = resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
 				time.Sleep(time.Second)
 				break
 			}
