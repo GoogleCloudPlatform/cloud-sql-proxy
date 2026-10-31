@@ -9,8 +9,8 @@ require (
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/google/go-cmp v0.7.0
-	github.com/hanwen/go-fuse/v2 v2.11.0
-	github.com/jackc/pgx/v5 v5.11.0
+	github.com/hanwen/go-fuse/v2 v2.12.1
+	github.com/jackc/pgx/v5 v5.12.0
 	github.com/microsoft/go-mssqldb v1.11.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -18,9 +18,9 @@ require (
 	go.opencensus.io v0.24.0
 	golang.org/x/oauth2 v0.37.0
 	golang.org/x/sys v0.49.0
-	google.golang.org/api v0.308.0
+	google.golang.org/api v0.310.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261019180522-ce908d29299b
-	google.golang.org/grpc v1.84.0
+	google.golang.org/grpc v1.85.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
