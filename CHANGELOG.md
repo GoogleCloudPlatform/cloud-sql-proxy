@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.27.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.27.0...v2.27.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* preserve custom logger option and add WithStructuredLogging ([#2712](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2712)) ([4ec343a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4ec343accbb7a1999e70e67b497fcfd34cc485e0))
+
 ## [2.27.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.3...v2.27.0) (2026-10-29)
 
 
