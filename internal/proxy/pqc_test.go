@@ -31,7 +31,10 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/exec"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -326,6 +329,95 @@ func freeTCPPort(t *testing.T) int {
 	return port
 }
 
+func runProxyRoundTrip(ctx context.Context, t *testing.T, adminURL, tlsAddr, icn string) (string, error) {
+	t.Helper()
+	proxyPort := freeTCPPort(t)
+
+	// Disable built-in Cloud Monitoring metric export (BuiltInMetrics = false)
+	// so this hermetic unit test does not dial monitoring.googleapis.com on client.Close().
+	builtInMetrics := false
+	conf := &proxy.Config{
+		Addr:           "127.0.0.1",
+		Port:           proxyPort,
+		APIEndpointURL: adminURL,
+		Token:          "test-oauth2-token",
+		UserAgent:      "cloud-sql-proxy/test",
+		BuiltInMetrics: &builtInMetrics,
+		Instances: []proxy.InstanceConnConfig{
+			{Name: icn},
+		},
+	}
+
+	dialerOpts, err := conf.DialerOptions(testLogger)
+	if err != nil {
+		t.Fatalf("conf.DialerOptions: %v", err)
+	}
+	// Redirect the server-side proxy TCP dial (127.0.0.1:3307) to our
+	// ephemeral mock Cloud SQL TLS 1.3 listener to avoid port 3307 collisions.
+	dialerOpts = append(dialerOpts, cloudsqlconn.WithDialFunc(func(ctx context.Context, network, addr string) (net.Conn, error) {
+		if addr != "127.0.0.1:3307" {
+			return nil, fmt.Errorf("unexpected backend dial address %q, want 127.0.0.1:3307", addr)
+		}
+		var d net.Dialer
+		return d.DialContext(ctx, network, tlsAddr)
+	}))
+
+	dialer, err := cloudsqlconn.NewDialer(ctx, dialerOpts...)
+	if err != nil {
+		t.Fatalf("cloudsqlconn.NewDialer: %v", err)
+	}
+
+	client, err := proxy.NewClient(ctx, dialer, testLogger, conf, nil)
+	if err != nil {
+		_ = dialer.Close()
+		t.Fatalf("proxy.NewClient: %v", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	ready := make(chan struct{})
+	go func() {
+		_ = client.Serve(ctx, func() { close(ready) })
+	}()
+	select {
+	case <-ready:
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for proxy Serve() readiness")
+	}
+
+	localAddr := fmt.Sprintf("127.0.0.1:%d", proxyPort)
+	conn, err := net.DialTimeout("tcp", localAddr, 5*time.Second)
+	if err != nil {
+		t.Fatalf("net.DialTimeout(%s): %v", localAddr, err)
+	}
+	defer func() { _ = conn.Close() }()
+	_ = conn.SetDeadline(time.Now().Add(5 * time.Second))
+
+	if _, err := conn.Write([]byte("ping-pqc\n")); err != nil {
+		return "", err
+	}
+	return bufio.NewReader(conn).ReadString('\n')
+}
+
+func TestProxyPQCOptOutSubprocessHelper(t *testing.T) {
+	tlsAddr := os.Getenv("CSQL_PQC_HELPER_TLS_ADDR")
+	if tlsAddr == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	reply, err := runProxyRoundTrip(
+		ctx,
+		t,
+		os.Getenv("CSQL_PQC_HELPER_ADMIN_URL"),
+		tlsAddr,
+		os.Getenv("CSQL_PQC_HELPER_ICN"),
+	)
+	if err == nil {
+		t.Fatalf("expected local client connection to close when backend TLS handshake fails, got reply %q", reply)
+	}
+}
+
 func TestProxyPQCKeyExchange(t *testing.T) {
 	// IANA codepoint for X25519MLKEM768 hybrid post-quantum key exchange.
 	const wantX25519MLKEM768Codepoint = tls.CurveID(0x11ec)
@@ -343,12 +435,13 @@ func TestProxyPQCKeyExchange(t *testing.T) {
 	adminSrv := startMockSQLAdminServer(t, pki, project, region, instance)
 
 	tcs := []struct {
-		desc             string
-		godebug          string
-		serverCurves     []tls.CurveID
-		wantClientMLKEM  bool
-		wantNegotiatedID tls.CurveID
-		wantHandshakeErr bool
+		desc                    string
+		godebug                 string
+		clientSubprocessGODEBUG string
+		serverCurves            []tls.CurveID
+		wantClientMLKEM         bool
+		wantNegotiatedID        tls.CurveID
+		wantHandshakeErr        bool
 	}{
 		{
 			desc:             "default hybrid PQC handshake negotiates X25519MLKEM768",
@@ -375,10 +468,12 @@ func TestProxyPQCKeyExchange(t *testing.T) {
 			wantNegotiatedID: tls.CurveP256,
 		},
 		{
-			desc:    "GODEBUG=tlsmlkem=0 opt-out negotiates classical X25519 against PQC server",
-			godebug: "tlsmlkem=0",
-			// Explicitly configure X25519MLKEM768 first on the server so process-wide
-			// GODEBUG=tlsmlkem=0 does not disable PQC on the mock server itself.
+			desc: "GODEBUG=tlsmlkem=0 opt-out omits X25519MLKEM768 from ClientHello and negotiates X25519",
+			// Note: In Go 1.26+, process-wide GODEBUG=tlsmlkem=0 filters ML-KEM groups
+			// out of an in-process tls.Server's CurvePreferences as well. Client
+			// opt-out is verified non-vacuously via GetConfigForClient inspecting the
+			// raw wire ClientHelloInfo.SupportedCurves (wantClientMLKEM = false).
+			godebug:          "tlsmlkem=0",
 			serverCurves:     []tls.CurveID{tls.X25519MLKEM768, tls.X25519, tls.CurveP256},
 			wantClientMLKEM:  false,
 			wantNegotiatedID: tls.X25519,
@@ -391,11 +486,15 @@ func TestProxyPQCKeyExchange(t *testing.T) {
 			wantNegotiatedID: tls.X25519MLKEM768,
 		},
 		{
-			desc:             "GODEBUG=tlsmlkem=0 fails against PQC-only server",
-			godebug:          "tlsmlkem=0",
-			serverCurves:     []tls.CurveID{tls.X25519MLKEM768},
-			wantClientMLKEM:  false,
-			wantHandshakeErr: true,
+			desc: "GODEBUG=tlsmlkem=0 fails against PQC-only server",
+			// Keep tlsmlkem=1 in the parent process so Go 1.26 does not filter
+			// X25519MLKEM768 out of the PQC-only mock server's CurvePreferences,
+			// and run the proxy client in a subprocess with GODEBUG=tlsmlkem=0.
+			godebug:                 "tlsmlkem=1",
+			clientSubprocessGODEBUG: "tlsmlkem=0",
+			serverCurves:            []tls.CurveID{tls.X25519MLKEM768},
+			wantClientMLKEM:         false,
+			wantHandshakeErr:        true,
 		},
 	}
 
@@ -409,72 +508,32 @@ func TestProxyPQCKeyExchange(t *testing.T) {
 			}
 
 			tlsAddr, rec := startMockCloudSQLTLSServer(t, pki, tc.serverCurves)
-			proxyPort := freeTCPPort(t)
-
-			// Disable built-in Cloud Monitoring metric export (BuiltInMetrics = false)
-			// so this hermetic unit test does not dial monitoring.googleapis.com on client.Close().
-			builtInMetrics := false
-			conf := &proxy.Config{
-				Addr:           "127.0.0.1",
-				Port:           proxyPort,
-				APIEndpointURL: adminSrv.URL,
-				Token:          "test-oauth2-token",
-				UserAgent:      "cloud-sql-proxy/test",
-				BuiltInMetrics: &builtInMetrics,
-				Instances: []proxy.InstanceConnConfig{
-					{Name: icn},
-				},
-			}
-
-			dialerOpts, err := conf.DialerOptions(testLogger)
-			if err != nil {
-				t.Fatalf("conf.DialerOptions: %v", err)
-			}
-			// Redirect the server-side proxy TCP dial (127.0.0.1:3307) to our
-			// ephemeral mock Cloud SQL TLS 1.3 listener to avoid port 3307 collisions.
-			dialerOpts = append(dialerOpts, cloudsqlconn.WithDialFunc(func(ctx context.Context, network, addr string) (net.Conn, error) {
-				if addr != "127.0.0.1:3307" {
-					return nil, fmt.Errorf("unexpected backend dial address %q, want 127.0.0.1:3307", addr)
-				}
-				var d net.Dialer
-				return d.DialContext(ctx, network, tlsAddr)
-			}))
-
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
 
-			dialer, err := cloudsqlconn.NewDialer(ctx, dialerOpts...)
-			if err != nil {
-				t.Fatalf("cloudsqlconn.NewDialer: %v", err)
-			}
-
-			client, err := proxy.NewClient(ctx, dialer, testLogger, conf, nil)
-			if err != nil {
-				_ = dialer.Close()
-				t.Fatalf("proxy.NewClient: %v", err)
-			}
-			defer func() { _ = client.Close() }()
-
-			ready := make(chan struct{})
-			go func() {
-				_ = client.Serve(ctx, func() { close(ready) })
-			}()
-			select {
-			case <-ready:
-			case <-ctx.Done():
-				t.Fatal("timed out waiting for proxy Serve() readiness")
-			}
-
-			localAddr := fmt.Sprintf("127.0.0.1:%d", proxyPort)
-			conn, err := net.DialTimeout("tcp", localAddr, 5*time.Second)
-			if err != nil {
-				t.Fatalf("net.DialTimeout(%s): %v", localAddr, err)
-			}
-			defer func() { _ = conn.Close() }()
-			_ = conn.SetDeadline(time.Now().Add(5 * time.Second))
-
-			if _, err := conn.Write([]byte("ping-pqc\n")); err != nil {
-				t.Fatalf("conn.Write: %v", err)
+			var (
+				reply   string
+				readErr error
+			)
+			if tc.clientSubprocessGODEBUG != "" {
+				cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestProxyPQCOptOutSubprocessHelper$")
+				env := make([]string, 0, len(os.Environ())+4)
+				for _, kv := range os.Environ() {
+					if !strings.HasPrefix(kv, "GODEBUG=") {
+						env = append(env, kv)
+					}
+				}
+				cmd.Env = append(env,
+					"GODEBUG="+tc.clientSubprocessGODEBUG,
+					"CSQL_PQC_HELPER_ADMIN_URL="+adminSrv.URL,
+					"CSQL_PQC_HELPER_TLS_ADDR="+tlsAddr,
+					"CSQL_PQC_HELPER_ICN="+icn,
+				)
+				if out, err := cmd.CombinedOutput(); err != nil {
+					t.Fatalf("subprocess client helper failed: %v\n%s", err, out)
+				}
+			} else {
+				reply, readErr = runProxyRoundTrip(ctx, t, adminSrv.URL, tlsAddr, icn)
 			}
 
 			select {
@@ -494,17 +553,24 @@ func TestProxyPQCKeyExchange(t *testing.T) {
 				t.Fatalf("ClientHello SupportedCurves = %v: contains X25519MLKEM768 (%#x) = %v, want %v",
 					gotCurves, tls.X25519MLKEM768, gotHasMLKEM, tc.wantClientMLKEM)
 			}
+			if !tc.wantClientMLKEM {
+				for _, pqGroup := range []tls.CurveID{tls.SecP256r1MLKEM768, tls.SecP384r1MLKEM1024} {
+					if slices.Contains(gotCurves, pqGroup) {
+						t.Fatalf("ClientHello SupportedCurves = %v: unexpected hybrid group %v (%#x) when ML-KEM is disabled",
+							gotCurves, pqGroup, uint16(pqGroup))
+					}
+				}
+			}
 			if !slices.Contains(gotCurves, tls.X25519) {
 				t.Fatalf("ClientHello SupportedCurves = %v: expected classical X25519 fallback curve", gotCurves)
 			}
 
 			if tc.wantHandshakeErr {
 				if gotHandshakeErr == nil {
-					t.Fatalf("expected TLS handshake to fail against PQC-only server with GODEBUG=%q, but succeeded with CurveID=%v",
-						tc.godebug, gotState.CurveID)
+					t.Fatalf("expected TLS handshake to fail against PQC-only server, but succeeded with CurveID=%v",
+						gotState.CurveID)
 				}
-				var buf [1]byte
-				if _, rErr := conn.Read(buf[:]); rErr == nil {
+				if tc.clientSubprocessGODEBUG == "" && readErr == nil {
 					t.Fatal("expected local client connection to close when backend TLS handshake fails")
 				}
 				return
@@ -521,9 +587,8 @@ func TestProxyPQCKeyExchange(t *testing.T) {
 					gotState.CurveID, uint16(gotState.CurveID), tc.wantNegotiatedID, uint16(tc.wantNegotiatedID))
 			}
 
-			reply, err := bufio.NewReader(conn).ReadString('\n')
-			if err != nil {
-				t.Fatalf("reading proxied reply: %v", err)
+			if readErr != nil {
+				t.Fatalf("reading proxied reply: %v", readErr)
 			}
 			if wantReply := "pong:ping-pqc\n"; reply != wantReply {
 				t.Fatalf("proxied reply = %q, want %q", reply, wantReply)

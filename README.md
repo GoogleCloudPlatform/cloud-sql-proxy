@@ -715,9 +715,11 @@ The Cloud SQL Auth Proxy encrypts connections to Cloud SQL instances using TLS
 ### Automatic Fallback
 
 No flags or configuration changes are required. Both hybrid `X25519MLKEM768` and
-classical `X25519` key shares are offered in the TLS 1.3 `ClientHello`. If a
-Cloud SQL instance does not yet support hybrid PQC, the TLS 1.3 handshake
-automatically falls back to classical `X25519` without connection failures.
+classical `X25519` key shares are offered in the TLS 1.3 `ClientHello` (and Go
+1.26+ builds also advertise `SecP256r1MLKEM768` and `SecP384r1MLKEM1024` in
+`supported_groups`). If a Cloud SQL instance does not yet support hybrid PQC,
+the TLS 1.3 handshake automatically falls back to classical `X25519` without
+connection failures.
 
 ### Opting Out
 
