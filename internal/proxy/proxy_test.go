@@ -266,6 +266,21 @@ func TestClientInitialization(t *testing.T) {
 			},
 		},
 		{
+			desc: "with SQL Data enabled globally but disabled per-instance",
+			in: &proxy.Config{
+				Addr:           "127.0.0.1",
+				SQLDataEnabled: true,
+				Instances: []proxy.InstanceConnConfig{
+					{Name: sd},
+					{Name: mysql, SQLDataEnabled: pointer(false)},
+				},
+			},
+			wantTCPAddrs: []string{
+				"127.0.0.1:5432",
+				"127.0.0.1:3306",
+			},
+		},
+		{
 			desc: "with a Unix socket",
 			in: &proxy.Config{
 				UnixSocket: testDir,
@@ -734,6 +749,18 @@ func TestSQLDataWarmup(t *testing.T) {
 				}},
 			},
 			want: 0,
+		},
+		{
+			desc: "warmup not skipped when disabled per-instance",
+			in: &proxy.Config{
+				SQLDataEnabled: true,
+				Instances: []proxy.InstanceConnConfig{{
+					Name:           "proj:reg:inst",
+					Port:           30107,
+					SQLDataEnabled: pointer(false),
+				}},
+			},
+			want: 1,
 		},
 	}
 

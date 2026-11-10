@@ -307,7 +307,7 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	if i.IAMAuthN != nil {
 		opts = append(opts, cloudsqlconn.WithDialIAMAuthN(*i.IAMAuthN))
 	}
-	if i.SQLDataEnabled != nil && *i.SQLDataEnabled || c.SQLDataEnabled {
+	if sqlDataEnabled(&c, i) {
 		opts = append(opts, cloudsqlconn.WithSQLData())
 	}
 
@@ -641,7 +641,7 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 	// unless the proxy is in SqlDataEnabled mode, initiate a refresh operation to warm the cache
 	for _, inst := range conf.Instances {
 		// Skip instances with SqlDataEnabled
-		if conf.SQLDataEnabled || inst.SQLDataEnabled != nil && *inst.SQLDataEnabled {
+		if sqlDataEnabled(conf, inst) {
 			continue
 		}
 		go func(name string) { _, _ = d.EngineVersion(ctx, name) }(inst.Name)
@@ -904,6 +904,15 @@ type socketMount struct {
 	dialOpts []cloudsqlconn.DialOption
 }
 
+// sqlDataEnabled reports whether the instance connects through the SQL Data
+// API. A value set on the instance takes precedence over the global setting.
+func sqlDataEnabled(conf *Config, inst InstanceConnConfig) bool {
+	if inst.SQLDataEnabled != nil {
+		return *inst.SQLDataEnabled
+	}
+	return conf.SQLDataEnabled
+}
+
 func networkType(conf *Config, inst InstanceConnConfig) string {
 	if (conf.UnixSocket == "" && inst.UnixSocket == "" && inst.UnixSocketPath == "") ||
 		(inst.Addr != "" || inst.Port != 0) {
@@ -951,7 +960,7 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 			np = inst.Port
 		case conf.Port != 0:
 			np = pc.nextPort()
-		case conf.SQLDataEnabled || inst.SQLDataEnabled != nil && *inst.SQLDataEnabled:
+		case sqlDataEnabled(conf, inst):
 			// TODO: Only Postgres is supported by the SqlDataService
 			// when more engines are supported, this code will need to change.
 			np = pc.nextDBPort("POSTGRES")
@@ -971,7 +980,7 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 
 		var version string
 		switch {
-		case conf.SQLDataEnabled || inst.SQLDataEnabled != nil && *inst.SQLDataEnabled:
+		case sqlDataEnabled(conf, inst):
 			version = "POSTGRES"
 		default:
 			var err error
