@@ -50,8 +50,8 @@ cloud-sql-proxy wait [flags]
 ### Options
 
 ```
-  -h, --help           help for wait
-  -m, --max duration   maximum amount of time to wait for startup (default 30s)
+  -h, --help[=true|false]   help for wait
+  -m, --max duration        maximum amount of time to wait for startup (default 30s)
 ```
 
 ### Options inherited from parent commands
