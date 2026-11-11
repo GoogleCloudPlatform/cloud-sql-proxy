@@ -97,6 +97,8 @@ type InstanceConnConfig struct {
 	UnixSocketPath string
 	// SQLDataEnabled enables connections through the SqlDataService for this connection.
 	SQLDataEnabled *bool
+	// ConnectTunnel enables connections through the SqlDataService without fallback for this connection.
+	ConnectTunnel *bool
 	// IAMAuthN enables automatic IAM DB Authentication for the instance.
 	// MySQL and Postgres only. If it is nil, the value was not specified.
 	IAMAuthN *bool
@@ -209,6 +211,8 @@ type Config struct {
 	SQLDataEnabled bool
 	// SQLDataEndpoint configures the endpoint of the SQL Data service.
 	SQLDataEndpoint string
+	// ConnectTunnel enables connections through the SqlDataService without fallback for this connection.
+	ConnectTunnel bool
 
 	// BuiltInMetrics enables or disables the Go Connector's built-in client
 	// metrics (cloudsql.googleapis.com/client/connector/*), which are
@@ -320,6 +324,8 @@ func dialOptions(c Config, i InstanceConnConfig) []cloudsqlconn.DialOption {
 	// add the option.
 	case i.PSC != nil && *i.PSC || i.PSC == nil && c.PSC:
 		opts = append(opts, cloudsqlconn.WithPSC())
+	case i.ConnectTunnel != nil && *i.ConnectTunnel || i.ConnectTunnel == nil && c.ConnectTunnel:
+		opts = append(opts, cloudsqlconn.WithConnectTunnel())
 	case c.AutoIP:
 		opts = append(opts, cloudsqlconn.WithAutoIP())
 	default:
@@ -638,10 +644,11 @@ func NewClient(ctx context.Context, d cloudsql.Dialer, l cloudsql.Logger, conf *
 		return configureFUSE(c, conf)
 	}
 
-	// unless the proxy is in SqlDataEnabled mode, initiate a refresh operation to warm the cache
+	// unless the proxy is in SqlDataEnabled or ConnectTunnel mode, initiate a refresh operation to warm the cache
 	for _, inst := range conf.Instances {
-		// Skip instances with SqlDataEnabled
-		if conf.SQLDataEnabled || inst.SQLDataEnabled != nil && *inst.SQLDataEnabled {
+		// Skip instances with SqlDataEnabled or ConnectTunnel
+		if conf.SQLDataEnabled || inst.SQLDataEnabled != nil && *inst.SQLDataEnabled ||
+			conf.ConnectTunnel || inst.ConnectTunnel != nil && *inst.ConnectTunnel {
 			continue
 		}
 		go func(name string) { _, _ = d.EngineVersion(ctx, name) }(inst.Name)

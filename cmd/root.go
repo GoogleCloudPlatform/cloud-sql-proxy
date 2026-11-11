@@ -653,6 +653,11 @@ only applicable to Unix sockets)`)
 		"Enable SQL Data to tunnel through the Cloud SQL Admin API without"+
 			" needing network access to your public or private IP",
 	)
+	localFlags.BoolVar(&c.conf.ConnectTunnel, "connect-tunnel", false,
+		"(*) Enable Connect Tunnel to tunnel through the Cloud SQL Admin API without"+
+			" needing network access to your public or private IP",
+	)
+	_ = localFlags.MarkHidden("connect-tunnel")
 
 	return c
 }
@@ -866,6 +871,9 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	if userHasSetLocal(cmd, "private-ip") && userHasSetLocal(cmd, "auto-ip") {
 		return newBadCommandError("cannot specify --private-ip and --auto-ip together")
 	}
+	if userHasSetLocal(cmd, "connect-tunnel") && userHasSetLocal(cmd, "auto-ip") {
+		return newBadCommandError("cannot specify --connect-tunnel and --auto-ip together")
+	}
 
 	// If more than one IP type is set, error.
 	var ipTypes int
@@ -878,8 +886,11 @@ func parseConfig(cmd *Command, conf *proxy.Config, args []string) error {
 	if conf.SQLDataEnabled {
 		ipTypes++
 	}
+	if conf.ConnectTunnel {
+		ipTypes++
+	}
 	if ipTypes > 1 {
-		return newBadCommandError("cannot specify --private-ip, --psc, and --sql-data flags at the same time")
+		return newBadCommandError("cannot specify --private-ip, --psc, --sql-data, and --connect-tunnel flags at the same time")
 	}
 
 	// If more than one auth method is set, error.
@@ -1075,6 +1086,23 @@ and re-try with just --auto-iam-authn`)
 
 			if ic.PrivateIP != nil && ic.PSC != nil {
 				return newBadCommandError("cannot specify both private-ip and psc query params")
+			}
+
+			ic.ConnectTunnel, err = parseBoolOpt(q, "connect-tunnel")
+			if err != nil {
+				return err
+			}
+			if ic.ConnectTunnel != nil && *ic.ConnectTunnel && conf.AutoIP {
+				return newBadCommandError("cannot use --auto-ip with connect-tunnel")
+			}
+			if ic.ConnectTunnel != nil && *ic.ConnectTunnel && conf.SQLDataEnabled {
+				return newBadCommandError("cannot use --sql-data with connect-tunnel")
+			}
+			if ic.SQLDataEnabled != nil && *ic.SQLDataEnabled && conf.ConnectTunnel {
+				return newBadCommandError("cannot use --connect-tunnel with sql-data")
+			}
+			if ic.ConnectTunnel != nil && (ic.PrivateIP != nil || ic.PSC != nil || ic.SQLDataEnabled != nil) {
+				return newBadCommandError("cannot specify connect-tunnel with private-ip, psc, or sql-data query params")
 			}
 
 		}

@@ -735,6 +735,25 @@ func TestSQLDataWarmup(t *testing.T) {
 			},
 			want: 0,
 		},
+		{
+			desc: "warmup skipped globally with ConnectTunnel",
+			in: &proxy.Config{
+				ConnectTunnel: true,
+				Instances:     []proxy.InstanceConnConfig{{Name: "proj:reg:inst", Port: 30107}},
+			},
+			want: 0,
+		},
+		{
+			desc: "warmup skipped per-instance with ConnectTunnel",
+			in: &proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					Name:          "proj:reg:inst",
+					Port:          30108,
+					ConnectTunnel: pointer(true),
+				}},
+			},
+			want: 0,
+		},
 	}
 
 	for _, tc := range tcs {

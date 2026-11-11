@@ -549,6 +549,40 @@ func TestNewCommandArguments(t *testing.T) {
 			}),
 		},
 		{
+			desc: "using the connect-tunnel flag",
+			args: []string{"--connect-tunnel", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ConnectTunnel: true,
+			}),
+		},
+		{
+			desc: "using the connect-tunnel and auto-iam-authn flags",
+			args: []string{"--connect-tunnel", "--auto-iam-authn", "proj:region:inst"},
+			want: withDefaults(&proxy.Config{
+				ConnectTunnel: true,
+				IAMAuthN:      true,
+			}),
+		},
+		{
+			desc: "using the connect-tunnel query param",
+			args: []string{"proj:region:inst?connect-tunnel=true"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					ConnectTunnel: pointer(true),
+				}},
+			}),
+		},
+		{
+			desc: "using the connect-tunnel and auto-iam-authn query params",
+			args: []string{"proj:region:inst?connect-tunnel=true&auto-iam-authn=true"},
+			want: withDefaults(&proxy.Config{
+				Instances: []proxy.InstanceConnConfig{{
+					ConnectTunnel: pointer(true),
+					IAMAuthN:      pointer(true),
+				}},
+			}),
+		},
+		{
 			desc: "using the resource-exhausted-cooldown-delay flag",
 			args: []string{"--resource-exhausted-cooldown-delay", "10s", "proj:region:inst"},
 			want: withDefaults(&proxy.Config{
@@ -964,6 +998,14 @@ func TestNewCommandWithEnvironmentConfig(t *testing.T) {
 			envValue: "https://test.googleapis.com",
 			want: withDefaults(&proxy.Config{
 				SQLDataEndpoint: "https://test.googleapis.com",
+			}),
+		},
+		{
+			desc:     "using the connect-tunnel envvar",
+			envName:  "CSQL_PROXY_CONNECT_TUNNEL",
+			envValue: "true",
+			want: withDefaults(&proxy.Config{
+				ConnectTunnel: true,
 			}),
 		},
 	}
@@ -1410,6 +1452,67 @@ func TestNewCommandWithErrors(t *testing.T) {
 				"--private-ip", "--psc",
 				"p:r:i",
 			},
+		},
+		{
+			desc: "using --connect-tunnel with --private-ip",
+			args: []string{
+				"--connect-tunnel", "--private-ip",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using --connect-tunnel with --psc",
+			args: []string{
+				"--connect-tunnel", "--psc",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using --connect-tunnel with --sql-data",
+			args: []string{
+				"--connect-tunnel", "--sql-data",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using --connect-tunnel with --auto-ip",
+			args: []string{
+				"--connect-tunnel", "--auto-ip",
+				"p:r:i",
+			},
+		},
+		{
+			desc: "using connect-tunnel query param with --auto-ip",
+			args: []string{
+				"--auto-ip",
+				"p:r:i?connect-tunnel=true",
+			},
+		},
+		{
+			desc: "using connect-tunnel query param with --sql-data",
+			args: []string{
+				"--sql-data",
+				"p:r:i?connect-tunnel=true",
+			},
+		},
+		{
+			desc: "using sql-data query param with --connect-tunnel",
+			args: []string{
+				"--connect-tunnel",
+				"p:r:i?sql-data=true",
+			},
+		},
+		{
+			desc: "using connect-tunnel and private-ip query params",
+			args: []string{"p:r:i?connect-tunnel=true&private-ip=true"},
+		},
+		{
+			desc: "using connect-tunnel and psc query params",
+			args: []string{"p:r:i?connect-tunnel=true&psc=true"},
+		},
+		{
+			desc: "using connect-tunnel and sql-data query params",
+			args: []string{"p:r:i?connect-tunnel=true&sql-data=true"},
 		},
 		{
 			desc: "run-connection-test with fuse",
