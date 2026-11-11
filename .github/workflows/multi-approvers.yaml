@@ -26,23 +26,161 @@ on:
       - 'review_requested'
       - 'review_request_removed'
 
-permissions:
-  actions: 'write'
-  contents: 'read'
-  id-token: 'write'
-  pull-requests: 'read'
+permissions: {}
 
 concurrency:
-  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
+  group: '${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}'
   cancel-in-progress: true
 
 jobs:
   multi-approvers:
     runs-on: 'ubuntu-latest'
+    permissions:
+      pull-requests: 'read'
     steps:
       - name: 'Multi-approvers'
-        uses: 'abcxyz/actions/.github/actions/multi-approvers@7c003a22a2308639325a29f9d4f4ff60781f6ce1' # main
+        uses: 'actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3' # v9.0.0
+        env:
+          REQUIRED_INTERNAL_APPROVALS: '2'
+          # Existing automation bot allowlist migrated from previous config.
+          USER_ID_ALLOWLIST: '25180681,55107282,122572305,78513119,49699333,70984784,44816363,205009765,56741989,224858768,104649659'
         with:
-          team: 'googlers'
-          token: '${{ secrets.MULTI_APPROVERS_TOKEN }}'
-          user-id-allowlist: '25180681,55107282,122572305,78513119,49699333,70984784,44816363,205009765,56741989,224858768,104649659'
+          retries: '2'
+          script: |
+            const INTERNAL_ROLES = new Set(['admin', 'maintain', 'write']);
+            const INTERNAL_PERMISSIONS = new Set(['admin', 'write']);
+
+            const prNumber = context.payload.pull_request?.number;
+            if (!prNumber) {
+              core.setFailed('No pull_request found in event payload.');
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber,
+            });
+
+            const author = pr.user;
+            if (!author?.login) {
+              core.setFailed(`Pull request #${prNumber} has no author.`);
+              return;
+            }
+
+            const allowlist = new Set(
+              (process.env.USER_ID_ALLOWLIST || '')
+                .split(',')
+                .map((id) => id.trim())
+                .filter(Boolean),
+            );
+
+            if (allowlist.has(String(author.id))) {
+              core.info(`Author ${author.login} (${author.id}) is in user-id-allowlist.`);
+              return;
+            }
+
+            const permissionCache = new Map();
+            async function isInternalUser(username) {
+              if (permissionCache.has(username)) {
+                return permissionCache.get(username);
+              }
+              try {
+                const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                  owner,
+                  repo,
+                  username,
+                });
+                const isInternal =
+                  INTERNAL_ROLES.has(data.role_name) ||
+                  INTERNAL_PERMISSIONS.has(data.permission);
+                core.info(
+                  `User ${username}: role_name=${data.role_name}, permission=${data.permission}, internal=${isInternal}`,
+                );
+                permissionCache.set(username, isInternal);
+                return isInternal;
+              } catch (err) {
+                if (err?.status === 404) {
+                  core.info(`User ${username} is not a collaborator (404), internal=false`);
+                  permissionCache.set(username, false);
+                  return false;
+                }
+                throw err;
+              }
+            }
+
+            if (await isInternalUser(author.login)) {
+              core.info(`Author ${author.login} is an internal user.`);
+              return;
+            }
+
+            const requiredApprovals = Number.parseInt(
+              process.env.REQUIRED_INTERNAL_APPROVALS || '2',
+              10,
+            );
+            if (!Number.isInteger(requiredApprovals) || requiredApprovals < 1) {
+              core.setFailed(
+                `Invalid REQUIRED_INTERNAL_APPROVALS: ${process.env.REQUIRED_INTERNAL_APPROVALS}`,
+              );
+              return;
+            }
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number: prNumber,
+              per_page: 100,
+            });
+
+            // Sort chronologically so the latest substantive state per reviewer wins.
+            const submittedTimestamp = (review) => {
+              const parsed = Date.parse(review.submitted_at || '');
+              return Number.isFinite(parsed) ? parsed : 0;
+            };
+            reviews.sort((a, b) => {
+              const timeDiff = submittedTimestamp(a) - submittedTimestamp(b);
+              if (timeDiff !== 0) {
+                return timeDiff;
+              }
+              return (a.id || 0) - (b.id || 0);
+            });
+
+            const latestReviewByUser = new Map();
+            for (const review of reviews) {
+              const reviewer = review.user;
+              if (!reviewer?.id || !reviewer?.login) {
+                continue;
+              }
+              if (reviewer.id === author.id) {
+                continue;
+              }
+              if (review.state === 'COMMENTED' || review.state === 'PENDING') {
+                continue;
+              }
+              latestReviewByUser.set(reviewer.id, {
+                login: reviewer.login,
+                state: review.state,
+              });
+            }
+
+            const internalApprovers = [];
+            for (const review of latestReviewByUser.values()) {
+              if (review.state !== 'APPROVED') {
+                continue;
+              }
+              if (await isInternalUser(review.login)) {
+                internalApprovers.push(review.login);
+              }
+            }
+
+            if (internalApprovers.length >= requiredApprovals) {
+              core.info(
+                `Found ${internalApprovers.length} internal approvals (${internalApprovers.join(', ')}), required ${requiredApprovals}.`,
+              );
+              return;
+            }
+
+            core.setFailed(
+              `PR from external author ${author.login} requires ${requiredApprovals} internal approvals (write/maintain/admin), found ${internalApprovers.length}${internalApprovers.length ? ` (${internalApprovers.join(', ')})` : ''}.`,
+            );
