@@ -36,7 +36,7 @@ cloud-sql-proxy shutdown [flags]
 
 ```
       --admin-port string   port for the admin server (default "9091")
-  -h, --help                help for shutdown
+  -h, --help[=true|false]   help for shutdown
 ```
 
 ### Options inherited from parent commands
