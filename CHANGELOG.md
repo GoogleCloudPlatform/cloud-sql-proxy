@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.28.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.27.0...v2.28.0) (2026-11-11)
+
+
+### Features
+
+* add hidden --connect-tunnel flag for Connect Tunnel ([#2721](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2721)) ([458deeb](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/458deebfde72e13a236ccb8ad05e23437fd7e244))
+
+
+### Bug Fixes
+
+* preserve custom logger option and add WithStructuredLogging ([#2712](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2712)) ([4ec343a](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/4ec343accbb7a1999e70e67b497fcfd34cc485e0))
+* update dependencies and base images to latest ([#2718](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2718)) ([da1637c](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/da1637c593ef67031083e46908bf346b186fdc9f))
+
 ## [2.27.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.26.3...v2.27.0) (2026-10-29)
 
 
