@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.5](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.38.4...v1.38.5) (2026-11-12)
+
+
+### Bug Fixes
+
+* update dependencies to latest versions ([#2723](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2723)) ([dbe6623](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/dbe6623454fc593ca7aeb47bca02dd3495968744))
+
 ## [1.38.4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.38.3...v1.38.4) (2026-10-08)
 
 
