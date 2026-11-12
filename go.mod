@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.10.0
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/go-sql-driver/mysql v1.10.1
-	github.com/hanwen/go-fuse/v2 v2.12.1
+	github.com/hanwen/go-fuse/v2 v2.11.0
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/lib/pq v1.12.3
 	github.com/microsoft/go-mssqldb v1.11.2
