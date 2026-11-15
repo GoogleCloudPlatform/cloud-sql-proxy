@@ -16,6 +16,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -25,6 +26,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
@@ -998,6 +1000,10 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 
 	lc := net.ListenConfig{KeepAlive: 30 * time.Second}
 	ln, err := lc.Listen(ctx, network, address)
+	if network == "unix" && errors.Is(err, syscall.EADDRINUSE) && removeStaleUnixSocket(address) {
+		c.logger.Infof("[%v] Removed stale Unix socket %v", inst.Name, address)
+		ln, err = lc.Listen(ctx, network, address)
+	}
 	if err != nil {
 		c.logger.Errorf("[%v] could not listen to address %v: %v", inst.Name, address, err)
 		return nil, err
@@ -1011,6 +1017,27 @@ func (c *Client) newSocketMount(ctx context.Context, conf *Config, pc *portConfi
 	opts := dialOptions(*conf, inst)
 	m := &socketMount{inst: inst.Name, dialOpts: opts, listener: ln}
 	return m, nil
+}
+
+// removeStaleUnixSocket removes the Unix socket at address when nothing is
+// listening on it, e.g., because a previous Proxy process was killed before it
+// could close its listener. It reports whether the socket was removed. A path
+// that is not a socket, or a socket that still accepts connections, is left
+// alone.
+func removeStaleUnixSocket(address string) bool {
+	fi, err := os.Lstat(address)
+	if err != nil || fi.Mode()&os.ModeSocket == 0 {
+		return false
+	}
+	conn, err := net.DialTimeout("unix", address, time.Second)
+	if err == nil {
+		_ = conn.Close()
+		return false
+	}
+	if !errors.Is(err, syscall.ECONNREFUSED) {
+		return false
+	}
+	return os.Remove(address) == nil
 }
 
 // newUnixSocketMount parses the configuration and returns the path to the unix
