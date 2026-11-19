@@ -14,7 +14,7 @@ This option uses a wrapper script around the Cloud SQL Auth Proxy to detect
 when the secret has changed, and restart the Proxy with the new value. This
 could be done in many languages, but here’s an example using bash:
 
-> [failover.sh](examples/disaster-recovery/failover.sh)
+> [failover.sh](failover.sh)
 ```sh
 #! /bin/bash
 
