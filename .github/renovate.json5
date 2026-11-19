@@ -4,23 +4,15 @@
   ],
   "dependencyDashboardLabels": ["type: process"],
   "commitMessagePrefix": "deps: ",
-  "postUpdateOptions": [
-    "gomodTidy"
-  ],
-  "prConcurrentLimit": 3,
+  // Go modules and GitHub Actions are managed by Dependabot (.github/dependabot.yml).
+  // Keep Renovate strictly for Dockerfiles (Dockerfile and Dockerfile.alpine) so
+  // base-image digest bumps land immediately without Dependabot's 7-day cooldown.
+  "enabledManagers": ["dockerfile"],
   "packageRules": [
     {
-      "matchManagers": ["github-actions"],
-      "groupName": "dependencies for github"
-    },
-    {
       "matchManagers": ["dockerfile"],
-      "groupName": "container images"
-    },
-    {
-      "groupName": "Non-major dependency updates",
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["minor", "patch"],
-    },
+      "groupName": "container images",
+      "prPriority": 10
+    }
   ]
 }
