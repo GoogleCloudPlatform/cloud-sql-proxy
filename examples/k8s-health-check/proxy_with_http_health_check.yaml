@@ -106,7 +106,7 @@ spec:
         - name: CSQL_PROXY_QUITQUITQUIT
           value: "true"
         - name: CSQL_PROXY_ADMIN_PORT
-          value: "9092"
+          value: "9091"
 
         # Enable structured logging with LogEntry format
         - name: CSQL_PROXY_STRUCTURED_LOGS
