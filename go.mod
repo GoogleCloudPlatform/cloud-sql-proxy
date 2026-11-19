@@ -19,7 +19,7 @@ require (
 	golang.org/x/oauth2 v0.38.0
 	golang.org/x/sys v0.50.0
 	google.golang.org/api v0.312.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261118221215-c8830f628b3f
 	google.golang.org/grpc v1.85.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
