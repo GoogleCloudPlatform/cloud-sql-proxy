@@ -1,18 +1,9 @@
 {
+  "enabled": false,
   "extends": [
     "config:recommended"
   ],
   "dependencyDashboardLabels": ["type: process"],
-  "commitMessagePrefix": "deps: ",
-  // Go modules and GitHub Actions are managed by Dependabot (.github/dependabot.yml).
-  // Keep Renovate strictly for Dockerfiles (Dockerfile and Dockerfile.alpine) so
-  // base-image digest bumps land immediately without Dependabot's 7-day cooldown.
-  "enabledManagers": ["dockerfile"],
-  "packageRules": [
-    {
-      "matchManagers": ["dockerfile"],
-      "groupName": "container images",
-      "prPriority": 10
-    }
-  ]
+  "commitMessagePrefix": "deps: "
+  // Go modules, Dockerfiles, and GitHub Actions are managed by Dependabot (.github/dependabot.yml).
 }
