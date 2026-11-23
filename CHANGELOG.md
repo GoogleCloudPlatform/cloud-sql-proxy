@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.38.6](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.38.5...v1.38.6) (2026-11-23)
+
+
+### Bug Fixes
+
+* **docker:** run apk upgrade in Dockerfile.alpine for security patches (v1) ([#2741](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2741)) ([6c9bed4](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/6c9bed4d04a170baba8cf5e572749c38067d550a))
+* update dependencies to latest (v1) ([#2736](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2736)) ([1035701](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/103570129b66a510a8c484c8f1478fb2d14879dd))
+
 ## [1.38.5](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v1.38.4...v1.38.5) (2026-11-12)
 
 
