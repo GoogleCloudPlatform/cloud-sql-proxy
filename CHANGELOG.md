@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.28.1](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.28.0...v2.28.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* update cloud-sql-go-connector to v1.27.1 and upgrade Alpine packages ([#2740](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2740)) ([3483255](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/3483255a31a2f1799f286fd54c7a712e98497aa8))
+* update dependencies to latest ([#2735](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/issues/2735)) ([a28efd6](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/commit/a28efd6ae65e6638b4ec05db27c06ee78a67b3dd))
+
 ## [2.28.0](https://github.com/GoogleCloudPlatform/cloud-sql-proxy/compare/v2.27.0...v2.28.0) (2026-11-11)
 
 
