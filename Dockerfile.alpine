@@ -30,7 +30,7 @@ FROM alpine:3@sha256:0f49f331d9212aff11b932863be4eb01cdf962969aa86dab7d1ee21ac6f
 
 LABEL org.opencontainers.image.source="https://github.com/GoogleCloudPlatform/cloud-sql-proxy"
 
-RUN apk add --no-cache \
+RUN apk upgrade --no-cache && apk add --no-cache \
     ca-certificates \
     libc6-compat
 # Install fuse and allow enable non-root users to mount
