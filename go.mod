@@ -18,7 +18,7 @@ require (
 	go.opencensus.io v0.24.0
 	golang.org/x/oauth2 v0.38.0
 	golang.org/x/sys v0.50.0
-	google.golang.org/api v0.316.0
+	google.golang.org/api v0.317.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261123191846-1e707ab9fbc2
 	google.golang.org/grpc v1.85.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
