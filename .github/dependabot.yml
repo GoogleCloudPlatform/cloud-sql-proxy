@@ -16,11 +16,42 @@ version: 2
 updates:
   - package-ecosystem: "gomod"
     directory: "/"
+    target-branch: "main"
     schedule:
       interval: "daily"
     cooldown:
-      default-days: 7
+      default-days: 0 # zizmor: ignore[dependabot-cooldown]
     open-pull-requests-limit: 10
+    allow:
+      - dependency-type: "all"
+    commit-message:
+      prefix: "deps"
+    groups:
+      non-major-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # v2.12.0 and v2.12.1 break linux/386 compilation (hanwen/go-fuse#628).
+      - dependency-name: "github.com/hanwen/go-fuse/v2"
+        versions: ["= 2.12.0", "= 2.12.1"]
+      # Pinned to v0.60.0: v0.61.0+ prints a deprecation notice to the standard logger on first use.
+      - dependency-name: "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
+        versions: [">= 0.61.0"]
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    target-branch: "v1"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 0 # zizmor: ignore[dependabot-cooldown]
+    open-pull-requests-limit: 10
+    allow:
+      - dependency-type: "all"
     commit-message:
       prefix: "deps"
     groups:
@@ -36,12 +67,27 @@ updates:
       - dependency-name: "github.com/hanwen/go-fuse/v2"
         versions: ["= 2.12.0", "= 2.12.1"]
 
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 0 # zizmor: ignore[dependabot-cooldown]
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps"
+    groups:
+      container-images:
+        applies-to: version-updates
+        patterns:
+          - "*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
     cooldown:
-      default-days: 7
+      default-days: 0 # zizmor: ignore[dependabot-cooldown]
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore"
